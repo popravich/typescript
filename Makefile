@@ -56,6 +56,14 @@ COMPILER_SOURCES_BASE= \
   $(CSRC)\incrementalParser.ts \
   $(CSRC)\pathUtils.ts \
   $(CSRC)\referenceResolution.ts \
+  $(CSRC)\pullDeclCollection.ts \
+  $(CSRC)\pullDecls.ts \
+  $(CSRC)\pullSymbols.ts \
+  $(CSRC)\pullSymbolBindingContext.ts \
+  $(CSRC)\pullTypeChecker.ts \
+  $(CSRC)\pullSemanticInfo.ts \
+  $(CSRC)\pullBinder.ts \
+  $(CSRC)\pullSymbolGraph.ts \
   $(CSRC)\typescript.ts
 
 COMPILER_SOURCES=$(COMPILER_SOURCES_BASE)

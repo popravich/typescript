@@ -53,13 +53,24 @@ module TypeScript {
 
     export enum AllowedElements {
         None = 0,
-        ModuleDeclarations = 1 << 2,
-        ClassDeclarations = 1 << 3,
-        InterfaceDeclarations = 1 << 4,
-        AmbientDeclarations = 1 << 10,
+        Statements = 1,
+        FunctionDecls = 1 << 1,
+        ModuleDecls = 1 << 2,
+        ClassDecls = 1 << 3,
+        InterfaceDecls = 1 << 4,
+        TypedFuncDecls = 1 << 5,
+        TypedDecls = 1 << 6,
+        TypedFuncSignatures = 1 << 8,
+        TypedSignatures = 1 << 9,
+        AmbientDecls = 1 << 10,
         Properties = 1 << 11,
-
-        Global = ModuleDeclarations | ClassDeclarations | InterfaceDeclarations | AmbientDeclarations,
+        
+        Block = Statements | FunctionDecls | TypedFuncDecls | TypedDecls,
+        Global = Statements | FunctionDecls | ModuleDecls | ClassDecls | InterfaceDecls | AmbientDecls,
+        FunctionBody = Statements | FunctionDecls,
+        ModuleMembers = TypedFuncDecls | FunctionDecls | ModuleDecls | ClassDecls | InterfaceDecls | TypedDecls | Statements | AmbientDecls,
+        ClassMembers = TypedFuncDecls | FunctionDecls | Statements | TypedDecls | Properties,
+        InterfaceMembers = TypedFuncSignatures | TypedSignatures,
         QuickParse = Global | Properties,
     }
 
@@ -104,6 +115,14 @@ module TypeScript {
         LocalStatic = 1 << 5,
         GetAccessor = 1 << 6,
         SetAccessor = 1 << 7,
+
+        // The following flags do not map to flags for any other enum
+        Signature = 1 << 8,
+        Enum = 1 << 9,
+        Constructor = 1 << 10,
+        Call = 1 << 11,
+        Index = 1 << 12,
+        Optional = 1 << 13,
     }
 
     export enum ModuleFlags {

@@ -142,6 +142,8 @@ module TypeScript {
         public enclosingType: Type;
         public instanceType: Type;
 
+        constructor () { nTypes++; }
+
         // REVIEW: Prune
         public isClass() { return this.instanceType != null; }
         public isArray() { return this.elementType != null; }
@@ -489,7 +491,7 @@ module TypeScript {
         public getAllAmbientEnclosedTypes() { return this.ambientEnclosedTypes; }
         public getPublicEnclosedTypes(): ScopedMembers { return null; }
         public getpublicAmbientEnclosedTypes(): ScopedMembers { return null; }
-        public importedModules: ImportDeclaration[] = [];
+        public importedModules: ImportDecl[] = [];
 
         // Hash table with dynamicModule type as key and its name in current scope and flag that tells if it is private as value
         private prettyNames = new SimpleHashTable(); 

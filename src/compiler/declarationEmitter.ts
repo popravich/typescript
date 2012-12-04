@@ -53,7 +53,7 @@ module TypeScript {
                 container = this.declarationContainerStack[this.declarationContainerStack.length - 2];
             }
 
-            if (container.nodeType == NodeType.ModuleDeclaration && !hasFlag(declFlags, DeclFlags.Exported)) {
+            if (container.nodeType == NodeType.Module && !hasFlag(declFlags, DeclFlags.Exported)) {
                 return false;
             }
 
@@ -92,8 +92,8 @@ module TypeScript {
 
             // Emit export only for global export statements. The container for this would be dynamic module which is whole file
             var container = this.getAstDeclarationContainer();
-            if (container.nodeType == NodeType.ModuleDeclaration &&
-                hasFlag((<ModuleDeclaration>container).modFlags, ModuleFlags.IsWholeFile) &&
+            if (container.nodeType == NodeType.Module &&
+                hasFlag((<ModuleDecl>container).modFlags, ModuleFlags.IsWholeFile) &&
                 hasFlag(declFlags, DeclFlags.Exported)) {
                 this.declFile.Write("export ");
             }
@@ -177,11 +177,11 @@ module TypeScript {
             var containingScope: SymbolScope = null;
             var declarationContainerAst = this.getAstDeclarationContainer();
             switch (declarationContainerAst.nodeType) {
-                case NodeType.ModuleDeclaration:
-                case NodeType.InterfaceDeclaration:
+                case NodeType.Module:
+                case NodeType.Interface:
                 case NodeType.FuncDecl:
-                    if (declarationContainerAst.type) {
-                        containingScope = declarationContainerAst.type.containedScope;
+                    if (declarationContainerAst.getType()) {
+                        containingScope = declarationContainerAst.getType().containedScope;
                     }
                     break;
 
@@ -192,9 +192,9 @@ module TypeScript {
                     }
                     break;
 
-                case NodeType.ClassDeclaration:
-                    if (declarationContainerAst.type) {
-                        containingScope = declarationContainerAst.type.instanceType.containedScope;
+                case NodeType.Class:
+                    if (declarationContainerAst.getType()) {
+                        containingScope = declarationContainerAst.getType().instanceType.containedScope;
                     }
                     break;
 
@@ -208,7 +208,7 @@ module TypeScript {
 
         public VarDeclCallback(pre: bool, varDecl: VarDecl): bool {
             if (pre && this.canEmitSignature(ToDeclFlags(varDecl.varFlags), false)) {
-                var interfaceMember = (this.getAstDeclarationContainer().nodeType == NodeType.InterfaceDeclaration);
+                var interfaceMember = (this.getAstDeclarationContainer().nodeType == NodeType.Interface);
                 if (!interfaceMember) {
                     // If it is var list of form var a, b, c = emit it only if count > 0 - which will be when emitting first var
                     // If it is var list of form  var a = varList count will be 0
@@ -226,8 +226,8 @@ module TypeScript {
                 }
 
                 var type: Type = null;
-                if (varDecl.typeExpr && varDecl.typeExpr.type) {
-                    type = varDecl.typeExpr.type;
+                if (varDecl.typeExpr && varDecl.typeExpr.getType()) {
+                    type = varDecl.typeExpr.getType();
                 }
                 else if (varDecl.sym) {
                     type = (<FieldSymbol>varDecl.sym).getType();
@@ -258,7 +258,7 @@ module TypeScript {
         public BlockCallback(pre: bool, block: Block): bool {
             if (!block.isStatementBlock) {
                 if (pre) {
-                    this.varListCount = block.statements.members.length;
+                    this.varListCount = block.stmts.members.length;
                 } else {
                     this.varListCount = 0;
                 }
@@ -272,10 +272,10 @@ module TypeScript {
             if (argDecl.isOptionalArg()) {
                 this.declFile.Write("?");
             }
-            if ((argDecl.typeExpr || argDecl.type != this.checker.anyType) &&
+            if ((argDecl.typeExpr || argDecl.getType() != this.checker.anyType) &&
                 this.canEmitTypeAnnotationSignature(ToDeclFlags(funcDecl.fncFlags))) {
                 this.declFile.Write(": ");
-                this.emitTypeSignature(argDecl.type);
+                this.emitTypeSignature(argDecl.getType());
             }
         }
 
@@ -288,21 +288,21 @@ module TypeScript {
                 return this.emitPropertyAccessorSignature(funcDecl);
             }
 
-            var isInterfaceMember = (this.getAstDeclarationContainer().nodeType == NodeType.InterfaceDeclaration);
+            var isInterfaceMember = (this.getAstDeclarationContainer().nodeType == NodeType.Interface);
             if (funcDecl.bod) {
                 if (funcDecl.isConstructor) {
-                    if (funcDecl.type.construct && funcDecl.type.construct.signatures.length > 1) {
+                    if (funcDecl.getType().construct && funcDecl.getType().construct.signatures.length > 1) {
                         return false;
                     }
                 } else {
-                    if (funcDecl.type.call && funcDecl.type.call.signatures.length > 1) {
+                    if (funcDecl.getType().call && funcDecl.getType().call.signatures.length > 1) {
                         // This means its implementation of overload signature. do not emit
                         return false;
                     }
                 }
-            } else if (!isInterfaceMember && hasFlag(funcDecl.fncFlags, FncFlags.Private) && funcDecl.type.call && funcDecl.type.call.signatures.length > 1) {
+            } else if (!isInterfaceMember && hasFlag(funcDecl.fncFlags, FncFlags.Private) && funcDecl.getType().call && funcDecl.getType().call.signatures.length > 1) {
                 // Print only first overload of private function
-                var signatures = funcDecl.type.call.signatures;
+                var signatures = funcDecl.getType().call.signatures;
                 var firstSignature = signatures[0].declAST;
                 if (firstSignature.bod) {
                     // Its a implementation, use next one
@@ -346,13 +346,13 @@ module TypeScript {
                 this.declFile.Write("[");
             }
 
-            if (funcDecl.arguments) {
-                var argsLen = funcDecl.arguments.members.length;
+            if (funcDecl.args) {
+                var argsLen = funcDecl.args.members.length;
                 if (funcDecl.variableArgList) {
                     argsLen--;
                 }
                 for (var i = 0; i < argsLen; i++) {
-                    var argDecl = <ArgDecl>funcDecl.arguments.members[i];
+                    var argDecl = <ArgDecl>funcDecl.args.members[i];
                     this.emitArgDecl(argDecl, funcDecl);
                     if (i < (argsLen - 1)) {
                         this.declFile.Write(", ");
@@ -361,8 +361,8 @@ module TypeScript {
             }
 
             if (funcDecl.variableArgList) {
-                var lastArg = <ArgDecl>funcDecl.arguments.members[funcDecl.arguments.members.length - 1];
-                if (funcDecl.arguments.members.length > 1) {
+                var lastArg = <ArgDecl>funcDecl.args.members[funcDecl.args.members.length - 1];
+                if (funcDecl.args.members.length > 1) {
                     this.declFile.Write(", ...");
                 }
                 else {
@@ -400,8 +400,8 @@ module TypeScript {
                 var basesLen = bases.members.length;
                 for (var i = 0; i < basesLen; i++) {
                     var baseExpr = bases.members[i];
-                    var baseSymbol = baseExpr.type.symbol;
-                    var baseType = baseExpr.type;
+                    var baseSymbol = baseExpr.getType().symbol;
+                    var baseType = baseExpr.getType();
                     if (i > 0) {
                         this.declFile.Write(", ");
                     }
@@ -430,18 +430,18 @@ module TypeScript {
         }
 
         private emitClassMembersFromConstructorDefinition(funcDecl: FuncDecl) {
-            if (funcDecl.arguments) {
-                var argsLen = funcDecl.arguments.members.length; if (funcDecl.variableArgList) { argsLen--; }
+            if (funcDecl.args) {
+                var argsLen = funcDecl.args.members.length; if (funcDecl.variableArgList) { argsLen--; }
 
                 for (var i = 0; i < argsLen; i++) {
-                    var argDecl = <ArgDecl>funcDecl.arguments.members[i];
+                    var argDecl = <ArgDecl>funcDecl.args.members[i];
                     if (hasFlag(argDecl.varFlags, VarFlags.Property)) {
                         this.emitDeclFlags(ToDeclFlags(argDecl.varFlags), "var");
                         this.declFile.Write(argDecl.id.text);
 
                         if (argDecl.typeExpr && this.canEmitTypeAnnotationSignature(ToDeclFlags(argDecl.varFlags))) {
                             this.declFile.Write(": ");
-                            this.emitTypeSignature(argDecl.type);
+                            this.emitTypeSignature(argDecl.getType());
                         }
                         this.declFile.WriteLine(";");
                     }
@@ -449,7 +449,7 @@ module TypeScript {
             }
         }
 
-        public ClassDeclarationCallback(pre: bool, classDecl: ClassDeclaration): bool {
+        public ClassCallback(pre: bool, classDecl: ClassDecl): bool {
             if (!this.canEmitPrePostAstSignature(ToDeclFlags(classDecl.varFlags), classDecl, pre)) {
                 return false;
             }
@@ -458,7 +458,7 @@ module TypeScript {
                 var className = classDecl.name.text;
                 this.emitDeclFlags(ToDeclFlags(classDecl.varFlags), "class");
                 this.declFile.Write(className);
-                this.emitBaseList(classDecl.extendsList, "extends");
+                this.emitBaseList(classDecl.baseClass, "extends");
                 this.emitBaseList(classDecl.implementsList, "implements");
                 this.declFile.WriteLine(" {");
 
@@ -478,7 +478,7 @@ module TypeScript {
             return true;
         }
 
-        public InterfaceDeclarationCallback(pre: bool, interfaceDecl: InterfaceDeclaration): bool {
+        public InterfaceCallback(pre: bool, interfaceDecl: TypeDecl): bool {
             if (!this.canEmitPrePostAstSignature(ToDeclFlags(interfaceDecl.varFlags), interfaceDecl, pre)) {
                 return false;
             }
@@ -503,7 +503,7 @@ module TypeScript {
             return true;
         }
 
-        public ImportDeclarationCallback(pre: bool, importDecl: ImportDeclaration): bool {
+        public ImportCallback(pre: bool, importDecl: ImportDecl): bool {
             if (pre && this.canEmitSignature(ToDeclFlags(importDecl.varFlags))) {
                 this.emitDeclFlags(ToDeclFlags(importDecl.varFlags), "import");
 
@@ -518,7 +518,7 @@ module TypeScript {
             return false;
         }
 
-        private emitEnumSignature(moduleDecl: ModuleDeclaration) {
+        private emitEnumSignature(moduleDecl: ModuleDecl) {
             if (!this.canEmitSignature(ToDeclFlags(moduleDecl.modFlags))) {
                 return false;
             }
@@ -545,7 +545,7 @@ module TypeScript {
             return false;
         }
 
-        public ModuleDeclarationCallback(pre: bool, moduleDecl: ModuleDeclaration): bool {
+        public ModuleCallback(pre: bool, moduleDecl: ModuleDecl): bool {
             if (hasFlag(moduleDecl.modFlags, ModuleFlags.IsWholeFile)) {
                 // This is dynamic modules and we are going to outputing single file, 
                 // we need to change the declFile because dynamic modules are always emitted to their corresponding .d.ts
@@ -593,9 +593,9 @@ module TypeScript {
                 this.declFile.Write(moduleDecl.name.text);
 
                 var isCurrentModuleDotted = (moduleDecl.members.members.length == 1 &&
-                    moduleDecl.members.members[0].nodeType == NodeType.ModuleDeclaration &&
-                    !(<ModuleDeclaration>moduleDecl.members.members[0]).isEnum() &&
-                    hasFlag((<ModuleDeclaration>moduleDecl.members.members[0]).modFlags, ModuleFlags.Exported));
+                    moduleDecl.members.members[0].nodeType == NodeType.Module &&
+                    !(<ModuleDecl>moduleDecl.members.members[0]).isEnum() &&
+                    hasFlag((<ModuleDecl>moduleDecl.members.members[0]).modFlags, ModuleFlags.Exported));
 
                 this.isDottedModuleName.push(isCurrentModuleDotted);
                 this.pushDeclarationContainer(moduleDecl);

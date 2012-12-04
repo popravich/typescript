@@ -151,7 +151,7 @@ module TypeScript {
         }
 
         public invalidCall(ast: CallExpression, nodeType: number, scope: SymbolScope): void {
-            var targetType = ast.target.type;
+            var targetType = ast.target.getType();
             var typeName = targetType.getScopedTypeName(scope);
             if (targetType.construct && (nodeType == NodeType.Call)) {
                 this.reportError(ast, "Value of type '" + typeName + "' is not callable.  Did you mean to include 'new'?");
@@ -163,8 +163,8 @@ module TypeScript {
         }
 
         public indexLHS(ast: BinaryExpression, scope: SymbolScope): void {
-            var targetType = ast.operand1.type.getScopedTypeName(scope);
-            var indexType = ast.operand2.type.getScopedTypeName(scope);
+            var targetType = ast.operand1.getType().getScopedTypeName(scope);
+            var indexType = ast.operand2.getType().getScopedTypeName(scope);
             this.simpleError(ast, "Value of type '" + targetType + "' is not indexable by type '" + indexType + "'");
         }
 

@@ -33,8 +33,36 @@
 ///<reference path='precompile.ts' />
 ///<reference path='incrementalParser.ts' />
 ///<reference path='declarationEmitter.ts' />
+///<reference path='pullDecls.ts' />
+///<reference path='pullSymbols.ts' />
+///<reference path='pullSymbolBindingContext.ts' />
+///<reference path='pullTypeChecker.ts' />
+///<reference path='pullSemanticInfo.ts' />
+///<reference path='pullDeclCollection.ts' />
+///<reference path='pullBinder.ts' />
+///<reference path='pullSymbolGraph.ts' />
 
 module TypeScript {
+
+    export var nASTs = 0;
+    export var nSymbols = 0;
+    export var nTypes = 0;
+    export var nFieldSymbols = 0;
+    export var nParameterSymbols = 0;
+    export var nTypeSymbols = 0;
+    export var nInferenceSymbols = 0;
+    export var nVariableSymbols = 0;
+    export var nSignatures = 0;
+    export var nSignatureGroups = 0;
+    export var nScopes = 0;
+    export var nAggregateScopes = 0;
+    export var nSymbolSearches = 0;
+    export var nSymbolFinds = 0;
+    export var nSymbolAmbientFinds = 0;
+    export var nSymbolEnters = 0;
+    export var nSymbolLocalFinds = 0;
+    export var nTypeGets = 0;
+    export var nTypeSets = 0;
 
     export enum UpdateUnitKind {
         Unknown,
@@ -111,6 +139,8 @@ module TypeScript {
         public scripts = new ASTList();
         public units: LocationInfo[] = new LocationInfo[];
         public errorReporter: ErrorReporter;
+        public pullTypeChecker: PullTypeChecker = null;
+        public semanticInfoChain: SemanticInfoChain = new SemanticInfoChain();
 
         public persistentTypeState: PersistentGlobalTypeState;
 
@@ -214,7 +244,7 @@ module TypeScript {
                         }
 
                         if (setRecovery) {
-                            this.parser.setErrorRecovery(null);
+                            this.parser.setErrorRecovery(null, 0, 0);
                         }
 
                         var updateResult: UpdateUnitResult;
@@ -255,7 +285,10 @@ module TypeScript {
                 this.persistentTypeState.setCollectionMode(keepResident ? TypeCheckCollectionMode.Resident : TypeCheckCollectionMode.Transient);
                 var index = this.units.length;
                 this.units[index] = script.locationInfo;
+                var preTime = new Date().getTime();
                 this.typeChecker.collectTypes(script);
+                var postTime = new Date().getTime();
+                this.totalCollectionTime = this.totalCollectionTime + (postTime - preTime);
                 this.scripts.append(script);
                 return script
             });
@@ -265,8 +298,10 @@ module TypeScript {
             return this.parseSourceUnit(new StringSourceText(prog), filename);
         }
 
+        public totalCollectionTime = 0;
+
         public parseSourceUnit(sourceText: ISourceText, filename: string) {
-            this.parser.setErrorRecovery(this.errorOutput);
+            this.parser.setErrorRecovery(this.errorOutput, -1, -1);
             var script: Script = this.parser.parse(sourceText, filename, 0);
 
             var index = this.units.length;
@@ -277,19 +312,25 @@ module TypeScript {
 
         public typeCheck() {
             return this.timeFunction("typeCheck()", () => {
+                var globaltcStart = new Date().getTime();
                 var binder = new Binder(this.typeChecker);
+
                 this.typeChecker.units = this.units;
+
                 binder.bind(this.typeChecker.globalScope, this.typeChecker.globals);
                 binder.bind(this.typeChecker.globalScope, this.typeChecker.ambientGlobals);
                 binder.bind(this.typeChecker.globalScope, this.typeChecker.globalTypes);
                 binder.bind(this.typeChecker.globalScope, this.typeChecker.ambientGlobalTypes);
+
                 this.typeFlow = new TypeFlow(this.logger, this.typeChecker.globalScope, this.parser, this.typeChecker);
+
+                var globalBindingEnd = new Date().getTime();
                 var i = 0;
                 var script: Script = null;
                 var len = this.scripts.members.length;
 
-
                 this.persistentTypeState.setCollectionMode(TypeCheckCollectionMode.Resident);
+
                 // first, typecheck resident "lib" scripts, if necessary
                 for (i = 0; i < len; i++) {
                     script = <Script>this.scripts.members[i];
@@ -298,6 +339,9 @@ module TypeScript {
                     this.typeFlow.assignScopes(script);
                     this.typeFlow.initLibs();
                 }
+
+                var globaltcEnd = new Date().getTime();
+
                 for (i = 0; i < len; i++) {
                     script = <Script>this.scripts.members[i];
                     if (!script.isResident || script.hasBeenTypeChecked) { continue; }
@@ -306,20 +350,29 @@ module TypeScript {
                     script.hasBeenTypeChecked = true;
                 }
 
+                var localtcStart = new Date().getTime();
+
                 // next typecheck scripts that may change
                 this.persistentTypeState.setCollectionMode(TypeCheckCollectionMode.Transient);
+
                 len = this.scripts.members.length;
+
                 for (i = 0; i < len; i++) {
                     script = <Script>this.scripts.members[i];
                     if (script.isResident) { continue; }
                     this.typeFlow.assignScopes(script);
                     this.typeFlow.initLibs();
                 }
+
+                var localtcEnd = new Date().getTime();
+
                 for (i = 0; i < len; i++) {
                     script = <Script>this.scripts.members[i];
                     if (script.isResident) { continue; }
                     this.typeFlow.typeCheck(script);
                 }
+
+                CompilerDiagnostics.Alert("Total binding and collection time: " + (this.totalCollectionTime + (globaltcEnd - globaltcStart) + (localtcEnd - localtcStart)));
 
                 return null;
             });
@@ -327,7 +380,7 @@ module TypeScript {
 
         public cleanASTTypesForReTypeCheck(ast: AST) {
             function cleanASTType(ast: AST, parent: AST): AST {
-                ast.type = null;
+                ast.setType(null);
                 if (ast.nodeType == NodeType.VarDecl) {
                     var vardecl = <VarDecl>ast;
                     vardecl.sym = null;
@@ -348,8 +401,8 @@ module TypeScript {
                     funcdecl.accessorSymbol = null;
                     funcdecl.scopeType = null;
                 }
-                else if (ast.nodeType == NodeType.ModuleDeclaration) {
-                    var modDecl = <ModuleDeclaration>ast;
+                else if (ast.nodeType == NodeType.Module) {
+                    var modDecl = <ModuleDecl>ast;
                     modDecl.mod = null;
                 }
                 else if (ast.nodeType == NodeType.With) {
@@ -398,6 +451,101 @@ module TypeScript {
                 this.cleanTypesForReTypeCheck();
                 return this.typeCheck();
             });
+        }
+
+        public pullTypeCheck() {
+            // create global decls
+            // collect decls from files
+            // walk scripts, pull-typechecking each
+            if (!this.pullTypeChecker) {
+                this.pullTypeChecker = new PullTypeChecker(this.semanticInfoChain);
+            }
+
+            var declCollectionContext: DeclCollectionContext = null;
+            var pullSymbolCollectionContext: PullSymbolBindingContext = null;
+            var semanticInfo: SemanticInfo = null;
+            var i = 0;
+            
+            // create decls
+            var createDeclsStartTime = new Date().getTime();
+
+            for (; i < this.scripts.members.length; i++) {
+                semanticInfo = new SemanticInfo(this.units[i].filename);
+
+                declCollectionContext = new DeclCollectionContext(semanticInfo);
+
+                declCollectionContext.scriptName = this.units[i].filename;
+
+                // create decls
+                getAstWalkerFactory().walk(this.scripts.members[i], preCollectDecls, postCollectDecls, null, declCollectionContext);
+
+                semanticInfo.addTopLevelDecl(declCollectionContext.getParent());
+
+                this.semanticInfoChain.addUnit(semanticInfo);
+            }
+
+            var createDeclsEndTime = new Date().getTime();
+
+            // bind declaration symbols
+            var bindStartTime = new Date().getTime();
+
+            var topLevelDecls: PullDecl[] = null;
+
+            // start at '1', so as to skip binding for global primitives such as 'any'
+            for (i = 1; i < this.semanticInfoChain.units.length; i++) {
+
+                topLevelDecls = this.semanticInfoChain.units[i].getTopLevelDecls();
+
+                pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, this.semanticInfoChain.units[i].getPath());
+
+                for (var j = 0; j < topLevelDecls.length; j++) {
+
+                    bindDeclSymbol(topLevelDecls[j], pullSymbolCollectionContext);
+
+                }
+            }
+
+            var bindEndTime = new Date().getTime();
+
+            CompilerDiagnostics.Alert("Decl creation: " + (createDeclsEndTime - createDeclsStartTime));
+            CompilerDiagnostics.Alert("Binding: " + (bindEndTime - bindStartTime));
+            CompilerDiagnostics.Alert("Total: " + (bindEndTime - createDeclsStartTime));
+
+            // typecheck
+            for (i = 0; i < this.scripts.members.length; i++) {
+                getAstWalkerFactory().walk(this.scripts.members[i], prePullTypeCheck, null, null, this.pullTypeChecker);
+            }
+        }
+
+        public updatePullSourceUnit(sourceText: ISourceText, filename: string, keepResident:bool, referencedFiles?: IFileReference[] = []): Script {
+            var script: Script = this.parser.parse(sourceText, filename, this.units.length, AllowedElements.Global);
+            script.referencedFiles = referencedFiles;
+            script.isResident = keepResident;
+            this.persistentTypeState.setCollectionMode(keepResident ? TypeCheckCollectionMode.Resident : TypeCheckCollectionMode.Transient);
+            var index = 0;
+            var found = false;
+
+            for (; index < this.units.length; index++) {
+                if (this.units[index].filename == filename) {
+                    found = true;
+                    break;
+                }
+            }
+
+            this.units[index] = script.locationInfo;
+            this.typeChecker.collectTypes(script);
+            if (found) {
+                this.scripts.members[index] = script;
+            }
+            else {
+                this.scripts.append(script);
+            }
+
+            // trace decl dependencies
+            // clean decl references
+            // clean symbols
+            // retypecheck
+            return script
         }
 
         public emitDeclarationFile(createFile: (path: string, useUTF8?: bool) => ITextWriter) {
@@ -571,6 +719,85 @@ module TypeScript {
                 }
             }
             return false;
+        }
+
+        public gatherDiagnostics() {
+            CompilerDiagnostics.Alert("Number of ASTs allocated: " + nASTs);
+            CompilerDiagnostics.Alert("Number of types allocated: " + nTypes);
+            CompilerDiagnostics.Alert("Number of symbols allocated: " + nSymbols);
+            CompilerDiagnostics.Alert("");
+
+            CompilerDiagnostics.Alert("Number of signatures allocated: " + nSignatures);
+            CompilerDiagnostics.Alert("Number of signature groups allocated: " + nSignatureGroups);
+            CompilerDiagnostics.Alert("");
+
+            CompilerDiagnostics.Alert("Number of field symbols allocated: " + nFieldSymbols);
+            CompilerDiagnostics.Alert("Number of type symbols allocated: " + nTypeSymbols);
+            CompilerDiagnostics.Alert("Number of variable symbols allocated: " + nVariableSymbols);
+            CompilerDiagnostics.Alert("Number of inference symbols allocated: " + nInferenceSymbols);
+            CompilerDiagnostics.Alert("");
+
+            // We need to query this info before the number of ASTs with types, since that will up the
+            // read count
+            var getsetInfo = this.gatherGetSetInfoFromASTs();
+
+            CompilerDiagnostics.Alert("Number of type gets: " + nTypeGets);
+            CompilerDiagnostics.Alert("Number of type sets: " + nTypeSets);
+            CompilerDiagnostics.Alert("Number of ASTs who were queried for types: " + getsetInfo.gets);
+            CompilerDiagnostics.Alert("% of ASTs whose types were retrieved: " + ((getsetInfo.gets / nASTs) * 100));
+            CompilerDiagnostics.Alert("");
+
+            var nASTsWithTypes = this.gatherTypeInfoFromASTs();
+
+            CompilerDiagnostics.Alert("Number of ASTs with types: " + nASTsWithTypes);
+            CompilerDiagnostics.Alert("% of ASTs with types: " + ((nASTsWithTypes / nASTs) * 100));
+            CompilerDiagnostics.Alert("% of ASTs with types whose types were retrieved: " + ((getsetInfo.gets / nASTsWithTypes) * 100));
+            CompilerDiagnostics.Alert("");
+
+            CompilerDiagnostics.Alert("Number of scopes allocated: " + nScopes);
+            CompilerDiagnostics.Alert("Number of aggregate scopes allocated: " + nScopes);
+            CompilerDiagnostics.Alert("Number of symbol searches: " + nSymbolSearches);
+            CompilerDiagnostics.Alert("Number of symbol finds: " + nSymbolFinds);
+            CompilerDiagnostics.Alert("Number of symbol ambient finds: " + nSymbolAmbientFinds);
+            CompilerDiagnostics.Alert("Number of symbol local finds: " + nSymbolLocalFinds);
+            CompilerDiagnostics.Alert("Number of symbol enters: " + nSymbolEnters);
+            CompilerDiagnostics.Alert("");
+        }
+
+        public gatherTypeInfoFromASTs():number {
+            var nTypesSet = 0;
+
+            function findSetTypes(ast: AST, parent: AST): AST {
+                if (ast.getType()) { nTypesSet++; }
+                return ast;
+            }
+
+            for (var i = 0, len = this.scripts.members.length; i < len; i++) {
+                var script = this.scripts.members[i];
+                TypeScript.getAstWalkerFactory().walk(script, findSetTypes);
+            }         
+
+            return nTypesSet;
+        }
+
+        public gatherGetSetInfoFromASTs(): { gets: number; sets: number; get_and_set: number; } {
+            var nTypesSet = 0;
+            var nTypesGotten = 0;
+            var nTypeWasSetAndGotten = 0;
+
+            function findGetSetTypes(ast: AST, parent: AST): AST {
+                if (ast.typeWasGotten) { nTypesGotten++; }
+                if (ast.typeWasSet) { nTypesSet++; }
+                if (ast.typeWasGotten && ast.typeWasSet) { nTypeWasSetAndGotten++; }
+                return ast;
+            }
+
+            for (var i = 0, len = this.scripts.members.length; i < len; i++) {
+                var script = this.scripts.members[i];
+                TypeScript.getAstWalkerFactory().walk(script, findGetSetTypes);
+            }         
+
+            return { gets: nTypesGotten, sets: nTypesSet, get_and_set: nTypeWasSetAndGotten };
         }
     }
 

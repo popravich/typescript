@@ -35,7 +35,7 @@ module TypeScript {
     }
 
     export class SymbolScope {
-        constructor (public container: Symbol) { }
+        constructor (public container: Symbol) { nScopes++; }
         public printLabel() { return "base"; }
         public getAllSymbolNames(members: bool): string[]{
             return ["please", "implement", "in", "derived", "classes"];
@@ -95,9 +95,13 @@ module TypeScript {
         constructor (container: Symbol) {
             super(container);
             this.container = container;
+            nAggregateScopes++;
         }
 
         public search(filter: ScopeSearchFilter, name: string, publicOnly: bool, typespace: bool) {
+
+            nSymbolSearches++;
+
             if (this.parents) {
                 for (var i = 0; i < this.parents.length; i++) {
                     var sym = this.parents[i].search(filter, name, publicOnly, typespace);
@@ -197,6 +201,9 @@ module TypeScript {
         }
 
         public find(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolFinds++;
+
             var sym: Symbol = null;
             var i = 0;
             var cache = this.valueCache;
@@ -234,6 +241,9 @@ module TypeScript {
         }
 
         public findAmbient(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolAmbientFinds++;
+
             var sym: Symbol = null;
             var i = 0;
             var cache = this.valueAmbientCache;
@@ -317,12 +327,18 @@ module TypeScript {
         }
 
         public search(filter: ScopeSearchFilter, name: string, publicOnly: bool, typespace: bool) {
+
+            nSymbolSearches++;
+
             var sym = this.find(name, publicOnly, typespace);
             filter.update(sym);
             return filter.result;
         }
 
         public find(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolFinds++;
+
             var table: IHashTable = null;
             var ambientTable: IHashTable = null;
 
@@ -351,6 +367,9 @@ module TypeScript {
         }
 
         public findAmbient(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolAmbientFinds++;
+
             var ambientTable = (this.ambientValueMembers == null) ? null :
                                 publicOnly ? this.ambientValueMembers.publicMembers : this.ambientValueMembers.allMembers;
             if (typespace) {
@@ -470,6 +489,9 @@ module TypeScript {
         }
 
         public search(filter: ScopeSearchFilter, name: string, publicOnly: bool, typespace: bool) {
+
+            nSymbolSearches++;
+
             var sym: Symbol = null;
             var table = (this.valueMembers == null) ? null :
                             publicOnly ? this.valueMembers.publicMembers : this.valueMembers.allMembers;
@@ -538,6 +560,9 @@ module TypeScript {
         }
 
         public find(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolFinds++;
+
             var sym: Symbol = null;
             var table = (this.valueMembers == null) ? null :
                             publicOnly ? this.valueMembers.publicMembers : this.valueMembers.allMembers;
@@ -562,6 +587,9 @@ module TypeScript {
         }
 
         public findAmbient(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolAmbientFinds++;
+
             var sym: Symbol = null;
             var ambientTable = (this.ambientValueMembers == null) ? null :
                                 publicOnly ? this.ambientValueMembers.publicMembers : this.ambientValueMembers.allMembers;
@@ -579,6 +607,9 @@ module TypeScript {
         }
 
         public findLocal(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolLocalFinds++;
+
             var sym: Symbol = null;
             var table = (this.valueMembers == null) ? null :
                             publicOnly ? this.valueMembers.publicMembers : this.valueMembers.allMembers;
@@ -604,6 +635,9 @@ module TypeScript {
         }
 
         public enter(container: Symbol, ast: AST, symbol: Symbol, errorReporter: ErrorReporter, insertAsPublic: bool, typespace: bool, ambient: bool): void {
+
+            nSymbolEnters++;
+
             var table = null;
 
             if (ambient) {
@@ -650,10 +684,11 @@ module TypeScript {
         }
 
         public find(name: string, publicOnly: bool, typespace: bool) {
+            nSymbolFinds++;
             this.filter.reset();
             return this.scope.search(this.filter, name, publicOnly, typespace);
         }
-        public findLocal(name: string, publicOnly: bool, typespace: bool) { return this.scope.findLocal(name, publicOnly, typespace); }
+        public findLocal(name: string, publicOnly: bool, typespace: bool) { nSymbolLocalFinds++;  return this.scope.findLocal(name, publicOnly, typespace); }
     }
 
     export class FilteredSymbolScopeBuilder extends SymbolScopeBuilder {
@@ -661,6 +696,9 @@ module TypeScript {
             super(valueMembers, null, null, null, parent, container);
         }
         public findLocal(name: string, publicOnly: bool, typespace: bool): Symbol {
+
+            nSymbolLocalFinds++;
+
             var sym = super.findLocal(name, publicOnly, typespace);
             if (sym) {
                 if (!this.filter(sym)) {
@@ -675,6 +713,7 @@ module TypeScript {
         }
 
         public find(name: string, publicOnly: bool, typespace: bool): Symbol {
+            nSymbolSearches++;
             var sym = super.findLocal(name, publicOnly, typespace);
             if (sym) {
                 if (!this.filter(sym)) {

@@ -81,7 +81,7 @@ class BatchCompiler {
         for (var i = 0; i < this.compilationEnvironment.residentCode.length; i++) {
             if (!this.commandLineHost.isResolved(this.compilationEnvironment.residentCode[i].path)) {
                 var path = this.compilationEnvironment.residentCode[i].path;
-                if (!TypeScript.isSTRFile(path) && !TypeScript.isDSTRFile(path) && !TypeScript.isTSFile(path) && !TypeScript.isDTSFile(path)) {
+                if (!TypeScript.isSTRFile(path) && !TypeScript.isDSTRFile(path) && !TypeScript.isSTRFile(path) && !TypeScript.isDSTRFile(path)) {
                     this.ioHost.stderr.WriteLine("Unknown extension for file: \"" + path + "\". Only .ts and .d.ts extensions are allowed.");
                 }
                 else {
@@ -93,7 +93,7 @@ class BatchCompiler {
         for (var i = 0; i < this.compilationEnvironment.code.length; i++) {
             if (!this.commandLineHost.isResolved(this.compilationEnvironment.code[i].path)) {
                 var path = this.compilationEnvironment.code[i].path;
-                if (!TypeScript.isSTRFile(path) && !TypeScript.isDSTRFile(path) && !TypeScript.isTSFile(path) && !TypeScript.isDTSFile(path)) {
+                if (!TypeScript.isSTRFile(path) && !TypeScript.isDSTRFile(path) && !TypeScript.isSTRFile(path) && !TypeScript.isDSTRFile(path)) {
                     this.ioHost.stderr.WriteLine("Unknown extension for file: \""+path+"\". Only .ts and .d.ts extensions are allowed.");
                 }
                 else {
@@ -154,7 +154,7 @@ class BatchCompiler {
                     }
                     else {
                         if (this.compilationSettings.errorRecovery) {
-                            compiler.parser.setErrorRecovery(this.ioHost.stderr);
+                            compiler.parser.setErrorRecovery(this.ioHost.stderr, -1, -1);
                         }
                         compiler.addUnit(code.content, code.path, addAsResident, code.referencedFiles);
                     }
@@ -181,18 +181,23 @@ class BatchCompiler {
         }
 
         if (!this.compilationSettings.parseOnly) {
-            compiler.typeCheck();
-            try {
-                compiler.emit(this.ioHost.createFile);
-            } catch (err) {
-                compiler.errorReporter.hasErrors = true;
-                // Catch emitter exceptions
-                if (err.message != "EmitError") {
-                    throw err;
-                }
+            if (this.compilationSettings.usePull) {
+                compiler.pullTypeCheck();
             }
+            else {
+                compiler.typeCheck();
+                try {
+                    compiler.emit(this.ioHost.createFile);
+                } catch (err) {
+                    compiler.errorReporter.hasErrors = true;
+                    // Catch emitter exceptions
+                    if (err.message != "EmitError") {
+                        throw err;
+                    }
+                }
 
-            compiler.emitDeclarationFile(this.ioHost.createFile);
+                compiler.emitDeclarationFile(this.ioHost.createFile);
+            }
         }
         else { 
             compiler.emitAST(this.compilationSettings.outputMany, this.ioHost.createFile);
@@ -200,6 +205,10 @@ class BatchCompiler {
 
         if (compiler.errorReporter.hasErrors) {
             this.ioHost.quit(1);
+        }
+
+        if (this.compilationSettings.gatherDiagnostics) {
+            compiler.gatherDiagnostics();
         }
     }
 
@@ -403,6 +412,22 @@ class BatchCompiler {
             }
         });
 
+        opts.flag('diagnostics', {
+            usage: 'gather diagnostic info about the compilation process',
+            experimental: true,
+            set: () => {
+                this.compilationSettings.gatherDiagnostics = true;
+            }
+        });
+
+        opts.flag('pull', {
+            usage: 'use "pull model" for typecheck operations',
+            experimental: true,
+            set: () => {
+                this.compilationSettings.usePull = true;
+            }
+        });
+
         opts.option('target', {
             usage: 'Specify ECMAScript target version: "ES3" (default), or "ES5"',
             type: 'VER',
@@ -513,6 +538,7 @@ class BatchCompiler {
             }
         } else {
             this.compile();
+
             if (this.compilationSettings.exec) {
                 this.run();
             }

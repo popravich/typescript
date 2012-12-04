@@ -52,12 +52,12 @@ module TypeScript {
         public isObjectLitField = false;
 
         public declAST: AST = null;
-        public declModule: ModuleDeclaration = null;  // if child of module, this is the module that declared it
+        public declModule: ModuleDecl = null;  // if child of module, this is the module that declared it
 
         public passSymbolCreated: number = CompilerDiagnostics.analysisPass;
 
         constructor(public name: string, public location: number,
-                 public unitIndex: number) { }
+                 public unitIndex: number) { nSymbols++; }
 
         public isInstanceProperty() {
             return hasFlag(this.flags, SymbolFlags.Property) && (!hasFlag(this.flags, SymbolFlags.ModuleMember));
@@ -268,10 +268,10 @@ module TypeScript {
 
         public getInterfaceDeclFromSymbol(checker: TypeChecker) {
             if (this.declAST != null) {
-                if (this.declAST.nodeType == NodeType.InterfaceDeclaration) {
-                    return <InterfaceDeclaration>this.declAST;
-                } else if (this.container != null && this.container != checker.gloMod && this.container.declAST.nodeType == NodeType.InterfaceDeclaration) {
-                    return <InterfaceDeclaration>this.container.declAST;
+                if (this.declAST.nodeType == NodeType.Interface) {
+                    return <TypeDecl>this.declAST;
+                } else if (this.container != null && this.container != checker.gloMod && this.container.declAST.nodeType == NodeType.Interface) {
+                    return <TypeDecl>this.container.declAST;
                 }
             }
 
@@ -287,8 +287,8 @@ module TypeScript {
         }
 
         public getImportDeclFromSymbol() {
-            if (this.declAST != null && this.declAST.nodeType == NodeType.ImportDeclaration) {
-                return <ImportDeclaration>this.declAST;
+            if (this.declAST != null && this.declAST.nodeType == NodeType.Import) {
+                return <ImportDecl>this.declAST;
             }
 
             return null;
@@ -303,6 +303,7 @@ module TypeScript {
     export class InferenceSymbol extends Symbol {
         constructor (name: string, location: number, unitIndex: number) {
             super(name, location, unitIndex);
+            nInferenceSymbols++;
         }
 
         public typeCheckStatus = TypeCheckStatus.NotStarted;
@@ -342,6 +343,7 @@ module TypeScript {
         constructor (locName: string, location: number, unitIndex: number, public type: Type) {
             super(locName, location, unitIndex);
             this.prettyName = this.name;
+            nTypeSymbols++;
         }
 
         public addLocation(loc: number) {
@@ -351,7 +353,7 @@ module TypeScript {
             this.additionalLocations[this.additionalLocations.length] = loc;
         }
         public isMethod = false;
-        public aliasLink:ImportDeclaration = null;
+        public aliasLink:ImportDecl = null;
         public kind() { return SymbolKind.Type; }
         public isType(): bool { return true; }
         public getType() { return this.type; }
@@ -458,6 +460,7 @@ module TypeScript {
             super(name, location, unitIndex);
             this.name = name;
             this.location = location;
+            nFieldSymbols++;
         }
         public kind() { return SymbolKind.Field; }
         public writeable() { return this.isAccessor() ? this.setter != null : this.canWrite; }
@@ -508,6 +511,7 @@ module TypeScript {
 
             this.name = name;
             this.location = location;
+            nParameterSymbols++;
         }
         public kind() { return SymbolKind.Parameter; }
         public writeable() { return true; }
@@ -552,6 +556,7 @@ module TypeScript {
 
         constructor (name: string, location: number, unitIndex: number, public variable: ValueLocation) {
             super(name, location, unitIndex);
+            nVariableSymbols++;
         }
         public kind() { return SymbolKind.Variable; }
         public writeable() { return true; }

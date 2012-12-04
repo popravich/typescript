@@ -12,6 +12,8 @@ module TypeScript {
         public typeCheckStatus = TypeCheckStatus.NotStarted;
         public nonOptionalParameterCount = 0;
 
+        constructor () { nSignatures++; }
+
         public specializeType(pattern: Type, replacement: Type, checker: TypeChecker): Signature {
             var result = new Signature();
             if (this.hasVariableArgList) {
@@ -42,7 +44,7 @@ module TypeScript {
                     var oldType = oldSym.getType();
                     if (oldType) {
                         paramDef.typeLink.type = oldType.specializeType(pattern, replacement, checker, false);
-                        paramSym.declAST.type = paramDef.typeLink.type;
+                        paramSym.declAST.setType(paramDef.typeLink.type);
                     }
                     else {
                         paramDef.typeLink.type = checker.anyType;
@@ -120,6 +122,9 @@ module TypeScript {
         public definitionSignature: Signature = null;
         public hasBeenTypechecked = false;
         public flags: SignatureFlags = SignatureFlags.None;
+
+        constructor () { nSignatureGroups++; }
+
         public addSignature(signature: Signature) {
             if (this.signatures == null) {
                 this.signatures = new Signature[];
@@ -223,7 +228,7 @@ module TypeScript {
 
                     // If we're typechecking a constructor via one of its overloads, ensure that the outer class is typechecked, since we need to validate its inheritance properties
                     // to properly check that 'super' is being used correctly
-                    if (this.signatures[i].declAST && this.signatures[i].declAST.isConstructor && this.signatures[i].declAST.classDecl && this.signatures[i].declAST.classDecl.type.symbol.typeCheckStatus == TypeCheckStatus.NotStarted) {
+                    if (this.signatures[i].declAST && this.signatures[i].declAST.isConstructor && this.signatures[i].declAST.classDecl && this.signatures[i].declAST.classDecl.getType().symbol.typeCheckStatus == TypeCheckStatus.NotStarted) {
                         checker.typeFlow.typeCheck(this.signatures[i].declAST.classDecl);
                     }
 

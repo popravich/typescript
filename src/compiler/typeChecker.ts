@@ -255,7 +255,7 @@ module TypeScript {
         public currentCompareA: Symbol = null;
         public currentCompareB: Symbol = null;
 
-        public currentModDecl: ModuleDeclaration = null;
+        public currentModDecl: ModuleDecl = null;
 
         public inBind = false;
         public inWith = false;
@@ -364,7 +364,7 @@ module TypeScript {
                 this.provisionalStartedTypecheckObjects[this.provisionalStartedTypecheckObjects.length] = pto;
             }
         }
-
+        
         public cleanStartedPTO() {
             for (var i = 0; i < this.provisionalStartedTypecheckObjects.length; i++) {
                 if (this.provisionalStartedTypecheckObjects[i].typeCheckStatus == this.typingContextStack.getContextID()) {
@@ -455,7 +455,7 @@ module TypeScript {
 
             signature.hasVariableArgList = funcDecl.variableArgList;
 
-            var sigData = this.getParameterList(funcDecl.arguments, container);
+            var sigData = this.getParameterList(funcDecl.args, container);
 
             signature.parameters = sigData.parameters;
             signature.nonOptionalParameterCount = sigData.nonOptionalParameterCount;
@@ -560,7 +560,7 @@ module TypeScript {
                 groupType.symbol.flags |= SymbolFlags.Property;
             }
 
-            funcDecl.type = groupType;
+            funcDecl.setType(groupType);
 
             // Add the function symbol to the appropriate scope
             // if the funcDecl is a constructor, it will be added to the enclosing scope as a class
@@ -677,13 +677,13 @@ module TypeScript {
                     if (accessorSym.getter) {
                         this.errorReporter.simpleError(funcDecl, "Redeclaration of property getter");
                     }
-                    accessorSym.getter = <TypeSymbol>sig.declAST.type.symbol;
+                    accessorSym.getter = <TypeSymbol>sig.declAST.getType().symbol;
                 }
                 else {
                     if (accessorSym.setter) {
                         this.errorReporter.simpleError(funcDecl, "Redeclaration of property setter");
                     }
-                    accessorSym.setter = <TypeSymbol>sig.declAST.type.symbol;
+                    accessorSym.setter = <TypeSymbol>sig.declAST.getType().symbol;
                 }
 
                 field.typeLink = getTypeLink(null, this, false);
@@ -730,13 +730,13 @@ module TypeScript {
                     if (accessorSym.getter) {
                         this.errorReporter.simpleError(funcDecl, "Redeclaration of property getter");
                     }
-                    accessorSym.getter = <TypeSymbol>funcDecl.type.symbol;
+                    accessorSym.getter = <TypeSymbol>funcDecl.getType().symbol;
                 }
                 else {
                     if (accessorSym.setter) {
                         this.errorReporter.simpleError(funcDecl, "Redeclaration of property setter");
                     }
-                    accessorSym.setter = <TypeSymbol>funcDecl.type.symbol;
+                    accessorSym.setter = <TypeSymbol>funcDecl.getType().symbol;
                 }
             }
 
@@ -914,7 +914,7 @@ module TypeScript {
                             // no going back                        
                             if (symType && typeSymbol.aliasLink && typeSymbol.onlyReferencedAsTypeRef) {
 
-                                var modDecl = <ModuleDeclaration>symType.symbol.declAST;
+                                var modDecl = <ModuleDecl>symType.symbol.declAST;
                                 if (modDecl && hasFlag(modDecl.modFlags, ModuleFlags.IsDynamic)) {
                                     typeSymbol.onlyReferencedAsTypeRef = !this.resolvingBases;
                                 }
@@ -962,7 +962,7 @@ module TypeScript {
 
         public resolveFuncDecl(funcDecl: FuncDecl, scope: SymbolScope,
             fgSym: TypeSymbol): Symbol {
-            var functionGroupSymbol = this.createFunctionSignature(funcDecl, scope.container, scope, fgSym, false).declAST.type.symbol;
+            var functionGroupSymbol = this.createFunctionSignature(funcDecl, scope.container, scope, fgSym, false).declAST.getType().symbol;
             var signatures: Signature[];
             if (funcDecl.isConstructMember()) {
                 signatures = functionGroupSymbol.type.construct.signatures;
@@ -1005,7 +1005,7 @@ module TypeScript {
             field.typeLink = getTypeLink(varDecl.typeExpr, this, varDecl.init == null);
             this.resolveTypeLink(scope, field.typeLink, true);
             varDecl.sym = fieldSymbol;
-            varDecl.type = field.typeLink.type;
+            varDecl.setType(field.typeLink.type);
             return fieldSymbol;
         }
 
@@ -1054,8 +1054,8 @@ module TypeScript {
                                     typeLink.type = this.anyType;
                                 }
                                 break;
-                            case NodeType.InterfaceDeclaration:
-                                var interfaceDecl = <InterfaceDeclaration>ast;
+                            case NodeType.Interface:
+                                var interfaceDecl = <TypeDecl>ast;
                                 var interfaceType = new Type();
                                 var interfaceSymbol = new TypeSymbol((<Identifier>interfaceDecl.name).text,
                                                                    ast.minChar,
@@ -1092,7 +1092,7 @@ module TypeScript {
                                         else {
                                             propSym = this.resolveFuncDecl(funcDecl, scope, <TypeSymbol>propSym);
                                         }
-                                        funcDecl.type = (<TypeSymbol>propSym).type;
+                                        funcDecl.setType((<TypeSymbol>propSym).type);
                                     }
                                     else {
                                         id = (<VarDecl>propDecl).id;
@@ -1108,7 +1108,7 @@ module TypeScript {
                                     }
                                 }
 
-                                ast.type = interfaceType;
+                                ast.setType(interfaceType);
                                 typeLink.type = interfaceType;
 
                                 break;
@@ -1130,7 +1130,7 @@ module TypeScript {
                     typeLink.type = this.anyType;
                 }
                 if (typeLink.ast) {
-                    typeLink.ast.type = typeLink.type;
+                    typeLink.ast.setType(typeLink.type);
                 }
             }
             // else wait for type inference
@@ -1154,7 +1154,7 @@ module TypeScript {
                 var i = 0;
                 // find the better conversion
                 for (i = 0; args && i < args.members.length; i++) {
-                    AType = args.members[i].type;
+                    AType = args.members[i].getType();
                     PType = i < best.signature.parameters.length ? best.signature.parameters[i].getType() : best.signature.parameters[best.signature.parameters.length - 1].getType().elementType;
                     QType = i < Q.signature.parameters.length ? Q.signature.parameters[i].getType() : Q.signature.parameters[Q.signature.parameters.length - 1].getType().elementType;
 
@@ -1235,7 +1235,7 @@ module TypeScript {
                             // if it's just annotations that are blocking us, typecheck the function and add it to the list
                             if (this.canContextuallyTypeFunction(memberType, <FuncDecl>args.members[j], false)) {
                                 this.typeFlow.typeCheck(args.members[j]);
-                                if (!this.sourceIsAssignableToTarget(args.members[j].type, memberType, comparisonInfo)) {
+                                if (!this.sourceIsAssignableToTarget(args.members[j].getType(), memberType, comparisonInfo)) {
                                     break;
                                 }
                             }
@@ -1249,9 +1249,9 @@ module TypeScript {
                             this.cleanStartedPTO();
                             hadProvisionalErrors = this.hadProvisionalErrors();
 
-                            if (!this.sourceIsAssignableToTarget(args.members[j].type, memberType, comparisonInfo)) {
+                            if (!this.sourceIsAssignableToTarget(args.members[j].getType(), memberType, comparisonInfo)) {
                                 if (comparisonInfo) {
-                                    comparisonInfo.setMessage("Could not apply type '" + memberType.getTypeName() + "' to argument " + (j + 1) + ", which is of type '" + args.members[j].type.getTypeName() + "'");
+                                    comparisonInfo.setMessage("Could not apply type '" + memberType.getTypeName() + "' to argument " + (j + 1) + ", which is of type '" + args.members[j].getType().getTypeName() + "'");
                                 }
                                 miss = true;
                             }
@@ -1282,9 +1282,9 @@ module TypeScript {
                         this.cleanStartedPTO();
                         hadProvisionalErrors = this.hadProvisionalErrors(); 
 
-                        if (!this.sourceIsAssignableToTarget(args.members[j].type, memberType, comparisonInfo)) {
+                        if (!this.sourceIsAssignableToTarget(args.members[j].getType(), memberType, comparisonInfo)) {
                             if (comparisonInfo) {
-                                comparisonInfo.setMessage("Could not apply type '" + memberType.getTypeName() + "' to argument " + (j + 1) + ", which is of type '" + args.members[j].type.getTypeName() + "'");
+                                comparisonInfo.setMessage("Could not apply type '" + memberType.getTypeName() + "' to argument " + (j + 1) + ", which is of type '" + args.members[j].getType().getTypeName() + "'");
                             }
                             miss = true;
                         }
@@ -1316,9 +1316,9 @@ module TypeScript {
                         this.cleanStartedPTO();
                         hadProvisionalErrors = this.hadProvisionalErrors(); 
 
-                        if (!this.sourceIsAssignableToTarget(args.members[j].type, memberType, comparisonInfo)) {
+                        if (!this.sourceIsAssignableToTarget(args.members[j].getType(), memberType, comparisonInfo)) {
                             if (comparisonInfo) {
-                                comparisonInfo.setMessage("Could not apply type '" + memberType.getTypeName() + "' to argument " + (j + 1) + ", which is of type '" + args.members[j].type.getTypeName() + "'");
+                                comparisonInfo.setMessage("Could not apply type '" + memberType.getTypeName() + "' to argument " + (j + 1) + ", which is of type '" + args.members[j].getType().getTypeName() + "'");
                             }
                             break;
                         }

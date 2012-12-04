@@ -48,7 +48,7 @@ module TypeScript {
             msg = msg.concat("sym=" + (<any>cur).sym);
 
             msg = this.addPadding(msg, 135, " ", false);
-            msg = msg.concat("type=" + (cur.type === null ? "null" : cur.type.getTypeName()));
+            msg = msg.concat("type=" + (cur.getType() === null ? "null" : cur.getType().getTypeName()));
             this.logger.log(msg);
         }
 

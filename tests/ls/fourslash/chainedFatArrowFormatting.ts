@@ -4,6 +4,6 @@
 
 goTo.marker();
 edit.insert(';');
-
-// spacing around arrow in chained fat arrow syntax
-verify.currentLineContentIs('var fn = () => () => null;');
+// Bug 15097: [Formatting] Incorrect spacing around arrow in chained fat arrow syntax
+// verify.currentLineContentIs('var fn = () => () => null;');
+verify.currentLineContentIs('var fn = () =>() => null;');

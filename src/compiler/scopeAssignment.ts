@@ -8,7 +8,7 @@ module TypeScript {
     export class AssignScopeContext {
         constructor (public scopeChain: ScopeChain,
                      public typeFlow: TypeFlow,
-                     public modDeclChain: ModuleDeclaration[]) {
+                     public modDeclChain: ModuleDecl[]) {
         }
     }
 
@@ -38,9 +38,7 @@ module TypeScript {
         }
     }
 
-    export function instanceFilterStop(s: Symbol) {
-        return s.isInstanceProperty();
-    }
+    export function instanceFilterStop(s: Symbol) => s.isInstanceProperty();
 
     export class ScopeSearchFilter {
 
@@ -67,7 +65,7 @@ module TypeScript {
     export var instanceFilter = new ScopeSearchFilter(instanceCompare, instanceFilterStop);
 
     export function preAssignModuleScopes(ast: AST, context: AssignScopeContext) {
-        var moduleDecl = <ModuleDeclaration>ast;
+        var moduleDecl = <ModuleDecl>ast;
         var memberScope: SymbolTableScope = null;
         var aggScope: SymbolAggregateScope = null;
 
@@ -97,15 +95,15 @@ module TypeScript {
     }
 
     export function preAssignClassScopes(ast: AST, context: AssignScopeContext) {
-        var classDecl = <InterfaceDeclaration>ast;
+        var classDecl = <TypeDecl>ast;
         var memberScope: SymbolTableScope = null;
         var aggScope: SymbolAggregateScope = null;
 
-        if (classDecl.name && classDecl.type) {
-            classDecl.name.sym = classDecl.type.symbol;
+        if (classDecl.name && classDecl.getType()) {
+            classDecl.name.sym = classDecl.getType().symbol;
         }
 
-        var classType = ast.type;
+        var classType = ast.getType();
 
         if (classType) {
             var classSym = classType.symbol;
@@ -129,20 +127,20 @@ module TypeScript {
             instanceType.containedScope = aggScope;
         }
         else {
-            ast.type = context.typeFlow.anyType;
+            ast.setType(context.typeFlow.anyType);
         }
     }
 
     export function preAssignInterfaceScopes(ast: AST, context: AssignScopeContext) {
-        var interfaceDecl = <InterfaceDeclaration>ast;
+        var interfaceDecl = <TypeDecl>ast;
         var memberScope: SymbolTableScope = null;
         var aggScope: SymbolAggregateScope = null;
 
-        if (interfaceDecl.name && interfaceDecl.type) {
-            interfaceDecl.name.sym = interfaceDecl.type.symbol;
+        if (interfaceDecl.name && interfaceDecl.getType()) {
+            interfaceDecl.name.sym = interfaceDecl.getType().symbol;
         }
 
-        var interfaceType = ast.type;
+        var interfaceType = ast.getType();
         memberScope = <SymbolTableScope>context.typeFlow.checker.scopeOf(interfaceType);
         interfaceType.memberScope = memberScope;
         aggScope = new SymbolAggregateScope(interfaceType.symbol);
@@ -154,7 +152,7 @@ module TypeScript {
 
     export function preAssignWithScopes(ast: AST, context: AssignScopeContext) {
         var withStmt = <WithStatement>ast;
-        var withType = withStmt.type;
+        var withType = withStmt.getType();
 
         var members = new ScopedMembers(new DualStringHashTable(new StringHashTable(), new StringHashTable()));
         var ambientMembers = new ScopedMembers(new DualStringHashTable(new StringHashTable(), new StringHashTable()));
@@ -165,7 +163,7 @@ module TypeScript {
         withType.ambientMembers = ambientMembers;
         withType.symbol = withSymbol;
         withType.setHasImplementation();
-        withStmt.type = withType;
+        withStmt.setType(withType);
 
         var withScope = new TypeScript.SymbolScopeBuilder(withType.members, withType.ambientMembers, null, null, context.scopeChain.scope, withType.symbol);
 
@@ -178,14 +176,14 @@ module TypeScript {
 
         var container: Symbol = null;
         var localContainer: Symbol = null;
-        if (funcDecl.type) {
-            localContainer = ast.type.symbol;
+        if (funcDecl.getType()) {
+            localContainer = ast.getType().symbol;
         }
 
         var isStatic = hasFlag(funcDecl.fncFlags, FncFlags.Static);
         var isInnerStatic = isStatic && context.scopeChain.fnc != null;
         // for inner static functions, use the parent's member scope, so local vars cannot be captured
-        var parentScope = isInnerStatic ? context.scopeChain.fnc.type.memberScope : context.scopeChain.scope;
+        var parentScope = isInnerStatic ? context.scopeChain.fnc.getType().memberScope : context.scopeChain.scope;
 
         // if this is not a method, but enclosed by class, use constructor as
         // the enclosing scope
@@ -228,9 +226,9 @@ module TypeScript {
             container = context.scopeChain.thisType.symbol;
         }
 
-        if (funcDecl.type == null || hasFlag(funcDecl.type.symbol.flags, SymbolFlags.TypeSetDuringScopeAssignment)) {
-            if (context.scopeChain.fnc && context.scopeChain.fnc.type) {
-                container = context.scopeChain.fnc.type.symbol;
+        if (funcDecl.getType() == null || hasFlag(funcDecl.getType().symbol.flags, SymbolFlags.TypeSetDuringScopeAssignment)) {
+            if (context.scopeChain.fnc && context.scopeChain.fnc.getType()) {
+                container = context.scopeChain.fnc.getType().symbol;
             }
 
             var funcScope = null;
@@ -242,10 +240,10 @@ module TypeScript {
                 // In the case of function-nested statics, no member list will have bee initialized for the function, so we need
                 // to copy it over.  We don't set this by default because having a non-null member list will throw off assignment
                 // compatibility tests
-                if (outerFnc.type.members == null && container.getType().memberScope) {
-                    outerFnc.type.members = (<SymbolScopeBuilder>(<TypeSymbol>container).type.memberScope).valueMembers;
+                if (outerFnc.getType().members == null && container.getType().memberScope) {
+                    outerFnc.getType().members = (<SymbolScopeBuilder>(<TypeSymbol>container).type.memberScope).valueMembers;
                 }
-                funcScope = context.scopeChain.fnc.type.memberScope;
+                funcScope = context.scopeChain.fnc.getType().memberScope;
                 outerFnc.innerStaticFuncs[outerFnc.innerStaticFuncs.length] = funcDecl;
             }
             else {
@@ -289,17 +287,17 @@ module TypeScript {
                 funcDecl.accessorSymbol = context.typeFlow.checker.createAccessorSymbol(funcDecl, fgSym, container.getType(), (funcDecl.isMethod() && isStatic), true, funcScope, container);
             }
 
-            funcDecl.type.symbol.flags |= SymbolFlags.TypeSetDuringScopeAssignment;
+            funcDecl.getType().symbol.flags |= SymbolFlags.TypeSetDuringScopeAssignment;
         }
 
         // Set the symbol for functions and their overloads
-        if (funcDecl.name && funcDecl.type) {
-            funcDecl.name.sym = funcDecl.type.symbol;
+        if (funcDecl.name && funcDecl.getType()) {
+            funcDecl.name.sym = funcDecl.getType().symbol;
         }
 
         // Keep track of the original scope type, because target typing might override
         // the "type" member. We need the original "Scope type" for completion list, etc.
-        funcDecl.scopeType = funcDecl.type;
+        funcDecl.scopeType = funcDecl.getType();
 
         // Overloads have no scope, so bail here
         if (funcDecl.isOverload) {
@@ -337,7 +335,7 @@ module TypeScript {
         funcDecl.symbols = funcTable;
 
         if (!funcDecl.isSpecialFn()) {
-            var group = funcDecl.type;
+            var group = funcDecl.getType();
             var signature = funcDecl.signature;
 
             if (!funcDecl.isConstructor) {
@@ -350,7 +348,7 @@ module TypeScript {
             funcDecl.enclosingFnc = context.scopeChain.fnc;
             group.enclosingType = isStatic ? context.scopeChain.classType : context.scopeChain.thisType;
             // for mapping when type checking
-            var fgSym = <TypeSymbol>ast.type.symbol;
+            var fgSym = <TypeSymbol>ast.getType().symbol;
             if (((funcDecl.fncFlags & FncFlags.Signature) == FncFlags.None) && funcDecl.vars) {
                 context.typeFlow.addLocalsFromScope(locals, fgSym, funcDecl.vars,
                                                     funcTable, false);
@@ -395,13 +393,13 @@ module TypeScript {
                 var list = <ASTList>ast;
                 list.enclosingScope = context.scopeChain.scope;
             }
-            else if (ast.nodeType == NodeType.ModuleDeclaration) {
+            else if (ast.nodeType == NodeType.Module) {
                 preAssignModuleScopes(ast, context);
             }
-            else if (ast.nodeType == NodeType.ClassDeclaration) {
+            else if (ast.nodeType == NodeType.Class) {
                 preAssignClassScopes(ast, context);
             }
-            else if (ast.nodeType == NodeType.InterfaceDeclaration) {
+            else if (ast.nodeType == NodeType.Interface) {
                 preAssignInterfaceScopes(ast, context);
             }
             else if (ast.nodeType == NodeType.With) {
@@ -425,8 +423,8 @@ module TypeScript {
         var context:AssignScopeContext = walker.state;
         var go = true;
         if (ast) {
-            if (ast.nodeType == NodeType.ModuleDeclaration) {
-                var prevModDecl = <ModuleDeclaration>ast;
+            if (ast.nodeType == NodeType.Module) {
+                var prevModDecl = <ModuleDecl>ast;
 
                 popAssignScope(context);
 
@@ -435,10 +433,10 @@ module TypeScript {
                     context.typeFlow.checker.currentModDecl = context.modDeclChain[context.modDeclChain.length - 1];
                 }
             }
-            else if (ast.nodeType == NodeType.ClassDeclaration) {
+            else if (ast.nodeType == NodeType.Class) {
                 popAssignScope(context);
             }
-            else if (ast.nodeType == NodeType.InterfaceDeclaration) {
+            else if (ast.nodeType == NodeType.Interface) {
                 popAssignScope(context);
             }
             else if (ast.nodeType == NodeType.With) {

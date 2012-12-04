@@ -27,8 +27,8 @@ module TypeScript {
         public objectLiteralScopeGetter: () => SymbolScope = null;
         public scopeStartAST: AST = null;
         public skipNextFuncDeclForClass = false;
-        public deepestModuleDecl: ModuleDeclaration = null;
-        public enclosingClassDecl: TypeDeclaration = null;
+        public deepestModuleDecl: ModuleDecl = null;
+        public enclosingClassDecl: NamedType = null;
         public enclosingObjectLit: UnaryExpression = null;
         public publicsOnly = true;
         public useFullAst = false;
@@ -80,10 +80,10 @@ module TypeScript {
         var memScope: MemberScopeContext = walker.state;
         if (hasFlag(ast.flags, memScope.matchFlag) && ((memScope.pos < 0) || (memScope.pos == ast.limChar))) {
             memScope.ast = ast;
-            if ((ast.type == null) && (memScope.pos >= 0)) {
+            if ((ast.getType() == null) && (memScope.pos >= 0)) {
                 memScope.flow.inScopeTypeCheck(ast, memScope.scope);
             }
-            memScope.type = ast.type;
+            memScope.type = ast.getType();
             memScope.options.stopWalk();
         }
         return ast;
@@ -97,7 +97,7 @@ module TypeScript {
         context: TypeCollectionContext,
         thisType: Type,
         classType: Type,
-        moduleDecl: ModuleDeclaration) {
+        moduleDecl: ModuleDecl) {
         var builder = new SymbolScopeBuilder(valueMembers, ambientValueMembers, enclosedTypes, ambientEnclosedTypes, null, container);
         var chain: ScopeChain = new ScopeChain(container, context.scopeChain, builder);
         chain.thisType = thisType;
@@ -131,12 +131,12 @@ module TypeScript {
                     context.scopeStartAST = script;
                     break;
 
-                case NodeType.ClassDeclaration:
+                case NodeType.Class:
                     context.scopeGetter = function () {
-                        return (ast.type === null || ast.type.instanceType.containedScope === null) ? null : ast.type.instanceType.containedScope;
+                        return (ast.getType() === null || ast.getType().instanceType.containedScope === null) ? null : ast.getType().instanceType.containedScope;
                     };
                     context.scopeStartAST = ast;
-                    context.enclosingClassDecl = <TypeDeclaration>ast;
+                    context.enclosingClassDecl = <NamedType>ast;
                     break;
 
                 case NodeType.ObjectLit:
@@ -153,17 +153,17 @@ module TypeScript {
                     }
                     break;
 
-                case NodeType.ModuleDeclaration:
-                    context.deepestModuleDecl = <ModuleDeclaration>ast;
+                case NodeType.Module:
+                    context.deepestModuleDecl = <ModuleDecl>ast;
                     context.scopeGetter = function () {
-                        return ast.type === null ? null : ast.type.containedScope;
+                        return ast.getType() === null ? null : ast.getType().containedScope;
                     };
                     context.scopeStartAST = ast;
                     break;
 
-                case NodeType.InterfaceDeclaration:
+                case NodeType.Interface:
                     context.scopeGetter = function () {
-                        return (ast.type === null) ? null : ast.type.containedScope;
+                        return (ast.getType() === null) ? null : ast.getType().containedScope;
                     };
                     context.scopeStartAST = ast;
                     break;
@@ -177,8 +177,8 @@ module TypeScript {
                         context.scopeGetter = function () {
                             // The scope of a class constructor is hidden somewhere we don't expect :-S
                             if (funcDecl.isConstructor && hasFlag(funcDecl.fncFlags, FncFlags.ClassMethod)) {
-                                if (ast.type && ast.type.enclosingType) {
-                                    return ast.type.enclosingType.constructorScope;
+                                if (ast.getType() && ast.getType().enclosingType) {
+                                    return ast.getType().enclosingType.constructorScope;
                                 }
                             }
 
@@ -186,8 +186,8 @@ module TypeScript {
                                 return funcDecl.scopeType.containedScope;
                             }
 
-                            if (funcDecl.type) {
-                                return funcDecl.type.containedScope;
+                            if (funcDecl.getType()) {
+                                return funcDecl.getType().containedScope;
                             }
                             return null;
                         };

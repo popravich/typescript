@@ -9,8 +9,20 @@ module TypeScript {
         public limChar: number = -1;  // -1 = "undefined" or "compiler generated"   
     }
 
+    export var astID = 0;
+
     export class AST extends ASTSpan {
-        public type: Type = null;
+        private type: Type = null;
+        private astID = astID++;
+
+        public typeWasGotten = false;
+        public typeWasSet = false;
+
+        public getType() { nTypeGets++; this.typeWasGotten = true; return this.type; }
+        public setType(t: Type) { nTypeSets++; this.typeWasSet = true; this.type = t; }
+
+        public getID() { return this.astID; }
+
         public flags = ASTFlags.Writeable;
 
         // REVIEW: for diagnostic purposes
@@ -23,14 +35,12 @@ module TypeScript {
 
         constructor (public nodeType: NodeType) {
             super();
+            nASTs++;
         }
 
         public isExpression() { return false; }
-
         public isStatementOrExpression() { return false; }
-
         public isCompoundStatement() { return false; }
-
         public isLeaf() { return this.isStatementOrExpression() && (!this.isCompoundStatement()); }
 
         public typeCheck(typeFlow: TypeFlow) {
@@ -161,16 +171,16 @@ module TypeScript {
             var resolved = "";
             var start = 0;
             var i = 0;
-            while(i <= name.length - 6) {
+            while (i <= name.length - 6) {
                 // Look for escape sequence \uxxxx
-                if (name.charAt(i) == '\\' && name.charAt(i+1) == 'u') {
+                if (name.charAt(i) == '\\' && name.charAt(i + 1) == 'u') {
                     var charCode = parseInt(name.substr(i + 2, 4), 16);
                     resolved += name.substr(start, i - start);
                     resolved += String.fromCharCode(charCode);
                     i += 6;
                     start = i;
                     continue;
-                } 
+                }
                 i++;
             }
             // Append remaining string
@@ -249,21 +259,16 @@ module TypeScript {
 
     export class Identifier extends AST {
         public sym: Symbol = null;
-        public cloId = -1;
         public text: string;
 
-        // 'actualText' is the text that the user has entered for the identifier. the text might 
-        // include any Unicode escape sequences (e.g.: \u0041 for 'A'). 'text', however, contains 
-        // the resolved value of any escape sequences in the actual text; so in the previous 
-        // example, actualText = '\u0041', text = 'A'.
+        // 'actualText' is the text that the user has entered for the identifier. the text might include any Unicode escape sequences (e.g.: \u0041 for 'A').
+        // 'text', however, contains the resolved value of any escape sequences in the actual text; so in the previous example, actualText = '\u0041', text = 'A'.
         //
-        // For purposes of finding a symbol, use text, as this will allow you to match all 
-        // variations of the variable text. For full-fidelity translation of the user input, such
-        // as emitting, use the actualText field.
+        // For purposes of finding a symbol, use text, as this will allow you to match all variations of the variable text.
+        // For full-fidelity translation of the user input, such as emitting, use the actualText field.
         // 
         // Note: 
-        //    To change text, and to avoid running into a situation where 'actualText' does not 
-        //    match 'text', always use setText.
+        //    To change text, and to avoid running into a situation where 'actualText' does not match 'text', always use setText.
         constructor (public actualText: string, public hasEscapeSequence?: bool) {
             super(NodeType.Name);
             this.setText(actualText, hasEscapeSequence);
@@ -312,10 +317,7 @@ module TypeScript {
         constructor () {
             super("__missing");
         }
-
-        public isMissing() {
-            return true;
-        }
+        public isMissing() { return true; }
 
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
             // Emit nothing for a missing ID
@@ -330,7 +332,7 @@ module TypeScript {
         public printLabel() { return this.id.actualText + ":"; }
 
         public typeCheck(typeFlow: TypeFlow) {
-            this.type = typeFlow.voidType;
+            this.setType(typeFlow.voidType);
             return this;
         }
 
@@ -344,25 +346,19 @@ module TypeScript {
             emitter.recordSourceMappingEnd(this);
             emitter.emitParensAndCommentsInPlace(this, false);
         }
+
     }
-
-    export class Expression extends AST {
-        constructor (nodeType: NodeType) {
-            super(nodeType);
-        }
-
-        public isExpression() { return true; }
-
-        public isStatementOrExpression() { return true; }
-    }
-
-    export class UnaryExpression extends Expression {
+    
+    export class UnaryExpression extends AST {
         public targetType: Type = null; // Target type for an object literal (null if no target type)
         public castTerm: AST = null;
 
         constructor (nodeType: NodeType, public operand: AST) {
             super(nodeType);
         }
+
+        public isExpression() { return true; }
+        public isStatementOrExpression() { return true; }
 
         public addToControlFlow(context: ControlFlowContext): void {
             super.addToControlFlow(context);
@@ -400,28 +396,28 @@ module TypeScript {
 
                 case NodeType.Throw:
                     this.operand = typeFlow.typeCheck(this.operand);
-                    this.type = typeFlow.voidType;
+                    this.setType(typeFlow.voidType);
                     return this;
 
                 case NodeType.Typeof:
                     this.operand = typeFlow.typeCheck(this.operand);
-                    this.type = typeFlow.stringType;
+                    this.setType(typeFlow.stringType);
                     return this;
 
                 case NodeType.Delete:
                     this.operand = typeFlow.typeCheck(this.operand);
-                    this.type = typeFlow.booleanType;
+                    this.setType(typeFlow.booleanType);
                     break;
 
                 case NodeType.TypeAssertion:
                     this.castTerm = typeFlow.typeCheck(this.castTerm);
                     var applyTargetType = !this.operand.isParenthesized;
 
-                    var targetType = applyTargetType ? this.castTerm.type : null;
+                    var targetType = applyTargetType ? this.castTerm.getType() : null;
 
                     typeFlow.checker.typeCheckWithContextualType(targetType, typeFlow.checker.inProvisionalTypecheckMode(), true, this.operand);
-                    typeFlow.castWithCoercion(this.operand, this.castTerm.type, false, true);
-                    this.type = this.castTerm.type;
+                    typeFlow.castWithCoercion(this.operand, this.castTerm.getType(), false, true);
+                    this.setType(this.castTerm.getType());
                     return this;
 
                 case NodeType.Void:
@@ -429,7 +425,7 @@ module TypeScript {
                     // this shouldn't be strictly necessary from the void operator's
                     // point of view
                     this.operand = typeFlow.typeCheck(this.operand);
-                    this.type = typeFlow.checker.undefinedType;
+                    this.setType(typeFlow.checker.undefinedType);
                     break;
 
                 default:
@@ -512,18 +508,18 @@ module TypeScript {
             emitter.recordSourceMappingEnd(this);
             emitter.emitParensAndCommentsInPlace(this, false);
         }
+
     }
 
-    export class CallExpression extends Expression {
-        constructor (nodeType: NodeType,
-                     public target: AST,
-                     public arguments: ASTList) {
+    export class CallExpression extends AST {
+        constructor (nodeType: NodeType, public target: AST, public args: ASTList) {
             super(nodeType);
             this.minChar = this.target.minChar;
         }
 
         public signature: Signature = null;
-
+        public isExpression() { return true; }
+        public isStatementOrExpression() { return true; }
         public typeCheck(typeFlow: TypeFlow) {
             if (this.nodeType == NodeType.New) {
                 return typeFlow.typeCheckNew(this);
@@ -538,10 +534,10 @@ module TypeScript {
             emitter.recordSourceMappingStart(this);
 
             if (this.nodeType == NodeType.New) {
-                emitter.emitNew(this.target, this.arguments);
+                emitter.emitNew(this.target, this.args);
             }
             else {
-                emitter.emitCall(this, this.target, this.arguments);
+                emitter.emitCall(this, this.target, this.args);
             }
 
             emitter.recordSourceMappingEnd(this);
@@ -549,10 +545,13 @@ module TypeScript {
         }
     }
 
-    export class BinaryExpression extends Expression {
+    export class BinaryExpression extends AST {
         constructor (nodeType: NodeType, public operand1: AST, public operand2: AST) {
             super(nodeType);
         }
+
+        public isStatementOrExpression() { return true; }
+        public isExpression() { return true; }
 
         public typeCheck(typeFlow: TypeFlow) {
             switch (this.nodeType) {
@@ -593,7 +592,7 @@ module TypeScript {
                 case NodeType.Index:
                     return typeFlow.typeCheckIndex(this);
                 case NodeType.Member:
-                    this.type = typeFlow.voidType;
+                    this.setType(typeFlow.voidType);
                     return this;
                 case NodeType.LogOr:
                     return typeFlow.typeCheckLogOr(this);
@@ -702,15 +701,19 @@ module TypeScript {
             emitter.recordSourceMappingEnd(this);
             emitter.emitParensAndCommentsInPlace(this, false);
         }
+
     }
 
-    export class ConditionalExpression extends Expression {
-        constructor (public operand1: AST,
+    export class TrinaryExpression extends AST {
+        constructor (nodeType: NodeType,
+                     public operand1: AST,
                      public operand2: AST,
                      public operand3: AST) {
-            super(NodeType.ConditionalExpression);
+            super(nodeType);
         }
 
+        public isExpression() { return true; }
+        public isStatementOrExpression() { return true; }
         public typeCheck(typeFlow: TypeFlow) {
             return typeFlow.typeCheckQMark(this);
         }
@@ -728,15 +731,16 @@ module TypeScript {
         }
     }
 
-    export class NumberLiteral extends Expression {
+    export class NumberLiteral extends AST {
+
         constructor (public value: number, public hasEmptyFraction?: bool) {
             super(NodeType.NumberLit);
         }
 
+        public isStatementOrExpression() { return true; }
         public isNegativeZero = false;
-
         public typeCheck(typeFlow: TypeFlow) {
-            this.type = typeFlow.doubleType;
+            this.setType(typeFlow.doubleType);
             return this;
         }
 
@@ -773,13 +777,15 @@ module TypeScript {
         }
     }
 
-    export class RegexLiteral extends Expression {
+    export class RegexLiteral extends AST {
+
         constructor (public regex) {
             super(NodeType.Regex);
         }
-        
+
+        public isStatementOrExpression() { return true; }
         public typeCheck(typeFlow: TypeFlow) {
-            this.type = typeFlow.regexType;
+            this.setType(typeFlow.regexType);
             return this;
         }
 
@@ -792,11 +798,13 @@ module TypeScript {
         }
     }
 
-    export class StringLiteral extends Expression {
+    export class StringLiteral extends AST {
+
         constructor (public text: string) {
             super(NodeType.QString);
         }
 
+        public isStatementOrExpression() { return true; }
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
             emitter.emitParensAndCommentsInPlace(this, true);
             emitter.recordSourceMappingStart(this);
@@ -806,7 +814,7 @@ module TypeScript {
         }
 
         public typeCheck(typeFlow: TypeFlow) {
-            this.type = typeFlow.stringType;
+            this.setType(typeFlow.stringType);
             return this;
         }
 
@@ -819,23 +827,17 @@ module TypeScript {
         }
     }
 
-    export class ModuleElement extends AST {
-        constructor (nodeType: NodeType) {
-            super(nodeType);
-        }
-    }
-
-    export class ImportDeclaration extends ModuleElement {
+    export class ImportDecl extends AST {
         public isStatementOrExpression() { return true; }
         public varFlags = VarFlags.None;
         public isDynamicImport = false;
 
         constructor (public id: Identifier, public alias: AST) {
-            super(NodeType.ImportDeclaration);
+            super(NodeType.Import);
         }
 
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
-            var mod = <ModuleType>this.alias.type;
+            var mod = <ModuleType>this.alias.getType();
             // REVIEW: Only modules may be aliased for now, though there's no real
             // restriction on what the type symbol may be
             if (!this.isDynamicImport || (this.id.sym && !(<TypeSymbol>this.id.sym).onlyReferencedAsTypeRef)) {
@@ -911,6 +913,7 @@ module TypeScript {
     }
 
     export class VarDecl extends BoundDecl {
+
         constructor (id: Identifier, nest: number) {
             super(id, NodeType.VarDecl, nest);
         }
@@ -968,7 +971,7 @@ module TypeScript {
         public enclosingFnc: FuncDecl = null;
         public freeVariables: Symbol[] = [];
         public unitIndex = -1;
-        public classDecl: NamedDeclaration = null;
+        public classDecl: Record = null;
         public boundToProperty: VarDecl = null;
         public isOverload = false;
         public innerStaticFuncs: FuncDecl[] = [];
@@ -982,7 +985,7 @@ module TypeScript {
         public endingToken: ASTSpan = null;
 
         constructor (public name: Identifier, public bod: ASTList, public isConstructor: bool,
-                     public arguments: ASTList, public vars: ASTList, public scopes: ASTList, public statics: ASTList,
+                    public args: ASTList, public vars: ASTList, public scopes: ASTList, public statics: ASTList,
             nodeType: number) {
 
             super(nodeType);
@@ -1003,31 +1006,6 @@ module TypeScript {
 
         public hasSelfReference() { return hasFlag(this.fncFlags, FncFlags.HasSelfReference); }
         public setHasSelfReference() { this.fncFlags |= FncFlags.HasSelfReference; }
-
-        public addCloRef(id: Identifier, sym: Symbol): number {
-            if (this.envids == null) {
-                this.envids = new Identifier[];
-            }
-            this.envids[this.envids.length] = id;
-            var outerFnc = this.enclosingFnc;
-            if (sym) {
-                while (outerFnc && (outerFnc.type.symbol != sym.container)) {
-                    outerFnc.addJumpRef(sym);
-                    outerFnc = outerFnc.enclosingFnc;
-                }
-            }
-            return this.envids.length - 1;
-        }
-
-        public addJumpRef(sym: Symbol): void {
-            if (this.jumpRefs == null) {
-                this.jumpRefs = new Identifier[];
-            }
-            var id = new Identifier(sym.name);
-            this.jumpRefs[this.jumpRefs.length] = id;
-            id.sym = sym;
-            id.cloId = this.addCloRef(id, null);
-        }
 
         public buildControlFlow(): ControlFlowContext {
             var entry = new BasicBlock();
@@ -1082,6 +1060,8 @@ module TypeScript {
         public isPublic() { return hasFlag(this.fncFlags, FncFlags.Public); }
         public isStatic() { return hasFlag(this.fncFlags, FncFlags.Static); }
 
+
+
         public treeViewLabel() {
             if (this.name == null) {
                 return "funcExpr";
@@ -1114,7 +1094,7 @@ module TypeScript {
         public isResident = false;
         public isDeclareFile = false;
         public hasBeenTypeChecked = false;
-        public topLevelMod: ModuleDeclaration = null;
+        public topLevelMod: ModuleDecl = null;
         public leftCurlyCount = 0;
         public rightCurlyCount = 0;
         public vars: ASTList;
@@ -1141,13 +1121,13 @@ module TypeScript {
             if (!this.isDeclareFile && !this.isResident && this.bod) {
                 for (var i = 0, len = this.bod.members.length; i < len; i++) {
                     var stmt = this.bod.members[i];
-                    if (stmt.nodeType == NodeType.ModuleDeclaration) {
-                        if (!hasFlag((<ModuleDeclaration>stmt).modFlags, ModuleFlags.ShouldEmitModuleDecl | ModuleFlags.Ambient)) {
+                    if (stmt.nodeType == NodeType.Module) {
+                        if (!hasFlag((<ModuleDecl>stmt).modFlags, ModuleFlags.ShouldEmitModuleDecl | ModuleFlags.Ambient)) {
                             return true;
                         }
                     }
-                    else if (stmt.nodeType == NodeType.ClassDeclaration) {
-                        if (!hasFlag((<InterfaceDeclaration>stmt).varFlags, VarFlags.Ambient)) {
+                    else if (stmt.nodeType == NodeType.Class) {
+                        if (!hasFlag((<TypeDecl>stmt).varFlags, VarFlags.Ambient)) {
                             return true;
                         }
                     }
@@ -1161,7 +1141,7 @@ module TypeScript {
                             return true;
                         }
                     }
-                    else if (stmt.nodeType != NodeType.InterfaceDeclaration && stmt.nodeType != NodeType.Empty) {
+                    else if (stmt.nodeType != NodeType.Interface && stmt.nodeType != NodeType.Empty) {
                         return true;
                     }
                 }
@@ -1178,35 +1158,42 @@ module TypeScript {
                 emitter.emitParensAndCommentsInPlace(this, false);
             }
         }
+
     }
 
-    export class NamedDeclaration extends ModuleElement {
-        public leftCurlyCount = 0;
-        public rightCurlyCount = 0;
-
+    export class Record extends AST {
         constructor (nodeType: NodeType,
-                     public name: Identifier,
-                     public members: ASTList) {
+                     public name: AST,
+                     public members: AST) {
             super(nodeType);
         }
     }
 
-    export class ModuleDeclaration extends NamedDeclaration {
+    export class ModuleDecl extends Record {
+
         public modFlags = ModuleFlags.ShouldEmitModuleDecl;
         public mod: ModuleType;
+        public alias: AST = null;
+        public leftCurlyCount = 0;
+        public rightCurlyCount = 0;
         public prettyName: string;
         public amdDependencies: string[] = [];
+        public members: ASTList;
         public vars: ASTList;
+        public name: Identifier;
         public scopes: ASTList;
         // Remember if the module contains Unicode chars, that is needed for dynamic module as we will generate a file for each.
         public containsUnicodeChar = false;
         public containsUnicodeCharInComment = false;
 
         constructor (name: Identifier, members: ASTList, vars: ASTList, scopes: ASTList, public endingToken: ASTSpan) {
-            super(NodeType.ModuleDeclaration, name, members);
+            super(NodeType.Module, name, members);
 
+            this.members = members;
             this.vars = vars;
+            this.name = name;
             this.scopes = scopes;
+
             this.prettyName = this.name.actualText;
         }
 
@@ -1233,38 +1220,44 @@ module TypeScript {
         }
     }
 
-    export class TypeDeclaration extends NamedDeclaration {
-        public varFlags = VarFlags.None;
+    export class NamedType extends Record {
+        public name: Identifier;
+        public members: AST;
 
-        constructor (nodeType: NodeType,
-                     name: Identifier,
-                     public extendsList: ASTList,
-                     public implementsList: ASTList,
-                     members: ASTList) {
+        constructor (nodeType: NodeType, name: Identifier, public extendsList: ASTList, public implementsList: ASTList, members: AST) {
             super(nodeType, name, members);
-        }
-
-        public isExported() { 
-            return hasFlag(this.varFlags, VarFlags.Exported);
-        }
-
-        public isAmbient() {
-            return hasFlag(this.varFlags, VarFlags.Ambient);
+            this.name = name;
+            this.members = members;
         }
     }
 
-    export class ClassDeclaration extends TypeDeclaration {
+    export class ClassDecl extends NamedType {
+        public varFlags = VarFlags.None;
+        public leftCurlyCount = 0;
+        public rightCurlyCount = 0;
         public knownMemberNames: any = {};
         public constructorDecl: FuncDecl = null;
         public constructorNestingLevel = 0;
+        public allMemberDefinitions: ASTList = new ASTList();
+        public name: Identifier;
+        public baseClass: ASTList;
+        public implementsList: ASTList;
+        public definitionMembers: ASTList;
         public endingToken: ASTSpan = null;
 
-        constructor (name: Identifier,
-                     members: ASTList,
-                     extendsList: ASTList,
-                     implementsList: ASTList) {
-            super(NodeType.ClassDeclaration, name, extendsList, implementsList, members);
+        constructor (name: Identifier, definitionMembers: ASTList, baseClass: ASTList,
+            implementsList: ASTList) {
+
+            super(NodeType.Class, name, baseClass, implementsList, definitionMembers);
+
+            this.name = name;
+            this.baseClass = baseClass;
+            this.implementsList = implementsList;
+            this.definitionMembers = definitionMembers;
         }
+
+        public isExported() { return hasFlag(this.varFlags, VarFlags.Exported); }
+        public isAmbient() { return hasFlag(this.varFlags, VarFlags.Ambient); }
 
         public typeCheck(typeFlow: TypeFlow) {
             return typeFlow.typeCheckClass(this);
@@ -1275,23 +1268,50 @@ module TypeScript {
         }
     }
 
-    export class InterfaceDeclaration extends TypeDeclaration {
-        constructor (name: Identifier,
-                     members: ASTList,
+    export class TypeDecl extends NamedType {
+        public varFlags = VarFlags.None;
+        public isOverload = false;
+        public leftCurlyCount = 0;
+        public rightCurlyCount = 0;
+        public name: Identifier;
+        public extendsList: ASTList;
+        public implementsList: ASTList;
+        public members: AST;
+
+        constructor (nodeType: NodeType,
+                     name: Identifier,
+                     members: AST,
+                     public args: ASTList,
                      extendsList: ASTList,
-                     implementsList: ASTList) {
-            super(NodeType.InterfaceDeclaration, name, extendsList, implementsList, members);
+            implementsList: ASTList) {
+            super(nodeType, name, extendsList, implementsList, members);
+
+            this.name = name;
+            this.extendsList = extendsList;
+            this.implementsList = implementsList;
+            this.members = members;
         }
 
+        public isExported() { return hasFlag(this.varFlags, VarFlags.Exported); }
+        public isAmbient() { return hasFlag(this.varFlags, VarFlags.Ambient); }
+
         public typeCheck(typeFlow: TypeFlow) {
-            return typeFlow.typeCheckInterface(this);
+            if (this.nodeType == NodeType.Interface) {
+                return typeFlow.typeCheckInterface(this);
+            }
+            else {
+                throw new Error("please implement type check for node type " + this.nodeType);
+            }
         }
 
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
+            if (this.nodeType != NodeType.Interface) {
+                throw new Error("please implement emit for node type " + this.nodeType);
+            }
         }
     }
 
-    export class Statement extends ModuleElement {
+    export class Statement extends AST {
         constructor (nodeType: NodeType) {
             super(nodeType);
             this.flags |= ASTFlags.IsStatement;
@@ -1299,17 +1319,16 @@ module TypeScript {
 
         public isLoop() { return false; }
 
-        public isStatementOrExpression() { return true; }
-
         public isCompoundStatement() { return this.isLoop(); }
 
         public typeCheck(typeFlow: TypeFlow) {
-            this.type = typeFlow.voidType;
+            this.setType(typeFlow.voidType);
             return this;
         }
     }
 
     export class LabeledStatement extends Statement {
+
         constructor (public labels: ASTList, public stmt: AST) {
             super(NodeType.LabeledStatement);
         }
@@ -1343,8 +1362,8 @@ module TypeScript {
     }
 
     export class Block extends Statement {
-        constructor (public statements: ASTList,
-                     public isStatementBlock: bool) {
+
+        constructor (public stmts: ASTList, public isStatementBlock: bool) {
             super(NodeType.Block);
         }
 
@@ -1355,11 +1374,11 @@ module TypeScript {
                 emitter.writeLineToOutput(" {");
                 emitter.indenter.increaseIndent();
             } else {
-                emitter.setInVarBlock(this.statements.members.length);
+                emitter.setInVarBlock(this.stmts.members.length);
             }
             var temp = emitter.setInObjectLiteral(false);
-            if (this.statements) {
-                emitter.emitJavascriptList(this.statements, null, TokenID.Semicolon, true, false, false);
+            if (this.stmts) {
+                emitter.emitJavascriptList(this.stmts, null, TokenID.Semicolon, true, false, false);
             }
             if (this.isStatementBlock) {
                 emitter.indenter.decreaseIndent();
@@ -1374,8 +1393,8 @@ module TypeScript {
         public addToControlFlow(context: ControlFlowContext) {
             var afterIfNeeded = new BasicBlock();
             context.pushStatement(this, context.current, afterIfNeeded);
-            if (this.statements) {
-                context.walk(this.statements, this);
+            if (this.stmts) {
+                context.walk(this.stmts, this);
             }
             context.walker.options.goChildren = false;
             context.popStatement();
@@ -1387,12 +1406,11 @@ module TypeScript {
 
         public typeCheck(typeFlow: TypeFlow) {
             if (!typeFlow.checker.styleSettings.emptyBlocks) {
-                if ((this.statements === null) || (this.statements.members.length == 0)) {
+                if ((this.stmts === null) || (this.stmts.members.length == 0)) {
                     typeFlow.checker.errorReporter.styleError(this, "empty block");
                 }
             }
-
-            typeFlow.typeCheck(this.statements);
+            typeFlow.typeCheck(this.stmts);
             return this;
         }
     }
@@ -1451,6 +1469,7 @@ module TypeScript {
     }
 
     export class WhileStatement extends Statement {
+        public isStatementOrExpression() { return true; }
         public body: AST = null;
 
         constructor (public cond: AST) {
@@ -1506,6 +1525,7 @@ module TypeScript {
     }
 
     export class DoWhileStatement extends Statement {
+        public isStatementOrExpression() { return true; }
         public body: AST = null;
         public whileAST: AST = null;
         public cond: AST = null;
@@ -1564,6 +1584,7 @@ module TypeScript {
     }
 
     export class IfStatement extends Statement {
+        public isStatementOrExpression() { return true; }
         public thenBod: AST;
         public elseBod: AST = null;
         public statement: ASTSpan = new ASTSpan();
@@ -1651,6 +1672,8 @@ module TypeScript {
             super(NodeType.Return);
         }
 
+        public isStatementOrExpression() { return true; }
+        
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
             emitter.emitParensAndCommentsInPlace(this, true);
             emitter.recordSourceMappingStart(this);
@@ -1692,7 +1715,7 @@ module TypeScript {
         }
         public statement: ASTSpan = new ASTSpan();
         public body: AST;
-
+        public isStatementOrExpression() { return true; }
         public isLoop() { return true; }
 
         public isFiltered() {
@@ -1711,8 +1734,8 @@ module TypeScript {
                 if (singleItem !== null) {
                     if (singleItem.nodeType == NodeType.Block) {
                         var block = <Block>singleItem;
-                        if ((block.statements !== null) && (block.statements.members.length == 1)) {
-                            singleItem = block.statements.members[0];
+                        if ((block.stmts !== null) && (block.stmts.members.length == 1)) {
+                            singleItem = block.stmts.members[0];
                         }
                     }
                     if (singleItem.nodeType == NodeType.If) {
@@ -1726,7 +1749,7 @@ module TypeScript {
                                     ((<Identifier>binex.operand1).actualText == (<Identifier>this.obj).actualText)) {
                                     var prop = <Identifier>binex.operand2;
                                     if (prop.actualText == "hasOwnProperty") {
-                                        var args = (<CallExpression>cond).arguments;
+                                        var args = (<CallExpression>cond).args;
                                         if ((args !== null) && (args.members.length == 1)) {
                                             var arg = args.members[0];
                                             if ((arg.nodeType == NodeType.Name) &&
@@ -1811,6 +1834,7 @@ module TypeScript {
             super(NodeType.For);
         }
 
+        public isStatementOrExpression() { return true; }
         public isLoop() { return true; }
 
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
@@ -1902,9 +1926,8 @@ module TypeScript {
 
     export class WithStatement extends Statement {
         public body: AST;
-
+        public isStatementOrExpression() { return true; }
         public isCompoundStatement() { return true; }
-
         public withSym: WithSymbol = null;
 
         constructor (public expr: AST) {
@@ -1939,6 +1962,7 @@ module TypeScript {
             super(NodeType.Switch);
         }
 
+        public isStatementOrExpression() { return true; }
         public isCompoundStatement() { return true; }
 
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
@@ -1973,7 +1997,7 @@ module TypeScript {
                 this.caseList.members[i] = typeFlow.typeCheck(this.caseList.members[i]);
             }
             this.defaultCase = <CaseStatement>typeFlow.typeCheck(this.defaultCase);
-            this.type = typeFlow.voidType;
+            this.setType(typeFlow.voidType);
             return this;
         }
 
@@ -2033,7 +2057,7 @@ module TypeScript {
         public typeCheck(typeFlow: TypeFlow) {
             this.expr = typeFlow.typeCheck(this.expr);
             typeFlow.typeCheck(this.body);
-            this.type = typeFlow.voidType;
+            this.setType(typeFlow.voidType);
             return this;
         }
 
@@ -2063,6 +2087,7 @@ module TypeScript {
     }
 
     export class TypeReference extends AST {
+
         constructor (public term: AST, public arrayCount: number) {
             super(NodeType.TypeRef);
         }
@@ -2083,11 +2108,11 @@ module TypeScript {
 
             typeFlow.checkForVoidConstructor(typeLink.type, this);
 
-            this.type = typeLink.type;
+            this.setType(typeLink.type);
 
             // in error recovery cases, there may not be a term
             if (this.term) {
-                this.term.type = this.type;
+                this.term.setType(this.getType());
             }
 
             typeFlow.inTypeRefTypeCheck = prevInTCTR;
@@ -2096,10 +2121,12 @@ module TypeScript {
     }
 
     export class TryFinally extends Statement {
+
         constructor (public tryNode: AST, public finallyNode: Finally) {
             super(NodeType.TryFinally);
         }
 
+        public isStatementOrExpression() { return true; }
         public isCompoundStatement() { return true; }
 
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
@@ -2112,7 +2139,7 @@ module TypeScript {
         public typeCheck(typeFlow: TypeFlow) {
             this.tryNode = typeFlow.typeCheck(this.tryNode);
             this.finallyNode = <Finally>typeFlow.typeCheck(this.finallyNode);
-            this.type = typeFlow.voidType;
+            this.setType(typeFlow.voidType);
             return this;
         }
 
@@ -2141,10 +2168,12 @@ module TypeScript {
     }
 
     export class TryCatch extends Statement {
+
         constructor (public tryNode: Try, public catchNode: Catch) {
             super(NodeType.TryCatch);
         }
 
+        public isStatementOrExpression() { return true; }
         public isCompoundStatement() { return true; }
 
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
@@ -2185,16 +2214,18 @@ module TypeScript {
         public typeCheck(typeFlow: TypeFlow) {
             this.tryNode = <Try>typeFlow.typeCheck(this.tryNode);
             this.catchNode = <Catch>typeFlow.typeCheck(this.catchNode);
-            this.type = typeFlow.voidType;
+            this.setType(typeFlow.voidType);
             return this;
         }
     }
 
     export class Try extends Statement {
+
         constructor (public body: AST) {
             super(NodeType.Try);
         }
 
+        public isStatementOrExpression() { return true; }
         public emit(emitter: Emitter, tokenId: TokenID, startLine: bool) {
             emitter.emitParensAndCommentsInPlace(this, true);
             emitter.recordSourceMappingStart(this);
@@ -2219,6 +2250,7 @@ module TypeScript {
     }
 
     export class Catch extends Statement {
+
         constructor (public param: VarDecl, public body: AST) {
             super(NodeType.Catch);
             if (this.param) {
@@ -2270,8 +2302,8 @@ module TypeScript {
             // var type for now (add syntax for type annotation)
             exceptVar.typeLink.type = typeFlow.anyType;
             var thisFnc = typeFlow.thisFnc;
-            if (thisFnc && thisFnc.type) {
-                exceptVar.symbol.container = thisFnc.type.symbol;
+            if (thisFnc && thisFnc.getType()) {
+                exceptVar.symbol.container = thisFnc.getType().symbol;
             }
             else {
                 exceptVar.symbol.container = null;
@@ -2289,13 +2321,15 @@ module TypeScript {
                 var table = typeFlow.scope.getTable();
                 (<any>table).secondaryTable.table[exceptVar.symbol.name] = undefined;
             }
-            this.type = typeFlow.voidType;
+            this.setType(typeFlow.voidType);
             typeFlow.scope = prevScope;
             return this;
         }
     }
 
+
     export class Finally extends Statement {
+
         constructor (public body: AST) {
             super(NodeType.Finally);
         }

@@ -7,9 +7,15 @@
 module Formatting {
     export class IndentationInfo {
 
+        public Prefix: string;
+        public Level: number;
+
         constructor(
-            public Prefix: string = null,
-            public Level: number = 0) {
+            public prefix: string = null,
+            public level: number = 0) {
+
+            this.Prefix = this.prefix;
+            this.Level = this.level;
         }
     }
 }

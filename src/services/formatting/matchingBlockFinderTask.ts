@@ -25,12 +25,12 @@ module Formatting {
                 if (currentNode.ast != null) {
                     //TypeScript:
                     switch (currentNode.ast.nodeType) {
-                        case TypeScript.NodeType.InterfaceDeclaration:
-                        case TypeScript.NodeType.ClassDeclaration:
-                        case TypeScript.NodeType.ModuleDeclaration:
+                        case TypeScript.NodeType.Interface:
+                        case TypeScript.NodeType.Class:
+                        case TypeScript.NodeType.Module:
                             return Span.FromBounds(currentNode.ast.minChar, currentNode.ast.limChar);
 
-                        case TypeScript.NodeType.ImportDeclaration:
+                        case TypeScript.NodeType.Import:
                             return new Span(currentNode.StartOffset, currentNode.EndOffset - currentNode.StartOffset);
                     }
                 }

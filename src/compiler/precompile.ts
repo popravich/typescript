@@ -97,6 +97,8 @@ module TypeScript {
         public outputFileName: string = "";
         public mapSourceFiles = false;
         public generateDeclarationFiles = false;
+        public gatherDiagnostics = false;
+        public usePull = false;
 
         public useCaseSensitiveFileResolution = false;
 

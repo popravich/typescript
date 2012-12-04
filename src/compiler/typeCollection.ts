@@ -4,10 +4,6 @@
 ///<reference path='typescript.ts' />
 
 module TypeScript {
-    export class Continuation {
-        public exceptionBlock = -1;
-        constructor (public normalBlock: number) { }
-    }
 
     function getBaseTypeLinks(bases: ASTList, baseTypeLinks: TypeLink[]) {
         if (bases) {
@@ -26,7 +22,7 @@ module TypeScript {
         return baseTypeLinks;
     }
 
-    function getBases(type: Type, typeDecl: TypeDeclaration) {
+    function getBases(type: Type, typeDecl: NamedType) {
         type.extendsTypeLinks = getBaseTypeLinks(typeDecl.extendsList, type.extendsTypeLinks);
         type.implementsTypeLinks = getBaseTypeLinks(typeDecl.implementsList, type.implementsTypeLinks);
     }
@@ -102,7 +98,7 @@ module TypeScript {
                 var name = (<Identifier>alias).text;
                 var isDynamic = isQuoted(name);
 
-                var findSym = (id: string) => {
+                var findSym = (id: string) {
                     if (context.members) {
                         return context.members.lookup(name);
                     }
@@ -151,7 +147,7 @@ module TypeScript {
         var scopeChain = context.scopeChain;
         var typeSymbol: TypeSymbol = null;
         var modType: ModuleType = null;
-        var importDecl = <ImportDeclaration>ast;
+        var importDecl = <ImportDecl>ast;
         var isExported = hasFlag(importDecl.varFlags, VarFlags.Exported);
 
         // REVIEW: technically, this call isn't strictly necessary, since we'll find the type during the call to resolveTypeMembers
@@ -186,7 +182,7 @@ module TypeScript {
     export function preCollectModuleTypes(ast: AST, parent: AST, context: TypeCollectionContext) {
         var scopeChain = context.scopeChain;
 
-        var moduleDecl: ModuleDeclaration = <ModuleDeclaration>ast;
+        var moduleDecl: ModuleDecl = <ModuleDecl>ast;
 
         var isAmbient = hasFlag(moduleDecl.modFlags, ModuleFlags.Ambient);
         var isEnum = hasFlag(moduleDecl.modFlags, ModuleFlags.IsEnum);
@@ -228,7 +224,7 @@ module TypeScript {
             modType.symbol = typeSymbol;
         }
         else {
-            if (symbol && symbol.declAST && symbol.declAST.nodeType != NodeType.ModuleDeclaration) {
+            if (symbol && symbol.declAST && symbol.declAST.nodeType != NodeType.Module) {
                 context.checker.errorReporter.simpleError(moduleDecl, "Conflicting symbol name for module '" + modName + "'");
             }
             typeSymbol = <TypeSymbol>symbol;
@@ -288,7 +284,7 @@ module TypeScript {
 
     export function preCollectClassTypes(ast: AST, parent: AST, context: TypeCollectionContext) {
         var scopeChain = context.scopeChain;
-        var classDecl = <ClassDeclaration>ast;
+        var classDecl = <ClassDecl>ast;
 
         var classType: Type;
         var instanceType: Type;
@@ -331,7 +327,7 @@ module TypeScript {
             }
         }
         
-        if (typeSymbol && !foundValSymbol && (typeSymbol.declAST != classDecl)) {
+        if (typeSymbol && !foundValSymbol && (typeSymbol.declAST != classDecl) && !(<TypeDecl>typeSymbol.declAST).isOverload) {
             typeSymbol = null;
         }
 
@@ -368,7 +364,7 @@ module TypeScript {
                 typeSymbol.flags |= SymbolFlags.Ambient;
             }
 
-            ast.type = classType;
+            ast.setType(classType);
 
             // class in both name spaces (type for instance type; constructor representative in value space)
             context.scopeChain.scope.enter(context.scopeChain.container, ast, typeSymbol,
@@ -393,18 +389,18 @@ module TypeScript {
             }
             
             instanceType = classType.instanceType;
-            ast.type = classType;
+            ast.setType(classType);
         }
         
         // if the class has no declared constructor, either create a default signature or adapt 
         // it's base class's signature group
         if (!classDecl.constructorDecl) {
 
-            if (typeSymbol && typeSymbol.declAST && typeSymbol.declAST.type && typeSymbol.declAST.type.call && !(<FuncDecl>typeSymbol.declAST).isOverload) {
+            if (typeSymbol && typeSymbol.declAST && typeSymbol.declAST.getType() && typeSymbol.declAST.getType().call && !(<FuncDecl>typeSymbol.declAST).isOverload) {
                 context.checker.errorReporter.duplicateIdentifier(typeSymbol.declAST, typeSymbol.name);
             }
 
-            createNewConstructGroupForType(classDecl.type);
+            createNewConstructGroupForType(classDecl.getType());
         }
 
         classType.typeFlags |= TypeFlags.IsClass;
@@ -418,7 +414,7 @@ module TypeScript {
 
     export function preCollectInterfaceTypes(ast: AST, parent: AST, context: TypeCollectionContext) {
         var scopeChain = context.scopeChain;
-        var interfaceDecl = <InterfaceDeclaration>ast;
+        var interfaceDecl = <TypeDecl>ast;
         var interfaceSymbol: TypeSymbol = null;
         var interfaceType: Type = null;
         var isExported = hasFlag(interfaceDecl.varFlags, VarFlags.Exported);
@@ -450,7 +446,7 @@ module TypeScript {
             interfaceType = context.checker.anyType;
         }
 
-        ast.type = interfaceType;
+        ast.setType(interfaceType);
         getBases(interfaceType, interfaceDecl);
 
         if (isExported) {
@@ -657,10 +653,10 @@ module TypeScript {
             //  createFunctionSignature
             if (fgSym == null) {
                 if (!(funcDecl.isSpecialFn())) {                    
-                    fgSym = context.checker.createFunctionSignature(funcDecl, containerSym, containerScope, null, !foundSymbol).declAST.type.symbol;
+                    fgSym = context.checker.createFunctionSignature(funcDecl, containerSym, containerScope, null, !foundSymbol).declAST.getType().symbol;
                 }
                 else {
-                    fgSym = context.checker.createFunctionSignature(funcDecl, containerSym, containerScope, containerSym, false).declAST.type.symbol;                                                                         
+                    fgSym = context.checker.createFunctionSignature(funcDecl, containerSym, containerScope, containerSym, false).declAST.getType().symbol;                                                                         
                 }
                 
                 // set the symbol's declAST, which will point back to the first declaration (symbol or otherwise)
@@ -673,7 +669,7 @@ module TypeScript {
                 
                 if ((fgSym.kind() == SymbolKind.Type)) {
 
-                    fgSym = context.checker.createFunctionSignature(funcDecl, containerSym, containerScope, fgSym, false).declAST.type.symbol;
+                    fgSym = context.checker.createFunctionSignature(funcDecl, containerSym, containerScope, fgSym, false).declAST.getType().symbol;
                 }
                 else {
                     context.checker.errorReporter.simpleError(funcDecl, "Function or method '" + funcDecl.name.actualText + "' already declared as a property");
@@ -681,10 +677,10 @@ module TypeScript {
             }
          
             if (funcDecl.isSpecialFn() && !isStatic) {
-                funcDecl.type = instType ? instType : fgSym.type; 
+                funcDecl.setType(instType ? instType : fgSym.type); 
             }
             else {
-                funcDecl.type = fgSym.type;
+                funcDecl.setType(fgSym.type);
             }            
         }
         else {
@@ -737,14 +733,14 @@ module TypeScript {
                 funcDecl.accessorSymbol = context.checker.createAccessorSymbol(funcDecl, fgSym, containerSym.type, (funcDecl.isMethod() && isStatic), true, containerScope, containerSym);
             }
 
-            funcDecl.type.symbol.declAST = ast;
+            funcDecl.getType().symbol.declAST = ast;
             if (funcDecl.isConstructor) { // REVIEW: Remove when classes completely replace oldclass
                 go = true;
             };
         }
         if (isExported) {
-            if (funcDecl.type.call) {
-                funcDecl.type.symbol.flags |= SymbolFlags.Exported;
+            if (funcDecl.getType().call) {
+                funcDecl.getType().symbol.flags |= SymbolFlags.Exported;
             }
             
             // Accessors are set to 'exported' above
@@ -753,8 +749,8 @@ module TypeScript {
             }
         }
         if (context.scopeChain.moduleDecl && !funcDecl.isSpecialFn()) {
-            funcDecl.type.symbol.flags |= SymbolFlags.ModuleMember;
-            funcDecl.type.symbol.declModule = context.scopeChain.moduleDecl;
+            funcDecl.getType().symbol.flags |= SymbolFlags.ModuleMember;
+            funcDecl.getType().symbol.declModule = context.scopeChain.moduleDecl;
         }
 
         if (fgSym && isOptional) {
@@ -777,22 +773,22 @@ module TypeScript {
         else if (ast.nodeType == NodeType.List) {
             go = true;
         }
-        else if (ast.nodeType == NodeType.ImportDeclaration) {
+        else if (ast.nodeType == NodeType.Import) {
             go = preCollectImportTypes(ast, parent, context);
         }
         else if (ast.nodeType == NodeType.With) {
             go = false;
         }
-        else if (ast.nodeType == NodeType.ModuleDeclaration) {
+        else if (ast.nodeType == NodeType.Module) {
             go = preCollectModuleTypes(ast, parent, context);
         }
-        else if (ast.nodeType == NodeType.ClassDeclaration) {
+        else if (ast.nodeType == NodeType.Class) {
             go = preCollectClassTypes(ast, parent, context);
         }
         else if (ast.nodeType == NodeType.Block) {
             go = true;
         }
-        else if (ast.nodeType == NodeType.InterfaceDeclaration) {
+        else if (ast.nodeType == NodeType.Interface) {
             go = preCollectInterfaceTypes(ast, parent, context);
         }
         // This will be a constructor arg because this pass only traverses
@@ -818,13 +814,13 @@ module TypeScript {
     export function postCollectTypes(ast: AST, parent: AST, walker: IAstWalker) {
         var context: TypeCollectionContext = walker.state;
 
-        if (ast.nodeType == NodeType.ModuleDeclaration) {
+        if (ast.nodeType == NodeType.Module) {
             popTypeCollectionScope(context);
         }
-        else if (ast.nodeType == NodeType.ClassDeclaration) {
+        else if (ast.nodeType == NodeType.Class) {
             popTypeCollectionScope(context);
         }
-        else if (ast.nodeType == NodeType.InterfaceDeclaration) {
+        else if (ast.nodeType == NodeType.Interface) {
             popTypeCollectionScope(context);
         }
         return ast;
