@@ -7,7 +7,7 @@ module TypeScript {
 
     export class PullSymbolBindingContext {
 
-        private parentChain: PullSymbol[] = [];
+        private parentChain: PullTypeSymbol[] = [];
         private declPath: string[] = [];
         public semanticInfo: SemanticInfo;
 
@@ -18,7 +18,7 @@ module TypeScript {
         public getParent() { return this.parentChain ? this.parentChain[this.parentChain.length - 1] : null; }
         public getDeclPath() { return this.declPath; }
 
-        public pushParent(parentDecl: PullSymbol) { 
+        public pushParent(parentDecl: PullTypeSymbol) { 
             if (parentDecl) { 
                 this.parentChain[this.parentChain.length] = parentDecl;
                 this.declPath[this.declPath.length] = parentDecl.getName();

@@ -24,6 +24,7 @@ module TypeScript {
         private astDeclMap: DataMap = new DataMap();
         private declASTMap: DataMap = new DataMap();
         private declSymbolMap: DataMap = new DataMap();
+        private astTypeSymbolMap: DataMap = new DataMap();
 
         constructor (compilationUnitPath: string) {
             this.compilationUnitPath = compilationUnitPath;
@@ -51,7 +52,11 @@ module TypeScript {
 
         public setSymbolForDecl(decl: PullDecl, symbol: PullSymbol) { this.declSymbolMap.link(decl.getDeclID().toString(), symbol); }
 
-        public getSymbolForDecl(decl: PullDecl) { return <PullSymbol>this.declSymbolMap.read(decl.getDeclID().toString()); }        
+        public getSymbolForDecl(decl: PullDecl) { return <PullSymbol>this.declSymbolMap.read(decl.getDeclID().toString()); }
+
+        public setTypeSymbolForAST(ast: AST, typeSymbol: PullTypeSymbol) { this.astTypeSymbolMap.link(ast.getID().toString(), typeSymbol); }
+        
+        public getTypeSymbolForAST(ast: AST) { return <PullTypeSymbol>this.astTypeSymbolMap.read(ast.getID().toString()); }
 
         public update() { }
     }
@@ -62,19 +67,19 @@ module TypeScript {
         private symbolCache = <any>{};
         private unitCache = <any>{};
 
-        public anyTypeSymbol: PullSymbol = null;
-        public boolTypeSymbol: PullSymbol = null;
-        public numberTypeSymbol: PullSymbol = null;
-        public stringTypeSymbol: PullSymbol = null;
-        public nullTypeSymbol: PullSymbol = null;
-        public undefinedTypeSymbol: PullSymbol = null;
-        public elementTypeSymbol: PullSymbol = null;
-        public voidTypeSymbol: PullSymbol = null;
+        public anyTypeSymbol: PullTypeSymbol = null;
+        public boolTypeSymbol: PullTypeSymbol = null;
+        public numberTypeSymbol: PullTypeSymbol = null;
+        public stringTypeSymbol: PullTypeSymbol = null;
+        public nullTypeSymbol: PullTypeSymbol = null;
+        public undefinedTypeSymbol: PullTypeSymbol = null;
+        public elementTypeSymbol: PullTypeSymbol = null;
+        public voidTypeSymbol: PullTypeSymbol = null;
 
         public addPrimitive(name: string, globalDecl: PullDecl) {
             var span = new ASTSpan();
             var decl = new PullDecl(name, DeclKind.Primitive, DeclFlags.None, span, "");
-            var symbol = new PullSymbol(name, DeclKind.Primitive);
+            var symbol = new PullTypeSymbol(name, DeclKind.Primitive);
             symbol.addDeclaration(decl);
             decl.setSymbol(symbol);
 
@@ -225,7 +230,7 @@ module TypeScript {
         }
 
         public getDeclForAST(ast: AST, unitPath: string): PullDecl {
-            var unit = <SemanticInfo>this.declCache[unitPath];
+            var unit = <SemanticInfo>this.unitCache[unitPath];
 
             if (unit) {
                 return unit.getDeclForAST(ast);
@@ -235,10 +240,30 @@ module TypeScript {
         }
 
         public getASTForDecl(decl: PullDecl, unitPath: string): AST {
-            var unit = <SemanticInfo>this.declCache[unitPath];
+            var unit = <SemanticInfo>this.unitCache[unitPath];
 
             if (unit) {
                 return unit.getASTForDecl(decl);
+            }
+            
+            return null;
+        }
+
+        public getTypeSymbolForAST(ast: AST, unitPath: string) {
+            var unit = <SemanticInfo>this.unitCache[unitPath];
+
+            if (unit) {
+                return unit.getTypeSymbolForAST(ast);
+            }
+            
+            return null;
+        }
+
+        public setTypeSymbolForAST(ast: AST, typeSymbol: PullTypeSymbol, unitPath: string) {
+            var unit = <SemanticInfo>this.unitCache[unitPath];
+
+            if (unit) {
+                return unit.setTypeSymbolForAST(ast, typeSymbol);
             }
             
             return null;

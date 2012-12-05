@@ -26,32 +26,31 @@ module TypeScript {
         
         // PULLTODO: Extends/Implements symbols
         var modName = moduleDecl.getDeclName();
-        var symbol: PullSymbol = findSymbolInContext(modName, DeclKind.Module, context, []);
+        var moduleSymbol: PullTypeSymbol = <PullTypeSymbol>findSymbolInContext(modName, DeclKind.Module, context, []);
         var createdNewSymbol = false;
 
-        if (!symbol) {
-            var symbol = new PullSymbol(modName, DeclKind.Module);
+        if (!moduleSymbol) {
+            var moduleSymbol = new PullTypeSymbol(modName, DeclKind.Module);
             createdNewSymbol = true;
         }
 
         if (moduleDecl) {
-            symbol.addDeclaration(moduleDecl);
-            moduleDecl.setSymbol(symbol);            
+            moduleSymbol.addDeclaration(moduleDecl);
+            moduleDecl.setSymbol(moduleSymbol);            
         }
 
-        context.semanticInfo.setSymbolForDecl(moduleDecl, symbol);
+        context.semanticInfo.setSymbolForDecl(moduleDecl, moduleSymbol);
         
         if (createdNewSymbol) {
             var parent = context.getParent();
 
             if (parent) {
                 var linkKind = moduleDecl.getDeclFlags() & DeclFlags.Exported ? SymbolLinkKind.PublicProperty : SymbolLinkKind.PrivateProperty;
-                parent.addOutgoingLink(symbol, linkKind);
-                symbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                parent.addMember(moduleSymbol, linkKind);
             }
         }
 
-        context.pushParent(symbol);
+        context.pushParent(moduleSymbol);
 
         var childDecls = moduleDecl.getChildDecls();
 
@@ -67,29 +66,26 @@ module TypeScript {
         // PULLTODO: Check for name collisions
         // PULLTODO: Extends/Implements symbols
         var className = classDecl.getDeclName();
-        var symbol = new PullSymbol(className, DeclKind.Class);
+        var classSymbol = new PullClassSymbol(className, DeclKind.Class);
 
-        var instanceSymbol = new PullSymbol(className, DeclKind.ClassInstanceDecl);
+        var instanceSymbol = new PullTypeSymbol(className, DeclKind.ClassInstanceDecl);
 
-        symbol.addOutgoingLink(instanceSymbol, SymbolLinkKind.InstanceType);
+        classSymbol.setInstanceType(instanceSymbol);
         
-        symbol.addDeclaration(classDecl);
+        classSymbol.addDeclaration(classDecl);
         
-        classDecl.setSymbol(symbol);
+        classDecl.setSymbol(classSymbol);
 
-        context.semanticInfo.setSymbolForDecl(classDecl, symbol);
+        context.semanticInfo.setSymbolForDecl(classDecl, classSymbol);
 
         var parent = context.getParent();
         
         if (parent) {
             var linkKind = classDecl.getDeclFlags() & DeclFlags.Exported ? SymbolLinkKind.PublicProperty : SymbolLinkKind.PrivateProperty;
-
-            parent.addOutgoingLink(symbol, linkKind);
-
-            symbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+            parent.addMember(classSymbol, linkKind);
         }
 
-        context.pushParent(symbol);
+        context.pushParent(classSymbol);
 
         var childDecls = classDecl.getChildDecls();
 
@@ -105,32 +101,31 @@ module TypeScript {
         // 1. Test for existing decl - if it exists, use its symbol
         // 2. If no other decl exists, create a new symbol and use that one
         var interfaceName = interfaceDecl.getDeclName();
-        var symbol: PullSymbol = findSymbolInContext(interfaceName, DeclKind.Interface, context, []);
+        var interfaceSymbol: PullTypeSymbol = <PullTypeSymbol>findSymbolInContext(interfaceName, DeclKind.Interface, context, []);
         var createdNewSymbol = false;
 
-        if (!symbol) {
-            symbol = new PullSymbol(interfaceName, DeclKind.Interface);
+        if (!interfaceSymbol) {
+            interfaceSymbol = new PullTypeSymbol(interfaceName, DeclKind.Interface);
             createdNewSymbol = true;
         }
 
         if (interfaceDecl) {
-            symbol.addDeclaration(interfaceDecl);
-            interfaceDecl.setSymbol(symbol);
+            interfaceSymbol.addDeclaration(interfaceDecl);
+            interfaceDecl.setSymbol(interfaceSymbol);
         }
 
-        context.semanticInfo.setSymbolForDecl(interfaceDecl, symbol);
+        context.semanticInfo.setSymbolForDecl(interfaceDecl, interfaceSymbol);
         
         if (createdNewSymbol) {
             var parent = context.getParent();
 
             if (parent) {
                 var linkKind = interfaceDecl.getDeclFlags() & DeclFlags.Exported ? SymbolLinkKind.PublicProperty : SymbolLinkKind.PrivateProperty;
-                parent.addOutgoingLink(symbol, linkKind);
-                symbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                parent.addMember(interfaceSymbol, linkKind);
             }
         }
 
-        context.pushParent(symbol);
+        context.pushParent(interfaceSymbol);
 
         var childDecls = interfaceDecl.getChildDecls();
 
@@ -171,25 +166,36 @@ module TypeScript {
                             isProperty ? DeclKind.Field : DeclKind.Variable;
 
         var declName = varDecl.getDeclName();
-        var symbol = new PullSymbol(declName, declType);
+        var variableSymbol = new PullSymbol(declName, declType);
         var parent = context.getParent();
 
         if (varDecl) {
-            symbol.addDeclaration(varDecl);
-            varDecl.setSymbol(symbol);
+            variableSymbol.addDeclaration(varDecl);
+            varDecl.setSymbol(variableSymbol);
         }
 
         if (parent) {
-
-            if (isProperty || isStatic || isExported) {
-                parent.addOutgoingLink(symbol, linkKind);
+            if (parent.hasBrand()) {
+                var classTypeSymbol = <PullClassSymbol>parent;
+                if (isStatic) {
+                    classTypeSymbol.addStaticMember(variableSymbol);
+                }
+                else {
+                    classTypeSymbol.getInstanceType().addMember(variableSymbol, linkKind);
+                }
             }
-
-            symbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+            else {
+                if (isProperty || isStatic || isExported) {
+                    parent.addMember(variableSymbol, linkKind);
+                }
+                else {
+                    variableSymbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                }
+            }
         }
     }
 
-    export function bindParameterSymbols(funcDecl: FuncDecl, context: PullSymbolBindingContext, signatureSymbol: PullSymbol) {
+    export function bindParameterSymbols(funcDecl: FuncDecl, context: PullSymbolBindingContext, signatureSymbol: PullSignatureSymbol) {
         // create a symbol for each ast
         // if it's a property, add the symbol to the enclosing type's member list
         var parameters: PullSymbol[] = [];
@@ -212,7 +218,7 @@ module TypeScript {
                     decl.setSymbol(parameterSymbol);
                 }
 
-                signatureSymbol.addOutgoingLink(parameterSymbol, SymbolLinkKind.Parameter);
+                signatureSymbol.addParameter(parameterSymbol);
 
                 // add a member to the parent type
                 if (decl && isProperty) {
@@ -221,14 +227,17 @@ module TypeScript {
                     parameterSymbol.addDeclaration(decl);
 
                     var linkKind = (decl.getDeclFlags() & DeclFlags.Private) ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
-
-                    parent.addOutgoingLink(parameterSymbol, linkKind);
-                    parameterSymbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                    if (parent.hasBrand()) {
+                        (<PullClassSymbol>parent).getInstanceType().addMember(parameterSymbol, linkKind);
+                    }
+                    else {
+                        // PULLTODO: I don't think we ever even take this branch...
+                        parent.addMember(parameterSymbol, linkKind);
+                    }
                 }
             }
         }
         
-        // DO NOT set the last bound symbol here
     }
 
     export function bindFunctionPullSymbol(funcDecl: PullDecl, context: PullSymbolBindingContext) {  
@@ -263,7 +272,7 @@ module TypeScript {
         var isIndex: bool = (declFlags & DeclFlags.Index) != 0;
         var isSignature: bool = (declKind & DeclKind.SomeSignature) != 0;
 
-        var symbol: PullSymbol = findSymbolInContext(funcName, declKind, context, []);
+        var functionSymbol: PullFunctionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
 
         // if it's a function definition, add a call signature to this signature
         // if it's a function signature, add a call signature to this signature
@@ -273,62 +282,68 @@ module TypeScript {
         // if it's a call signature, add a call signature to the parent
         // if it's a construct signature, add a construct signature to the parent
 
+        var linkKind = isStatic ? SymbolLinkKind.StaticProperty :
+                        isPrivate ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
 
-        if (!symbol) {
+        if (!functionSymbol) {
             // PULLTODO: Make sure that we properly flag signature decl types when collecting decls
-            symbol = new PullSymbol(funcName, isProperty ? DeclKind.Method : DeclKind.Function);
+            functionSymbol = new PullFunctionSymbol(funcName, isProperty ? DeclKind.Method : DeclKind.Function);
         }
 
         if (funcDecl) {
-            funcDecl.setSymbol(symbol);
-            symbol.addDeclaration(funcDecl);
-            context.semanticInfo.setSymbolForDecl(funcDecl, symbol);
+            funcDecl.setSymbol(functionSymbol);
+            functionSymbol.addDeclaration(funcDecl);
+            context.semanticInfo.setSymbolForDecl(funcDecl, functionSymbol);
         }
 
         var parent = context.getParent();
         
-        if (parent) {
+        if (parent && !isConstructor) {
 
-            if (isProperty || isStatic || isExported) {
+            if (parent.hasBrand()) {
+                if (isStatic) {
+                    (<PullClassSymbol>parent).addStaticMember(functionSymbol);
+                }
+                else {
+                    (<PullClassSymbol>parent).getInstanceType().addMember(functionSymbol, linkKind);
+                }
 
-                var linkKind = isStatic ? SymbolLinkKind.StaticProperty :
-                                isPrivate ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
-
-                parent.addOutgoingLink(symbol, linkKind);
             }
+            else {
 
-            symbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                if (isProperty || isExported) {
+                    parent.addMember(functionSymbol, linkKind);
+                }
+                else {
+                    functionSymbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                }
+            }
         }
 
         if (!isSignature) {
-            context.pushParent(symbol);
+            context.pushParent(functionSymbol);
         }
 
         var sigKind = isConstructor ? DeclKind.ConstructSignature :
                         isIndex ? DeclKind.IndexSignature : DeclKind.CallSignature;
 
-        var signature = new PullSymbol("", sigKind);
+        var signature = isSignature ? new PullSignatureSymbol("", sigKind) : new PullDefinitionSignatureSymbol("", sigKind);
 
         bindParameterSymbols(<FuncDecl>context.semanticInfo.getASTForDecl(funcDecl), context, signature);
 
         // add the implicit call member for this function type
-        if (funcName) {
-            if (isConstructor) {
-                symbol.addOutgoingLink(signature, SymbolLinkKind.ConstructSignature);
-            }
-            else {
-                symbol.addOutgoingLink(signature, SymbolLinkKind.CallSignature);
-            }
+        if (funcName && !(isConstructor || isIndex)) {
+            functionSymbol.addSignature(signature);
         }
         else if (parent) {
             if (isConstructor) {
-                parent.addOutgoingLink(signature, SymbolLinkKind.ConstructSignature);
+                parent.addConstructSignature(signature);
             }
             else if (isIndex) {
-                parent.addOutgoingLink(signature, SymbolLinkKind.IndexSignature);
+                parent.addIndexSignature(signature);
             }
             else {
-                parent.addOutgoingLink(signature, SymbolLinkKind.CallSignature);
+                parent.addCallSignature(signature);
             }
         }
         
@@ -364,9 +379,13 @@ module TypeScript {
             case DeclKind.Class:
                 bindClassPullSymbol(decl, context);
                 break;
+            case DeclKind.Method:
+            case DeclKind.StaticMethod:
             case DeclKind.Function:
                 bindFunctionPullSymbol(decl, context);
                 break;
+            case DeclKind.Field:
+            case DeclKind.StaticField:
             case DeclKind.Variable:
                 bindVariablePullSymbol(decl, context);
                 break;

@@ -5,68 +5,6 @@
 
 module TypeScript {
 
-    export class DataMap {
-        public map: any = {};
-
-        public link(id: string, data: any) {
-            this.map[id] = data;
-        }
-
-        public unlink(id: string) {
-            this.map[id] = undefined;
-        }
-
-        //public unlinkChildren(ast:AST) {
-        //    TypeScript.getAstWalkerFactory().walk(ast, (ast: AST, parent: AST): AST => { this.unlink(ast); });
-        //}
-
-        public read(id: string) {
-            return this.map[id];
-        }
-
-        public flush() {
-            this.map = {};
-        }
-
-        public unpatch() { return null; }
-    }
-
-    export class PatchedDataMap extends DataMap {
-        public diffs: any = {};
-        
-        constructor (public parent: DataMap) {
-            super();
-        }
-
-        public link(id: string, data: any) {
-            this.diffs[id] = data;
-        }
-
-        public unlink(id: string) {
-            this.diffs[id] = undefined;
-        }
-
-        public read(id: string) {
-
-            var data = this.diffs[id];
-            
-            if (data) {
-                return data;
-            }
-
-            return this.parent.read(id);
-        }
-
-        public flush() {
-            this.diffs = {};
-        }
-
-        public unpatch() { 
-            this.flush();
-            return this.parent;
-        }
-    }
-
     export function prePullTypeCheck(ast: AST, parent: AST, walker: IAstWalker): AST {
 
         var typeChecker: PullTypeChecker = walker.state;
@@ -77,17 +15,11 @@ module TypeScript {
             ast = typeChecker.typeCheckScript(<Script>ast);
             go = true;
         }
+        if (ast.nodeType == NodeType.List) {
+            go = true;
+        }
         else if (ast.nodeType == NodeType.VarDecl) {
             ast = typeChecker.typeCheckBoundDecl(<BoundDecl>ast);
-        }
-        else if (ast.nodeType == NodeType.ArgDecl) {
-           ast = typeChecker.typeCheckBoundDecl(<BoundDecl>ast);
-        }
-        else if (ast.nodeType == NodeType.This) {
-            ast = typeChecker.typeCheckThis(ast);
-        }
-        else if (ast.nodeType == NodeType.Name) {
-            ast = typeChecker.typeCheckName(ast);
         }
         else if (ast.nodeType == NodeType.Asg) {
             ast = typeChecker.typeCheckAsgOperator(ast);
@@ -108,18 +40,24 @@ module TypeScript {
             ast = typeChecker.typeCheckModule(<ModuleDecl>ast);
             go = true;
         }
-        else if (ast.nodeType == NodeType.ObjectLit) {
-            ast = typeChecker.typeCheckObjectLit(<UnaryExpression>ast);
-        }
-        else if (ast.nodeType == NodeType.Return) {
-            ast = typeChecker.typeCheckReturn(<ReturnStatement>ast);
-        }
-        else if (ast.nodeType == NodeType.New) {
-            ast = typeChecker.typeCheckNew(ast);
-        }
-        else if (ast.nodeType == NodeType.Call) {
-            ast = typeChecker.typeCheckCall(ast);
-        }
+        //else if (ast.nodeType == NodeType.This) {
+        //    ast = typeChecker.typeCheckThis(ast);
+        //}
+        //else if (ast.nodeType == NodeType.Name) {
+        //    ast = typeChecker.typeCheckName(ast);
+        //}
+        //else if (ast.nodeType == NodeType.ObjectLit) {
+        //    ast = typeChecker.typeCheckObjectLit(<UnaryExpression>ast);
+        //}
+        //else if (ast.nodeType == NodeType.Return) {
+        //    ast = typeChecker.typeCheckReturn(<ReturnStatement>ast);
+        //}
+        //else if (ast.nodeType == NodeType.New) {
+        //    ast = typeChecker.typeCheckNew(ast);
+        //}
+        //else if (ast.nodeType == NodeType.Call) {
+        //    ast = typeChecker.typeCheckCall(ast);
+        //}
 
         walker.options.goChildren = go;
         return ast;
@@ -133,72 +71,75 @@ module TypeScript {
 
         public semanticInfoChain: SemanticInfoChain;
 
+        public resolver: PullTypeResolver = null;
+
         constructor (semanticInfoChain) {
             this.semanticInfoChain = semanticInfoChain;
         }
 
-        public setType(ast: AST, type: PullSymbol) {
-            this.typingMap.link(ast.getID().toString(), type);
+        public setUnit(unitPath: string) {
+            this.resolver = new PullTypeResolver(this.semanticInfoChain, unitPath);
         }
 
         public typeCheck(ast: AST): AST {
-            return null;
+            return ast;
         }
 
         public typeCheckScript(script: Script): Script {
-            return null;
-        }
-
-        public typeCheckBoundDecl(varDecl: BoundDecl): VarDecl {
-            return null;
-        }
-
-        public typeCheckThis(ast: AST): AST {
-            return null;
-        }
-
-        public typeCheckName(ast: AST): AST {
-            return null;
-        }
-
-        public typeCheckAsgOperator(ast: AST): AST {
-            return null;
+            return script;
         }
 
         public typeCheckFunction(funcDecl: FuncDecl): FuncDecl {
-            return null;
+            var sym = this.resolver.resolveFunctionDeclaration(funcDecl);
+            return funcDecl;
         }
 
         public typeCheckClass(classDecl: ClassDecl): ClassDecl {
-            return null;
+            var sym = this.resolver.resolveClassDeclaration(classDecl);
+            return classDecl;
         }
 
         public typeCheckInterface(interfaceDecl: TypeDecl): TypeDecl {
-            return null;
+            var sym = this.resolver.resolveInterfaceDeclaration(interfaceDecl);
+            return interfaceDecl;
         }
 
         public typeCheckModule(moduleDecl: ModuleDecl): ModuleDecl {
-            return null;
+            var sym = this.resolver.resolveModuleDeclaration(moduleDecl);
+            return moduleDecl;
+        }
+
+        public typeCheckBoundDecl(varDecl: BoundDecl): BoundDecl {
+            var sym = this.resolver.resolveVariableDeclaration(varDecl);
+            return varDecl;
+        }
+
+        public typeCheckThis(ast: AST): AST {
+            return ast;
+        }
+
+        public typeCheckName(ast: AST): AST {
+            return ast;
+        }
+
+        public typeCheckAsgOperator(ast: AST): AST {
+            return ast;
         }
 
         public typeCheckObjectLit(objectLit: UnaryExpression): UnaryExpression {
-            return null;
+            return objectLit;
         }
 
         public typeCheckReturn(returnStmt: ReturnStatement): ReturnStatement {
-            return null;
+            return returnStmt;
         }
 
         public typeCheckNew(ast: AST): AST {
-            return null;
+            return ast;
         }
 
         public typeCheckCall(ast: AST): AST {
-            return null;
-        }
-
-        public updateTypes(oldInfo: SemanticInfo, newInfo: SemanticInfo) {
-
+            return ast;
         }
     }
 }

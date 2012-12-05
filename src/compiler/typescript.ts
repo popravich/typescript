@@ -33,9 +33,11 @@
 ///<reference path='precompile.ts' />
 ///<reference path='incrementalParser.ts' />
 ///<reference path='declarationEmitter.ts' />
+///<reference path='dataMap.ts' />
 ///<reference path='pullDecls.ts' />
 ///<reference path='pullSymbols.ts' />
 ///<reference path='pullSymbolBindingContext.ts' />
+///<reference path='pullTypeResolution.ts' />
 ///<reference path='pullTypeChecker.ts' />
 ///<reference path='pullSemanticInfo.ts' />
 ///<reference path='pullDeclCollection.ts' />
@@ -506,15 +508,18 @@ module TypeScript {
             }
 
             var bindEndTime = new Date().getTime();
+            var typeCheckStartTime = new Date().getTime();
+            // typecheck
+            for (i = 0; i < this.scripts.members.length; i++) {
+                this.pullTypeChecker.setUnit(this.units[i].filename);
+                getAstWalkerFactory().walk(this.scripts.members[i], prePullTypeCheck, null, null, this.pullTypeChecker);
+            }
+            var typeCheckEndTime = new Date().getTime();
 
             CompilerDiagnostics.Alert("Decl creation: " + (createDeclsEndTime - createDeclsStartTime));
             CompilerDiagnostics.Alert("Binding: " + (bindEndTime - bindStartTime));
-            CompilerDiagnostics.Alert("Total: " + (bindEndTime - createDeclsStartTime));
-
-            // typecheck
-            for (i = 0; i < this.scripts.members.length; i++) {
-                getAstWalkerFactory().walk(this.scripts.members[i], prePullTypeCheck, null, null, this.pullTypeChecker);
-            }
+            CompilerDiagnostics.Alert("TypeCheck: " + (typeCheckEndTime - typeCheckStartTime));
+            CompilerDiagnostics.Alert("Total: " + (typeCheckEndTime - createDeclsStartTime));
         }
 
         public updatePullSourceUnit(sourceText: ISourceText, filename: string, keepResident:bool, referencedFiles?: IFileReference[] = []): Script {
