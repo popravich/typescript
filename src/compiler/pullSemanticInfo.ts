@@ -82,6 +82,7 @@ module TypeScript {
             var symbol = new PullTypeSymbol(name, DeclKind.Primitive);
             symbol.addDeclaration(decl);
             decl.setSymbol(symbol);
+            symbol.setResolved();
 
             globalDecl.addChildDecl(decl);
             this.units[0].setSymbolForDecl(decl, symbol);
@@ -147,7 +148,7 @@ module TypeScript {
 
         // a decl path is a list of decls that reference the components of a declaration from the global scope down
         // E.g., string would be "['string']" and "A.B.C" would be "['A','B','C']"
-        public findDecls(declPath: string[], declType: DeclKind): PullDecl[] {
+        public findDecls(declPath: string[], declKind: DeclKind): PullDecl[] {
 
             var cacheID = this.getDeclPathCacheID(declPath);
 
@@ -173,7 +174,7 @@ module TypeScript {
                 decls = [];
 
                 for (var j = 0; j < declsToSearch.length; j++) {
-                    foundDecls = declsToSearch[j].findChildDecls(path, declType);
+                    foundDecls = declsToSearch[j].findChildDecls(path, (i == declPath.length - 1) ? declKind : DeclKind.SomeType);
 
                     for (var k = 0; k < foundDecls.length; k++) {
                         decls[decls.length] = foundDecls[k];

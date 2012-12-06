@@ -296,8 +296,12 @@ module TypeScript {
 
         var decl = new PullDecl(funcName, declType, declFlags, span, context.scriptName);
 
-        context.getParent().addChildDecl(decl);
+        // parent could be null if we're collecting decls for a lambda expression
+        var parent = context.getParent();
 
+        if (parent) {
+            parent.addChildDecl(decl);
+        }
         context.pushParent(decl);
 
         context.semanticInfo.setDeclForAST(ast, decl);

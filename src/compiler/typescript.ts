@@ -373,8 +373,9 @@ module TypeScript {
                     if (script.isResident) { continue; }
                     this.typeFlow.typeCheck(script);
                 }
-
+                var globaltcend = new Date().getTime();
                 CompilerDiagnostics.Alert("Total binding and collection time: " + (this.totalCollectionTime + (globaltcEnd - globaltcStart) + (localtcEnd - localtcStart)));
+                CompilerDiagnostics.Alert("Total typecheck time: " + (globaltcend - globaltcStart));
 
                 return null;
             });

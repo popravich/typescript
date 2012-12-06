@@ -59,7 +59,7 @@ module TypeScript {
         // declaration methods
         public addDeclaration(decl: PullDecl) { this.declarations.addItem(decl); }
         
-        public getDeclarations() { <PullDecl[]>this.declarations.find(d => d); }
+        public getDeclarations() { return <PullDecl[]>this.declarations.find(d => d); }
         
         public removeDeclaration(decl: PullDecl) { this.declarations.remove(d => d === decl);  }
         

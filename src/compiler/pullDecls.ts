@@ -37,6 +37,7 @@ module TypeScript {
         
         SomeType = Module | Function | Class | ClassInstanceDecl | Interface | Primitive | Global,
         SomeSignature = CallSignature | ConstructSignature | IndexSignature,
+        SomeValue = Variable | Argument | Field | StaticField,
 
         DynamicModule = Module | Dynamic,
 
@@ -84,7 +85,7 @@ module TypeScript {
         public getDeclID() { return this.declID; }
 
         public getDeclName() { return this.declName; }
-        public getDeclKind() { return this.declType}
+        public getKind() { return this.declType}
 
         public setSymbol(symbolNode: PullSymbol) { this.symbol = symbolNode; }
         public getSymbol() { return this.symbol; }
@@ -122,7 +123,7 @@ module TypeScript {
             this.childDecls[this.childDecls.length] = childDecl;
 
             // add to the appropriate cache
-            var cache = (childDecl.getDeclKind() & DeclKind.SomeType) ? this.childDeclTypeCache : this.childDeclValueCache;
+            var cache = (childDecl.getKind() & DeclKind.SomeType) ? this.childDeclTypeCache : this.childDeclValueCache;
             var cacheVal = <PullDecl[]>cache[declName];
             if (!cacheVal) {
                 cacheVal = [];

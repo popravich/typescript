@@ -138,7 +138,7 @@ module TypeScript {
 
     export function bindVariablePullSymbol(varDecl: PullDecl, context: PullSymbolBindingContext) {
         var declFlags = varDecl.getDeclFlags();
-        var declType = varDecl.getDeclKind();
+        var declType = varDecl.getKind();
         var isProperty = false;
         var isStatic = false;
         var isExported = false;
@@ -161,7 +161,7 @@ module TypeScript {
             isProperty = true;
         }
 
-        var declType =  varDecl ? varDecl.getDeclKind() :
+        var declType =  varDecl ? varDecl.getKind() :
                         isStatic ? DeclKind.StaticField :
                             isProperty ? DeclKind.Field : DeclKind.Variable;
 
@@ -241,7 +241,7 @@ module TypeScript {
     }
 
     export function bindFunctionPullSymbol(funcDecl: PullDecl, context: PullSymbolBindingContext) {  
-        var declKind = funcDecl.getDeclKind();
+        var declKind = funcDecl.getKind();
         var declFlags = funcDecl.getDeclFlags();
         var isProperty = false;
         var isPrivate = false;
@@ -363,7 +363,7 @@ module TypeScript {
             return;
         }
 
-        switch (decl.getDeclKind()) {
+        switch (decl.getKind()) {
             case DeclKind.Script:
                 var childDecls = decl.getChildDecls();
                 for (var i = 0; i < childDecls.length; i++) {
