@@ -182,7 +182,6 @@ module TypeScript {
 
             var len = 0;
             
-            // TODO: verify no signature pair with identical parameters
             if (this.signatures && ((len = this.signatures.length) > 0)) {
                 
                 for (var i = 0; i < len; i++) {

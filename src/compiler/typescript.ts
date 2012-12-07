@@ -39,6 +39,7 @@
 ///<reference path='pullSymbolBindingContext.ts' />
 ///<reference path='pullTypeResolution.ts' />
 ///<reference path='pullTypeChecker.ts' />
+///<reference path='pullDeclDiffer.ts' />
 ///<reference path='pullSemanticInfo.ts' />
 ///<reference path='pullDeclCollection.ts' />
 ///<reference path='pullBinder.ts' />
@@ -284,13 +285,17 @@ module TypeScript {
                 var script: Script = this.parser.parse(sourceText, filename, this.units.length, AllowedElements.Global);
                 script.referencedFiles = referencedFiles;
                 script.isResident = keepResident;
-                this.persistentTypeState.setCollectionMode(keepResident ? TypeCheckCollectionMode.Resident : TypeCheckCollectionMode.Transient);
                 var index = this.units.length;
                 this.units[index] = script.locationInfo;
-                var preTime = new Date().getTime();
-                this.typeChecker.collectTypes(script);
-                var postTime = new Date().getTime();
-                this.totalCollectionTime = this.totalCollectionTime + (postTime - preTime);
+                
+                if (!this.settings.usePull) {
+                    this.persistentTypeState.setCollectionMode(keepResident ? TypeCheckCollectionMode.Resident : TypeCheckCollectionMode.Transient);
+                    var preTime = new Date().getTime();
+                    this.typeChecker.collectTypes(script);
+                    var postTime = new Date().getTime();
+                    this.totalCollectionTime = this.totalCollectionTime + (postTime - preTime);
+                }
+                
                 this.scripts.append(script);
                 return script
             });
@@ -468,11 +473,17 @@ module TypeScript {
             var pullSymbolCollectionContext: PullSymbolBindingContext = null;
             var semanticInfo: SemanticInfo = null;
             var i = 0;
+            var skipFirst = !this.settings.useDefaultLib ? 1 : 2;
             
             // create decls
             var createDeclsStartTime = new Date().getTime();
 
             for (; i < this.scripts.members.length; i++) {
+
+                if (this.settings.testPull && i == skipFirst) {
+                    continue;
+                }
+
                 semanticInfo = new SemanticInfo(this.units[i].filename);
 
                 declCollectionContext = new DeclCollectionContext(semanticInfo);
@@ -497,6 +508,10 @@ module TypeScript {
             // start at '1', so as to skip binding for global primitives such as 'any'
             for (i = 1; i < this.semanticInfoChain.units.length; i++) {
 
+                if (this.settings.testPull && i == (skipFirst + 1)) {
+                    continue;
+                }
+
                 topLevelDecls = this.semanticInfoChain.units[i].getTopLevelDecls();
 
                 pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, this.semanticInfoChain.units[i].getPath());
@@ -512,6 +527,11 @@ module TypeScript {
             var typeCheckStartTime = new Date().getTime();
             // typecheck
             for (i = 0; i < this.scripts.members.length; i++) {
+
+                if (this.settings.testPull && i == skipFirst) {
+                    continue;
+                }
+
                 this.pullTypeChecker.setUnit(this.units[i].filename);
                 getAstWalkerFactory().walk(this.scripts.members[i], prePullTypeCheck, null, null, this.pullTypeChecker);
             }
@@ -521,6 +541,30 @@ module TypeScript {
             CompilerDiagnostics.Alert("Binding: " + (bindEndTime - bindStartTime));
             CompilerDiagnostics.Alert("TypeCheck: " + (typeCheckEndTime - typeCheckStartTime));
             CompilerDiagnostics.Alert("Total: " + (typeCheckEndTime - createDeclsStartTime));
+
+            if (this.settings.testPull) {
+                var declDiffer = new PullDeclDiffer();
+                
+                semanticInfo = new SemanticInfo(this.units[skipFirst].filename);
+
+                declCollectionContext = new DeclCollectionContext(semanticInfo);
+
+                declCollectionContext.scriptName = this.units[skipFirst].filename;
+
+                // create decls
+                getAstWalkerFactory().walk(this.scripts.members[skipFirst], preCollectDecls, postCollectDecls, null, declCollectionContext);
+
+                // note that we don't decrement skipFirst, because we need to skip the globals that are added
+                var oldTopLevelDecl = this.semanticInfoChain.units[skipFirst].getTopLevelDecls()[0];
+                var newTopLevelDecl = declCollectionContext.getParent();
+                
+                semanticInfo.addTopLevelDecl(newTopLevelDecl);
+
+                var diffResults: PullDeclDiff[] = [];
+                
+                declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
+            }
+
         }
 
         public updatePullSourceUnit(sourceText: ISourceText, filename: string, keepResident:bool, referencedFiles?: IFileReference[] = []): Script {

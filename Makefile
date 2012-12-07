@@ -63,6 +63,7 @@ COMPILER_SOURCES_BASE= \
   $(CSRC)\pullSymbolBindingContext.ts \
   $(CSRC)\pullTypeResolution.ts \
   $(CSRC)\pullTypeChecker.ts \
+  $(CSRC)\pullDeclDiffer.ts \
   $(CSRC)\pullSemanticInfo.ts \
   $(CSRC)\pullBinder.ts \
   $(CSRC)\pullSymbolGraph.ts \

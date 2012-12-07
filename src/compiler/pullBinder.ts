@@ -25,7 +25,7 @@ module TypeScript {
         // 2. If no other decl exists, create a new symbol and use that one
         
         // PULLTODO: Extends/Implements symbols
-        var modName = moduleDecl.getDeclName();
+        var modName = moduleDecl.getName();
         var moduleSymbol: PullTypeSymbol = <PullTypeSymbol>findSymbolInContext(modName, DeclKind.Module, context, []);
         var createdNewSymbol = false;
 
@@ -65,7 +65,7 @@ module TypeScript {
 
         // PULLTODO: Check for name collisions
         // PULLTODO: Extends/Implements symbols
-        var className = classDecl.getDeclName();
+        var className = classDecl.getName();
         var classSymbol = new PullClassSymbol(className, DeclKind.Class);
 
         var instanceSymbol = new PullClassInstanceSymbol(className, DeclKind.ClassInstanceDecl);
@@ -101,7 +101,7 @@ module TypeScript {
 
         // 1. Test for existing decl - if it exists, use its symbol
         // 2. If no other decl exists, create a new symbol and use that one
-        var interfaceName = interfaceDecl.getDeclName();
+        var interfaceName = interfaceDecl.getName();
         var interfaceSymbol: PullTypeSymbol = <PullTypeSymbol>findSymbolInContext(interfaceName, DeclKind.Interface, context, []);
         var createdNewSymbol = false;
 
@@ -166,7 +166,7 @@ module TypeScript {
                         isStatic ? DeclKind.StaticField :
                             isProperty ? DeclKind.Field : DeclKind.Variable;
 
-        var declName = varDecl.getDeclName();
+        var declName = varDecl.getName();
         var variableSymbol = new PullSymbol(declName, declType);
         var parent = context.getParent();
 
@@ -265,7 +265,7 @@ module TypeScript {
             isExported = true;
         }
 
-        var funcName = funcDecl.getDeclName();
+        var funcName = funcDecl.getName();
 
         // 1. Test for existing decl - if it exists, use its symbol
         // 2. If no other decl exists, create a new symbol and use that one

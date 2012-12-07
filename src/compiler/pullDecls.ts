@@ -89,7 +89,7 @@ module TypeScript {
 
         public getDeclID() { return this.declID; }
 
-        public getDeclName() { return this.declName; }
+        public getName() { return this.declName; }
         public getKind() { return this.declType}
 
         public setSymbol(symbol: PullSymbol) { this.symbol = symbol; }
@@ -118,11 +118,11 @@ module TypeScript {
         public addChildDecl(childDecl: PullDecl, addIfDuplicate?=true) {
             // check if decl exists
             // merge if necessary
-            var declName = childDecl.getDeclName();
+            var declName = childDecl.getName();
 
             if (!addIfDuplicate) { // PULLTODO: Check decl type?
                 for (var i = 0; i < this.childDecls.length; i++) {
-                    if (this.childDecls[i].getDeclName() == declName) {
+                    if (this.childDecls[i].getName() == declName) {
                         return false;
                     }
                 }

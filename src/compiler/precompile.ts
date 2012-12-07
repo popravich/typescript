@@ -98,8 +98,10 @@ module TypeScript {
         public mapSourceFiles = false;
         public generateDeclarationFiles = false;
         public gatherDiagnostics = false;
-        public usePull = false;
 
+        public usePull = false;
+        public testPull = false;
+        
         public useCaseSensitiveFileResolution = false;
 
         public setStyleOptions(str: string) {

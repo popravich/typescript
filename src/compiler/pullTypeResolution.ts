@@ -118,7 +118,7 @@ module TypeScript {
 
             // next, try the enclosing context
             for (var i = 0; i < contextDeclPath.length; i++) {
-                contextSymbolPath[contextSymbolPath.length] = contextDeclPath[i].getDeclName();
+                contextSymbolPath[contextSymbolPath.length] = contextDeclPath[i].getName();
             }
 
             for (var i = 0; i < pathToName.length; i++) {
@@ -220,6 +220,9 @@ module TypeScript {
             }
         }
 
+        // PULLTODO: VERY IMPORTANT
+        // Right now, the assumption is that the declaration's parse tree is still in memory
+        // we need to add a cache-in/cache-out mechanism so that we can break the dependency on in-memory ASTs
         public resolveDeclaredSymbol(symbol: PullSymbol) {
 
             if (symbol.isResolved()) {
