@@ -202,6 +202,7 @@ module TypeScript {
 
         public isType() { return true; }
         public hasBrand() { return false; }
+        public isInstanceType() { return false; }
 
         public getType() { return this; }
 
@@ -276,6 +277,27 @@ module TypeScript {
         public getExtendedTypes() {
             return this.extendedTypes;
         }
+
+        public findMember(name: string) {
+            for (var i = 0; i < this.members.length; i++) {
+                if (this.members[i].getName() == name) {
+                    return this.members[i];
+                }
+            }
+
+            // couldn't find the symbol?  look in the parents
+            var parentMemberSym: PullSymbol; 
+
+            for (var i = 0; i < this.extendedTypes.length; i++) {
+                parentMemberSym = this.extendedTypes[i].findMember(name);
+                
+                if (parentMemberSym) {
+                    return parentMemberSym;
+                }
+            }
+
+            return null;
+        }
     }
 
     export class PullClassSymbol extends PullTypeSymbol {
@@ -299,6 +321,10 @@ module TypeScript {
             this.staticMembers[this.staticMembers.length] = staticMember;
         }
         public getStaticMembers() { return this.staticMembers; }
+    }
+
+    export class PullClassInstanceSymbol extends PullClassSymbol {
+        public isInstanceType() { return true; }
     }
     
     export class PullDefinitionSignatureSymbol extends PullSignatureSymbol {
@@ -349,7 +375,7 @@ module TypeScript {
         }
     }
 
-    export function specializeToArrayType(arrayInterfaceType: PullTypeSymbol, typeToReplace: PullTypeSymbol, typeToSpecializeTo: PullTypeSymbol) {
+    export function specializeToArrayType(arrayInterfaceType: PullTypeSymbol, typeToReplace: PullTypeSymbol, typeToSpecializeTo: PullTypeSymbol, resolver: PullTypeResolver) {
 
         // For the time-being, only specialize interface types
         // this way we can assume only public members and non-static methods
@@ -359,6 +385,9 @@ module TypeScript {
 
         // PULLTODO: Recursive reference bug
         var newArrayType: PullTypeSymbol = new PullTypeSymbol(arrayInterfaceType.getName(), arrayInterfaceType.getKind() | DeclKind.Array);
+        newArrayType.addDeclaration(arrayInterfaceType.getDeclarations()[0]);
+
+        newArrayType.addOutgoingLink(typeToSpecializeTo, SymbolLinkKind.ArrayOf);
 
         var field: PullSymbol = null;
         var newField: PullSymbol = null;
@@ -384,7 +413,10 @@ module TypeScript {
             if (members[i].isType()) { // must be a method
                 method = <PullFunctionSymbol> members[i];
 
+                resolver.resolveDeclaredSymbol(method);
+
                 newMethod = new PullFunctionSymbol(method.getName(), method.getKind());
+                newMethod.addDeclaration(method.getDeclarations()[0]);
 
                 signatures = method.getCallSignatures();
 
@@ -392,6 +424,7 @@ module TypeScript {
                 for (var j = 0; j < signatures.length; j++) {
 
                     newSignature = new PullSignatureSymbol("", DeclKind.CallSignature);
+                    newSignature.addDeclaration(signatures[j].getDeclarations[0]);
 
                     parameters = signatures[j].getParameters();
                     returnType = signatures[j].getReturnType();
@@ -427,7 +460,10 @@ module TypeScript {
             else { // must be a field
                 field = members[i];
 
+                resolver.resolveDeclaredSymbol(field);
+
                 newField = new PullSymbol(field.getName(), field.getKind());
+                newField.addDeclaration(field.getDeclarations()[0]);
                 
                 fieldType = field.getType();
 

@@ -68,12 +68,13 @@ module TypeScript {
         var className = classDecl.getDeclName();
         var classSymbol = new PullClassSymbol(className, DeclKind.Class);
 
-        var instanceSymbol = new PullTypeSymbol(className, DeclKind.ClassInstanceDecl);
+        var instanceSymbol = new PullClassInstanceSymbol(className, DeclKind.ClassInstanceDecl);
 
         classSymbol.setInstanceType(instanceSymbol);
         
         classSymbol.addDeclaration(classDecl);
-        
+        instanceSymbol.addDeclaration(classDecl);
+
         classDecl.setSymbol(classSymbol);
 
         context.semanticInfo.setSymbolForDecl(classDecl, classSymbol);
@@ -203,7 +204,6 @@ module TypeScript {
         var argDecl: BoundDecl = null;
         var parameterSymbol: PullSymbol = null;
         var isProperty = false;
-        var parent = context.getParent();
 
         if (funcDecl.args) {
 
@@ -225,8 +225,10 @@ module TypeScript {
                     parameterSymbol = new PullSymbol(argDecl.id.actualText, DeclKind.Field);
 
                     parameterSymbol.addDeclaration(decl);
+                    decl.setPropertySymbol(parameterSymbol);
 
                     var linkKind = (decl.getDeclFlags() & DeclFlags.Private) ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
+                    var parent = context.getParent(1);
                     if (parent.hasBrand()) {
                         (<PullClassSymbol>parent).getInstanceType().addMember(parameterSymbol, linkKind);
                     }

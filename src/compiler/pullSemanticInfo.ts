@@ -140,7 +140,7 @@ module TypeScript {
             var cacheID = "";
             
             for (var i = 0; i < declPath.length; i++) {
-                cacheID = "#" + declPath[i];
+                cacheID += "#" + declPath[i];
             }
 
             return cacheID;

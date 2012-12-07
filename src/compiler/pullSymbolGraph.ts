@@ -7,6 +7,7 @@ module TypeScript {
     export enum SymbolLinkKind {
         TypedAs,
         ContextuallyTypedAs,
+        ProvidesInferredType,
 
         InstanceType,
         ArrayOf,

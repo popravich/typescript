@@ -55,6 +55,11 @@ module TypeScript {
         private declName: string;
 
         private symbol: PullSymbol = null;
+
+        // use this to store the symbol for a parameter property
+        private propertySymbol: PullSymbol = null;
+
+        private containedExpressionSymbols: PullSymbol[] = [];
         
         private childDecls: PullDecl[] = [];
         private childDeclTypeCache: any = new BlockIntrinsics();
@@ -87,8 +92,11 @@ module TypeScript {
         public getDeclName() { return this.declName; }
         public getKind() { return this.declType}
 
-        public setSymbol(symbolNode: PullSymbol) { this.symbol = symbolNode; }
+        public setSymbol(symbol: PullSymbol) { this.symbol = symbol; }
         public getSymbol() { return this.symbol; }
+
+        public setPropertySymbol(symbol: PullSymbol) { this.propertySymbol = symbol; }
+        public getPropertySymbol() { return this.propertySymbol; }
 
         public getDeclFlags() { return this.declFlags; }
         
@@ -165,5 +173,13 @@ module TypeScript {
         }
 
         public getChildDecls() { return this.childDecls; }
+
+        public addContainedExpressionSymbol(symbol: PullSymbol) {
+            this.containedExpressionSymbols[this.containedExpressionSymbols.length] = symbol;
+        }
+
+        public getContainedExpressionSymbols() {
+            return this.containedExpressionSymbols;
+        }
     }
 }

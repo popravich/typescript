@@ -180,6 +180,7 @@ module TypeScript {
 
         if (hasFlag(varDecl.varFlags, VarFlags.Property)) {
             isProperty = true;
+            declFlags |= DeclFlags.Public;
         }
 
         if (hasFlag(varDecl.varFlags, VarFlags.Static)) {
@@ -335,8 +336,20 @@ module TypeScript {
         else if (ast.nodeType == NodeType.Import) {
             go = preCollectImportDecls(ast, parent, context);
         }
-        else if (ast.nodeType == NodeType.With) {
-            go = false;
+        else if (ast.nodeType == NodeType.If) {
+            go = true;
+        }
+        else if (ast.nodeType == NodeType.For) {
+            go = true;
+        }
+        else if (ast.nodeType == NodeType.ForIn) {
+            go = true;
+        }
+        else if (ast.nodeType == NodeType.While) {
+            go = true;
+        }
+        else if (ast.nodeType == NodeType.DoWhile) {
+            go = true;
         }
         else if (ast.nodeType == NodeType.Module) {
             go = preCollectModuleDecls(ast, parent, context);
