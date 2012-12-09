@@ -230,12 +230,17 @@ module TypeScript {
             }
 
             var thisUnit = this.unitPath;
-            var decl = symbol.getDeclarations()[0];
-            var ast = this.semanticInfoChain.getASTForDecl(decl, decl.getScriptName());
+            var decls = symbol.getDeclarations();
 
-            this.setUnitPath(decl.getScriptName());
-            this.resolveDeclaration(ast);
-            this.setUnitPath(thisUnit);        
+            for (var i = 0; i < decls.length; i++) {
+                var decl = decls[i];
+                var ast = this.semanticInfoChain.getASTForDecl(decl, decl.getScriptName());
+
+                this.setUnitPath(decl.getScriptName());
+                this.resolveDeclaration(ast);
+            }
+            
+            this.setUnitPath(thisUnit);
         }
 
         //
@@ -639,26 +644,18 @@ module TypeScript {
 
             var funcSymbol = <PullFunctionSymbol>funcDecl.getSymbol();
 
-            if (funcSymbol.isResolved()) {
+            var signature: PullSignatureSymbol = funcDecl.getSignatureSymbol();
+
+            if (signature.isResolved()) {
                 return funcSymbol;
             }
 
-            var signatures = funcSymbol.getSignatures();
-            
-            var signature: PullSignatureSymbol = null;
-            var argSymbol: PullSymbol = null;
-            var argDeclAST: BoundDecl = null;
-
-            for (var iSig = 0; iSig < signatures.length; iSig++) {
-
-                signature = signatures[iSig];                    
-
+            if (signature) {
+                
                 // resolve parameter type annotations as necessary
                 if (funcDeclAST.args) {
                     for (var i = 0; i < funcDeclAST.args.members.length; i++) {
-                        argDeclAST = <BoundDecl>funcDeclAST.args.members[i];
-                        
-                        this.resolveVariableDeclaration(argDeclAST)
+                        this.resolveVariableDeclaration(<BoundDecl>funcDeclAST.args.members[i]);
                     }
                 }
 
@@ -688,8 +685,8 @@ module TypeScript {
                     }
                 }
             }
-        
-            funcSymbol.setResolved();
+
+            signature.setResolved();
 
             return funcSymbol;
         }

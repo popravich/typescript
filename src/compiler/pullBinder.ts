@@ -272,7 +272,7 @@ module TypeScript {
 
         var isConstructor: bool = (declFlags & DeclFlags.Constructor) != 0;
         var isIndex: bool = (declFlags & DeclFlags.Index) != 0;
-        var isSignature: bool = (declKind & DeclKind.SomeSignature) != 0;
+        var isSignature: bool = (declFlags & DeclFlags.Signature) != 0;
 
         var functionSymbol: PullFunctionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
 
@@ -330,6 +330,9 @@ module TypeScript {
                         isIndex ? DeclKind.IndexSignature : DeclKind.CallSignature;
 
         var signature = isSignature ? new PullSignatureSymbol("", sigKind) : new PullDefinitionSignatureSymbol("", sigKind);
+        
+        signature.addDeclaration(funcDecl);
+        funcDecl.setSignatureSymbol(signature);
 
         bindParameterSymbols(<FuncDecl>context.semanticInfo.getASTForDecl(funcDecl), context, signature);
 

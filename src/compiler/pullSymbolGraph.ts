@@ -109,22 +109,38 @@ module TypeScript {
         constructor (public start: PullSymbol, public end: PullSymbol, public kind: SymbolLinkKind) { }
     }
 
-    export class PullSymbolGraph {
+    export enum PullSymbolUpdateKind {
+        NoUpdate,
+        MemberRemoved,
+        MemberAdded,
+        SymbolRemoved,
+    }
 
-        public topLevelNodes: LinkList = new LinkList();
+    export class PullSymbolUpdate {
+        public updateKind = PullSymbolUpdateKind.NoUpdate;
+        public symbolUpdated: PullSymbol = null;
+        public oldMember: PullSymbol = null;
+        public newMember: PullSymbol = null;
+    }
 
-        public addTopLevelNode(node: PullSymbol) {
-            this.topLevelNodes.addItem(node);
+    export class PullSymbolGraphUpdater {
+
+        // for now, remove links - later on, see what happens if we leave stuff 'dangling'
+        public RemoveSymbol(symbolToRemove: PullSymbol) {
+            // - remove the symbol from its parent
+            //  - if the parent is null, the symbol is global
+            //  - what if the signature is a function?
+
+            // - remove each of the symbol's outgoing links
+
+            // - for each incoming link, update the symbol pointing in
+
+            // - invalidate everything along the way
         }
 
-        public deleteTopLevelNode(node: PullSymbol) {
-            this.topLevelNodes.remove(tln => tln === node);
+        public AddSymbol(symbolToAdd: PullSymbol, symbolToAddTo: PullTypeSymbol) {
+
         }
 
-        public getTopLevelNodes() { return this.topLevelNodes.find(node => node); }
-
-        public updateTopLevelNodes(map: (item: PullSymbolLink, context: any) => void , context: any) {
-            this.topLevelNodes.update(map, context);
-        }
     }
 }
