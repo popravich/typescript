@@ -656,7 +656,7 @@ module TypeScript {
                 newArrayType.addMember(newField, SymbolLinkKind.PublicProperty);
             }
         }
-
+        newArrayType.addOutgoingLink(arrayInterfaceType, SymbolLinkKind.ArrayType);
         return newArrayType;
     }
 

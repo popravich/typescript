@@ -54,7 +54,7 @@ module TypeScript {
                 foundDecls = oldDecl.findChildDecls(newDeclChildren[i].getName(), newDeclChildren[i].getKind());
 
                 if (!foundDecls.length) {
-                    diffs[diffs.length] = new PullDeclDiff(null, newDeclChildren[i], PullDeclEdit.DeclAdded);
+                    diffs[diffs.length] = new PullDeclDiff(oldDecl, newDeclChildren[i], PullDeclEdit.DeclAdded);
                 }
             }
         }

@@ -8,6 +8,7 @@ module TypeScript {
         TypedAs,
         ContextuallyTypedAs,
         ProvidesInferredType,
+        ArrayType,
 
         InstanceType,
         ArrayOf,
@@ -200,7 +201,7 @@ module TypeScript {
 
             symbolToAdd.updateOutgoingLinks(propagateAdditionToOutgoingLinks, new PullSymbolUpdate(GraphUpdateKind.SymbolAdded, symbolToAdd, this));
 
-            //symbolToAdd.updateIncomingLinks(propagateRemovalToIncomingLinks, new PullSymbolUpdate(GraphUpdateKind.SymbolAdded, symbolToAdd, this));
+            symbolToAdd.updateIncomingLinks(propagateAdditionToIncomingLinks, new PullSymbolUpdate(GraphUpdateKind.SymbolAdded, symbolToAdd, this));
 
         }
 
@@ -429,13 +430,13 @@ module TypeScript {
             // shouldn't change anything...
         }
         else if (link.kind == SymbolLinkKind.PublicProperty) {
-            // do nothing...
+            update.updater.invalidateType(affectedSymbol);
         }
         else if (link.kind == SymbolLinkKind.PrivateProperty) {
             // do nothing...
         }
         else if (link.kind == SymbolLinkKind.StaticProperty) {
-            // do nothing...
+            update.updater.invalidateType(affectedSymbol);
         }
         else if (link.kind == SymbolLinkKind.Aliases) {
             // PULLTODO
@@ -536,6 +537,9 @@ module TypeScript {
             update.updater.invalidateType(affectedSymbol);
         }
         else if (link.kind == SymbolLinkKind.ProvidesInferredType) {
+            update.updater.invalidateType(affectedSymbol);
+        }
+        else if (link.kind == SymbolLinkKind.ArrayType) {
             update.updater.invalidateType(affectedSymbol);
         }
         else if (link.kind == SymbolLinkKind.InstanceType) {

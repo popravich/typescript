@@ -582,6 +582,7 @@ module TypeScript {
                     var graphUpdater = new PullSymbolGraphUpdater();
                     var diff: PullDeclDiff;
                     
+                    var traceStartTime = new Date().getTime();
                     for (var i = 0; i < diffResults.length; i++) {
                         diff = diffResults[i];
 
@@ -589,12 +590,15 @@ module TypeScript {
                             graphUpdater.removeDecl(diff.oldDecl);
                         }
                         else if (diff.kind == PullDeclEdit.DeclAdded) {
-                            graphUpdater.addDecl(diff.newDecl);
+                            //graphUpdater.addDecl(diff.newDecl);
+                            graphUpdater.invalidateType(diff.oldDecl.getSymbol());
                         }
                         else {
                             // PULLTODO: Other kinds of edits
                         }
                     }
+                    var traceEndTime = new Date().getTime();
+                    CompilerDiagnostics.Alert("Trace time: " + (traceEndTime - traceStartTime));
                 }
             }
 
