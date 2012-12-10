@@ -473,7 +473,8 @@ module TypeScript {
             var pullSymbolCollectionContext: PullSymbolBindingContext = null;
             var semanticInfo: SemanticInfo = null;
             var i = 0;
-            var skipFirst = !this.settings.useDefaultLib ? 1 : 2;
+            var skipLib = this.settings.testLibPull ? 1 : 0;
+            var skipFirst = (!this.settings.useDefaultLib ? 1 : 2) - skipLib;
             
             // create decls
             var createDeclsStartTime = new Date().getTime();
@@ -507,10 +508,6 @@ module TypeScript {
 
             // start at '1', so as to skip binding for global primitives such as 'any'
             for (i = 1; i < this.semanticInfoChain.units.length; i++) {
-
-                if (this.settings.testPull && i == (skipFirst + 1)) {
-                    continue;
-                }
 
                 topLevelDecls = this.semanticInfoChain.units[i].getTopLevelDecls();
 

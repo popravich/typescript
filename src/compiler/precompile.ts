@@ -101,6 +101,7 @@ module TypeScript {
 
         public usePull = false;
         public testPull = false;
+        public testLibPull = false;
         
         public useCaseSensitiveFileResolution = false;
 
