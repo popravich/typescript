@@ -81,13 +81,30 @@ module TypeScript {
 
                 if (p(node.value)) {
 
-                    prev = node.prev;
-                    next = node.next;
-                    prev.next = next;
-                    next.prev = prev;
-                    node = prev;
-                }
+                    if (node == this.head) {
 
+                        if (this.last == this.head) {
+                            this.last = null;
+                        }
+
+                        this.head = this.head.next;
+
+                        if (this.head) {
+                            this.head.prev = null;
+                        }
+                    }
+                    else {
+                        prev = node.prev;
+                        next = node.next;
+                        
+                        if (prev) {
+                            prev.next = next;
+                        }
+                        if (next) {
+                            next.prev = prev;
+                        }
+                    }
+                }
                 node = node.next;
             }
         }
@@ -165,6 +182,7 @@ module TypeScript {
             if (symbolToRemove.removeUpdateVersion == this.updateVersion) {
                 return;
             }
+
             symbolToRemove.removeUpdateVersion = this.updateVersion;
 
             symbolToRemove.updateOutgoingLinks(propagateRemovalToOutgoingLinks, new PullSymbolUpdate(GraphUpdateKind.SymbolRemoved, symbolToRemove, this));
@@ -177,19 +195,21 @@ module TypeScript {
             if (symbolToAdd.addUpdateVersion == this.updateVersion) {
                 return;
             }
+
             symbolToAdd.addUpdateVersion = this.updateVersion;
 
             symbolToAdd.updateOutgoingLinks(propagateAdditionToOutgoingLinks, new PullSymbolUpdate(GraphUpdateKind.SymbolAdded, symbolToAdd, this));
 
-            symbolToAdd.updateIncomingLinks(propagateRemovalToIncomingLinks, new PullSymbolUpdate(GraphUpdateKind.SymbolAdded, symbolToAdd, this));
+            //symbolToAdd.updateIncomingLinks(propagateRemovalToIncomingLinks, new PullSymbolUpdate(GraphUpdateKind.SymbolAdded, symbolToAdd, this));
 
         }
 
-        public invalidateType(symbolWhoseTypeChanged) {
+        public invalidateType(symbolWhoseTypeChanged: PullSymbol) {
 
             if (symbolWhoseTypeChanged.typeChangeUpdateVersion == this.updateVersion) {
                 return;
             }
+
             symbolWhoseTypeChanged.typeChangeUpdateVersion = this.updateVersion;
 
             symbolWhoseTypeChanged.unsetType();
@@ -205,8 +225,6 @@ module TypeScript {
         
         var symbolToRemove = update.symbolToUpdate;
         var affectedSymbol = link.end;
-
-        symbolToRemove.removeOutgoingLink(link);
 
         // carry out the update based on the update kind, the affected symbol kind and the relationship
         if (link.kind == SymbolLinkKind.TypedAs) {
@@ -266,6 +284,8 @@ module TypeScript {
         else if (link.kind == SymbolLinkKind.IndexSignature) {
             update.updater.invalidateType(affectedSymbol);
         }
+
+        symbolToRemove.removeOutgoingLink(link);
     }
 
     export function propagateRemovalToIncomingLinks(link: PullSymbolLink, update: PullSymbolUpdate) { 

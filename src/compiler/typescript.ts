@@ -542,6 +542,7 @@ module TypeScript {
             CompilerDiagnostics.Alert("TypeCheck: " + (typeCheckEndTime - typeCheckStartTime));
             CompilerDiagnostics.Alert("Total: " + (typeCheckEndTime - createDeclsStartTime));
 
+            var diffStartTime = new Date().getTime();
             if (this.settings.testPull) {
                 var declDiffer = new PullDeclDiffer();
                 
@@ -563,7 +564,45 @@ module TypeScript {
                 var diffResults: PullDeclDiff[] = [];
                 
                 declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
+
+                if (diffResults.length) {
+                    // replace the old semantic info
+                    this.semanticInfoChain.updateUnit(this.semanticInfoChain.units[skipFirst], semanticInfo);
+
+                    // re-bind
+
+                    topLevelDecls = semanticInfo.getTopLevelDecls();
+
+                    pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, semanticInfo.getPath());
+
+                    for (var i = 0; i < topLevelDecls.length; i++) {
+
+                        bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
+
+                    }
+                    
+                    // propagate changes
+                    var graphUpdater = new PullSymbolGraphUpdater();
+                    var diff: PullDeclDiff;
+                    
+                    for (var i = 0; i < diffResults.length; i++) {
+                        diff = diffResults[i];
+
+                        if (diff.kind == PullDeclEdit.DeclRemoved) {
+                            graphUpdater.removeDecl(diff.oldDecl);
+                        }
+                        else if (diff.kind == PullDeclEdit.DeclAdded) {
+                            graphUpdater.addDecl(diff.newDecl);
+                        }
+                        else {
+                            // PULLTODO: Other kinds of edits
+                        }
+                    }
+                }
             }
+
+            var diffEndTime = new Date().getTime();
+            CompilerDiagnostics.Alert("Diff time: " + (diffEndTime - diffStartTime));
 
         }
 

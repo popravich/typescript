@@ -122,6 +122,16 @@ module TypeScript {
             return null;
         }
 
+        // PULLTODO: compilationUnitPath is only really there for debug purposes
+        public updateUnit(oldUnit: SemanticInfo, newUnit: SemanticInfo) {
+            for (var i = 0; i < this.units.length; i++) {
+                if (this.units[i] == oldUnit) {
+                    this.units[i] = newUnit;
+                    return;
+                }
+            }
+        }
+
         private collectAllTopLevelDecls() {
             var decls: PullDecl[] = [];
             var unitDecls: PullDecl[];

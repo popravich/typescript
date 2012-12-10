@@ -90,8 +90,10 @@ module TypeScript {
         }
 
         public removeOutgoingLink(link: PullSymbolLink) {
-            this.outgoingLinks.remove (p => p === link);
-            link.end.incomingLinks.remove (p => p === link);
+            if (link) {
+                this.outgoingLinks.remove(p => p === link);
+                link.end.incomingLinks.remove(p => p === link);
+            }
         }
 
         public updateOutgoingLinks(map: (item: PullSymbolLink, context: any) => void , context: any) {
@@ -127,7 +129,6 @@ module TypeScript {
         public unsetContainer() {
             if (this.cachedContainerLink) {
                 this.removeOutgoingLink(this.cachedContainerLink);
-                this.cachedContainerLink = null;
             }
             else {
 
@@ -171,7 +172,6 @@ module TypeScript {
         public unsetType() {
             if (this.cachedTypeLink) {
                 this.removeOutgoingLink(this.cachedTypeLink);
-                this.cachedTypeLink = null;
             }
             else {
                 var typeList = this.findOutgoingLinks(link => link.kind == SymbolLinkKind.TypedAs);
@@ -518,7 +518,9 @@ module TypeScript {
         public invalidate() {
             this.staticMembers = [];
 
-            this.instanceType.invalidate();
+            if (this.instanceType) {
+                this.instanceType.invalidate();
+            }
             super.invalidate();
         }
     }
