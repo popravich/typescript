@@ -31,6 +31,11 @@ module TypeScript {
 
         private hasBeenResolved = false;
 
+        public typeChangeUpdateVersion = -1;
+        public addUpdateVersion = -1;
+        public removeUpdateVersion = -1;
+
+
         // public surface area
         public getSymbolID() { return this.pullSymbolID; }
 
@@ -89,8 +94,12 @@ module TypeScript {
             link.end.incomingLinks.remove (p => p === link);
         }
 
-        public updateLinks(map: (item: PullSymbolLink, context: any) => void , context: any) {
+        public updateOutgoingLinks(map: (item: PullSymbolLink, context: any) => void , context: any) {
             this.outgoingLinks.update(map, context);
+        }
+
+        public updateIncomingLinks(map: (item: PullSymbolLink, context: any) => void , context: any) {
+            this.incomingLinks.update(map, context);
         }
 
         public setContainer(containerSymbol: PullTypeSymbol, relationshipKind: SymbolLinkKind) {
@@ -114,10 +123,28 @@ module TypeScript {
 
             return null;
         }
+
+        public unsetContainer() {
+            if (this.cachedContainerLink) {
+                this.removeOutgoingLink(this.cachedContainerLink);
+                this.cachedContainerLink = null;
+            }
+            else {
+
+                // PULLTODO: If we can guarantee that no link will exist without caching, we won't need to search
+                var containerList = this.findOutgoingLinks(link => link.kind == SymbolLinkKind.ContainedBy);
+
+                if (containerList.length) {
+                    this.removeOutgoingLink(containerList[0]);
+                }
+            }
+
+            this.invalidate();
+        }
         
         public setType(typeRef: PullTypeSymbol) {
 
-            // PULLTODO: Remove
+            // PULLTODO: Remove once we're certain that duplicate types can never be set
             if (this.cachedTypeLink) {
                 CompilerDiagnostics.Alert("Type '" + this.name + "' is having its type reset from '" + this.cachedTypeLink.end.getName() + "' to '" + typeRef.getName() + "'");
             }
@@ -139,6 +166,22 @@ module TypeScript {
             }
 
             return null;
+        }
+
+        public unsetType() {
+            if (this.cachedTypeLink) {
+                this.removeOutgoingLink(this.cachedTypeLink);
+                this.cachedTypeLink = null;
+            }
+            else {
+                var typeList = this.findOutgoingLinks(link => link.kind == SymbolLinkKind.TypedAs);
+
+                if (typeList.length) {
+                    this.removeOutgoingLink(typeList[0]);
+                }
+            }
+
+            this.invalidate();
         }
 
         public isTyped() {
@@ -165,7 +208,6 @@ module TypeScript {
             
             this.hasBeenResolved = false;
         }
-
     }
 
     export class PullSignatureSymbol extends PullSymbol {
@@ -240,6 +282,7 @@ module TypeScript {
         public isType() { return true; }
         public hasBrand() { return false; }
         public isInstanceType() { return false; }
+        public isFunction() { return false; }
 
         public getType() { return this; }
 
@@ -258,10 +301,13 @@ module TypeScript {
 
         public removeMember(memberSymbol: PullSymbol) {
             var memberLink: PullSymbolLink;
+            var child: PullSymbol;
 
             for (var i = 0; i < this.memberLinks.length; i++) {
                 if (memberSymbol == this.memberLinks[i].end) {
                     memberLink = this.memberLinks[i];
+                    child = memberLink.end;
+                    child.unsetContainer();
                     this.removeOutgoingLink(memberLink);
                     break;
                 }
@@ -487,6 +533,8 @@ module TypeScript {
 
     export class PullFunctionSymbol extends PullTypeSymbol {
         private definitionSignature: PullDefinitionSignatureSymbol = null;
+
+        public isFunction() { return true; }
 
         public invalidate(sweepForNewValues = false) {
 
