@@ -146,21 +146,21 @@ module TypeScript {
             return decls;
         }
 
-        private getDeclPathCacheID(declPath: string[]) {
+        private getDeclPathCacheID(declPath: string[], declKind: DeclKind) {
             var cacheID = "";
             
             for (var i = 0; i < declPath.length; i++) {
                 cacheID += "#" + declPath[i];
             }
 
-            return cacheID;
+            return cacheID + "#" + declKind.toString();
         }
 
         // a decl path is a list of decls that reference the components of a declaration from the global scope down
         // E.g., string would be "['string']" and "A.B.C" would be "['A','B','C']"
         public findDecls(declPath: string[], declKind: DeclKind): PullDecl[] {
 
-            var cacheID = this.getDeclPathCacheID(declPath);
+            var cacheID = this.getDeclPathCacheID(declPath, declKind);
 
             if (declPath.length) {
                 var cachedDecls = this.declCache[cacheID];
@@ -207,7 +207,7 @@ module TypeScript {
 
         public findSymbol(declPath: string[], declType: DeclKind): PullSymbol {
 
-            var cacheID = this.getDeclPathCacheID(declPath);
+            var cacheID = this.getDeclPathCacheID(declPath, declType);
 
             if (declPath.length) {
 

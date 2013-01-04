@@ -146,9 +146,9 @@ module TypeScript {
         public setType(typeRef: PullTypeSymbol) {
 
             // PULLTODO: Remove once we're certain that duplicate types can never be set
-            if (this.cachedTypeLink) {
-                CompilerDiagnostics.Alert("Type '" + this.name + "' is having its type reset from '" + this.cachedTypeLink.end.getName() + "' to '" + typeRef.getName() + "'");
-            }
+            //if (this.cachedTypeLink) {
+            //    CompilerDiagnostics.Alert("Type '" + this.name + "' is having its type reset from '" + this.cachedTypeLink.end.getName() + "' to '" + typeRef.getName() + "'");
+            //}
 
             var link = this.addOutgoingLink(typeRef, SymbolLinkKind.TypedAs);
             this.cachedTypeLink = link;
@@ -208,6 +208,18 @@ module TypeScript {
             
             this.hasBeenResolved = false;
         }
+
+        public toString() { 
+            var str = this.name;
+
+            var type = this.getType();
+            
+            if (type) {
+                str += ": " + type.getName();
+            }
+
+            return this.name;
+        }
     }
 
     export class PullSignatureSymbol extends PullSymbol {
@@ -266,6 +278,28 @@ module TypeScript {
 
             super.invalidate();
         }
+
+        public toString() {
+            var sigString = "(";
+            var params = this.getParameters();
+
+            for (var i = 0; i < params.length; i++) {
+                sigString += params[i].toString();
+
+                if (i < params.length - 1) {
+                    sigString += ", ";
+                }
+            }
+            sigString += ")";
+
+            var returnType = this.getReturnType();
+
+            if (returnType) {
+                sigString += ": " + returnType.getName();
+            }
+
+            return sigString;
+        }
     }
 
     export class PullTypeSymbol extends PullSymbol {
@@ -279,12 +313,21 @@ module TypeScript {
         private constructSignatureLinks: PullSymbolLink[] = [];
         private indexSignatureLinks: PullSymbolLink[] = [];
 
+        private arrayType: PullTypeSymbol = null;
+
         public isType() { return true; }
         public hasBrand() { return false; }
         public isInstanceType() { return false; }
         public isFunction() { return false; }
 
         public getType() { return this; }
+
+        public getArrayType() { return this.arrayType; }
+        public setArrayType(arrayType: PullTypeSymbol) {
+            this.arrayType = arrayType;
+
+            arrayType.addOutgoingLink(this, SymbolLinkKind.ArrayOf);
+        }
 
         public addMember(memberSymbol: PullSymbol, linkKind: SymbolLinkKind) {
             var link = this.addOutgoingLink(memberSymbol, linkKind);
@@ -329,14 +372,32 @@ module TypeScript {
             this.callSignatureLinks[this.callSignatureLinks.length] = link;
         }
 
+        public addCallSignatures(callSignatures: PullSignatureSymbol[]) {
+            for (var i = 0; i < callSignatures.length; i++) {
+                this.addCallSignature(callSignatures[i]);
+            }
+        }
+
         public addConstructSignature(constructSignature: PullSignatureSymbol) {
             var link = this.addOutgoingLink(constructSignature, SymbolLinkKind.ConstructSignature);
             this.constructSignatureLinks[this.constructSignatureLinks.length] = link;
         }
 
+        public addConstructSignatures(constructSignatures: PullSignatureSymbol[]) {
+            for (var i = 0; i < constructSignatures.length; i++) {
+                this.addConstructSignature(constructSignatures[i]);
+            }
+        }
+
         public addIndexSignature(indexSignature: PullSignatureSymbol) {
             var link = this.addOutgoingLink(indexSignature, SymbolLinkKind.IndexSignature);
             this.indexSignatureLinks[this.indexSignatureLinks.length] = link;
+        }
+
+        public addIndexSignatures(indexSignatures: PullSignatureSymbol[]) {
+            for (var i = 0; i < indexSignatures.length; i++) {
+                this.addIndexSignature(indexSignatures[i]);
+            }
         }
 
         public getCallSignatures(): PullSignatureSymbol[] {
@@ -491,6 +552,37 @@ module TypeScript {
 
             super.invalidate();
         }
+
+        public toString() {
+            var tstring = this.getName() + " { "
+            var members = this.getMembers();
+            var callSigs = this.getCallSignatures();
+            var constructSigs = this.getConstructSignatures();
+            var indexSigs = this.getIndexSignatures();
+
+            for (var i = 0; i < members.length; i++) {
+                tstring += members[i].toString();
+                tstring += "; ";
+            }
+
+            for (i = 0; i < callSigs.length; i++) {
+                tstring += callSigs[i].toString();
+                tstring += "; ";
+            }
+
+            for (i = 0; i < constructSigs.length; i++) {
+                tstring += constructSigs[i].toString();
+                tstring += "; ";
+            }
+
+            for (i = 0; i < indexSigs.length; i++) {
+                tstring += indexSigs[i].toString();
+                tstring += "; ";
+            }
+
+            tstring += " }";
+            return tstring;
+        }
     }
 
     export class PullClassSymbol extends PullTypeSymbol {
@@ -552,6 +644,8 @@ module TypeScript {
                 this.definitionSignature = <PullDefinitionSignatureSymbol>signature;
             }
         }
+
+        public getDefinitionSignature() { return this.definitionSignature; }
     }
 
     // PULLTODO: This should be a part of the resolver class
@@ -559,15 +653,20 @@ module TypeScript {
 
         // For the time-being, only specialize interface types
         // this way we can assume only public members and non-static methods
-        if ((arrayInterfaceType.getKind() & DeclKind.Interface) == 0) {
-            return;
+        if (!arrayInterfaceType || (arrayInterfaceType.getKind() & DeclKind.Interface) == 0) {
+            return null;
+        }
+
+        if (typeToSpecializeTo.getArrayType()) {
+            return typeToSpecializeTo.getArrayType();
         }
 
         // PULLTODO: Recursive reference bug
         var newArrayType: PullTypeSymbol = new PullTypeSymbol(arrayInterfaceType.getName(), arrayInterfaceType.getKind() | DeclKind.Array);
         newArrayType.addDeclaration(arrayInterfaceType.getDeclarations()[0]);
 
-        newArrayType.addOutgoingLink(typeToSpecializeTo, SymbolLinkKind.ArrayOf);
+        typeToSpecializeTo.setArrayType(newArrayType);
+        //newArrayType.addOutgoingLink(typeToSpecializeTo, SymbolLinkKind.ArrayOf);
 
         var field: PullSymbol = null;
         var newField: PullSymbol = null;

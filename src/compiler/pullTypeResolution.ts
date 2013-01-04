@@ -9,7 +9,19 @@ module TypeScript {
     // The resolver associates types with a given AST
     export class PullTypeResolver {
 
-        constructor (private semanticInfoChain: SemanticInfoChain, private unitPath: string) { }
+        private cachedArrayInterfaceType: PullTypeSymbol = null;
+        private cachedNumberInterfaceType: PullTypeSymbol = null;
+        private cachedStringInterfaceType: PullTypeSymbol = null;
+        private cachedBooleanInterfaceType: PullTypeSymbol = null;
+        private cachedObjectInterfaceType: PullTypeSymbol = null;
+
+        constructor (private semanticInfoChain: SemanticInfoChain, private unitPath: string) {
+            this.cachedArrayInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Array", [], DeclKind.Interface);
+            this.cachedNumberInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Number", [], DeclKind.Interface);
+            this.cachedStringInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("String", [], DeclKind.Interface);
+            this.cachedBooleanInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Boolean", [], DeclKind.Interface);
+            this.cachedObjectInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Object", [], DeclKind.Interface);
+        }
 
         public getUnitPath() { return this.unitPath; }
         
@@ -337,7 +349,15 @@ module TypeScript {
             var funcDeclSymbol = new PullFunctionSymbol(funcName, DeclKind.Function);
             var signature = new PullSignatureSymbol(null, sigDeclKind);
 
-            funcDeclSymbol.addSignature(signature);
+            if (isConstructor) {
+                funcDeclSymbol.addConstructSignature(signature);
+            }
+            else if (isIndex) {
+                funcDeclSymbol.addIndexSignature(signature);
+            }
+            else {
+                funcDeclSymbol.addCallSignature(signature);
+            }
 
             // resolve the return type annotation
             if (funcDeclAST.returnTypeAnnotation) {
@@ -353,7 +373,7 @@ module TypeScript {
             // link parameters and resolve their annotations
             if (funcDeclAST.args) {
                 for (var i = 0; i < funcDeclAST.args.members.length; i++) {
-                    this.resolveFunctionTypeSignatureParameters(<ArgDecl>funcDeclAST.args.members[i], signature, enclosingDecl);
+                    this.resolveFunctionTypeSignatureParameter(<ArgDecl>funcDeclAST.args.members[i], signature, null, enclosingDecl);
                 }
             }
 
@@ -362,7 +382,7 @@ module TypeScript {
             return funcDeclSymbol;
         }
 
-        public resolveFunctionTypeSignatureParameters(argDecl: ArgDecl, signatureSymbol: PullSymbol, enclosingDecl: PullDecl) {
+        public resolveFunctionTypeSignatureParameter(argDecl: ArgDecl, signatureSymbol: PullSymbol, contextParam: PullSymbol, enclosingDecl: PullDecl) {
             var paramSymbol = new PullSymbol(argDecl.id.actualText, DeclKind.Argument);
 
             signatureSymbol.addOutgoingLink(paramSymbol, SymbolLinkKind.Parameter);
@@ -375,7 +395,12 @@ module TypeScript {
                 paramSymbol.setType(typeRef);
             } // PULLTODO: default values?
             else {
-                paramSymbol.setType(this.semanticInfoChain.anyTypeSymbol);
+                if (contextParam) {
+                    paramSymbol.setType(contextParam.getType());
+                }
+                else {
+                    paramSymbol.setType(this.semanticInfoChain.anyTypeSymbol);
+                }
             }
 
             paramSymbol.setResolved();
@@ -383,14 +408,15 @@ module TypeScript {
 
         public resolveInterfaceTypeReference(interfaceDeclAST: NamedType, enclosingDecl: PullDecl): PullTypeSymbol {
             var interfaceSymbol = new PullTypeSymbol("", DeclKind.Interface);
-            var memberSymbol: PullSymbol = null;
-            var varDecl: VarDecl = null;
-            var funcDecl: FuncDecl = null;
 
             if (interfaceDeclAST.members) {
 
                 // PULLTODO: Why are the members in a TypeDecl an AST and not an ASTList?
+                var memberSymbol: PullSymbol = null;
+                var varDecl: VarDecl = null;
+                var funcDecl: FuncDecl = null;
                 var typeMembers = <ASTList> interfaceDeclAST.members;
+                var methodSymbol: PullFunctionSymbol = null;
 
                 for (var i = 0; i < typeMembers.members.length; i++) {
 
@@ -400,8 +426,21 @@ module TypeScript {
                         interfaceSymbol.addMember(memberSymbol, SymbolLinkKind.PublicProperty);
                     }
                     else if (typeMembers.members[i].nodeType == NodeType.FuncDecl) {
-                        memberSymbol = this.resolveFunctionTypeSignature(<FuncDecl>typeMembers.members[i], enclosingDecl);
-                        interfaceSymbol.addMember(memberSymbol, SymbolLinkKind.PublicProperty);
+                        methodSymbol = <PullFunctionSymbol>this.resolveFunctionTypeSignature(<FuncDecl>typeMembers.members[i], enclosingDecl);
+
+                        // check to see if it's a "special" function
+                        if (methodSymbol.getName() == "_construct") {
+                            interfaceSymbol.addConstructSignatures(methodSymbol.getConstructSignatures());
+                        }
+                        else if (methodSymbol.getName() == "_call") {
+                            interfaceSymbol.addCallSignatures(methodSymbol.getCallSignatures());
+                        }
+                        else if (methodSymbol.getName() == "__item") {
+                            interfaceSymbol.addIndexSignatures(methodSymbol.getIndexSignatures());
+                        }
+                        else {
+                            interfaceSymbol.addMember(methodSymbol, SymbolLinkKind.PublicProperty);
+                        }
                     }
                 }
             }
@@ -486,24 +525,22 @@ module TypeScript {
             // PULLTODO: Arity > 1
             // PULLTODO: Lots to optimize here
             if (typeRef.arrayCount) {
-                var arraySymbol: PullTypeSymbol = null;
-                var arrayLinks = typeDeclSymbol.findIncomingLinks((psl: PullSymbolLink) => psl.kind == SymbolLinkKind.ArrayOf);
-
-                // first, look to see if there's already an array symbol for this type
-                if (arrayLinks.length) {
-                    if (arrayLinks.length > 1) {
-                        CompilerDiagnostics.Alert("For some reason, there's more than one array link for type '" + typeDeclSymbol.getName() + "'");
-                    }
-                    arraySymbol = <PullTypeSymbol>arrayLinks[0].start;
-                }
+                var arraySymbol: PullTypeSymbol = typeDeclSymbol.getArrayType();
 
                 // otherwise, create a new array symbol
-                else {                    
+                if (!arraySymbol) {                    
                     // for each member in the array interface symbol, substitute in the the typeDecl symbol for "_element"
                     //var arrayInterfaceSymbol = <PullTypeSymbol>this.findSymbolForPath(["Array"], enclosingDecl, DeclKind.Interface);
-                    var arrayInterfaceSymbol = <PullTypeSymbol>this.getSymbolFromDeclPath("Array", this.getPathToDecl(enclosingDecl), DeclKind.Interface);
+                    
+                    if (!this.cachedArrayInterfaceType) {
+                        // PULLTODO: We shouldn't need to keep searching out 'Array'
+                        this.cachedArrayInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Array", this.getPathToDecl(enclosingDecl), DeclKind.Interface);
+                    }
+                    arraySymbol = specializeToArrayType(this.cachedArrayInterfaceType, this.semanticInfoChain.elementTypeSymbol, typeDeclSymbol, this);
 
-                    arraySymbol = specializeToArrayType(arrayInterfaceSymbol, this.semanticInfoChain.elementTypeSymbol, typeDeclSymbol, this);
+                    if (!arraySymbol) {
+                        arraySymbol = this.semanticInfoChain.anyTypeSymbol;
+                    }
                 }
             
                 typeDeclSymbol = arraySymbol;
@@ -684,9 +721,9 @@ module TypeScript {
                         this.resolveFunctionBodyReturnTypes(funcDeclAST, signature, funcDecl);
                     }
                 }
+                
+                signature.setResolved();
             }
-
-            signature.setResolved();
 
             return funcSymbol;
         }
@@ -705,8 +742,20 @@ module TypeScript {
         // PULLTODORESOLUTION: if statements
         // PULLTODORESOLUTION: try/catch
         // PULLTODORESOLUTION: debugger statement
+        // PULLTODORESOLUTION: Object literals
+        // PULLTODORESOLUTION: Type Assertions
+        // PULLTODORESOLUTION: Unary Expressions
+        // PULLTODORESOLUTION: Binary expressions
+        // PULLTODORESOLUTION: Call expressions
+        // PULLTODORESOLUTION: Conditional expressions        
+        // PULLTODORESOLUTION: Throw
 
         public resolveExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl):PullSymbol {
+            //var type = this.getTypeSymbolForAST(expressionAST);
+            
+            //if (expr) {
+            //    return type;
+            //}
 
             switch (expressionAST.nodeType) {
                 case NodeType.Name:
@@ -715,10 +764,26 @@ module TypeScript {
                     return this.resolveDottedNameExpression(<BinaryExpression>expressionAST, enclosingDecl);
                 case NodeType.FuncDecl:
                     return this.resolveFunctionExpression(<FuncDecl>expressionAST, assigningAST, enclosingDecl);
+
+                case NodeType.ObjectLit:
+                    return this.resolveObjectLiteralExpression(expressionAST, assigningAST, enclosingDecl);
+
+                case NodeType.ArrayLit:
+                    return this.resolveArrayLiteralExpression(expressionAST, assigningAST, enclosingDecl);
+
                 case NodeType.This:
                     return this.resolveThisExpression(expressionAST, enclosingDecl);
                 case NodeType.Super:
                     return this.resolveSuperExpression(expressionAST, enclosingDecl);
+
+                case NodeType.Call:
+                    return this.resolveCallExpression(expressionAST, assigningAST, enclosingDecl);
+
+                case NodeType.New:
+                    return this.resolveNewExpression(expressionAST, assigningAST, enclosingDecl);
+
+                case NodeType.TypeAssertion:
+                    return this.resolveTypeAssertionExpression(expressionAST, assigningAST, enclosingDecl);
 
                 // primitives
                 case NodeType.NumberLit:
@@ -732,6 +797,62 @@ module TypeScript {
                     return this.semanticInfoChain.boolTypeSymbol;
                 case NodeType.Void:
                     return this.semanticInfoChain.voidTypeSymbol;
+
+                // boolean operations
+                case NodeType.Not:
+                case NodeType.LogNot:
+                case NodeType.Ne:
+                case NodeType.Eq:
+                case NodeType.Eqv:
+                case NodeType.NEqv:
+                case NodeType.Lt:
+                case NodeType.Le:
+                case NodeType.Ge:
+                case NodeType.Gt:
+                    return this.semanticInfoChain.boolTypeSymbol;
+
+                case NodeType.Add:
+                case NodeType.Sub:
+                case NodeType.Mul:
+                case NodeType.Div:
+                case NodeType.Mod:
+                case NodeType.Or:
+                case NodeType.And:
+                case NodeType.AsgAdd:
+                case NodeType.AsgSub:
+                case NodeType.AsgMul:
+                case NodeType.AsgDiv:
+                case NodeType.AsgMod:
+                case NodeType.AsgOr:
+                case NodeType.AsgAnd:
+                    return this.resolveArithmeticExpression(expressionAST, assigningAST, enclosingDecl);
+
+                case NodeType.Pos:
+                case NodeType.Neg:
+                case NodeType.IncPost:
+                case NodeType.IncPre:
+                case NodeType.DecPost:
+                case NodeType.DecPre:
+                    return this.semanticInfoChain.numberTypeSymbol;
+
+                case NodeType.Lsh:
+                case NodeType.Rsh:
+                case NodeType.Rs2:
+                case NodeType.AsgLsh:
+                case NodeType.AsgRsh:
+                case NodeType.AsgRs2:
+                    return this.semanticInfoChain.numberTypeSymbol;
+
+                case NodeType.Index:
+                    return this.resolveIndexExpression(expressionAST, assigningAST, enclosingDecl);
+
+                case NodeType.LogOr:
+                    return this.resolveLogicalOrExpression(expressionAST, assigningAST, enclosingDecl);
+                case NodeType.LogAnd:
+                    return this.resolveLogicalAndExpression(expressionAST, assigningAST, enclosingDecl);
+
+                case NodeType.Typeof:
+                    return this.semanticInfoChain.stringTypeSymbol;
             }
 
             return this.semanticInfoChain.anyTypeSymbol;
@@ -761,6 +882,14 @@ module TypeScript {
                 this.resolveDeclaredSymbol(nameSymbol);
             }
 
+            if (nameSymbol.isType() && (<PullTypeSymbol>nameSymbol).hasBrand()) {
+                var instanceType = (<PullClassSymbol>nameSymbol).getInstanceType();
+
+                if (!instanceType.isResolved()) {
+                    this.resolveDeclaredSymbol(instanceType);
+                }
+            }
+
             //enclosingDecl.addContainedExpressionSymbol(nameSymbol);
 
             return nameSymbol;
@@ -778,7 +907,17 @@ module TypeScript {
                 return lhsType;
             }
 
-            if (!lhsType.isResolved) {
+            if (lhsType == this.semanticInfoChain.numberTypeSymbol && this.cachedNumberInterfaceType) {
+                lhsType = this.cachedNumberInterfaceType;
+            }
+            else if (lhsType == this.semanticInfoChain.stringTypeSymbol && this.cachedStringInterfaceType) {
+                lhsType = this.cachedStringInterfaceType;
+            }
+            else if (lhsType == this.semanticInfoChain.boolTypeSymbol && this.cachedBooleanInterfaceType) {
+                lhsType = this.cachedBooleanInterfaceType;
+            }
+
+            if (!lhsType.isResolved()) {
                 this.resolveDeclaredSymbol(lhsType);
             }
 
@@ -804,6 +943,8 @@ module TypeScript {
             // otherwise, just process it as a normal function declaration
             
             var shouldContextuallyType = assigningAST != null && ((<BoundDecl>assigningAST).typeExpr != null);
+            var assigningFunctionTypeSymbol: PullFunctionSymbol = null;
+            var assigningFunctionSignature: PullSignatureSymbol = null;
 
             if (funcDeclAST.returnTypeAnnotation) {
                 shouldContextuallyType = false;
@@ -820,10 +961,14 @@ module TypeScript {
             }
 
             if (shouldContextuallyType) {
-                var functionTypeSymbol = this.getDeclForAST(assigningAST).getSymbol().getType();
-                return functionTypeSymbol;
+
+                // PULLTODO: Check for parenthesization 
+
+                assigningFunctionTypeSymbol = <PullFunctionSymbol>this.getDeclForAST(assigningAST).getSymbol().getType();
+                assigningFunctionSignature = assigningFunctionTypeSymbol.getCallSignatures()[0];
             }
 
+            // PULLTODO: Anonymous function names should be "" and not null
             var funcName = funcDeclAST.name ? funcDeclAST.name.text : funcDeclAST.hint;
 
             var isConstructor = hasFlag(funcDeclAST.fncFlags,FncFlags.ConstructMember);
@@ -832,6 +977,8 @@ module TypeScript {
                             isIndex ? DeclKind.IndexSignature : DeclKind.CallSignature;
             
             var funcDeclSymbol = new PullFunctionSymbol(funcName, DeclKind.Function);
+
+            // PULLTODO: "" or null for these names?
             var signature = new PullSignatureSymbol(null, sigDeclKind);
 
             funcDeclSymbol.addSignature(signature);
@@ -844,36 +991,68 @@ module TypeScript {
                 signature.setReturnType(returnTypeSymbol);
             }
             else {
-                signature.setReturnType(this.semanticInfoChain.anyTypeSymbol);
+                if (assigningFunctionSignature) {
+                    var returnType = assigningFunctionSignature.getReturnType();
+
+                    if (returnType) {
+                        signature.setReturnType(returnType);
+                    }
+                    else {
+                        signature.setReturnType(this.semanticInfoChain.anyTypeSymbol);
+                    }
+                }
+                else {
+                    // create a new function decl
+                    var semanticInfo = this.semanticInfoChain.getUnit(this.unitPath);
+                    var declCollectionContext = new DeclCollectionContext(semanticInfo);
+
+                    declCollectionContext.scriptName = this.unitPath;
+
+                    getAstWalkerFactory().walk(funcDeclAST, preCollectDecls, postCollectDecls, null, declCollectionContext);
+
+                    var functionDecl = this.getDeclForAST(funcDeclAST);
+
+                    // bind the symbols
+
+                    var pullSymbolBindingContext = new PullSymbolBindingContext(this.semanticInfoChain, this.unitPath);
+                    bindDeclSymbol(functionDecl, pullSymbolBindingContext);
+
+                    this.resolveFunctionBodyReturnTypes(funcDeclAST, signature, functionDecl);
+                    //signature.setReturnType(this.semanticInfoChain.anyTypeSymbol);
+                }
             }
 
             // link parameters and resolve their annotations
             if (funcDeclAST.args) {
+
+                var contextParams: PullSymbol[] = [];
+                var contextParam: PullSymbol = null;
+
+                if (assigningFunctionSignature) {
+                    contextParams = assigningFunctionSignature.getParameters();
+                }
+
                 for (var i = 0; i < funcDeclAST.args.members.length; i++) {
-                    this.resolveFunctionTypeSignatureParameters(<ArgDecl>funcDeclAST.args.members[i], signature, enclosingDecl);
+
+                    if (i < contextParams.length) {
+                        contextParam = contextParams[i];
+                    }
+
+                    this.resolveFunctionTypeSignatureParameter(<ArgDecl>funcDeclAST.args.members[i], signature, contextParam, enclosingDecl);
                 }
             }
 
-            // create a new function decl
-            var semanticInfo = this.semanticInfoChain.getUnit(this.unitPath);
-            var declCollectionContext = new DeclCollectionContext(semanticInfo);
-
-            declCollectionContext.scriptName = this.unitPath;
-
-            getAstWalkerFactory().walk(funcDeclAST, preCollectDecls, postCollectDecls, null, declCollectionContext);
-
-            var functionDecl = this.getDeclForAST(funcDeclAST);
-
-            // bind the symbols
-
-            var pullSymbolBindingContext = new PullSymbolBindingContext(this.semanticInfoChain, this.unitPath);
-            bindDeclSymbol(functionDecl, pullSymbolBindingContext);
-
-            this.resolveFunctionBodyReturnTypes(funcDeclAST, signature, functionDecl);
+            // set contextual type link
+            if (assigningFunctionTypeSymbol) {
+                funcDeclSymbol.addOutgoingLink(assigningFunctionTypeSymbol, SymbolLinkKind.ContextuallyTypedAs);
+            }
 
             funcDeclSymbol.setResolved();
 
-            enclosingDecl.addContainedExpressionSymbol(funcDeclSymbol);
+            // PULLTODO: REVIEW: Should this be placed in the file decl instead?
+            if (enclosingDecl) {
+                enclosingDecl.addContainedExpressionSymbol(funcDeclSymbol);
+            }
 
             return funcDeclSymbol;
         }
@@ -886,33 +1065,314 @@ module TypeScript {
             return this.semanticInfoChain.anyTypeSymbol;
         }
 
-              
-        // PULLTODORESOLUTION: Dotted identifiers
-        // PULLTODORESOLUTION: Object literals
-        // PULLTODORESOLUTION: Type Assertions
-        // PULLTODORESOLUTION: Unary Expressions
-        // PULLTODORESOLUTION: Binary expressions
-        // PULLTODORESOLUTION: Call expressions
-        // PULLTODORESOLUTION: Conditional expressions
-        // PULLTODORESOLUTION: Literals
-        // PULLTODORESOLUTION: Throw
+        // if there's no type annotation on the assigning AST, we need to create a type from each binary expression
+        // in the object literal
+        public resolveObjectLiteralExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+
+            // walk the members of the object literal,
+            // create fields for each based on the value assigned in
+            var objectLitAST = <UnaryExpression>expressionAST;
+            var typeSymbol = new PullTypeSymbol("", DeclKind.Interface);
+            var memberDecls = <ASTList>objectLitAST.operand;
+
+            if (memberDecls) {
+                var binex:BinaryExpression;
+                var id:AST;
+                var text: string;
+                var idText: string;
+                var memberSymbol: PullSymbol;
+                var memberExprType: PullSymbol;
+
+                for (var i = 0, len = memberDecls.members.length; i < len; i++) {
+                    binex = <BinaryExpression>memberDecls.members[i];
+
+                    id = binex.operand1;
+
+                    if (id.nodeType == NodeType.Name) {
+                        text = (<Identifier>id).text;
+                    }
+                    else if (id.nodeType == NodeType.QString) {
+                        idText = (<StringLiteral>id).text;
+                        text = idText.substring(1, idText.length - 1);
+                    }
+                    else {
+                        return this.semanticInfoChain.anyTypeSymbol;
+                    }
+
+                    memberSymbol = new PullSymbol(text, DeclKind.Field);
+
+                    memberExprType = this.resolveExpression(binex.operand2, binex.operand1, enclosingDecl);
+                    
+                    memberSymbol.setType(memberExprType.getType());
+                }
+            }
+
+            return typeSymbol;
+        }
+
+        public resolveArrayLiteralExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            var typeDeclSymbol = this.semanticInfoChain.anyTypeSymbol;
+
+            // PULLTODO: This info should be cached...
+            var arraySymbol = typeDeclSymbol.getArrayType();
+         
+            // ...But in case we haven't...
+            if (!arraySymbol) {                    
+                // PULLTODO: We shouldn't need to keep searching out 'Array'
+                if (!this.cachedArrayInterfaceType) {
+                    this.cachedArrayInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Array", this.getPathToDecl(enclosingDecl), DeclKind.Interface);
+                }
+
+                arraySymbol = specializeToArrayType(this.cachedArrayInterfaceType, this.semanticInfoChain.elementTypeSymbol, typeDeclSymbol, this);
+
+                if (!arraySymbol) {
+                    arraySymbol = this.semanticInfoChain.anyTypeSymbol;
+                }
+            }
+            
+            return arraySymbol;
+        }
+
+        // PULLTODO
+        public resolveIndexExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            return this.semanticInfoChain.anyTypeSymbol;
+        }
+
+        public resolveBitwiseOperator(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+
+            var binex = <BinaryExpression>expressionAST;
+
+            var leftType = <PullTypeSymbol>this.resolveExpression(binex.operand1, assigningAST, enclosingDecl);
+            var rightType = <PullTypeSymbol>this.resolveExpression(binex.operand2, assigningAST, enclosingDecl);
+
+            if (this.sourceIsSubtypeOfTarget(leftType, this.semanticInfoChain.numberTypeSymbol) &&
+                this.sourceIsSubtypeOfTarget(rightType, this.semanticInfoChain.numberTypeSymbol)) {
+                
+                return this.semanticInfoChain.numberTypeSymbol;
+            }
+            else if ((leftType == this.semanticInfoChain.boolTypeSymbol) &&
+                     (rightType == this.semanticInfoChain.boolTypeSymbol)) {
+                
+                return this.semanticInfoChain.boolTypeSymbol;
+            }
+            else if (leftType == this.semanticInfoChain.anyTypeSymbol) {
+                if ((rightType == this.semanticInfoChain.anyTypeSymbol) ||
+                    (rightType == this.semanticInfoChain.numberTypeSymbol) ||
+                    (rightType == this.semanticInfoChain.boolTypeSymbol)) {
+
+                    return this.semanticInfoChain.anyTypeSymbol;
+                }
+            }
+            else if (rightType == this.semanticInfoChain.anyTypeSymbol) {
+                if ((leftType == this.semanticInfoChain.numberTypeSymbol) ||
+                    (leftType == this.semanticInfoChain.boolTypeSymbol)) {
+
+                    return this.semanticInfoChain.anyTypeSymbol;
+                }
+            }
+
+            return this.semanticInfoChain.anyTypeSymbol;
+        }
+
+        public resolveArithmeticExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            var binex = <BinaryExpression>expressionAST;
+
+            var leftType = <PullTypeSymbol>this.resolveExpression(binex.operand1, assigningAST, enclosingDecl);
+            var rightType = <PullTypeSymbol>this.resolveExpression(binex.operand2, assigningAST, enclosingDecl);
+            
+            // PULLTODO: Eh?
+            if (this.isNullOrUndefinedType(leftType)) {
+                leftType = rightType;
+            }
+            if (this.isNullOrUndefinedType(rightType)) {
+                rightType = leftType;
+            }
+
+            leftType = this.widenType(leftType);
+            rightType = this.widenType(rightType);
+
+            if (expressionAST.nodeType == NodeType.Add || expressionAST.nodeType == NodeType.AsgAdd) {
+                if (leftType == this.semanticInfoChain.stringTypeSymbol || rightType == this.semanticInfoChain.stringTypeSymbol) {
+                    return this.semanticInfoChain.stringTypeSymbol;
+                }
+                else if (leftType == this.semanticInfoChain.numberTypeSymbol && rightType == this.semanticInfoChain.numberTypeSymbol) {
+                    return this.semanticInfoChain.numberTypeSymbol;
+                }
+                else if (this.sourceIsSubtypeOfTarget(leftType, this.semanticInfoChain.numberTypeSymbol) && this.sourceIsSubtypeOfTarget(rightType, this.semanticInfoChain.numberTypeSymbol)) {
+                    return this.semanticInfoChain.numberTypeSymbol;
+                }
+                else {
+                    // could be an error
+                    return this.semanticInfoChain.anyTypeSymbol;
+                }
+            }
+            else {
+                if (leftType == this.semanticInfoChain.numberTypeSymbol && rightType == this.semanticInfoChain.numberTypeSymbol) {
+                    return this.semanticInfoChain.numberTypeSymbol;
+                }
+                else if (this.sourceIsSubtypeOfTarget(leftType, this.semanticInfoChain.numberTypeSymbol) && this.sourceIsSubtypeOfTarget(rightType, this.semanticInfoChain.numberTypeSymbol)) {
+                    return this.semanticInfoChain.numberTypeSymbol;
+                }
+                else if (leftType == this.semanticInfoChain.anyTypeSymbol || rightType == this.semanticInfoChain.anyTypeSymbol) {
+                    return this.semanticInfoChain.numberTypeSymbol;
+                }
+                else {
+                    // error
+                    return this.semanticInfoChain.anyTypeSymbol;
+                }
+            }
+        }
+
+        public resolveLogicalOrExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            var binex = <BinaryExpression>expressionAST;
+
+            var leftType = <PullTypeSymbol>this.resolveExpression(binex.operand1, assigningAST, enclosingDecl);
+            var rightType = <PullTypeSymbol>this.resolveExpression(binex.operand2, assigningAST, enclosingDecl);
+            
+            if (leftType == this.semanticInfoChain.anyTypeSymbol || rightType == this.semanticInfoChain.anyTypeSymbol) {
+                return this.semanticInfoChain.anyTypeSymbol;
+            }
+            else if (leftType == this.semanticInfoChain.boolTypeSymbol) {
+                if (rightType == this.semanticInfoChain.boolTypeSymbol) {
+                    return this.semanticInfoChain.boolTypeSymbol;
+                }
+                else {
+                    return this.semanticInfoChain.anyTypeSymbol;
+                }
+            }
+            else if (leftType == this.semanticInfoChain.numberTypeSymbol) {
+                if (rightType == this.semanticInfoChain.numberTypeSymbol) {
+                    return this.semanticInfoChain.numberTypeSymbol;
+                }
+                else {
+                    return this.semanticInfoChain.anyTypeSymbol
+                }
+            }
+            else if (leftType == this.semanticInfoChain.stringTypeSymbol) {
+                if (rightType == this.semanticInfoChain.stringTypeSymbol) {
+                    return this.semanticInfoChain.stringTypeSymbol;
+                }
+                else {
+                    return this.semanticInfoChain.anyTypeSymbol;
+                }
+            }
+            else if (this.sourceIsSubtypeOfTarget(leftType, rightType)) {
+                return rightType;
+            }
+            else if (this.sourceIsSubtypeOfTarget(rightType, leftType)) {
+                return leftType;
+            }
+
+            return this.semanticInfoChain.anyTypeSymbol;
+        }
+
+        public resolveLogicalAndExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            var binex = <BinaryExpression>expressionAST;
+
+            var leftType = <PullTypeSymbol>this.resolveExpression(binex.operand1, assigningAST, enclosingDecl);
+            var rightType = <PullTypeSymbol>this.resolveExpression(binex.operand2, assigningAST, enclosingDecl);
+            
+            return rightType;
+        }
+
+        public resolveCallExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            var callEx = <CallExpression>expressionAST;
+
+            // resolve the target
+            var targetSymbol = this.resolveExpression(callEx.target, assigningAST, enclosingDecl).getType();
+
+            if (targetSymbol == this.semanticInfoChain.anyTypeSymbol) {
+                return targetSymbol;
+            }
+
+            // the target should be a function
+            //if (!targetSymbol.isType()) {
+            //    CompilerDiagnostics.Alert("Attempting to call a non-function symbol");
+            //    return this.semanticInfoChain.anyTypeSymbol;
+            //}
+
+            var signatures = (<PullFunctionSymbol>targetSymbol).getCallSignatures();
+
+            if (!signatures.length) {
+                CompilerDiagnostics.Alert("Attempting to call on a type with no call signatures");
+                return this.semanticInfoChain.anyTypeSymbol;
+            }
+
+            // now grab the signature - the first one, for now, and return the return type
+            // PULLTODO: Overload resolution
+            var signature = signatures[0];
+            var returnType = signature.getReturnType();
+
+            if (returnType.hasBrand()) {
+                return (<PullClassSymbol>returnType).getInstanceType();
+            }
+            else {
+                return returnType;
+            }
+        }
+
+        public resolveNewExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            var callEx = <CallExpression>expressionAST;
+
+            // resolve the target
+            var targetSymbol = this.resolveExpression(callEx.target, assigningAST, enclosingDecl);
+
+            var targetTypeSymbol = targetSymbol.isType() ? <PullTypeSymbol>targetSymbol : targetSymbol.getType();
+
+            if (targetTypeSymbol == this.semanticInfoChain.anyTypeSymbol) {
+                return this.semanticInfoChain.anyTypeSymbol;
+            }
+
+            if (targetTypeSymbol.hasBrand()) {
+                return (<PullClassSymbol>targetTypeSymbol).getInstanceType();
+            }
+
+            var constructSignatures = targetTypeSymbol.getConstructSignatures();
+
+            // PULLTODO: Overload resolution
+            if (constructSignatures.length) {
+                return constructSignatures[0].getReturnType();
+            }
+            
+            CompilerDiagnostics.Alert("Invalid 'new' expression");
+
+            return this.semanticInfoChain.anyTypeSymbol;
+
+        }
+
+        public resolveTypeAssertionExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+            var assertionExpression = <UnaryExpression>expressionAST;
+            var typeReference = this.resolveTypeReference(<TypeReference>assertionExpression.castTerm, enclosingDecl);
+
+            if (typeReference.hasBrand()) {
+                return (<PullClassSymbol>typeReference).getInstanceType();
+            }
+            else {
+                return typeReference;
+            }
+        }
         
+        // type relationships
+
         public findBestCommonType(typeSymbols: PullSymbol[]): PullTypeSymbol {
             return this.semanticInfoChain.anyTypeSymbol;
         }
+
+        public widenType(type: PullTypeSymbol): PullTypeSymbol {
+            return type;
+        }
+
+        public isNullOrUndefinedType(type: PullTypeSymbol) {
+            return  type == this.semanticInfoChain.nullTypeSymbol ||
+                    type == this.semanticInfoChain.undefinedTypeSymbol;
+        }
+
+        public sourceIsSubtypeOfTarget(sourceType: PullTypeSymbol, targetType: PullTypeSymbol) {
+            return false;
+        }
+
+        public sourceIsAssignableToTarget(sourceType: PullTypeSymbol, targetType: PullTypeSymbol) {
+            return false;
+        }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

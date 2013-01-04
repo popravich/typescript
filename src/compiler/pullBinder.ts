@@ -179,7 +179,7 @@ module TypeScript {
             if (parent.hasBrand()) {
                 var classTypeSymbol = <PullClassSymbol>parent;
                 if (isStatic) {
-                    classTypeSymbol.addStaticMember(variableSymbol);
+                    classTypeSymbol.addMember(variableSymbol, linkKind);
                 }
                 else {
                     classTypeSymbol.getInstanceType().addMember(variableSymbol, linkKind);
@@ -220,23 +220,24 @@ module TypeScript {
 
                 signatureSymbol.addParameter(parameterSymbol);
 
+                // PULLTODO: REVIEW: Shouldn't need this, since parameters are created off of decl collection
                 // add a member to the parent type
-                if (decl && isProperty) {
-                    parameterSymbol = new PullSymbol(argDecl.id.actualText, DeclKind.Field);
+                //if (decl && isProperty) {
+                //    parameterSymbol = new PullSymbol(argDecl.id.actualText, DeclKind.Field);
 
-                    parameterSymbol.addDeclaration(decl);
-                    decl.setPropertySymbol(parameterSymbol);
+                //    parameterSymbol.addDeclaration(decl);
+                //    decl.setPropertySymbol(parameterSymbol);
 
-                    var linkKind = (decl.getDeclFlags() & DeclFlags.Private) ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
-                    var parent = context.getParent(1);
-                    if (parent.hasBrand()) {
-                        (<PullClassSymbol>parent).getInstanceType().addMember(parameterSymbol, linkKind);
-                    }
-                    else {
-                        // PULLTODO: I don't think we ever even take this branch...
-                        parent.addMember(parameterSymbol, linkKind);
-                    }
-                }
+                //    var linkKind = (decl.getDeclFlags() & DeclFlags.Private) ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
+                //    var parent = context.getParent(1);
+                //    if (parent.hasBrand()) {
+                //        (<PullClassSymbol>parent).getInstanceType().addMember(parameterSymbol, linkKind);
+                //    }
+                //    else {
+                //        // PULLTODO: I don't think we ever even take this branch...
+                //        parent.addMember(parameterSymbol, linkKind);
+                //    }
+                //}
             }
         }
         
@@ -304,7 +305,7 @@ module TypeScript {
 
             if (parent.hasBrand()) {
                 if (isStatic) {
-                    (<PullClassSymbol>parent).addStaticMember(functionSymbol);
+                    (<PullClassSymbol>parent).addMember(functionSymbol, linkKind);
                 }
                 else {
                     (<PullClassSymbol>parent).getInstanceType().addMember(functionSymbol, linkKind);

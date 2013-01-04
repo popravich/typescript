@@ -447,6 +447,14 @@ class BatchCompiler {
             }
         });
 
+        opts.option('testpullwithfile', {
+            usage: 'use "pull model" for typecheck operations, diff the first two files and re-typecheck',
+            experimental: true,
+            set: (str) => {
+                this.compilationSettings.setPullTestFile(str);                
+            }
+        });
+
         opts.option('target', {
             usage: 'Specify ECMAScript target version: "ES3" (default), or "ES5"',
             type: 'VER',

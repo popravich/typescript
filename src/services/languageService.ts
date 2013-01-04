@@ -42,7 +42,7 @@ module Services {
 
         getAstPathToPosition(script: TypeScript.AST, pos: number, options: TypeScript.GetAstPathOptions /*= Tools.GetAstPathOptions.Default*/): TypeScript.AstPath;
         getIdentifierPathToPosition(script: TypeScript.AST, pos: number): TypeScript.AstPath;
-        getSymbolAtPosition(script: TypeScript.AST, pos: number): TypeScript.Symbol;
+        //getSymbolAtPosition(script: TypeScript.AST, pos: number): TypeScript.Symbol;
 
         getSymbolTree(): Services.ISymbolTree;
     }

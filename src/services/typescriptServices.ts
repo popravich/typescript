@@ -12,6 +12,8 @@
 ///<reference path='symbolTree.ts' />
 ///<reference path='overridesCollector.ts' />
 ///<reference path='languageService.ts' />
+///<reference path='pullLanguageService.ts' />
+///<reference path='pullCompilerState.ts' />
 ///<reference path='shims.ts' />
 ///<reference path='formatting\formatting.ts' />
 

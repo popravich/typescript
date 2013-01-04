@@ -102,8 +102,16 @@ module TypeScript {
         public usePull = false;
         public testPull = false;
         public testLibPull = false;
+        public testPullWithFile: string = "";
         
         public useCaseSensitiveFileResolution = false;
+
+        public setPullTestFile(str: string) {
+            this.usePull = true;
+            this.testPull = true;
+            this.testLibPull = str.indexOf("lib.d.ts") != -1;
+            this.testPullWithFile = str;
+        }
 
         public setStyleOptions(str: string) {
             this.styleSettings.parseOptions(str);

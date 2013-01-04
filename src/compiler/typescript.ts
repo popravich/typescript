@@ -332,6 +332,8 @@ module TypeScript {
                 this.typeFlow = new TypeFlow(this.logger, this.typeChecker.globalScope, this.parser, this.typeChecker);
 
                 var globalBindingEnd = new Date().getTime();
+                var globalBindingTime = globalBindingEnd - globaltcStart;
+
                 var i = 0;
                 var script: Script = null;
                 var len = this.scripts.members.length;
@@ -339,6 +341,7 @@ module TypeScript {
                 this.persistentTypeState.setCollectionMode(TypeCheckCollectionMode.Resident);
 
                 // first, typecheck resident "lib" scripts, if necessary
+                var localtcStart = new Date().getTime();
                 for (i = 0; i < len; i++) {
                     script = <Script>this.scripts.members[i];
                     if (!script.isResident || script.hasBeenTypeChecked) { continue; }
@@ -347,8 +350,6 @@ module TypeScript {
                     this.typeFlow.initLibs();
                 }
 
-                var globaltcEnd = new Date().getTime();
-
                 for (i = 0; i < len; i++) {
                     script = <Script>this.scripts.members[i];
                     if (!script.isResident || script.hasBeenTypeChecked) { continue; }
@@ -356,8 +357,6 @@ module TypeScript {
                     this.typeFlow.typeCheck(script);
                     script.hasBeenTypeChecked = true;
                 }
-
-                var localtcStart = new Date().getTime();
 
                 // next typecheck scripts that may change
                 this.persistentTypeState.setCollectionMode(TypeCheckCollectionMode.Transient);
@@ -371,16 +370,19 @@ module TypeScript {
                     this.typeFlow.initLibs();
                 }
 
-                var localtcEnd = new Date().getTime();
-
                 for (i = 0; i < len; i++) {
                     script = <Script>this.scripts.members[i];
                     if (script.isResident) { continue; }
                     this.typeFlow.typeCheck(script);
                 }
-                var globaltcend = new Date().getTime();
-                CompilerDiagnostics.Alert("Total binding and collection time: " + (this.totalCollectionTime + (globaltcEnd - globaltcStart) + (localtcEnd - localtcStart)));
-                CompilerDiagnostics.Alert("Total typecheck time: " + (globaltcend - globaltcStart));
+                var globaltcEnd = new Date().getTime();
+
+                CompilerDiagnostics.Alert("Total collection time: " + this.totalCollectionTime);
+                CompilerDiagnostics.Alert("Total binding time: " + globalBindingTime);
+                CompilerDiagnostics.Alert("Total binding and collection time: " + (this.totalCollectionTime + globalBindingTime));
+                CompilerDiagnostics.Alert("Total resolution and checking time: " + (globaltcEnd - localtcStart));
+                CompilerDiagnostics.Alert("Total typecheck time: " + (globaltcEnd - globaltcStart));
+                CompilerDiagnostics.Alert("");
 
                 return null;
             });
@@ -473,8 +475,8 @@ module TypeScript {
             var pullSymbolCollectionContext: PullSymbolBindingContext = null;
             var semanticInfo: SemanticInfo = null;
             var i = 0;
-            var skipLib = this.settings.testLibPull ? 1 : 0;
-            var skipFirst = (!this.settings.useDefaultLib ? 1 : 2) - skipLib;
+            var skipFirst = (!this.settings.useDefaultLib ? 0 : 1);
+            var findPullFile = this.settings.testPullWithFile != "";
             
             // create decls
             var createDeclsStartTime = new Date().getTime();
@@ -536,10 +538,9 @@ module TypeScript {
 
             CompilerDiagnostics.Alert("Decl creation: " + (createDeclsEndTime - createDeclsStartTime));
             CompilerDiagnostics.Alert("Binding: " + (bindEndTime - bindStartTime));
-            CompilerDiagnostics.Alert("TypeCheck: " + (typeCheckEndTime - typeCheckStartTime));
+            CompilerDiagnostics.Alert("Type resolution: " + (typeCheckEndTime - typeCheckStartTime));
             CompilerDiagnostics.Alert("Total: " + (typeCheckEndTime - createDeclsStartTime));
-
-            var diffStartTime = new Date().getTime();
+            
             if (this.settings.testPull) {
                 var declDiffer = new PullDeclDiffer();
                 
@@ -553,20 +554,36 @@ module TypeScript {
                 getAstWalkerFactory().walk(this.scripts.members[skipFirst], preCollectDecls, postCollectDecls, null, declCollectionContext);
 
                 // note that we don't decrement skipFirst, because we need to skip the globals that are added
-                var oldTopLevelDecl = this.semanticInfoChain.units[skipFirst].getTopLevelDecls()[0];
+                var oldIndex = skipFirst;
+
+                if (findPullFile) {
+                    for (var i = 0; i < this.units.length; i++) {
+                        if (this.semanticInfoChain.units[i].getPath().indexOf(this.settings.testPullWithFile) != -1) {
+                            oldIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                var oldTopLevelDecl = this.semanticInfoChain.units[oldIndex].getTopLevelDecls()[0];
                 var newTopLevelDecl = declCollectionContext.getParent();
                 
                 semanticInfo.addTopLevelDecl(newTopLevelDecl);
 
                 var diffResults: PullDeclDiff[] = [];
                 
+                var diffStartTime = new Date().getTime();
                 declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
+
+                var diffEndTime = new Date().getTime();
+                CompilerDiagnostics.Alert("Diff time: " + (diffEndTime - diffStartTime));
 
                 if (diffResults.length) {
                     // replace the old semantic info
                     this.semanticInfoChain.updateUnit(this.semanticInfoChain.units[skipFirst], semanticInfo);
 
                     // re-bind
+                    var innerBindStartTime = new Date().getTime();
 
                     topLevelDecls = semanticInfo.getTopLevelDecls();
 
@@ -577,6 +594,9 @@ module TypeScript {
                         bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
 
                     }
+                    var innerBindEndTime = new Date().getTime();
+
+                    CompilerDiagnostics.Alert("Inner bind time: " + (innerBindEndTime - innerBindStartTime));
                     
                     // propagate changes
                     var graphUpdater = new PullSymbolGraphUpdater();
@@ -599,11 +619,9 @@ module TypeScript {
                     }
                     var traceEndTime = new Date().getTime();
                     CompilerDiagnostics.Alert("Trace time: " + (traceEndTime - traceStartTime));
+                    CompilerDiagnostics.Alert("Number of diffs: " + diffResults.length);
                 }
             }
-
-            var diffEndTime = new Date().getTime();
-            CompilerDiagnostics.Alert("Diff time: " + (diffEndTime - diffStartTime));
 
         }
 

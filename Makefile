@@ -115,6 +115,8 @@ SERVICES_SOURCES_BASE= \
   $(SSRC)\symbolTree.ts \
   $(SSRC)\overridesCollector.ts \
   $(SSRC)\languageService.ts \
+  $(SSRC)\pullLanguageService.ts \
+  $(SSRC)\pullCompilerState.ts \
   $(SSRC)\shims.ts \
   $(SSRC)\typescriptServices.ts
 
