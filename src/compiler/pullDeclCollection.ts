@@ -372,6 +372,21 @@ module TypeScript {
         else if (ast.nodeType == NodeType.FuncDecl) {
             go = preCollectFuncDecls(ast, parent, context);
         }
+        //// go into blocks, if necessary...
+        //else if (ast.nodeType == NodeType.Block ||
+        //         ast.nodeType == NodeType.For ||
+        //         ast.nodeType == NodeType.ForIn ||
+        //         ast.nodeType == NodeType.While ||
+        //         ast.nodeType == NodeType.If ||
+        //         ast.nodeType == NodeType.Try ||
+        //         ast.nodeType == NodeType.TryCatch ||
+        //         ast.nodeType == NodeType.TryFinally ||
+        //         ast.nodeType == NodeType.Catch ||
+        //         ast.nodeType == NodeType.Finally) {
+
+        //    go = true;
+
+        //}
 
         walker.options.goChildren = go;
 

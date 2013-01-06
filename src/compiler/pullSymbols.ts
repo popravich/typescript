@@ -105,7 +105,7 @@ module TypeScript {
         }
 
         public setContainer(containerSymbol: PullTypeSymbol, relationshipKind: SymbolLinkKind) {
-            containerSymbol.addOutgoingLink(this, relationshipKind);
+            //containerSymbol.addOutgoingLink(this, relationshipKind);
             
             var link = this.addOutgoingLink(containerSymbol, SymbolLinkKind.ContainedBy);
             this.cachedContainerLink = link;
@@ -266,6 +266,13 @@ module TypeScript {
                 return <PullTypeSymbol> this.returnTypeLink.end;
             }
             else {
+                var rtl = this.findOutgoingLinks((p) => p.kind == SymbolLinkKind.ReturnType);
+
+                if (rtl.length) {
+                    this.returnTypeLink = rtl[0];
+                    return <PullTypeSymbol> this.returnTypeLink.end;
+                }
+
                 return null;
             }
         }
@@ -275,6 +282,8 @@ module TypeScript {
         public invalidate() {
             this.removeOutgoingLink(this.returnTypeLink);
             this.returnTypeLink = null;
+
+            this.parameterLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.Parameter);
 
             super.invalidate();
         }
@@ -424,7 +433,7 @@ module TypeScript {
             return <PullSignatureSymbol[]>members;
         }
 
-        public removeCallSignature(signature: PullSignatureSymbol) {
+        public removeCallSignature(signature: PullSignatureSymbol, invalidate = true) {
             var signatureLink: PullSymbolLink;
 
             for (var i = 0; i < this.callSignatureLinks.length; i++) {
@@ -435,10 +444,12 @@ module TypeScript {
                 }
             }
             
-            this.invalidate();
+            if (invalidate) {
+                this.invalidate();
+            }
         }
 
-        public removeConstructSignature(signature: PullSignatureSymbol) {
+        public removeConstructSignature(signature: PullSignatureSymbol, invalidate = true) {
             var signatureLink: PullSymbolLink;
 
             for (var i = 0; i < this.constructSignatureLinks.length; i++) {
@@ -448,11 +459,13 @@ module TypeScript {
                     break;
                 }
             }
-            
-            this.invalidate();
+
+            if (invalidate) {
+                this.invalidate();
+            }
         }
 
-        public removeIndexSignature(signature: PullSignatureSymbol) {
+        public removeIndexSignature(signature: PullSignatureSymbol, invalidate=true) {
             var signatureLink: PullSymbolLink;
 
             for (var i = 0; i < this.indexSignatureLinks.length; i++) {
@@ -463,7 +476,9 @@ module TypeScript {
                 }
             }
             
-            this.invalidate();
+            if (invalidate) {
+                this.invalidate();
+            }
         }
 
         public addImplementedType(interfaceType: PullTypeSymbol) {
@@ -527,7 +542,7 @@ module TypeScript {
                 this.memberCache = {};
 
                 for (var i = 0; i < this.memberLinks.length; i++) {
-                    this.memberCache[this.memberLinks[i].end.getName()] = this.memberLinks[i];
+                    this.memberCache[this.memberLinks[i].end.getName()] = this.memberLinks[i].end;
                 }
             }
             
@@ -550,6 +565,20 @@ module TypeScript {
         public invalidate() {
             this.memberCache = null;
 
+            this.memberLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.StaticProperty ||
+                                                              psl.kind == SymbolLinkKind.PrivateProperty ||
+                                                              psl.kind == SymbolLinkKind.PublicProperty);
+
+            this.callSignatureLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.CallSignature);
+
+            this.constructSignatureLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.ConstructSignature);
+
+            this.indexSignatureLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.IndexSignature);
+
+            this.implementedTypeLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.Implements);
+
+            this.extendedTypeLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.Extends);
+
             super.invalidate();
         }
 
@@ -571,12 +600,12 @@ module TypeScript {
             }
 
             for (i = 0; i < constructSigs.length; i++) {
-                tstring += constructSigs[i].toString();
+                tstring += "new " + constructSigs[i].toString();
                 tstring += "; ";
             }
 
             for (i = 0; i < indexSigs.length; i++) {
-                tstring += indexSigs[i].toString();
+                tstring += "[" + indexSigs[i].toString() + "]";
                 tstring += "; ";
             }
 

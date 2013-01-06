@@ -41,6 +41,18 @@ module Services {
             return this._getScriptSyntaxAST(fileName);
         }
 
+        public getReferencesAtPosition(fileName: string, pos: number): ReferenceEntry[] {
+            return [];
+        }
+
+        public getOccurrencesAtPosition(fileName: string, pos: number): ReferenceEntry[] {
+            return [];
+        }
+
+        public getImplementorsAtPosition(fileName: string, position: number): ReferenceEntry[] {
+            return [];
+        }
+
         private _getScriptSyntaxAST(fileName: string): ScriptSyntaxAST {
             return TypeScript.timeFunction(this.logger, "getScriptSyntaxAST(\"" + fileName + "\")", () => {
                 var version = this.pullCompilerState.getScriptVersion(fileName);
@@ -90,39 +102,6 @@ module Services {
             this.refresh();
 
             return this.pullCompilerState.getScriptAST(fileName);
-        }
-
-        public getTypeAtPosition(fileName: string, pos: number): TypeInfo {
-            this.refresh();
-
-            var script = this.pullCompilerState.getScriptAST(fileName);
-            var sourceText = this.pullCompilerState.getSourceText(script);
-
-            // First check whether we are in a comment where quick info should not be displayed
-            var path = this.getAstPathToPosition(script, pos);
-            if (path.count() == 0)
-                return null;
-
-            if (path.nodeType() === TypeScript.NodeType.Comment) {
-                this.logger.log("The specified location is inside a comment");
-                return null;
-            }
-
-            // Look for AST node containing the position
-            var typeInfo = this.getTypeInfoAtPosition(pos, script);
-            if (typeInfo == null) {
-                this.logger.log("No type found at the specified location.");
-                return null;
-            }
-
-            var enclosingScopeContext = TypeScript.findEnclosingScopeAt(this.logger, script, sourceText, pos, /*isMemberCompletion*/false);
-            if (enclosingScopeContext == null) {
-                this.logger.log("No context found at the specified location.");
-                return null;
-            }
-
-            var memberName = typeInfo.type.getScopedTypeNameEx(enclosingScopeContext.getScope());
-            return new TypeInfo(memberName, typeInfo.ast.minChar, typeInfo.ast.limChar);
         }
 
         public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo {
@@ -418,216 +397,11 @@ module Services {
         }
 
         public getSignatureAtPosition(fileName: string, pos: number): SignatureInfo {
-            this.refresh();
-
-            var script = this.pullCompilerState.getScriptAST(fileName);
-
-            // If "pos" is the "EOF" position
-            var atEOF = (pos === script.limChar);
-
-            var path = this.getAstPathToPosition(script, pos);
-            if (path.count() == 0)
-                return null;
-
-            // First check whether we are in a comment where quick info should not be displayed
-            if (path.nodeType() === TypeScript.NodeType.Comment) {
-                this.logger.log("position is inside a comment");
-                return null;
-            }
-
-            var callExpr: TypeScript.CallExpression = null;  // assigned null to avoid definite assignment error
-            while (path.count() >= 2) {
-                // Path we are looking for...
-                if (path.isArgumentListOfCall() || path.isArgumentListOfNew()) {
-                    // The caret position should be *after* the opening "(" of the argument list
-                    if (atEOF || pos > path.ast().minChar) {
-                        path.pop();
-                        callExpr = <TypeScript.CallExpression>path.pop();
-                    }
-                    break;
-                }
-
-                // Path that should make us stop looking up..
-                if (pos > path.ast().minChar) {  // If cursor is on the "{" of the body, we may wat to display param help
-                    if (path.isBodyOfBlock() ||
-                        path.isBodyOfCase() ||
-                        path.isBodyOfCatch() ||
-                        path.isBodyOfDefaultCase() ||
-                        path.isBodyOfDoWhile() ||
-                        path.isBodyOfClass() ||
-                        path.isBodyOfFinally() ||
-                        path.isBodyOfFor() ||
-                        path.isBodyOfForIn() ||
-                        path.isBodyOfFunction() ||
-                        path.isBodyOfInterface() ||
-                        path.isBodyOfModule() ||
-                        path.isBodyOfObjectLit() ||
-                        path.isBodyOfScript() ||
-                        path.isBodyOfSwitch() ||
-                        path.isBodyOfTry() ||
-                        path.isBodyOfWhile() ||
-                        path.isBodyOfWith()
-                        ) {
-                        break;
-                    }
-                }
-                path.pop();
-            }
-
-            if (!callExpr || !callExpr.target || !callExpr.target.getType()) {
-                this.logger.log("No call expression for the given position");
-                return null;
-            }
-
-            if (callExpr.target.getType() === this.pullCompilerState.anyType()) {
-                this.logger.log("Call expression is of type 'any'");
-                return null;
-            }
-
-            var convertSignatureGroupToSignatureInfo = (name: string, isNew: bool, group: TypeScript.SignatureGroup) => {
-                var result = new FormalSignatureInfo();
-                result.isNew = false;
-                result.name = name;
-                result.openParen = (group.flags & TypeScript.SignatureFlags.IsIndexer ? "[" : "(");
-                result.closeParen = (group.flags & TypeScript.SignatureFlags.IsIndexer ? "]" : ")");
-
-                var hasOverloads = group.signatures.length > 1;
-                group.signatures
-                    // Same test as in "typeFlow.str: resolveOverload()": filter out the definition signature if there are overloads
-                    .filter(signature => !(hasOverloads && signature === group.definitionSignature && !this.pullCompilerState.getCompilationSettings().canCallDefinitionSignature))
-                    .forEach(signature => {
-                        var signatureGroupInfo = new FormalSignatureItemInfo();
-                        signatureGroupInfo.returnType = (signature.returnType === null ? "any" : signature.returnType.type.getScopedTypeName(/*scope*/null));
-                        signature.parameters.forEach((p, i) => {
-                            var signatureParameterInfo = new FormalParameterInfo();
-                            signatureParameterInfo.isVariable = (signature.hasVariableArgList) && (i === signature.parameters.length - 1);
-                            signatureParameterInfo.isOptional = p.isOptional();
-                            signatureParameterInfo.name = p.name;
-                            signatureParameterInfo.type = p.getType().getScopedTypeName(/*scope*/null);
-                            signatureGroupInfo.parameters.push(signatureParameterInfo);
-                        });
-                        result.signatureGroup.push(signatureGroupInfo);
-                    });
-                return result;
-            };
-
-            var convertCallExprToActualSignatureInfo = (ast: TypeScript.CallExpression, caretPosition: number): ActualSignatureInfo => {
-                if (!TypeScript.isValidAstNode(ast))
-                    return null;
-
-                if (!TypeScript.isValidAstNode(ast.args))
-                    return null;
-
-                var result = new ActualSignatureInfo();
-                result.currentParameter = -1;
-                result.openParenMinChar = ast.args.minChar;
-                result.closeParenLimChar = Math.max(ast.args.minChar, ast.args.limChar);
-                ast.args.members.forEach((arg, index) => {
-                    var parameter = new ActualParameterInfo();
-                    parameter.minChar = arg.minChar;
-                    parameter.limChar = Math.max(arg.minChar, arg.limChar);
-                    result.parameters.push(parameter);
-                });
-
-                result.parameters.forEach((p, index) => {
-                    var minChar = (index == 0 ? result.openParenMinChar : result.parameters[index - 1].limChar + 1);
-                    var limChar = (index == result.parameters.length - 1 ? result.closeParenLimChar : result.parameters[index + 1].minChar);
-                    if (caretPosition >= minChar && (atEOF ? caretPosition <= limChar : caretPosition < limChar)) {
-                        result.currentParameter = index;
-                    }
-                });
-                return result;
-            };
-
-            var getSignatureIndex = (ast: TypeScript.CallExpression, group: TypeScript.SignatureGroup) => {
-                if (ast == null || group == null || group.signatures == null)
-                    return -1;
-
-                return group.signatures.indexOf(ast.signature);
-            };
-
-            var getTargetSymbolName = (callExpr: TypeScript.CallExpression) => {
-                var sym: TypeScript.Symbol = null;
-                if ((<any>callExpr.target).sym != null) {
-                    sym = (<any>callExpr.target).sym;
-                } else if (callExpr.target.getType().symbol !== null) {
-                    var sym = callExpr.target.getType().symbol;
-                }
-
-                if (sym != null) {
-                    if (sym.kind() == TypeScript.SymbolKind.Type) {
-                        if ((<TypeScript.TypeSymbol>sym).isMethod || (<TypeScript.TypeSymbol>sym).isClass() || (<TypeScript.TypeSymbol>sym).isFunction()) {
-                            if (sym.name != null && sym.name != "_anonymous" /* see TypeChecker.anon*/) {
-                                return sym.name;
-                            }
-                        }
-                    } else if (sym.kind() == TypeScript.SymbolKind.Parameter) {
-                        return sym.name;
-                    }
-                    else if (sym.kind() == TypeScript.SymbolKind.Variable) {
-                        return sym.name;
-                    }
-                    else if (sym.kind() == TypeScript.SymbolKind.Field) {
-                        return sym.name;
-                    }
-                }
-
-                return "";
-            };
-
-            var name = getTargetSymbolName(callExpr);
-            var result = new SignatureInfo();
-            if (callExpr.nodeType === TypeScript.NodeType.Call && callExpr.target.getType().call !== null) {
-                result.formal = convertSignatureGroupToSignatureInfo(name, /*isNew:*/false, callExpr.target.getType().call);
-                result.actual = convertCallExprToActualSignatureInfo(callExpr, pos);
-                result.activeFormal = getSignatureIndex(callExpr, callExpr.target.getType().call);
-            }
-            else if (callExpr.nodeType === TypeScript.NodeType.New && callExpr.target.getType().construct !== null) {
-                result.formal = convertSignatureGroupToSignatureInfo(name, /*isNew:*/true, callExpr.target.getType().construct);
-                result.actual = convertCallExprToActualSignatureInfo(callExpr, pos);
-                result.activeFormal = getSignatureIndex(callExpr, callExpr.target.getType().construct);
-            }
-            else {
-                this.logger.log("No signature group found for the target of the call expression");
-                return null;
-            }
-
-            if (result.actual == null || result.formal == null || result.activeFormal == null) {
-                this.logger.log("Can't compute actual and/or formal signature of the call expression");
-                return null;
-            }
-
-            return result;
+            return null;
         }
 
         public getDefinitionAtPosition(fileName: string, pos: number): DefinitionInfo {
-            this.refresh();
-
-            var script = this.pullCompilerState.getScriptAST(fileName);
-
-            var sym = this.getSymbolAtPosition(script, pos);
-            if (sym == null) {
-                this.logger.log("No identifier at the specified location.");
-                return null;
-            }
-
-            if (!TypeScript.isValidAstNode(sym.declAST)) {
-                this.logger.log("No symbol location for identifier at the specified location.");
-                return null;
-            }
-
-            var unitIndex = sym.unitIndex;
-            var minChar = sym.declAST.minChar;
-            var limChar = sym.declAST.limChar;
-
-            return new DefinitionInfo(
-                this.pullCompilerState.mapToHostUnitIndex(unitIndex),
-                minChar,
-                limChar,
-                this.getSymbolElementKind(sym),
-                sym.name,
-                this.getSymbolContainerKind(sym),
-                this.getSymbolContainerName(sym));
+            return null;
         }
 
         // Given a script name and position in the script, return a string representing 
@@ -650,476 +424,6 @@ module Services {
             var syntaxAST = this._getScriptSyntaxAST(fileName);
             var manager = new BraceMathingManager(syntaxAST);
             return manager.getBraceMatchingAtPosition(position);
-        }
-
-        private getSymbolElementKind(sym: TypeScript.Symbol): string {
-            if (sym.declAST == null) {
-                return ScriptElementKind.keyword; // Predefined type (void, etc.)
-            }
-            return this.getDeclNodeElementKind(sym.declAST);
-        }
-
-        private getSymbolElementKindModifiers(sym: TypeScript.Symbol): string {
-            if (sym.declAST == null) {
-                return ScriptElementKindModifier.none; // Predefined type (void, etc.)
-            }
-            return this.getDeclNodeElementKindModifiers(sym.declAST);
-        }
-
-        private getSymbolContainerKind(sym: TypeScript.Symbol): string {
-            return "";
-        }
-
-        private getSymbolContainerName(sym: TypeScript.Symbol): string {
-            return sym.container == null ? "<global>" : sym.container.fullName();
-        }
-
-        public getReferencesAtPosition(fileName: string, pos: number): ReferenceEntry[] {
-            this.refresh();
-
-            var context = new GetReferencesContext();
-            // Whole program scope
-            for (var i = 0, len = this.pullCompilerState.getScriptCount() ; i < len; i++) {
-                context.scope.push(i);
-            }
-            return this.getReferencesForSourceLocation(context, this.pullCompilerState.getUnitIndex(fileName), pos);
-        }
-
-        public getOccurrencesAtPosition(fileName: string, pos: number): ReferenceEntry[] {
-            this.refresh();
-
-            var unitIndex = this.pullCompilerState.getUnitIndex(fileName);
-            var context = new GetReferencesContext();
-            // Single source file scope
-            context.scope.push(unitIndex);
-            return this.getReferencesForSourceLocation(context, unitIndex, pos);
-        }
-
-        public getImplementorsAtPosition(fileName: string, position: number): ReferenceEntry[] {
-            this.refresh();
-
-            var script = this.pullCompilerState.getScriptAST(fileName);
-            var path = this.getIdentifierPathToPosition(script, position);
-            if (path === null) {
-                this.logger.log("No identifier at the specified location.");
-                return [];
-            }
-
-            var name = <TypeScript.Identifier>path.ast();
-            var sym = name.sym;
-            if (sym === null) {
-                this.logger.log("No symbol annotation on the identifier AST.");
-                return [];
-            }
-
-            var collector = new OverridesCollector(this.getSymbolTree());
-            var symbolSet = collector.findImplementors(sym);
-            var references = new ReferenceEntrySet();
-            symbolSet.getAll().forEach(x => { references.addSymbol(x); })
-            return this.mapUnitIndexInReferenceEntrySet(references);
-        }
-
-
-        private getReferencesForSourceLocation(context: GetReferencesContext, unitIndex: number, position: number): ReferenceEntry[] {
-            var script = this.pullCompilerState.getScript(unitIndex);
-
-            var path = this.getIdentifierPathToPosition(script, position);
-            if (path === null) {
-                this.logger.log("No identifier at the specified location.");
-                return [];
-            }
-
-            var name = <TypeScript.Identifier>path.ast();
-            var sym = name.sym;
-            if (sym === null) {
-                this.logger.log("No symbol annotation on the identifier AST.");
-                return [];
-            }
-
-            return this.getReferencesForSymbol(context, sym);
-        }
-
-        private isWriteAccess(parent: TypeScript.AST, cur: TypeScript.AST) {
-            var write: bool = false;
-            if (parent !== null) {
-                var pnt = parent.nodeType;
-                switch (pnt) {
-                    case TypeScript.NodeType.VarDecl:
-                        if ((<TypeScript.VarDecl>parent).init != null) {
-                            write = true;
-                        }
-                        break;
-                    case TypeScript.NodeType.ArgDecl:
-                        write = true;
-                        break;
-                    case TypeScript.NodeType.Asg:
-                    case TypeScript.NodeType.AsgAdd:
-                    case TypeScript.NodeType.AsgSub:
-                    case TypeScript.NodeType.AsgMul:
-                    case TypeScript.NodeType.AsgDiv:
-                    case TypeScript.NodeType.AsgMod:
-                    case TypeScript.NodeType.AsgOr:
-                    case TypeScript.NodeType.AsgAnd:
-                    case TypeScript.NodeType.AsgXor:
-                    case TypeScript.NodeType.AsgLsh:
-                    case TypeScript.NodeType.AsgRsh:
-                    case TypeScript.NodeType.AsgRs2:
-                        if ((<TypeScript.BinaryExpression>parent).operand1 === cur) {
-                            write = true;
-                        }
-                        break;
-                    case TypeScript.NodeType.IncPost:
-                    case TypeScript.NodeType.IncPre:
-                    case TypeScript.NodeType.DecPost:
-                    case TypeScript.NodeType.DecPre:
-                        write = true;
-                        break;
-                }
-            }
-            return write;
-        }
-
-
-        private getReferencesForSymbol(context: GetReferencesContext, sym: TypeScript.Symbol): ReferenceEntry[] {
-            var collector = new OverridesCollector(this.getSymbolTree());
-            var symbolSet = collector.findMemberOverrides(sym);
-            var references = new ReferenceEntrySet();
-
-            var match = (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => {
-                //logger.log("Found reference: " + unitIndex + ", " + ast.minChar);
-                references.addAst(unitIndex, cur, this.isWriteAccess(parent, cur));
-            }
-
-            if (sym.kind() == TypeScript.SymbolKind.Field) {
-                this.logger.log("getReferencesToField");
-                this.getReferencesToField(context, symbolSet, match);
-            }
-            else if (sym.kind() == TypeScript.SymbolKind.Parameter) {
-                this.logger.log("getReferencesToParameter");
-                this.getReferencesToParameter(context, symbolSet, match);
-            }
-            else if (sym.kind() == TypeScript.SymbolKind.Type) {
-                this.logger.log("getReferencesToType");
-                this.getReferencesToType(context, symbolSet, match);
-            }
-            else if (sym.kind() == TypeScript.SymbolKind.Variable) {
-                this.logger.log("getReferencesToVariable");
-                this.getReferencesToVariable(context, symbolSet, match);
-            }
-            else {
-                this.logger.log("No recognized symbol at the specified location (" + sym.kind() + ").");
-            }
-
-            return this.mapUnitIndexInReferenceEntrySet(references);
-        }
-
-        private mapUnitIndexInReferenceEntrySet(references: ReferenceEntrySet): ReferenceEntry[] {
-            var result = references.getEntries();
-            result.forEach(x => {
-                x.unitIndex = this.pullCompilerState.mapToHostUnitIndex(x.unitIndex);
-            });
-            return result;
-        }
-
-        /// COMPLETION LISTS
-        /// Get a string based representation of the completions 
-        /// to provide at the given source position and providing a member completion 
-        /// list if requested.
-        /// * "isMemberCompletion" is set to true if the character on the left of "pos" is a "dot".
-        ///   This corresponds to the "list members" completion list.
-        /// * If set to false, "pos" is the caret location or the poisition of the first character of
-        ///   the identifier at the caret location. This corresponds to the semantics of "complete word"
-        ///   completion list.
-        public getCompletionsAtPosition(fileName: string, pos: number, isMemberCompletion: bool): CompletionInfo {
-            //this.minimalRefresh();
-            this.refresh();
-
-            var result = this.getQuickCompletionsAtPosition(fileName, pos, isMemberCompletion);
-            if (result == null) {
-                this.refresh();
-                result = this.getAccurateCompletionsAtPosition(fileName, pos, isMemberCompletion);
-            }
-
-            return result;
-        }
-
-        //
-        // Try returning completions from an possibly out of date AST.
-        // Return "null" if there was no heuristic available to return meaningful completions.
-        // The caller will then retry with the "accurate" completions entry point.
-        //
-        private getQuickCompletionsAtPosition(fileName: string, pos: number, isMemberCompletion: bool): CompletionInfo {
-            var script = this.pullCompilerState.getScriptAST(fileName);
-            var editRange = this.pullCompilerState.getScriptEditRange(script);
-
-            if (editRange == null) {
-                this.logger.log("Full refresh required: there are no pending edits for the script. Be conservative and try again with accurate algorithm.");
-                return null;
-            }
-
-            // Find the enclosing scope so we can parse the corresponding fragment
-            var sourceText = this.pullCompilerState.getSourceText(script);
-            var enclosingScopeContext = new TypeScript.IncrementalParser(this.logger).getEnclosingScopeContextIfSingleScopeEdit(script, fileName, sourceText, editRange);
-            if (enclosingScopeContext === null) {
-                this.logger.log("Full refresh required: range of edits may affect more than one scope");
-                return null;
-            }
-
-            if (enclosingScopeContext.enclosingObjectLit !== null) {
-                this.logger.log("Full refresh required: quick completion list does not work inside object literals, because full typecheck is required to obtain the target type of the object literal.");
-                return null;
-            }
-
-            // Update scope: we know the scope is ok, but for the remaining of completion list
-            // work, we need to have the "pos" member be the caret position in the new source text, so that
-            // we can extract the correct script fragment for partial parsing.
-            enclosingScopeContext.pos = pos;
-            enclosingScopeContext.isMemberCompletion = isMemberCompletion;
-            this.logger.log("Found scope context in previous script AST: " + editRange + ", pos=" + pos + ", scopePos=" + enclosingScopeContext.getScopePosition());
-
-            // Compute completion entries
-            var result = new CompletionInfo();
-            result.maybeInaccurate = true;
-            result.isMemberCompletion = isMemberCompletion;
-            enclosingScopeContext.useFullAst = false;
-            this.getCompletionsFromEnclosingScopeContext(enclosingScopeContext, result);
-            if (result.entries.length == 0) {
-                this.logger.log("Full refresh required: QuickCompletion returned an empty list. Be conservative and try again with accurate algorithm.");
-                return null;
-            }
-
-            return result;
-        }
-
-        private getAccurateCompletionsAtPosition(fileName: string, pos: number, isMemberCompletion: bool): CompletionInfo {
-            var result = new CompletionInfo();
-            result.maybeInaccurate = false;
-            result.isMemberCompletion = isMemberCompletion;
-
-            // Find the enclosing scope so we can parse the corresponding fragment
-            var script = this.pullCompilerState.getScriptAST(fileName);
-            var sourceText = this.pullCompilerState.getSourceText(script);
-            var enclosingScopeContext = TypeScript.findEnclosingScopeAt(this.logger, script, sourceText, pos, isMemberCompletion);
-            if (enclosingScopeContext == null) {
-                this.logger.log("No context found at the specified location.");
-                return result;
-            }
-            this.logger.log("Found scope context in up-to-date script AST: pos=" + pos + ", scopePos=" + enclosingScopeContext.getScopePosition());
-
-            // Compute completion entries
-            enclosingScopeContext.useFullAst = true;
-            this.getCompletionsFromEnclosingScopeContext(enclosingScopeContext, result);
-            return result;
-        }
-
-        private getCompletionsFromEnclosingScopeContext(enclosingScopeContext: TypeScript.EnclosingScopeContext, result: CompletionInfo): void {
-
-            var getCompletions = (isMemberCompletion: bool) => {
-                result.isMemberCompletion = isMemberCompletion;
-                enclosingScopeContext.isMemberCompletion = isMemberCompletion;
-
-                var entries = this.pullCompilerState.getScopeEntries(enclosingScopeContext);
-                entries.forEach(x => {
-                    var entry = new CompletionEntry();
-                    entry.name = x.name;
-                    entry.type = x.type;
-                    entry.kind = this.getSymbolElementKind(x.sym);
-                    entry.kindModifiers = this.getSymbolElementKindModifiers(x.sym);
-                    result.entries.push(entry);
-                });
-            };
-
-            // We have an enclosing scope context, we can now compute the completion list.
-            var scriptFragment = enclosingScopeContext.getScriptFragment();
-            try {
-                var path = this.getAstPathToPosition(scriptFragment,
-                    enclosingScopeContext.pos - enclosingScopeContext.getScriptFragmentPosition(),
-                    TypeScript.GetAstPathOptions.EdgeInclusive | TypeScript.GetAstPathOptions.DontPruneSearchBasedOnPosition);
-
-                if (this.isCompletionListBlocker(path)) { 
-                    this.logger.log("Returning an empty list because position is inside a comment");
-                }
-                // Special case for object literals
-                else if (this.isObjectLiteralMemberNameCompletion(enclosingScopeContext)) {
-                    this.logger.log("Completion list for members of object literal");
-                    return getCompletions(true);
-                }
-                // Ensure we are in a position where it is ok to provide a completion list
-                else if (enclosingScopeContext.isMemberCompletion || this.isCompletionListTriggerPoint(path)) {
-                    return getCompletions(enclosingScopeContext.isMemberCompletion);
-                }
-                else {
-                    this.logger.log("Returning an empty list because position is not a valid position for displaying a completion list");
-                }
-            }
-            finally {
-                this.pullCompilerState.cleanASTTypesForReTypeCheck(scriptFragment);
-            }
-        }
-
-        private isObjectLiteralMemberNameCompletion(enclosingScopeContext: TypeScript.EnclosingScopeContext): bool {
-            if (enclosingScopeContext.enclosingObjectLit === null)
-                return false;
-
-            if (enclosingScopeContext.isMemberCompletion)
-                return false;
-
-            var objectLit = enclosingScopeContext.enclosingObjectLit;
-            var script = enclosingScopeContext.script;
-            var pos = enclosingScopeContext.pos
-
-            // We want to show the list of object literal members if either
-            // 1) we are inside an empty object literal
-            // 2) we are on the name node of a member of an object literal
-            // 3) we are outside of any expression of any member of an object literal
-            if (!TypeScript.isValidAstNode(objectLit))
-                return false;
-
-            if (!TypeScript.isValidAstNode(objectLit.operand))
-                return false;
-
-            if (objectLit.operand.nodeType !== TypeScript.NodeType.List)
-                return false;
-
-            var memberList = <TypeScript.ASTList>objectLit.operand;
-            var isInsideList = (memberList.minChar < pos && pos < memberList.limChar);
-            if (!isInsideList)
-                return false;
-
-            // Empty list always means member completion
-            if (memberList.members.length == 0) {
-                return true;
-            }
-
-            var syntaxAST = new ScriptSyntaxAST(this.logger, script, enclosingScopeContext.text);
-            var tokenStream = new TokenStreamHelper(syntaxAST.getTokenStream(memberList.minChar, memberList.limChar));
-
-            var nameAreaMinChar = tokenStream.tokenEndPos();
-            var isNameArea = false;
-            var cancelSearch = false;
-
-            if (!tokenStream.expect(TypeScript.TokenID.OpenBrace))
-                return false;
-
-            memberList.members.forEach((x, i) => {
-                if (cancelSearch)
-                    return;
-
-                if (x.nodeType !== TypeScript.NodeType.Member) {
-                    nameAreaMinChar = -1;
-                    return;
-                }
-
-                var member = <TypeScript.BinaryExpression>x;
-                if (!TypeScript.isValidAstNode(member.operand1)) {
-                    nameAreaMinChar = -1;
-                    return;
-                }
-
-                if (nameAreaMinChar < 0)
-                    nameAreaMinChar = member.operand1.minChar;
-
-                if (!tokenStream.skipToOffset(member.operand1.limChar)) {
-                    nameAreaMinChar = -1;
-                    cancelSearch = true;
-                    return;
-                }
-
-                if (tokenStream.tokenId() !== TypeScript.TokenID.Colon) {
-                    nameAreaMinChar = -1;
-                    return;
-                }
-
-                if ((nameAreaMinChar) >= 0 && (nameAreaMinChar <= pos) && (pos <= tokenStream.tokenStartPos())) {
-                    isNameArea = true;
-                    cancelSearch = true;
-                    return;
-                }
-
-                // Reposition nameAreaMinChar to the end of the member expression
-                nameAreaMinChar = -1;
-                if (TypeScript.isValidAstNode(member.operand2)) {
-                    if (tokenStream.skipToOffset(member.operand2.limChar)) {
-                        if (tokenStream.tokenId() == TypeScript.TokenID.Comma) {
-                            nameAreaMinChar = tokenStream.tokenEndPos();
-                            tokenStream.moveNext(); // skip comma
-                        }
-                    }
-                }
-            });
-
-            if (nameAreaMinChar < 0)
-                return false;
-
-            if (isNameArea)
-                return true;
-
-            if (tokenStream.tokenId() !== TypeScript.TokenID.CloseBrace)
-                return false;
-
-            return (nameAreaMinChar <= pos) && (pos <= tokenStream.tokenStartPos());
-        }
-
-        private isCompletionListBlocker(path: TypeScript.AstPath): bool {
-            var asts = path.asts;
-
-            var isNodeType = (nodeType: TypeScript.NodeType) => {
-                return (path.count() >= 1) &&
-                    (path.ast().nodeType === nodeType);
-            };
-
-            if (isNodeType(TypeScript.NodeType.Comment)
-                || isNodeType(TypeScript.NodeType.Regex)
-                || isNodeType(TypeScript.NodeType.QString)
-                ) {
-                return true;
-            }
-
-            return false;
-        }
-
-        private isCompletionListTriggerPoint(path: TypeScript.AstPath): bool {
-            var asts = path.asts;
-
-            var isNodeType = (nodeType: TypeScript.NodeType) => {
-                return (path.count() >= 1) &&
-                    (path.ast().nodeType === nodeType);
-            };
-
-            var isDecl = (nodeType: TypeScript.NodeType) => {
-                if (isNodeType(nodeType))
-                    return true;
-
-                if (asts.length > 1 &&
-                    (asts[asts.length - 2].nodeType === nodeType) &&
-                    (asts[asts.length - 1].nodeType === TypeScript.NodeType.Name))
-                    return true;
-
-                return false;
-            };
-
-            if (path.isNameOfVariable() // var <here>
-                || path.isNameOfFunction() // function <here>
-                || path.isNameOfArgument() // function foo(<here>
-                || path.isNameOfInterface() // interface <here>
-                || path.isNameOfClass() // class <here>
-                || path.isNameOfModule() // module <here>
-                ) {
-                return false;
-            }
-
-            if (isNodeType(TypeScript.NodeType.Member) // class C() { property <here>
-                || isNodeType(TypeScript.NodeType.TryCatch) // try { } catch(<here>
-                || isNodeType(TypeScript.NodeType.Catch) // try { } catch(<here>
-                //|| isNodeType(Tools.NodeType.Class) // doesn't work
-                || isNodeType(TypeScript.NodeType.Comment)
-                || isNodeType(TypeScript.NodeType.Regex)
-                || isNodeType(TypeScript.NodeType.QString)
-                ) {
-                return false
-            }
-
-            return true;
         }
 
         public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
@@ -1354,37 +658,7 @@ module Services {
             return this.pullCompilerState.getErrorEntries(maxCount, (u, e) => { return u === unitIndex; });
         }
 
-        private getTypeInfoAtPosition(pos: number, script: TypeScript.AST): {
-            ast: TypeScript.AST; type: TypeScript.Type;
-        } {
-            var result: { ast: TypeScript.AST; type: TypeScript.Type; } = null;
-            var resultASTs: TypeScript.AST[] = [];
-
-            var pre = (cur: TypeScript.AST, parent: TypeScript.AST): TypeScript.AST => {
-                if (TypeScript.isValidAstNode(cur)) {
-                    if (pos >= cur.minChar && pos < cur.limChar) {
-                        // TODO: Since AST is sometimes not correct wrt to position, only add "cur" if it's better
-                        //       than top of the stack.
-                        var previous = resultASTs[resultASTs.length - 1];
-                        if (previous == undefined || (cur.minChar >= previous.minChar && cur.limChar <= previous.limChar)) {
-                            resultASTs.push(cur);
-
-                            //logASTNode(script, cur, 0);
-                            if ((<TypeScript.BoundDecl>cur).sym != null && (<TypeScript.BoundDecl>cur).sym.getType() != null) {
-                                result = { ast: cur, type: (<TypeScript.BoundDecl>cur).sym.getType() };
-                            }
-                            else if (cur.getType() != null) {
-                                result = { ast: cur, type: cur.getType() };
-                            }
-                        }
-                    }
-                }
-                return cur;
-            }
-
-            TypeScript.getAstWalkerFactory().walk(script, pre);
-            return result;
-        }
+        
 
         private getNameOrDottedNameSpanFromPosition(pos: number, script: TypeScript.Script): SpanInfo  {
             var result: SpanInfo = null;
@@ -1421,124 +695,7 @@ module Services {
             return result;
         }
 
-        private getReferencesToField(context: GetReferencesContext, symbolSet: Services.SymbolSet, match: (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => void ) {
-            var fieldMatch = (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => {
-                if (cur.nodeType == TypeScript.NodeType.Name) {
-                    match(unitIndex, parent, cur);
-                }
-            }
-            return this.getReferencesToSymbolSet(context, symbolSet, fieldMatch);
-        }
-
-        private getReferencesToType(context: GetReferencesContext, symbolSet: Services.SymbolSet, match: (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => void ) {
-            var typeMatch = (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => {
-                if (cur.nodeType == TypeScript.NodeType.Name) {
-                    match(unitIndex, parent, cur);
-                }
-            }
-            return this.getReferencesToSymbolSet(context, symbolSet, typeMatch);
-        }
-
-        private getReferencesToParameter(context: GetReferencesContext, symbolSet: Services.SymbolSet, match: (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => void ) {
-            var parameterMatch = (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => {
-                if (cur.nodeType == TypeScript.NodeType.Name) {
-                    match(unitIndex, parent, cur);
-                }
-            }
-            //TODO: Limit search to scope of function defining the parameter
-            return this.getReferencesToSymbolSet(context, symbolSet, parameterMatch);
-        }
-
-        private getReferencesToVariable(context: GetReferencesContext, symbolSet: Services.SymbolSet, match: (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => void ) {
-            var variableMatch = (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => {
-                if (cur.nodeType == TypeScript.NodeType.Name) {
-                    match(unitIndex, parent, cur);
-                }
-            }
-            //TODO: Limit search to scope of function defining the variable
-            return this.getReferencesToSymbolSet(context, symbolSet, variableMatch);
-        }
-
-        private getReferencesToSymbolSet(context: GetReferencesContext, symbolSet: Services.SymbolSet, match: (unitIndex: number, parent: TypeScript.AST, cur: TypeScript.AST) => void ): void {
-            var processScript = (unitIndex: number) => {
-                var pre = (cur: TypeScript.AST, parent: TypeScript.AST): TypeScript.AST => {
-                    if (TypeScript.isValidAstNode(cur)) {
-                        var sym = (<any>cur).sym;
-                        if (sym != null && symbolSet.contains(sym)) {
-                            match(unitIndex, parent, cur);
-                        }
-                    }
-                    return cur;
-                }
-
-                TypeScript.getAstWalkerFactory().walk(this.pullCompilerState.getScript(unitIndex), pre);
-                //this.compilerState.getScript(unitIndex).walk(pre, null, null, new Tools.BaseWalkContext());
-            }
-
-            for (var i = 0, len = context.scope.length; i < len; i++) {
-                processScript(context.scope[i]);
-            }
-        }
-
-        //
-        // Return the comma separated list of modifers (from the ScriptElementKindModifier list of constants) 
-        // of an AST node referencing a known declaration kind.
-        //
-        private getDeclNodeElementKind(ast: TypeScript.AST): string {
-            switch (ast.nodeType) {
-                case TypeScript.NodeType.Interface:
-                    return ScriptElementKind.interfaceElement;
-
-                case TypeScript.NodeType.Class:
-                    return ScriptElementKind.classElement;
-
-                case TypeScript.NodeType.Module:
-                    var moduleDecl = <TypeScript.ModuleDecl>ast;
-                    var isEnum = moduleDecl.isEnum();
-                    return isEnum ? ScriptElementKind.enumElement : ScriptElementKind.moduleElement;
-
-                case TypeScript.NodeType.VarDecl:
-                    var varDecl = <TypeScript.VarDecl>ast;
-                    return (varDecl.isProperty() ? ScriptElementKind.memberVariableElement : ScriptElementKind.variableElement);
-
-                case TypeScript.NodeType.ArgDecl:
-                    var argDecl = <TypeScript.ArgDecl>ast;
-                    return (argDecl.isProperty() ? ScriptElementKind.memberVariableElement : ScriptElementKind.variableElement);
-
-                case TypeScript.NodeType.FuncDecl:
-                    var funcDecl = <TypeScript.FuncDecl>ast;
-                    if (funcDecl.isGetAccessor()) {
-                        return ScriptElementKind.memberGetAccessorElement;
-                    }
-                    else if (funcDecl.isSetAccessor()) {
-                        return ScriptElementKind.memberSetAccessorElement;
-                    }
-                    else if (funcDecl.isCallMember()) {
-                        return ScriptElementKind.callSignatureElement;
-                    }
-                    else if (funcDecl.isIndexerMember()) {
-                        return ScriptElementKind.indexSignatureElement;
-                    }
-                    else if (funcDecl.isConstructMember()) {
-                        return ScriptElementKind.constructSignatureElement;
-                    }
-                    else if (funcDecl.isConstructor) {
-                        return ScriptElementKind.constructorImplementationElement;
-                    }
-                    else if (funcDecl.isMethod()) {
-                        return ScriptElementKind.memberFunctionElement;
-                    }
-                    else {
-                        return ScriptElementKind.functionElement;
-                    }
-
-                default:
-                    if (this.logger.warning()) {
-                        this.logger.log("Warning: unrecognized AST node type: " + (<any>TypeScript.NodeType)._map[ast.nodeType]);
-                    }
-                    return ScriptElementKind.unknown;
-            }
-        }
+        
 
         //
         // Return the comma separated list of modifers (from the ScriptElementKindModifier list of constants) 
@@ -1856,32 +1013,64 @@ module Services {
             return path;
         }
 
-        public getSymbolAtPosition(script: TypeScript.AST, pos: number): TypeScript.Symbol {
-            this.logger.log("getSymbolAtPosition(" + script + ", " + pos + ")");
+        //
+        // New Pull stuff
+        //
+        public getTypeAtPosition(fileName: string, pos: number): TypeInfo {
+            this.refresh();
 
-            var path = this.getAstPathToPosition(script, pos);
-            if (path.count() == 0)
-                return null;
+            var script = this.pullCompilerState.getScriptAST(fileName);
 
-            var finalAST = <any>path.ast();
-            if (finalAST == null)
-                return null;
+            var info = this.pullCompilerState.getPullTypeInfoAtPosition(pos, script);
+            var minChar = -1;
+            var limChar = -1;
 
-            //var preFinalAST = asts.length > 0 && asts[asts.length - 2];
-            if (finalAST.sym) {
-                return finalAST.sym;
-            }
-            if (finalAST.nodeType == TypeScript.NodeType.Dot && finalAST.operand2.sym) {
-                return finalAST.operand2.sym;
-            }
-            if (finalAST.signature && finalAST.signature.returnType && finalAST.signature.returnType.type && finalAST.signature.returnType.type.symbol) {
-                return finalAST.signature.returnType.type.symbol;
-            }
-            if (finalAST.type && finalAST.type.symbol) {
-                return finalAST.type.symbol;
+            if (info.ast) {
+                minChar = info.ast.minChar;
+                limChar = info.ast.limChar;
             }
 
-            return null;
+            // PULLTODO: use typeInfo for now, since I want to see more info for debugging;
+            //  we'll want to switch to typeName later, though
+            var memberName = TypeScript.MemberName.create(info.typeInfo);
+
+            var typeInfo = new TypeInfo(memberName, minChar, limChar);
+
+            return typeInfo;
+        }
+
+        public getCompletionsAtPosition(fileName: string, pos: number, isMemberCompletion: bool): CompletionInfo {
+            //this.minimalRefresh();
+            this.refresh();
+
+            var script = this.pullCompilerState.getScriptAST(fileName);
+
+            var info = this.pullCompilerState.getPullTypeInfoAtPosition(pos, script);
+
+            var type = info.typeSymbol;
+
+            if (isMemberCompletion && type.hasBrand()) {
+                type = (<TypeScript.PullClassSymbol>type).getInstanceType();
+            }
+
+            var completions = new CompletionInfo();
+            var members = type.getMembers();
+            var completionEntry: CompletionEntry;
+
+            for (var i = 0; i < members.length; i++) {
+                completionEntry = new CompletionEntry;
+                completionEntry.name = members[i].getName();
+                if (members[i].getType()) {
+                    completionEntry.type = members[i].getType().toString();
+                }
+                else {
+                    completionEntry.type = "Not sure what the type is...";
+                }
+
+                completions.entries[completions.entries.length] = completionEntry;
+            }
+
+            return completions;
         }
     }
 }

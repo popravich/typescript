@@ -44,6 +44,7 @@ module TypeScript {
     export class LinkList {
         public head: IListItem = null;
         public last: IListItem = null;
+        public length = 0;
 
         public addItem(item: any) {
             if (!this.head) {
@@ -55,6 +56,8 @@ module TypeScript {
             this.last.next = new IListItem(item);
             this.last.next.prev = this.last;
             this.last = this.last.next;
+
+            this.length++;
         }
 
         // PULLTODO: Register callbacks for caching
@@ -105,6 +108,8 @@ module TypeScript {
                             next.prev = prev;
                         }
                     }
+
+                    this.length--;
                 }
                 node = node.next;
             }

@@ -62,11 +62,7 @@ module Services {
 
         public mapToHostUnitIndex(unitIndex: number): number {
             return this.unitIndexMap[unitIndex];
-        }
-
-        public anyType() {
-            return this.compiler.typeFlow.anyType;
-        }
+        }        
 
         public getScriptCount() {
             return this.compiler.scripts.members.length;
@@ -102,73 +98,6 @@ module Services {
             var newScript = compiler.addSourceUnit(this.hostCache.getSourceText(hostUnitIndex), this.hostCache.getScriptId(hostUnitIndex), this.hostCache.getIsResident(hostUnitIndex));
         }
 
-        private updateCompilerUnit(compiler: TypeScript.TypeScriptCompiler, hostUnitIndex: number, unitIndex: number): TypeScript.UpdateUnitResult {
-            var scriptId = this.hostCache.getScriptId(hostUnitIndex);
-
-            //Note: We need to call "_setUnitIndexMapping" _before_ calling into the compiler,
-            //      in case the compiler fails (i.e. throws an exception). This is due to the way
-            //      we recover from those failure (we still report errors to the host, 
-            //      and we need unit mapping info to do that correctly.
-            this.setUnitIndexMapping(unitIndex, hostUnitIndex);
-
-            var previousEntry = this.scriptMap.getEntry(scriptId);
-
-            //
-            // If file is resident, no update for sure
-            //
-            var isResident = this.hostCache.getIsResident(hostUnitIndex);
-            if (isResident) {
-                //logger.log("Resident unit are always unchanged (until they become resident): " + unitIndex + "-" + fileName);
-                return TypeScript.UpdateUnitResult.noEdits(unitIndex); // not updated
-            }
-
-            //
-            // If file version is the same, assume no update
-            //
-            var version = this.hostCache.getVersion(hostUnitIndex);
-            if (previousEntry.version === version) {
-                //logger.log("Assumed unchanged unit: " + unitIndex + "-"+ fileName);
-                return TypeScript.UpdateUnitResult.noEdits(unitIndex); // not updated
-            }
-
-            //
-            // Otherwise, we need to re-parse/retypecheck the file (maybe incrementally)
-            //
-            var result = this.attemptIncrementalUpdateUnit(scriptId);
-            if (result != null)
-                return result;
-
-            var sourceText = this.hostCache.getSourceText(hostUnitIndex);
-            this.setUnitMapping(unitIndex, hostUnitIndex);
-            return compiler.partialUpdateUnit(sourceText, scriptId, true/*setRecovery*/);
-        }
-
-        private attemptIncrementalUpdateUnit(scriptId: string): TypeScript.UpdateUnitResult {
-            var previousScript = this.getScriptAST(scriptId);
-            var newSourceText = this.getSourceText(previousScript, false);
-            var editRange = this.getScriptEditRange(previousScript);
-
-            var result = new TypeScript.IncrementalParser(this.logger).attemptIncrementalUpdateUnit(previousScript, scriptId, newSourceText, editRange);
-            if (result == null)
-                return null;
-
-            if (result.kind === TypeScript.UpdateUnitKind.EditsInsideSingleScope) {
-                if (result.scope1.nodeType != TypeScript.NodeType.FuncDecl) {
-                    this.logger.log("  Bailing out because containing scope is not a function");
-                    return null;
-                }
-            }
-
-            //TODO: We don't enable incremental right now, as it would break IDE error reporting
-            if (true) {
-                this.logger.log("  Bailing out because incremental typecheck is not implemented yet");
-                return null;
-            }
-            else {
-                return result;
-            }
-        }
-
         private getHostCompilationSettings() {
             var settings = this.host.getCompilationSettings();
             if (settings !== null) {
@@ -178,6 +107,7 @@ module Services {
             // Set "ES5" target by default for language service
             settings = new TypeScript.CompilationSettings();
             settings.codeGenTarget = TypeScript.CodeGenTarget.ES5;
+            settings.usePull = true;
             return settings;
         }
 
@@ -210,7 +140,7 @@ module Services {
 
             // Initial typecheck
             this.onTypeCheckStarting();
-            this.compiler.typeCheck()
+            this.compiler.pullTypeCheck();
         }
 
         public minimalRefresh(): void {
@@ -293,116 +223,8 @@ module Services {
                 }
             }
 
-            //
-            // If any file "isResident" status has changed, create a new compiler instance
-            //
-            for (var unitIndex = 0, len = this.compiler.units.length; unitIndex < len; unitIndex++) {
-                var fileName = this.compiler.units[unitIndex].filename;
-                var isResident = (<TypeScript.Script>this.compiler.scripts.members[unitIndex]).isResident;
-                var hostUnitIndex = this.hostCache.getUnitIndex(fileName);
-
-                if (this.hostCache.getIsResident(hostUnitIndex) != isResident) {
-                    this.logger.log("Creating new compiler instance because of unit 'isResident' status has changed: " + unitIndex + "-" + fileName);
-                    this.createCompiler();
-                    return true;
-                }
-            }
-
             // We can attempt a partial refresh
             return false;
-        }
-
-        // Attempt an incremental refresh of the compiler state.
-        private partialRefresh(): void {
-            this.logger.log("Updating files...");
-            this.compilerCache = new CompilerCache(this.compiler);
-
-            var updateResults: TypeScript.UpdateUnitResult[] = [];
-            function getSingleFunctionEdit(updateResults: TypeScript.UpdateUnitResult[]) {
-                var result: TypeScript.UpdateUnitResult = null;
-                for (var i = 0, len = updateResults.length; i < len; i++) {
-                    var entry = updateResults[i];
-                    if (entry.kind == TypeScript.UpdateUnitKind.EditsInsideSingleScope) {
-                        if (result === null)
-                            result = entry;
-                        else {
-                            result = null;
-                            break;
-                        }
-                    } else if (entry.kind == TypeScript.UpdateUnitKind.Unknown) {
-                        result = null;
-                        break;
-                    }
-                }
-                return result;
-            }
-            var fileAdded: bool = false;
-
-            // foreach file in the list of new files
-            //   if there was a file with the same name before
-            //      update it if content has changed
-            //   else
-            //      add it
-            for (var hostUnitIndex = 0, len = this.host.getScriptCount() ; hostUnitIndex < len; hostUnitIndex++) {
-                var fileName = this.hostCache.getScriptId(hostUnitIndex);
-                var unitIndex = this.compilerCache.getUnitIndex(fileName);
-
-                if (unitIndex >= 0) {
-                    var updateResult = this.updateCompilerUnit(this.compiler, hostUnitIndex, unitIndex);
-                    updateResults.push(updateResult);
-                }
-                else {
-                    this.addCompilerUnit(this.compiler, hostUnitIndex);
-                    fileAdded = true;
-                }
-            }
-
-            // Are we in an incremental update situation?
-            var incrementalTypeCheckSuccessful = false;
-            var singleEdit = getSingleFunctionEdit(updateResults);
-            if (fileAdded === false && singleEdit !== null) {
-                this.logger.log("Attempting incremental type check because there was a single edit to the function \"" + (<TypeScript.FuncDecl>singleEdit.scope1).name.actualText + "\"");
-                incrementalTypeCheckSuccessful = this.attemptIncrementalTypeCheck(singleEdit);
-            }
-
-            // Incremental was not applicable, fall back to full typecheck
-            if (!incrementalTypeCheckSuccessful) {
-                // Apply changes to units
-                var anythingUpdated = false;
-                for (var i = 0, len = updateResults.length; i < len; i++) {
-                    var entry = updateResults[i];
-                    if (this.applyUpdateResult(entry))
-                        anythingUpdated = true;
-                }
-
-                if (anythingUpdated) {
-                    this.logger.log("Incremental type check not applicable, processing unit updates");
-                    this.onTypeCheckStarting();
-                    this.compiler.reTypeCheck();
-                }
-                else {
-                    this.logger.log("No updates to source files, no typecheck needed");
-                }
-            }
-        }
-
-        private attemptIncrementalTypeCheck(updateResult: TypeScript.UpdateUnitResult): bool {
-            var success = this.compiler.attemptIncrementalTypeCheck(updateResult);
-            if (success) {
-                this.applyUpdateResult(updateResult);
-            }
-            return success;
-        }
-
-        private applyUpdateResult(updateResult: TypeScript.UpdateUnitResult): bool {
-            switch (updateResult.kind) {
-                case TypeScript.UpdateUnitKind.NoEdits:
-                    return false;
-                case TypeScript.UpdateUnitKind.Unknown:
-                case TypeScript.UpdateUnitKind.EditsInsideSingleScope:
-                    this.errorCollector.startParsing(updateResult.unitIndex);
-                    return this.compiler.applyUpdateResult(updateResult);
-            }
         }
 
         public getScriptAST(fileName: string): TypeScript.Script {
@@ -508,6 +330,67 @@ module Services {
             var script = parser.parse(sourceText, fileName, 0);
 
             return new ScriptSyntaxAST(this.logger, script, sourceText);
+        }
+
+        //
+        // New Pull stuff
+        //
+        public getPullTypeInfoAtPosition(pos: number, script: TypeScript.Script) {
+            return this.compiler.pullGetTypeInfoAtPosition(pos, script);
+        }
+
+        private updateCompilerUnit(compiler: TypeScript.TypeScriptCompiler, hostUnitIndex: number, unitIndex: number): bool {
+            var scriptId = this.hostCache.getScriptId(hostUnitIndex);
+
+            //Note: We need to call "_setUnitIndexMapping" _before_ calling into the compiler,
+            //      in case the compiler fails (i.e. throws an exception). This is due to the way
+            //      we recover from those failure (we still report errors to the host, 
+            //      and we need unit mapping info to do that correctly.
+            this.setUnitIndexMapping(unitIndex, hostUnitIndex);
+
+            var previousEntry = this.scriptMap.getEntry(scriptId);
+
+            //
+            // If file version is the same, assume no update
+            //
+            var version = this.hostCache.getVersion(hostUnitIndex);
+            if (previousEntry.version === version) {
+                //logger.log("Assumed unchanged unit: " + unitIndex + "-"+ fileName);
+                return false;
+            }
+
+            //
+            // Otherwise, we need to re-parse/retypecheck the file (maybe incrementally)
+            //
+
+            var sourceText = this.hostCache.getSourceText(hostUnitIndex);
+            this.setUnitMapping(unitIndex, hostUnitIndex);
+            return compiler.pullUpdateUnit(sourceText, scriptId, true/*setRecovery*/);
+        }
+
+        // Attempt an incremental refresh of the compiler state.
+        private partialRefresh(): void {
+            this.logger.log("Updating files...");
+            this.compilerCache = new CompilerCache(this.compiler);
+
+            var fileAdded: bool = false;
+
+            for (var hostUnitIndex = 0, len = this.host.getScriptCount() ; hostUnitIndex < len; hostUnitIndex++) {
+                var fileName = this.hostCache.getScriptId(hostUnitIndex);
+                var unitIndex = this.compilerCache.getUnitIndex(fileName);
+
+                if (unitIndex >= 0) {
+                    this.updateCompilerUnit(this.compiler, hostUnitIndex, unitIndex);
+                }
+                else {
+                    this.addCompilerUnit(this.compiler, hostUnitIndex);
+                    fileAdded = true;
+                }
+            }
+
+            if (fileAdded) {
+                this.compiler.pullTypeCheck(true);
+            }
         }
     }
 }

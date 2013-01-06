@@ -127,6 +127,7 @@ module TypeScript {
             for (var i = 0; i < this.units.length; i++) {
                 if (this.units[i] == oldUnit) {
                     this.units[i] = newUnit;
+                    this.unitCache[oldUnit.getPath()] = newUnit;
                     return;
                 }
             }
@@ -178,6 +179,7 @@ module TypeScript {
             var decls: PullDecl[] = [];
             var path: string;
             var foundDecls: PullDecl[] = [];
+            var keepSearching = (declKind & DeclKind.Module) || (declKind & DeclKind.Interface);
 
             for (var i = 0; i < declPath.length; i++) {
                 path = declPath[i];
@@ -188,6 +190,12 @@ module TypeScript {
 
                     for (var k = 0; k < foundDecls.length; k++) {
                         decls[decls.length] = foundDecls[k];
+                    }
+
+                    // Unless we're searching for an interface or module, we've found the one true
+                    // decl, so don't bother searching the rest of the top-level decls
+                    if (foundDecls.length && !keepSearching) {
+                        break;
                     }
                 }
 

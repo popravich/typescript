@@ -49,6 +49,17 @@ module TypeScript {
                 parent.addMember(moduleSymbol, linkKind);
             }
         }
+        else if (context.reBindingAfterChange) {
+            // clear out the old decls...
+            var decls = moduleSymbol.getDeclarations();
+            var scriptName = moduleDecl.getScriptName();
+
+            for (var i = 0; i < decls.length; i++) {
+                if (decls[i].getScriptName() == scriptName && decls[i].getDeclID() < context.startingDeclForRebind) {
+                    moduleSymbol.removeDeclaration(decls[i]);
+                }
+            }
+        }
 
         context.pushParent(moduleSymbol);
 
@@ -66,11 +77,53 @@ module TypeScript {
         // PULLTODO: Check for name collisions
         // PULLTODO: Extends/Implements symbols
         var className = classDecl.getName();
-        var classSymbol = new PullClassSymbol(className, DeclKind.Class);
+        var classSymbol: PullClassSymbol = null;
+        var instanceSymbol: PullTypeSymbol = null;
+        var parentHadSymbol = false;
 
-        var instanceSymbol = new PullClassInstanceSymbol(className, DeclKind.ClassInstanceDecl);
+        var parent = context.getParent();
 
-        classSymbol.setInstanceType(instanceSymbol);
+        if (context.reBindingAfterChange && parent) {
+            // see if the parent already has a symbol for this class
+            var members = parent.getMembers();
+            var member: PullSymbol = null;
+
+            for (var i = 0 ; i < members.length; i++) {
+                member = members[i];
+
+                if (member.getName() == className && member.getKind() == DeclKind.Class) {
+                    parentHadSymbol = true;
+                    classSymbol = <PullClassSymbol>member;
+                    instanceSymbol = classSymbol.getInstanceType();
+
+                    // prune out-of-date decls
+                    var decls = classSymbol.getDeclarations();
+                    var scriptName = classDecl.getScriptName();
+
+                    for (var j = 0; j < decls.length; j++) {
+                        if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
+                            classSymbol.removeDeclaration(decls[j]);
+                        }
+                    }
+
+                    decls = instanceSymbol.getDeclarations();
+
+                    for (var j = 0; j < decls.length; j++) {
+                        if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
+                            instanceSymbol.removeDeclaration(decls[j]);
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if (!parentHadSymbol) {
+            classSymbol = new PullClassSymbol(className, DeclKind.Class);
+            instanceSymbol = new PullClassInstanceSymbol(className, DeclKind.ClassInstanceDecl);
+            classSymbol.setInstanceType(instanceSymbol);
+        }        
         
         classSymbol.addDeclaration(classDecl);
         instanceSymbol.addDeclaration(classDecl);
@@ -79,11 +132,32 @@ module TypeScript {
 
         context.semanticInfo.setSymbolForDecl(classDecl, classSymbol);
 
-        var parent = context.getParent();
         
-        if (parent) {
+        if (parent && !parentHadSymbol) {
             var linkKind = classDecl.getDeclFlags() & DeclFlags.Exported ? SymbolLinkKind.PublicProperty : SymbolLinkKind.PrivateProperty;
             parent.addMember(classSymbol, linkKind);
+        }
+
+        // PULLTODO: For now, remove stale signatures from the function type, but we want to be smarter about this when
+        // incremental parsing comes online
+        if (parentHadSymbol) {
+            var callSigs = classSymbol.getCallSignatures();
+            var constructSigs = classSymbol.getConstructSignatures();
+            var indexSigs = classSymbol.getIndexSignatures();
+
+            for (var i = 0; i < callSigs.length; i++) {
+                classSymbol.removeCallSignature(callSigs[i], false);
+            }
+            for (var i = 0; i < constructSigs.length; i++) {
+                classSymbol.removeConstructSignature(constructSigs[i], false);
+            }
+            for (var i = 0; i < indexSigs.length; i++) {
+                classSymbol.removeIndexSignature(indexSigs[i], false);
+            }
+
+            // just invalidate this once, so we don't pay the cost of rebuilding caches
+            // for each signature removed
+            classSymbol.invalidate();
         }
 
         context.pushParent(classSymbol);
@@ -125,6 +199,17 @@ module TypeScript {
                 parent.addMember(interfaceSymbol, linkKind);
             }
         }
+        else if (context.reBindingAfterChange) {
+            // clear out the old decls...
+            var decls = interfaceSymbol.getDeclarations();
+            var scriptName = interfaceDecl.getScriptName();
+
+            for (var i = 0; i < decls.length; i++) {
+                if (decls[i].getScriptName() == scriptName && decls[i].getDeclID() < context.startingDeclForRebind) {
+                    interfaceSymbol.removeDeclaration(decls[i]);
+                }
+            }
+        }
 
         context.pushParent(interfaceSymbol);
 
@@ -144,6 +229,7 @@ module TypeScript {
         var isStatic = false;
         var isExported = false;
         var linkKind = SymbolLinkKind.PrivateProperty;
+        var variableSymbol: PullSymbol = null;
 
         if (hasFlag(declFlags, DeclFlags.Exported)) {
             isExported = true;
@@ -167,15 +253,48 @@ module TypeScript {
                             isProperty ? DeclKind.Field : DeclKind.Variable;
 
         var declName = varDecl.getName();
-        var variableSymbol = new PullSymbol(declName, declType);
+
+        var parentHadSymbol = false;
+
         var parent = context.getParent();
+
+        if (context.reBindingAfterChange && parent) {
+            // see if the parent already has a symbol for this class
+            var members = parent.hasBrand() && !isStatic ? (<PullClassSymbol>parent).getInstanceType().getMembers() : parent.getMembers();
+            var member: PullSymbol = null;
+
+            for (var i = 0 ; i < members.length; i++) {
+                member = members[i];
+
+                if (member.getName() == declName && member.getKind() == declType) {
+                    parentHadSymbol = true;
+                    variableSymbol = member;
+                    
+                    // prune out-of-date decls...
+                    var decls = member.getDeclarations();
+                    var scriptName = varDecl.getScriptName();
+
+                    for (var j = 0; j < decls.length; j++) {
+                        if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
+                            variableSymbol.removeDeclaration(decls[j]);
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if (!parentHadSymbol) {
+            variableSymbol = new PullSymbol(declName, declType);
+        }        
 
         if (varDecl) {
             variableSymbol.addDeclaration(varDecl);
             varDecl.setSymbol(variableSymbol);
         }
 
-        if (parent) {
+        if (parent && !parentHadSymbol) {
             if (parent.hasBrand()) {
                 var classTypeSymbol = <PullClassSymbol>parent;
                 if (isStatic) {
@@ -275,7 +394,11 @@ module TypeScript {
         var isIndex: bool = (declFlags & DeclFlags.Index) != 0;
         var isSignature: bool = (declFlags & DeclFlags.Signature) != 0;
 
-        var functionSymbol: PullFunctionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
+        var parent = context.getParent();
+        var parentHadSymbol = false;
+
+        // PULLTODO: On a re-bind, there's no need to search far-and-wide: just look in the parent's member list
+        var functionSymbol: PullFunctionSymbol = null; //<PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
 
         // if it's a function definition, add a call signature to this signature
         // if it's a function signature, add a call signature to this signature
@@ -288,6 +411,33 @@ module TypeScript {
         var linkKind = isStatic ? SymbolLinkKind.StaticProperty :
                         isPrivate ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
 
+        if (context.reBindingAfterChange && parent) {
+            // see if the parent already has a symbol for this class
+            var members = parent.hasBrand() && !isStatic ? (<PullClassSymbol>parent).getInstanceType().getMembers() : parent.getMembers();
+            var member: PullSymbol = null;
+
+            for (var i = 0 ; i < members.length; i++) {
+                member = members[i];
+
+                if (member.getName() == funcName && (member.getKind() & declKind)) {
+                    parentHadSymbol = true;
+                    functionSymbol = <PullFunctionSymbol>member;
+                    
+                    // prune out-of-date decls...
+                    var decls = member.getDeclarations();
+                    var scriptName = funcDecl.getScriptName();
+
+                    for (var j = 0; j < decls.length; j++) {
+                        if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
+                            functionSymbol.removeDeclaration(decls[j]);
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
         if (!functionSymbol) {
             // PULLTODO: Make sure that we properly flag signature decl types when collecting decls
             functionSymbol = new PullFunctionSymbol(funcName, isProperty ? DeclKind.Method : DeclKind.Function);
@@ -298,10 +448,8 @@ module TypeScript {
             functionSymbol.addDeclaration(funcDecl);
             context.semanticInfo.setSymbolForDecl(funcDecl, functionSymbol);
         }
-
-        var parent = context.getParent();
         
-        if (parent && !isConstructor) {
+        if (parent && !isConstructor && !parentHadSymbol) {
 
             if (parent.hasBrand()) {
                 if (isStatic) {
@@ -327,11 +475,33 @@ module TypeScript {
             context.pushParent(functionSymbol);
         }
 
+        // PULLTODO: For now, remove stale signatures from the function type, but we want to be smarter about this when
+        // incremental parsing comes online
+        if (parentHadSymbol) {
+            var callSigs = functionSymbol.getCallSignatures();
+            var constructSigs = functionSymbol.getConstructSignatures();
+            var indexSigs = functionSymbol.getIndexSignatures();
+
+            for (var i = 0; i < callSigs.length; i++) {
+                functionSymbol.removeCallSignature(callSigs[i], false);
+            }
+            for (var i = 0; i < constructSigs.length; i++) {
+                functionSymbol.removeConstructSignature(constructSigs[i], false);
+            }
+            for (var i = 0; i < indexSigs.length; i++) {
+                functionSymbol.removeIndexSignature(indexSigs[i], false);
+            }
+
+            // just invalidate this once, so we don't pay the cost of rebuilding caches
+            // for each signature removed
+            functionSymbol.invalidate();
+        }
+
         var sigKind = isConstructor ? DeclKind.ConstructSignature :
                         isIndex ? DeclKind.IndexSignature : DeclKind.CallSignature;
 
         var signature = isSignature ? new PullSignatureSymbol("", sigKind) : new PullDefinitionSignatureSymbol("", sigKind);
-        
+
         signature.addDeclaration(funcDecl);
         funcDecl.setSignatureSymbol(signature);
 

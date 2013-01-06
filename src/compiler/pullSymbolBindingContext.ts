@@ -10,6 +10,8 @@ module TypeScript {
         private parentChain: PullTypeSymbol[] = [];
         private declPath: string[] = [];
         public semanticInfo: SemanticInfo;
+        public reBindingAfterChange = false;
+        public startingDeclForRebind = pullDeclId; // note that this gets set on creation
 
         constructor (public semanticInfoChain: SemanticInfoChain, public scriptName: string) {
             this.semanticInfo = this.semanticInfoChain.getUnit(this.scriptName);
@@ -40,49 +42,54 @@ module TypeScript {
         var contextSymbolPath: string[] = context.getDeclPath();
         var nestedSymbolPath: string[] = [];
         var copyOfContextSymbolPath = [];
+        var symbol: PullSymbol = null;
 
         // first, search within the given symbol path
-        for (var i = 0; i < typeLookupPath.length; i++) {
-            nestedSymbolPath[nestedSymbolPath.length] = typeLookupPath[i];
-        }
-        
-        nestedSymbolPath[nestedSymbolPath.length] = name;
+        if (typeLookupPath.length) {
 
-        var symbol: PullSymbol = null; 
-        
-        while (nestedSymbolPath.length >= 2) {
-            symbol = context.semanticInfoChain.findSymbol(nestedSymbolPath, declKind);
-
-            if (symbol) {
-                var endTime = new Date().getTime();
-                time_in_findSymbol += endTime - startTime;
-                return symbol;
+            for (var i = 0; i < typeLookupPath.length; i++) {
+                nestedSymbolPath[nestedSymbolPath.length] = typeLookupPath[i];
             }
-            nestedSymbolPath.length -= 2;
+
             nestedSymbolPath[nestedSymbolPath.length] = name;
+
+            while (nestedSymbolPath.length >= 2) {
+                symbol = context.semanticInfoChain.findSymbol(nestedSymbolPath, declKind);
+
+                if (symbol) {
+                    var endTime = new Date().getTime();
+                    time_in_findSymbol += endTime - startTime;
+                    return symbol;
+                }
+                nestedSymbolPath.length -= 2;
+                nestedSymbolPath[nestedSymbolPath.length] = name;
+            }
         }
 
         // next, link back up to the enclosing context
-        for (var i = 0; i < contextSymbolPath.length; i++) {
-            copyOfContextSymbolPath[copyOfContextSymbolPath.length] = contextSymbolPath[i];
-        }
-
-        for (var i = 0; i < typeLookupPath.length; i++) {
-            copyOfContextSymbolPath[copyOfContextSymbolPath.length] = typeLookupPath[i];
-        }
+        if (contextSymbolPath.length) {
             
-        copyOfContextSymbolPath[copyOfContextSymbolPath.length] = name;
-
-        while (copyOfContextSymbolPath.length >= 2) {
-            symbol = context.semanticInfoChain.findSymbol(copyOfContextSymbolPath, declKind);
-
-            if (symbol) {
-                var endTime = new Date().getTime();
-                time_in_findSymbol += endTime - startTime;
-                return symbol;
+            for (var i = 0; i < contextSymbolPath.length; i++) {
+                copyOfContextSymbolPath[copyOfContextSymbolPath.length] = contextSymbolPath[i];
             }
-            copyOfContextSymbolPath.length -= 2;
+
+            for (var i = 0; i < typeLookupPath.length; i++) {
+                copyOfContextSymbolPath[copyOfContextSymbolPath.length] = typeLookupPath[i];
+            }
+
             copyOfContextSymbolPath[copyOfContextSymbolPath.length] = name;
+
+            while (copyOfContextSymbolPath.length >= 2) {
+                symbol = context.semanticInfoChain.findSymbol(copyOfContextSymbolPath, declKind);
+
+                if (symbol) {
+                    var endTime = new Date().getTime();
+                    time_in_findSymbol += endTime - startTime;
+                    return symbol;
+                }
+                copyOfContextSymbolPath.length -= 2;
+                copyOfContextSymbolPath[copyOfContextSymbolPath.length] = name;
+            }
         }
 
         // finally, try searching globally
