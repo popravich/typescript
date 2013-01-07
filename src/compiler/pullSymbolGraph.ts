@@ -311,6 +311,9 @@ module TypeScript {
         else if (link.kind == SymbolLinkKind.InstanceType) {
             // no action...
         }
+        else if (link.kind == SymbolLinkKind.ArrayType) {
+            update.updater.removeSymbol(affectedSymbol);
+        }
         else if (link.kind == SymbolLinkKind.ArrayOf) {
             update.updater.removeSymbol(affectedSymbol);
         }

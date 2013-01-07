@@ -715,13 +715,13 @@ module TypeScript {
             return { gets: nTypesGotten, sets: nTypesSet, get_and_set: nTypeWasSetAndGotten };
         }
 
+        //
         // Pull typecheck infrastructure
+        //
 
         public pullTypeCheck(refresh = false) {
             return this.timeFunction("pullTypeCheck()", () => {
-                // create global decls
-                // collect decls from files
-                // walk scripts, pull-typechecking each
+
                 if (!this.pullTypeChecker || refresh) {
                     this.semanticInfoChain = new SemanticInfoChain();
                     this.pullTypeChecker = new PullTypeChecker(this.semanticInfoChain);
@@ -780,6 +780,7 @@ module TypeScript {
 
                 var bindEndTime = new Date().getTime();
                 var typeCheckStartTime = new Date().getTime();
+
                 // typecheck
                 for (i = 0; i < this.scripts.members.length; i++) {
 
@@ -789,10 +790,8 @@ module TypeScript {
 
                     this.pullTypeChecker.setUnit(this.units[i].filename, this.logger);
                     this.pullTypeChecker.resolver.resolveBoundDecls(this.semanticInfoChain.units[this.settings.testPull ? (i > skipFirst ? i : i + 1) : i + 1].getTopLevelDecls()[0]);
-
-                    //this.pullTypeChecker.setUnit(this.units[i].filename);
-                    //getAstWalkerFactory().walk(this.scripts.members[i], prePullTypeCheck, null, null, this.pullTypeChecker);
                 }
+
                 var typeCheckEndTime = new Date().getTime();
 
                 this.logger.log("Decl creation: " + (createDeclsEndTime - createDeclsStartTime));
@@ -802,16 +801,6 @@ module TypeScript {
                 this.logger.log("Total: " + (typeCheckEndTime - createDeclsStartTime));
 
                 if (this.settings.testPull) {
-                    //var declDiffer = new PullDeclDiffer();
-
-                    //semanticInfo = new SemanticInfo(this.units[skipFirst].filename);
-
-                    //declCollectionContext = new DeclCollectionContext(semanticInfo);
-
-                    //declCollectionContext.scriptName = this.units[skipFirst].filename;
-
-                    //// create decls
-                    //getAstWalkerFactory().walk(this.scripts.members[skipFirst], preCollectDecls, postCollectDecls, null, declCollectionContext);
 
                     // note that we don't decrement skipFirst, because we need to skip the globals that are added
                     var oldIndex = skipFirst;
@@ -826,63 +815,6 @@ module TypeScript {
                     }
 
                     this.pullUpdateScript(<Script>this.scripts.members[oldIndex], <Script>this.scripts.members[skipFirst]);
-
-                    //var oldTopLevelDecl = this.semanticInfoChain.units[oldIndex].getTopLevelDecls()[0];
-                    //var newTopLevelDecl = declCollectionContext.getParent();
-
-                    //semanticInfo.addTopLevelDecl(newTopLevelDecl);
-
-                    //var diffResults: PullDeclDiff[] = [];
-
-                    //var diffStartTime = new Date().getTime();
-                    //declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
-
-                    //var diffEndTime = new Date().getTime();
-                    //CompilerDiagnostics.Alert("Diff time: " + (diffEndTime - diffStartTime));
-
-                    //if (diffResults.length) {
-                    //    // replace the old semantic info
-                    //    this.semanticInfoChain.updateUnit(this.semanticInfoChain.units[skipFirst], semanticInfo);
-
-                    //    // re-bind
-                    //    var innerBindStartTime = new Date().getTime();
-
-                    //    topLevelDecls = semanticInfo.getTopLevelDecls();
-
-                    //    pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, semanticInfo.getPath());
-
-                    //    for (var i = 0; i < topLevelDecls.length; i++) {
-
-                    //        bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
-
-                    //    }
-                    //    var innerBindEndTime = new Date().getTime();
-
-                    //    CompilerDiagnostics.Alert("Inner bind time: " + (innerBindEndTime - innerBindStartTime));
-
-                    //    // propagate changes
-                    //    var graphUpdater = new PullSymbolGraphUpdater();
-                    //    var diff: PullDeclDiff;
-
-                    //    var traceStartTime = new Date().getTime();
-                    //    for (var i = 0; i < diffResults.length; i++) {
-                    //        diff = diffResults[i];
-
-                    //        if (diff.kind == PullDeclEdit.DeclRemoved) {
-                    //            graphUpdater.removeDecl(diff.oldDecl);
-                    //        }
-                    //        else if (diff.kind == PullDeclEdit.DeclAdded) {
-                    //            //graphUpdater.addDecl(diff.newDecl);
-                    //            graphUpdater.invalidateType(diff.oldDecl.getSymbol());
-                    //        }
-                    //        else {
-                    //            // PULLTODO: Other kinds of edits
-                    //        }
-                    //    }
-                    //    var traceEndTime = new Date().getTime();
-                    //    CompilerDiagnostics.Alert("Trace time: " + (traceEndTime - traceStartTime));
-                    //    CompilerDiagnostics.Alert("Number of diffs: " + diffResults.length);
-                    //}
                 }
             });
         }
@@ -903,18 +835,6 @@ module TypeScript {
 
                 // create decls
                 getAstWalkerFactory().walk(newScript, preCollectDecls, postCollectDecls, null, declCollectionContext);
-
-                // note that we don't decrement skipFirst, because we need to skip the globals that are added
-                //var oldIndex = skipFirst;
-
-                //if (findPullFile) {
-                //    for (var i = 0; i < this.units.length; i++) {
-                //        if (this.semanticInfoChain.units[i].getPath().indexOf(this.settings.testPullWithFile) != -1) {
-                //            oldIndex = i;
-                //            break;
-                //        }
-                //    }
-                //}
 
                 var oldTopLevelDecl = oldScriptSemanticInfo.getTopLevelDecls()[0];
                 var newTopLevelDecl = declCollectionContext.getParent();
@@ -973,11 +893,6 @@ module TypeScript {
                     }
                     //var typeInfo;
                     var traceEndTime = new Date().getTime();
-                    //if (addedDiff) {
-                    //    var startupdate = new Date().getTime();
-                    //    typeInfo = this.pullGetTypeInfoAtPosition(/*addedDiff.newDecl.getSpan().minChar*/489, newScript, oldScript.locationInfo.filename);
-                    //    CompilerDiagnostics.Alert("Pull time for AST: " + ((new Date()).getTime() - startupdate));
-                    //}
 
                     this.logger.log("Update Script - Trace time: " + (traceEndTime - traceStartTime));
                     this.logger.log("Update Script - Number of diffs: " + diffResults.length);
@@ -991,6 +906,7 @@ module TypeScript {
 
         public pullGetTypeInfoAtPosition(pos: number, script: Script, scriptName?: string): { ast: AST; typeName: string; typeInfo: string; typeSymbol: PullTypeSymbol; } {
             return this.timeFunction("pullGetTypeInfoAtPosition for pos " + pos + ":", () => {
+
                 // find the enclosing decl
                 var declStack: PullDecl[] = [];
                 var resultASTs: AST[] = [];
@@ -1005,9 +921,9 @@ module TypeScript {
                 var pre = (cur: AST, parent: AST): AST => {
                     if (isValidAstNode(cur)) {
                         if (pos >= cur.minChar && pos <= cur.limChar) {
-                            // TODO: Since AST is sometimes not correct wrt to position, only add "cur" if it's better
-                            //       than top of the stack.
+
                             var previous = resultASTs[resultASTs.length - 1];
+
                             if (previous == undefined || (cur.minChar >= previous.minChar && cur.limChar <= previous.limChar)) {
 
                                 var decl = semanticInfo.getDeclForAST(cur);
@@ -1082,7 +998,7 @@ module TypeScript {
 
                         var updateResult: UpdateUnitResult;
 
-                        // Capture parsing errors so that they are part of "updateResult"
+                        // Capture parsing errors for now
                         var parseErrors: ErrorEntry[] = [];
                         var errorCapture = (minChar: number, charLen: number, message: string, unitIndex: number): void => {
                             parseErrors.push(new ErrorEntry(unitIndex, minChar, minChar + charLen, message));
@@ -1099,13 +1015,6 @@ module TypeScript {
 
                         this.scripts.members[i] = newScript;
                         this.units[i] = newScript.locationInfo;
-
-                        //for (var i = 0, len = updateResult.parseErrors.length; i < len; i++) {
-                        //    var e = updateResult.parseErrors[i];
-                        //    if (this.parser.errorCallback) {
-                        //        this.parser.errorCallback(e.minChar, e.limChar - e.minChar, e.message, e.unitIndex);
-                        //    }
-                        //}
 
                         return this.pullUpdateScript(oldScript, newScript);
                     }

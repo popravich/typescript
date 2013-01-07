@@ -848,7 +848,7 @@ module Services {
                         var typeDecl = <TypeScript.TypeDecl>ast;
                         item = addItem(parent, typeDecl, typeDecl.name.actualText, ScriptElementKind.interfaceElement);
                         context.containerASTs.push(ast);
-                        context.containerSymbols.push(typeDecl.getType().symbol);
+                        //context.containerSymbols.push(typeDecl.getType().symbol);
                         context.containerKinds.push("interface");
                     }
                         break;
@@ -857,7 +857,7 @@ module Services {
                         var classDecl = <TypeScript.ClassDecl>ast;
                         item = addItem(parent, classDecl, classDecl.name.actualText, ScriptElementKind.classElement);
                         context.containerASTs.push(ast);
-                        context.containerSymbols.push(classDecl.getType().symbol);
+                        //context.containerSymbols.push(classDecl.getType().symbol);
                         context.containerKinds.push("class");
                     }
                         break;
@@ -868,7 +868,7 @@ module Services {
                         var kind = isEnum ? ScriptElementKind.enumElement : ScriptElementKind.moduleElement;
                         item = addItem(parent, moduleDecl, moduleDecl.name.actualText, kind);
                         context.containerASTs.push(ast);
-                        context.containerSymbols.push(moduleDecl.mod.symbol);
+                        //context.containerSymbols.push(moduleDecl.mod.symbol);
                         context.containerKinds.push(kind);
                     }
                         break;
