@@ -105,18 +105,8 @@ module Services {
         }
 
         public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo {
-            this.refresh();
 
-            var script = this.pullCompilerState.getScriptAST(fileName);
-
-            // Look for AST node containing the position
-            var spanInfo = this.getNameOrDottedNameSpanFromPosition(startPos, script);
-            if (spanInfo == null) {
-                this.logger.log("No name or dotted name found at the specified location.");
-                return null;
-            }
-
-            return spanInfo;
+            return null;
         }
 
         // Gets breakpoint span in the statement depending on context
@@ -1049,11 +1039,15 @@ module Services {
 
             var type = info.typeSymbol;
 
-            if (isMemberCompletion && type.hasBrand()) {
-                type = (<TypeScript.PullClassSymbol>type).getInstanceType();
-            }
+            //if (isMemberCompletion && type.hasBrand()) {
+            //    type = (<TypeScript.PullClassSymbol>type).getInstanceType();
+            //}
 
             var completions = new CompletionInfo();
+            
+            // PULLREVIEW: Always enabling this for now, to reduce noise in the completion lists
+            completions.isMemberCompletion = true;
+            
             var members = type.getMembers();
             var completionEntry: CompletionEntry;
 

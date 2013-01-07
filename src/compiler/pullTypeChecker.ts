@@ -77,8 +77,8 @@ module TypeScript {
             this.semanticInfoChain = semanticInfoChain;
         }
 
-        public setUnit(unitPath: string) {
-            this.resolver = new PullTypeResolver(this.semanticInfoChain, unitPath);
+        public setUnit(unitPath: string, logger?: ILogger) {
+            this.resolver = new PullTypeResolver(this.semanticInfoChain, unitPath, logger);
         }
 
         public typeCheck(ast: AST): AST {

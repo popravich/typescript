@@ -15,7 +15,7 @@ module TypeScript {
         private cachedBooleanInterfaceType: PullTypeSymbol = null;
         private cachedObjectInterfaceType: PullTypeSymbol = null;
 
-        constructor (private semanticInfoChain: SemanticInfoChain, private unitPath: string) {
+        constructor (private semanticInfoChain: SemanticInfoChain, private unitPath: string, private logger: ILogger) {
             this.cachedArrayInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Array", [], DeclKind.Interface);
             this.cachedNumberInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Number", [], DeclKind.Interface);
             this.cachedStringInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("String", [], DeclKind.Interface);
@@ -26,6 +26,15 @@ module TypeScript {
         public getUnitPath() { return this.unitPath; }
         
         public setUnitPath(unitPath: string) { this.unitPath = unitPath; }
+
+        private log(message: string) {
+            if (this.logger) {
+                this.logger.log(message);
+            }
+            else {
+                this.log(message);
+            }
+        }
 
         private getDeclForAST(ast: AST, unitPath?: string) {
             return this.semanticInfoChain.getDeclForAST(ast, unitPath ? unitPath : this.unitPath);
@@ -192,7 +201,7 @@ module TypeScript {
                     }
                     
                 }
-                else if (pathDeclKind & DeclKind.Function) {
+                else /*if (pathDeclKind & DeclKind.Function)*/ {
                     childDecls = decl.findChildDecls(symbolName, declKind);
 
                     if (childDecls.length) {
@@ -227,7 +236,7 @@ module TypeScript {
                 case NodeType.ArgDecl:
                     return this.resolveVariableDeclaration(<BoundDecl>declAST);
                 default:
-                    CompilerDiagnostics.Alert("Invalid declaration type...");
+                    this.log("RESOLUTION ERROR: Invalid declaration type...");
                     return this.semanticInfoChain.anyTypeSymbol;
             }
         }
@@ -484,7 +493,7 @@ module TypeScript {
                 typeDeclSymbol = <PullTypeSymbol>this.getSymbolFromDeclPath(typeName.actualText, this.getPathToDecl(enclosingDecl), DeclKind.SomeType);
                 if (!typeDeclSymbol) {
                     // PULLTODOERROR
-                    CompilerDiagnostics.Alert("Could not find type '" + typeName.actualText + "'");
+                    this.log("RESOLUTION ERROR: Could not find type '" + typeName.actualText + "'");
                     return this.semanticInfoChain.anyTypeSymbol;
                 }
             }
@@ -522,13 +531,13 @@ module TypeScript {
                 typeDeclSymbol = <PullTypeSymbol>this.findSymbolForPath(dottedNamePath, enclosingDecl, DeclKind.SomeType);
                 
                 if (!typeDeclSymbol) {
-                    CompilerDiagnostics.Alert("Could not find dotted type '" + lastTypeName + "'");
+                    this.log("RESOLUTION ERROR: Could not find dotted type '" + lastTypeName + "'");
                     return this.semanticInfoChain.anyTypeSymbol;
                 }
             }
 
             if (!typeDeclSymbol) {
-                CompilerDiagnostics.Alert("Couldn't bind to the type symbol before creating the array, for some reason");
+                this.log("RESOLUTION ERROR: Couldn't bind to the type symbol before creating the array, for some reason");
                 return this.semanticInfoChain.anyTypeSymbol;
             }
 
@@ -577,7 +586,7 @@ module TypeScript {
 
                 // PULLTODOERROR
                 if (!typeExprSymbol) {
-                    CompilerDiagnostics.Alert("Could not resolve type expression for variable '" + varDecl.id.actualText + "'");
+                    this.log("RESOLUTION ERROR: Could not resolve type expression for variable '" + varDecl.id.actualText + "'");
                     declSymbol.setType(this.semanticInfoChain.anyTypeSymbol);
                     if (declPropertySymbol) {
                         declPropertySymbol.setType(this.semanticInfoChain.anyTypeSymbol);
@@ -600,7 +609,7 @@ module TypeScript {
                 var initExprSymbol = this.resolveStatementOrExpression(varDecl.init, varDecl, this.getEnclosingDecl(decl));
 
                 if (!initExprSymbol) {
-                    CompilerDiagnostics.Alert("Could not resolve type of initializer expression for variable '" + varDecl.id.actualText + "'");
+                    this.log("RESOLUTION ERROR: Could not resolve type of initializer expression for variable '" + varDecl.id.actualText + "'");
                     declSymbol.setType(this.semanticInfoChain.anyTypeSymbol);
                     if (declPropertySymbol) {
                         declPropertySymbol.setType(this.semanticInfoChain.anyTypeSymbol);
@@ -713,7 +722,7 @@ module TypeScript {
                     var returnTypeSymbol = this.resolveTypeReference(returnTypeRef, this.getEnclosingDecl(funcDecl));
 
                     if (!returnTypeSymbol) {
-                        CompilerDiagnostics.Alert("Could not resolve return type reference for some reason...");
+                        this.log("RESOLUTION ERROR: Could not resolve return type reference for some reason...");
                         signature.setReturnType(this.semanticInfoChain.anyTypeSymbol);
                     }
                     else {
@@ -755,6 +764,20 @@ module TypeScript {
         // PULLTODORESOLUTION: debugger statement
         // PULLTODORESOLUTION: Conditional expressions        
         // PULLTODORESOLUTION: Throw
+
+        public resolveAST(ast: AST, assigningAST: AST, enclosingDecl: PullDecl) {
+            switch (ast.nodeType) {
+                case NodeType.Module:
+                case NodeType.Interface:
+                case NodeType.Class:
+                case NodeType.FuncDecl:
+                case NodeType.VarDecl:
+                case NodeType.ArgDecl:
+                    return this.resolveDeclaration(ast);
+                default:
+                    return this.resolveStatementOrExpression(ast, assigningAST, enclosingDecl);
+            }
+        }
 
         public resolveStatementOrExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl):PullSymbol {
 
@@ -874,7 +897,7 @@ module TypeScript {
             }
 
             if (!nameSymbol) {
-                CompilerDiagnostics.Alert("Could not find symbol '" + id + "'");
+                this.log("RESOLUTION ERROR: Could not find symbol '" + id + "'");
                 return this.semanticInfoChain.anyTypeSymbol;
             }
 
@@ -926,7 +949,7 @@ module TypeScript {
             var nameSymbol = lhsType.findMember(rhsName);
 
             if (!nameSymbol) {
-                CompilerDiagnostics.Alert("Could not find dotted symbol name '" + rhsName + "'");
+                this.log("RESOLUTION ERROR: Could not find dotted symbol name '" + rhsName + "'");
                 return this.semanticInfoChain.anyTypeSymbol;
             }
 
@@ -1288,14 +1311,14 @@ module TypeScript {
 
             // the target should be a function
             //if (!targetSymbol.isType()) {
-            //    CompilerDiagnostics.Alert("Attempting to call a non-function symbol");
+            //    this.log("Attempting to call a non-function symbol");
             //    return this.semanticInfoChain.anyTypeSymbol;
             //}
 
             var signatures = (<PullFunctionSymbol>targetSymbol).getCallSignatures();
 
             if (!signatures.length) {
-                CompilerDiagnostics.Alert("Attempting to call on a type with no call signatures");
+                this.log("RESOLUTION ERROR: Attempting to call on a type with no call signatures");
                 return this.semanticInfoChain.anyTypeSymbol;
             }
 
@@ -1340,7 +1363,7 @@ module TypeScript {
                 return constructSignatures[0].getReturnType();
             }
             
-            CompilerDiagnostics.Alert("Invalid 'new' expression");
+            this.log("RESOLUTION ERROR: Invalid 'new' expression");
 
             return this.semanticInfoChain.anyTypeSymbol;
 

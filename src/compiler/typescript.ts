@@ -276,39 +276,6 @@ module TypeScript {
             });
         }
 
-        public pullUpdateUnit(sourceText: ISourceText, filename: string, setRecovery: bool): bool {
-            return this.timeFunction("partialUpdateUnit(" + filename + ")", () => {
-                for (var i = 0, len = this.units.length; i < len; i++) {
-                    if (this.units[i].filename == filename) {
-
-                        if (setRecovery) {
-                            this.parser.setErrorRecovery(null, 0, 0);
-                        }
-
-                        var updateResult: UpdateUnitResult;
-
-                        // Capture parsing errors so that they are part of "updateResult"
-                        var parseErrors: ErrorEntry[] = [];
-                        var errorCapture = (minChar: number, charLen: number, message: string, unitIndex: number): void => {
-                            parseErrors.push(new ErrorEntry(unitIndex, minChar, minChar + charLen, message));
-                        };
-                        var svErrorCallback = this.parser.errorCallback;
-                        if (svErrorCallback)
-                            this.parser.errorCallback = errorCapture;
-
-                        var oldScript = <Script>this.scripts.members[i];
-                        var newScript = this.parser.parse(sourceText, filename, i);
-
-                        if (svErrorCallback)
-                            this.parser.errorCallback = svErrorCallback;
-
-                        return this.pullUpdateScript(oldScript, newScript);
-                    }
-                }
-                throw new Error("Unknown file \"" + filename + "\"");
-            });
-        }
-
         public addUnit(prog: string, filename: string, keepResident? = false, referencedFiles?: IFileReference[] = []): Script {
             return this.addSourceUnit(new StringSourceText(prog), filename, keepResident, referencedFiles);
         }
@@ -494,354 +461,6 @@ module TypeScript {
                 this.cleanTypesForReTypeCheck();
                 return this.typeCheck();
             });
-        }
-
-        public pullTypeCheck(refresh = false) {
-            // create global decls
-            // collect decls from files
-            // walk scripts, pull-typechecking each
-            if (!this.pullTypeChecker || refresh) {
-                this.semanticInfoChain = new SemanticInfoChain();
-                this.pullTypeChecker = new PullTypeChecker(this.semanticInfoChain);
-            }
-
-            var declCollectionContext: DeclCollectionContext = null;
-            var pullSymbolCollectionContext: PullSymbolBindingContext = null;
-            var semanticInfo: SemanticInfo = null;
-            var i = 0;
-            var skipFirst = (!this.settings.useDefaultLib ? 0 : 1);
-            var findPullFile = this.settings.testPullWithFile != "";
-            
-            // create decls
-            var createDeclsStartTime = new Date().getTime();
-
-            for (; i < this.scripts.members.length; i++) {
-
-                if (this.settings.testPull && i == skipFirst) {
-                    continue;
-                }
-
-                semanticInfo = new SemanticInfo(this.units[i].filename);
-
-                declCollectionContext = new DeclCollectionContext(semanticInfo);
-
-                declCollectionContext.scriptName = this.units[i].filename;
-
-                // create decls
-                getAstWalkerFactory().walk(this.scripts.members[i], preCollectDecls, postCollectDecls, null, declCollectionContext);
-
-                semanticInfo.addTopLevelDecl(declCollectionContext.getParent());
-
-                this.semanticInfoChain.addUnit(semanticInfo);
-            }
-
-            var createDeclsEndTime = new Date().getTime();
-
-            // bind declaration symbols
-            var bindStartTime = new Date().getTime();
-
-            var topLevelDecls: PullDecl[] = null;
-
-            // start at '1', so as to skip binding for global primitives such as 'any'
-            for (i = 1; i < this.semanticInfoChain.units.length; i++) {
-
-                topLevelDecls = this.semanticInfoChain.units[i].getTopLevelDecls();
-
-                pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, this.semanticInfoChain.units[i].getPath());
-
-                for (var j = 0; j < topLevelDecls.length; j++) {
-
-                    bindDeclSymbol(topLevelDecls[j], pullSymbolCollectionContext);
-
-                }
-            }
-
-            var bindEndTime = new Date().getTime();
-            var typeCheckStartTime = new Date().getTime();
-            // typecheck
-            for (i = 0; i < this.scripts.members.length; i++) {
-
-                if (this.settings.testPull && i == skipFirst) {
-                    continue;
-                }
-
-                this.pullTypeChecker.setUnit(this.units[i].filename);
-                this.pullTypeChecker.resolver.resolveBoundDecls(this.semanticInfoChain.units[i > skipFirst ? i : i + 1].getTopLevelDecls()[0]);
-
-                //this.pullTypeChecker.setUnit(this.units[i].filename);
-                //getAstWalkerFactory().walk(this.scripts.members[i], prePullTypeCheck, null, null, this.pullTypeChecker);
-            }
-            var typeCheckEndTime = new Date().getTime();
-
-            CompilerDiagnostics.Alert("Decl creation: " + (createDeclsEndTime - createDeclsStartTime));
-            CompilerDiagnostics.Alert("Binding: " + (bindEndTime - bindStartTime));
-            CompilerDiagnostics.Alert("    Time in findSymbol: " + time_in_findSymbol);
-            CompilerDiagnostics.Alert("Type resolution: " + (typeCheckEndTime - typeCheckStartTime));
-            CompilerDiagnostics.Alert("Total: " + (typeCheckEndTime - createDeclsStartTime));
-            
-            if (this.settings.testPull) {
-                //var declDiffer = new PullDeclDiffer();
-                
-                //semanticInfo = new SemanticInfo(this.units[skipFirst].filename);
-
-                //declCollectionContext = new DeclCollectionContext(semanticInfo);
-
-                //declCollectionContext.scriptName = this.units[skipFirst].filename;
-
-                //// create decls
-                //getAstWalkerFactory().walk(this.scripts.members[skipFirst], preCollectDecls, postCollectDecls, null, declCollectionContext);
-
-                // note that we don't decrement skipFirst, because we need to skip the globals that are added
-                var oldIndex = skipFirst;
-
-                if (findPullFile) {
-                    for (var i = 0; i < this.units.length; i++) {
-                        if (this.semanticInfoChain.units[i].getPath().indexOf(this.settings.testPullWithFile) != -1) {
-                            oldIndex = i;
-                            break;
-                        }
-                    }
-                }
-
-                this.pullUpdateScript(<Script>this.scripts.members[oldIndex], <Script>this.scripts.members[skipFirst]);
-
-                //var oldTopLevelDecl = this.semanticInfoChain.units[oldIndex].getTopLevelDecls()[0];
-                //var newTopLevelDecl = declCollectionContext.getParent();
-                
-                //semanticInfo.addTopLevelDecl(newTopLevelDecl);
-
-                //var diffResults: PullDeclDiff[] = [];
-                
-                //var diffStartTime = new Date().getTime();
-                //declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
-
-                //var diffEndTime = new Date().getTime();
-                //CompilerDiagnostics.Alert("Diff time: " + (diffEndTime - diffStartTime));
-
-                //if (diffResults.length) {
-                //    // replace the old semantic info
-                //    this.semanticInfoChain.updateUnit(this.semanticInfoChain.units[skipFirst], semanticInfo);
-
-                //    // re-bind
-                //    var innerBindStartTime = new Date().getTime();
-
-                //    topLevelDecls = semanticInfo.getTopLevelDecls();
-
-                //    pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, semanticInfo.getPath());
-
-                //    for (var i = 0; i < topLevelDecls.length; i++) {
-
-                //        bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
-
-                //    }
-                //    var innerBindEndTime = new Date().getTime();
-
-                //    CompilerDiagnostics.Alert("Inner bind time: " + (innerBindEndTime - innerBindStartTime));
-                    
-                //    // propagate changes
-                //    var graphUpdater = new PullSymbolGraphUpdater();
-                //    var diff: PullDeclDiff;
-                    
-                //    var traceStartTime = new Date().getTime();
-                //    for (var i = 0; i < diffResults.length; i++) {
-                //        diff = diffResults[i];
-
-                //        if (diff.kind == PullDeclEdit.DeclRemoved) {
-                //            graphUpdater.removeDecl(diff.oldDecl);
-                //        }
-                //        else if (diff.kind == PullDeclEdit.DeclAdded) {
-                //            //graphUpdater.addDecl(diff.newDecl);
-                //            graphUpdater.invalidateType(diff.oldDecl.getSymbol());
-                //        }
-                //        else {
-                //            // PULLTODO: Other kinds of edits
-                //        }
-                //    }
-                //    var traceEndTime = new Date().getTime();
-                //    CompilerDiagnostics.Alert("Trace time: " + (traceEndTime - traceStartTime));
-                //    CompilerDiagnostics.Alert("Number of diffs: " + diffResults.length);
-                //}
-            }
-
-        }
-        
-        // returns 'true' if diffs were detected
-        public pullUpdateScript(oldScript: Script, newScript: Script): bool {
-            var declDiffer = new PullDeclDiffer();
-            
-            // want to name the new script semantic info the same as the old one
-            var newScriptSemanticInfo = new SemanticInfo(oldScript.locationInfo.filename);
-            var oldScriptSemanticInfo = this.semanticInfoChain.getUnit(oldScript.locationInfo.filename);
-
-            var declCollectionContext = new DeclCollectionContext(newScriptSemanticInfo);
-
-            declCollectionContext.scriptName = oldScript.locationInfo.filename;
-
-            // create decls
-            getAstWalkerFactory().walk(newScript, preCollectDecls, postCollectDecls, null, declCollectionContext);
-
-            // note that we don't decrement skipFirst, because we need to skip the globals that are added
-            //var oldIndex = skipFirst;
-
-            //if (findPullFile) {
-            //    for (var i = 0; i < this.units.length; i++) {
-            //        if (this.semanticInfoChain.units[i].getPath().indexOf(this.settings.testPullWithFile) != -1) {
-            //            oldIndex = i;
-            //            break;
-            //        }
-            //    }
-            //}
-
-            var oldTopLevelDecl = oldScriptSemanticInfo.getTopLevelDecls()[0];
-            var newTopLevelDecl = declCollectionContext.getParent();
-                
-            newScriptSemanticInfo.addTopLevelDecl(newTopLevelDecl);
-
-            var diffResults: PullDeclDiff[] = [];
-                
-            var diffStartTime = new Date().getTime();
-            declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
-
-            var diffEndTime = new Date().getTime();
-            CompilerDiagnostics.Alert("Diff time: " + (diffEndTime - diffStartTime));
-
-            if (diffResults.length) {
-                // replace the old semantic info
-                this.semanticInfoChain.updateUnit(oldScriptSemanticInfo, newScriptSemanticInfo);
-
-                // re-bind
-                var innerBindStartTime = new Date().getTime();
-
-                var topLevelDecls = newScriptSemanticInfo.getTopLevelDecls();
-
-                var pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, newScriptSemanticInfo.getPath());
-                pullSymbolCollectionContext.reBindingAfterChange = true;
-
-                for (var i = 0; i < topLevelDecls.length; i++) {
-
-                    bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
-
-                }
-                var innerBindEndTime = new Date().getTime();
-
-                CompilerDiagnostics.Alert("Inner bind time: " + (innerBindEndTime - innerBindStartTime));
-                    
-                // propagate changes
-                var graphUpdater = new PullSymbolGraphUpdater();
-                var diff: PullDeclDiff;
-                var addedDiff: PullDeclDiff = null;
-                    
-                var traceStartTime = new Date().getTime();
-                for (var i = 0; i < diffResults.length; i++) {
-                    diff = diffResults[i];
-
-                    if (diff.kind == PullDeclEdit.DeclRemoved) {
-                        graphUpdater.removeDecl(diff.oldDecl);
-                    }
-                    else if (diff.kind == PullDeclEdit.DeclAdded) {
-                        //graphUpdater.addDecl(diff.newDecl);
-                        graphUpdater.invalidateType(diff.oldDecl.getSymbol());
-                        addedDiff = diff;
-                    }
-                    else {
-                        // PULLTODO: Other kinds of edits
-                    }
-                }
-                var typeInfo;
-                var traceEndTime = new Date().getTime();
-                if (addedDiff) {
-                    var startupdate = new Date().getTime();
-                    typeInfo = this.pullGetTypeInfoAtPosition(/*addedDiff.newDecl.getSpan().minChar*/489, newScript, oldScript.locationInfo.filename);
-                    CompilerDiagnostics.Alert("Pull time for AST: " + ((new Date()).getTime() - startupdate));
-                }
-                
-                CompilerDiagnostics.Alert("Trace time: " + (traceEndTime - traceStartTime));
-                CompilerDiagnostics.Alert("Number of diffs: " + diffResults.length);
-                
-                return true;
-            }
-
-            return false;
-        }
-
-        public pullGetTypeInfoAtPosition(pos: number, script: Script, scriptName?: string): { ast: AST; typeName: string; typeInfo: string; typeSymbol: PullTypeSymbol; } {
-
-            // find the enclosing decl
-            var declStack: PullDecl[] = [];
-            var resultASTs: AST[] = [];
-            if (!scriptName) {
-                scriptName = script.locationInfo.filename;
-            }
-            var semanticInfo = this.semanticInfoChain.getUnit(scriptName);
-            var lastDeclAST: AST = null;
-            var foundAST: AST = null;
-            var symbol: PullSymbol = null;
-
-            var pre = (cur: AST, parent: AST): AST => {
-                if (isValidAstNode(cur)) {
-                    if (pos >= cur.minChar && pos < cur.limChar) {
-                        // TODO: Since AST is sometimes not correct wrt to position, only add "cur" if it's better
-                        //       than top of the stack.
-                        var previous = resultASTs[resultASTs.length - 1];
-                        if (previous == undefined || (cur.minChar >= previous.minChar && cur.limChar <= previous.limChar)) {
-
-                            var decl = semanticInfo.getDeclForAST(cur);
-
-                            if (decl) {
-                                declStack[declStack.length] = decl;
-                                lastDeclAST = cur;
-                            }
-
-                            resultASTs[resultASTs.length] = cur;
-                        }
-                    }
-                }
-                return cur;
-            }
-
-            getAstWalkerFactory().walk(script, pre);
-            
-            if (resultASTs.length) {
-                foundAST = resultASTs[resultASTs.length - 1];
-
-                this.pullTypeChecker.setUnit(script.locationInfo.filename);
-
-                // are we within a decl?  if so, just grab its symbol
-                if (lastDeclAST == foundAST) {
-                    symbol = declStack[declStack.length - 1].getSymbol();
-                    this.pullTypeChecker.resolver.resolveDeclaredSymbol(symbol);
-                }
-                else {
-                    // otherwise, it's an expression that needs to be resolved, so we must pull...
-
-                    // first, find the enclosing decl
-                    var enclosingDecl: PullDecl = null;
-
-                    for (var i = declStack.length - 1; i >= 0; i--) {
-                        if (!(declStack[i].getKind() & DeclKind.Variable)) {
-                            enclosingDecl = declStack[i];
-                        }
-                    }
-
-                    // next, obtain the assigning AST, if applicable
-                    // (this would be the ast for the last decl on the decl stack)
-                    var assigningAST: AST = null;
-                    
-                    if (declStack.length && (declStack[declStack.length - 1].getKind() & DeclKind.Variable)) {
-                        assigningAST = semanticInfo.getASTForDecl(declStack[declStack.length - 1]);
-                    }
-                    symbol = this.pullTypeChecker.resolver.resolveStatementOrExpression(foundAST, assigningAST, enclosingDecl);
-                }
-            }
-
-            if (symbol) {
-                var type = symbol.getType();
-                if (type) {
-                    return { ast: foundAST, typeName: type.getName(), typeInfo: type.toString(), typeSymbol: type };
-                }
-            }
-
-            return { ast: foundAST, typeName: "couldn't find the type...", typeInfo: "couldn't find members...", typeSymbol: null};
         }
 
         public emitDeclarationFile(createFile: (path: string, useUTF8?: bool) => ITextWriter) {
@@ -1094,6 +713,405 @@ module TypeScript {
             }         
 
             return { gets: nTypesGotten, sets: nTypesSet, get_and_set: nTypeWasSetAndGotten };
+        }
+
+        // Pull typecheck infrastructure
+
+        public pullTypeCheck(refresh = false) {
+            return this.timeFunction("pullTypeCheck()", () => {
+                // create global decls
+                // collect decls from files
+                // walk scripts, pull-typechecking each
+                if (!this.pullTypeChecker || refresh) {
+                    this.semanticInfoChain = new SemanticInfoChain();
+                    this.pullTypeChecker = new PullTypeChecker(this.semanticInfoChain);
+                }
+
+                var declCollectionContext: DeclCollectionContext = null;
+                var pullSymbolCollectionContext: PullSymbolBindingContext = null;
+                var semanticInfo: SemanticInfo = null;
+                var i = 0;
+                var skipFirst = (!this.settings.useDefaultLib ? 0 : 1);
+                var findPullFile = this.settings.testPullWithFile != "";
+
+                // create decls
+                var createDeclsStartTime = new Date().getTime();
+
+                for (; i < this.scripts.members.length; i++) {
+
+                    if (this.settings.testPull && i == skipFirst) {
+                        continue;
+                    }
+
+                    semanticInfo = new SemanticInfo(this.units[i].filename);
+
+                    declCollectionContext = new DeclCollectionContext(semanticInfo);
+
+                    declCollectionContext.scriptName = this.units[i].filename;
+
+                    // create decls
+                    getAstWalkerFactory().walk(this.scripts.members[i], preCollectDecls, postCollectDecls, null, declCollectionContext);
+
+                    semanticInfo.addTopLevelDecl(declCollectionContext.getParent());
+
+                    this.semanticInfoChain.addUnit(semanticInfo);
+                }
+
+                var createDeclsEndTime = new Date().getTime();
+
+                // bind declaration symbols
+                var bindStartTime = new Date().getTime();
+
+                var topLevelDecls: PullDecl[] = null;
+
+                // start at '1', so as to skip binding for global primitives such as 'any'
+                for (i = 1; i < this.semanticInfoChain.units.length; i++) {
+
+                    topLevelDecls = this.semanticInfoChain.units[i].getTopLevelDecls();
+
+                    pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, this.semanticInfoChain.units[i].getPath());
+
+                    for (var j = 0; j < topLevelDecls.length; j++) {
+
+                        bindDeclSymbol(topLevelDecls[j], pullSymbolCollectionContext);
+
+                    }
+                }
+
+                var bindEndTime = new Date().getTime();
+                var typeCheckStartTime = new Date().getTime();
+                // typecheck
+                for (i = 0; i < this.scripts.members.length; i++) {
+
+                    if (this.settings.testPull && i == skipFirst) {
+                        continue;
+                    }
+
+                    this.pullTypeChecker.setUnit(this.units[i].filename, this.logger);
+                    this.pullTypeChecker.resolver.resolveBoundDecls(this.semanticInfoChain.units[this.settings.testPull ? (i > skipFirst ? i : i + 1) : i + 1].getTopLevelDecls()[0]);
+
+                    //this.pullTypeChecker.setUnit(this.units[i].filename);
+                    //getAstWalkerFactory().walk(this.scripts.members[i], prePullTypeCheck, null, null, this.pullTypeChecker);
+                }
+                var typeCheckEndTime = new Date().getTime();
+
+                this.logger.log("Decl creation: " + (createDeclsEndTime - createDeclsStartTime));
+                this.logger.log("Binding: " + (bindEndTime - bindStartTime));
+                this.logger.log("    Time in findSymbol: " + time_in_findSymbol);
+                this.logger.log("Type resolution: " + (typeCheckEndTime - typeCheckStartTime));
+                this.logger.log("Total: " + (typeCheckEndTime - createDeclsStartTime));
+
+                if (this.settings.testPull) {
+                    //var declDiffer = new PullDeclDiffer();
+
+                    //semanticInfo = new SemanticInfo(this.units[skipFirst].filename);
+
+                    //declCollectionContext = new DeclCollectionContext(semanticInfo);
+
+                    //declCollectionContext.scriptName = this.units[skipFirst].filename;
+
+                    //// create decls
+                    //getAstWalkerFactory().walk(this.scripts.members[skipFirst], preCollectDecls, postCollectDecls, null, declCollectionContext);
+
+                    // note that we don't decrement skipFirst, because we need to skip the globals that are added
+                    var oldIndex = skipFirst;
+
+                    if (findPullFile) {
+                        for (var i = 0; i < this.units.length; i++) {
+                            if (this.semanticInfoChain.units[i].getPath().indexOf(this.settings.testPullWithFile) != -1) {
+                                oldIndex = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    this.pullUpdateScript(<Script>this.scripts.members[oldIndex], <Script>this.scripts.members[skipFirst]);
+
+                    //var oldTopLevelDecl = this.semanticInfoChain.units[oldIndex].getTopLevelDecls()[0];
+                    //var newTopLevelDecl = declCollectionContext.getParent();
+
+                    //semanticInfo.addTopLevelDecl(newTopLevelDecl);
+
+                    //var diffResults: PullDeclDiff[] = [];
+
+                    //var diffStartTime = new Date().getTime();
+                    //declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
+
+                    //var diffEndTime = new Date().getTime();
+                    //CompilerDiagnostics.Alert("Diff time: " + (diffEndTime - diffStartTime));
+
+                    //if (diffResults.length) {
+                    //    // replace the old semantic info
+                    //    this.semanticInfoChain.updateUnit(this.semanticInfoChain.units[skipFirst], semanticInfo);
+
+                    //    // re-bind
+                    //    var innerBindStartTime = new Date().getTime();
+
+                    //    topLevelDecls = semanticInfo.getTopLevelDecls();
+
+                    //    pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, semanticInfo.getPath());
+
+                    //    for (var i = 0; i < topLevelDecls.length; i++) {
+
+                    //        bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
+
+                    //    }
+                    //    var innerBindEndTime = new Date().getTime();
+
+                    //    CompilerDiagnostics.Alert("Inner bind time: " + (innerBindEndTime - innerBindStartTime));
+
+                    //    // propagate changes
+                    //    var graphUpdater = new PullSymbolGraphUpdater();
+                    //    var diff: PullDeclDiff;
+
+                    //    var traceStartTime = new Date().getTime();
+                    //    for (var i = 0; i < diffResults.length; i++) {
+                    //        diff = diffResults[i];
+
+                    //        if (diff.kind == PullDeclEdit.DeclRemoved) {
+                    //            graphUpdater.removeDecl(diff.oldDecl);
+                    //        }
+                    //        else if (diff.kind == PullDeclEdit.DeclAdded) {
+                    //            //graphUpdater.addDecl(diff.newDecl);
+                    //            graphUpdater.invalidateType(diff.oldDecl.getSymbol());
+                    //        }
+                    //        else {
+                    //            // PULLTODO: Other kinds of edits
+                    //        }
+                    //    }
+                    //    var traceEndTime = new Date().getTime();
+                    //    CompilerDiagnostics.Alert("Trace time: " + (traceEndTime - traceStartTime));
+                    //    CompilerDiagnostics.Alert("Number of diffs: " + diffResults.length);
+                    //}
+                }
+            });
+        }
+        
+        // returns 'true' if diffs were detected
+        public pullUpdateScript(oldScript: Script, newScript: Script): bool {
+            return this.timeFunction("pullUpdateScript: ", () => {
+
+                var declDiffer = new PullDeclDiffer();
+
+                // want to name the new script semantic info the same as the old one
+                var newScriptSemanticInfo = new SemanticInfo(oldScript.locationInfo.filename);
+                var oldScriptSemanticInfo = this.semanticInfoChain.getUnit(oldScript.locationInfo.filename);
+
+                var declCollectionContext = new DeclCollectionContext(newScriptSemanticInfo);
+
+                declCollectionContext.scriptName = oldScript.locationInfo.filename;
+
+                // create decls
+                getAstWalkerFactory().walk(newScript, preCollectDecls, postCollectDecls, null, declCollectionContext);
+
+                // note that we don't decrement skipFirst, because we need to skip the globals that are added
+                //var oldIndex = skipFirst;
+
+                //if (findPullFile) {
+                //    for (var i = 0; i < this.units.length; i++) {
+                //        if (this.semanticInfoChain.units[i].getPath().indexOf(this.settings.testPullWithFile) != -1) {
+                //            oldIndex = i;
+                //            break;
+                //        }
+                //    }
+                //}
+
+                var oldTopLevelDecl = oldScriptSemanticInfo.getTopLevelDecls()[0];
+                var newTopLevelDecl = declCollectionContext.getParent();
+
+                newScriptSemanticInfo.addTopLevelDecl(newTopLevelDecl);
+
+                var diffResults: PullDeclDiff[] = [];
+
+                var diffStartTime = new Date().getTime();
+                declDiffer.diffDecls(oldTopLevelDecl, newTopLevelDecl, diffResults);
+
+                var diffEndTime = new Date().getTime();
+                this.logger.log("Update Script - Diff time: " + (diffEndTime - diffStartTime));
+
+                // replace the old semantic info
+                this.semanticInfoChain.updateUnit(oldScriptSemanticInfo, newScriptSemanticInfo);
+
+                // re-bind
+                var innerBindStartTime = new Date().getTime();
+
+                var topLevelDecls = newScriptSemanticInfo.getTopLevelDecls();
+
+                var pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, newScriptSemanticInfo.getPath());
+                pullSymbolCollectionContext.reBindingAfterChange = true;
+
+                for (var i = 0; i < topLevelDecls.length; i++) {
+
+                    bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
+
+                }
+                var innerBindEndTime = new Date().getTime();
+
+                this.logger.log("Update Script - Inner bind time: " + (innerBindEndTime - innerBindStartTime));
+                if (diffResults.length) {
+
+                    // propagate changes
+                    var graphUpdater = new PullSymbolGraphUpdater();
+                    var diff: PullDeclDiff;
+                    var addedDiff: PullDeclDiff = null;
+
+                    var traceStartTime = new Date().getTime();
+                    for (var i = 0; i < diffResults.length; i++) {
+                        diff = diffResults[i];
+
+                        if (diff.kind == PullDeclEdit.DeclRemoved) {
+                            graphUpdater.removeDecl(diff.oldDecl);
+                        }
+                        else if (diff.kind == PullDeclEdit.DeclAdded) {
+                            //graphUpdater.addDecl(diff.newDecl);
+                            graphUpdater.invalidateType(diff.oldDecl.getSymbol());
+                            addedDiff = diff;
+                        }
+                        else {
+                            // PULLTODO: Other kinds of edits
+                        }
+                    }
+                    //var typeInfo;
+                    var traceEndTime = new Date().getTime();
+                    //if (addedDiff) {
+                    //    var startupdate = new Date().getTime();
+                    //    typeInfo = this.pullGetTypeInfoAtPosition(/*addedDiff.newDecl.getSpan().minChar*/489, newScript, oldScript.locationInfo.filename);
+                    //    CompilerDiagnostics.Alert("Pull time for AST: " + ((new Date()).getTime() - startupdate));
+                    //}
+
+                    this.logger.log("Update Script - Trace time: " + (traceEndTime - traceStartTime));
+                    this.logger.log("Update Script - Number of diffs: " + diffResults.length);
+
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
+        public pullGetTypeInfoAtPosition(pos: number, script: Script, scriptName?: string): { ast: AST; typeName: string; typeInfo: string; typeSymbol: PullTypeSymbol; } {
+            return this.timeFunction("pullGetTypeInfoAtPosition for pos " + pos + ":", () => {
+                // find the enclosing decl
+                var declStack: PullDecl[] = [];
+                var resultASTs: AST[] = [];
+                if (!scriptName) {
+                    scriptName = script.locationInfo.filename;
+                }
+                var semanticInfo = this.semanticInfoChain.getUnit(scriptName);
+                var lastDeclAST: AST = null;
+                var foundAST: AST = null;
+                var symbol: PullSymbol = null;
+
+                var pre = (cur: AST, parent: AST): AST => {
+                    if (isValidAstNode(cur)) {
+                        if (pos >= cur.minChar && pos <= cur.limChar) {
+                            // TODO: Since AST is sometimes not correct wrt to position, only add "cur" if it's better
+                            //       than top of the stack.
+                            var previous = resultASTs[resultASTs.length - 1];
+                            if (previous == undefined || (cur.minChar >= previous.minChar && cur.limChar <= previous.limChar)) {
+
+                                var decl = semanticInfo.getDeclForAST(cur);
+
+                                if (decl) {
+                                    declStack[declStack.length] = decl;
+                                    lastDeclAST = cur;
+                                }
+
+                                resultASTs[resultASTs.length] = cur;
+                            }
+                        }
+                    }
+                    return cur;
+                }
+
+                getAstWalkerFactory().walk(script, pre);
+
+                if (resultASTs.length) {
+                    foundAST = resultASTs[resultASTs.length - 1];
+
+                    this.pullTypeChecker.setUnit(script.locationInfo.filename, this.logger);
+
+                    // are we within a decl?  if so, just grab its symbol
+                    if (lastDeclAST == foundAST) {
+                        symbol = declStack[declStack.length - 1].getSymbol();
+                        this.pullTypeChecker.resolver.resolveDeclaredSymbol(symbol);
+                    }
+                    else {
+                        // otherwise, it's an expression that needs to be resolved, so we must pull...
+
+                        // first, find the enclosing decl
+                        var enclosingDecl: PullDecl = null;
+
+                        for (var i = declStack.length - 1; i >= 0; i--) {
+                            if (!(declStack[i].getKind() & DeclKind.Variable)) {
+                                enclosingDecl = declStack[i];
+                                break;
+                            }
+                        }
+
+                        // next, obtain the assigning AST, if applicable
+                        // (this would be the ast for the last decl on the decl stack)
+                        var assigningAST: AST = null;
+
+                        if (declStack.length && (declStack[declStack.length - 1].getKind() & DeclKind.Variable)) {
+                            assigningAST = semanticInfo.getASTForDecl(declStack[declStack.length - 1]);
+                        }
+                        symbol = this.pullTypeChecker.resolver.resolveAST(foundAST, assigningAST, enclosingDecl);
+                    }
+                }
+
+                if (symbol) {
+                    var type = symbol.getType();
+                    if (type) {
+                        return { ast: foundAST, typeName: type.getName(), typeInfo: type.toString(), typeSymbol: type };
+                    }
+                }
+
+                return { ast: foundAST, typeName: "couldn't find the type...", typeInfo: "couldn't find members...", typeSymbol: null };
+            });
+        }
+
+        public pullUpdateUnit(sourceText: ISourceText, filename: string, setRecovery: bool): bool {
+            return this.timeFunction("pullUpdateUnit(" + filename + ")", () => {
+                for (var i = 0, len = this.units.length; i < len; i++) {
+                    if (this.units[i].filename == filename) {
+
+                        if (setRecovery) {
+                            this.parser.setErrorRecovery(null, 0, 0);
+                        }
+
+                        var updateResult: UpdateUnitResult;
+
+                        // Capture parsing errors so that they are part of "updateResult"
+                        var parseErrors: ErrorEntry[] = [];
+                        var errorCapture = (minChar: number, charLen: number, message: string, unitIndex: number): void => {
+                            parseErrors.push(new ErrorEntry(unitIndex, minChar, minChar + charLen, message));
+                        };
+                        var svErrorCallback = this.parser.errorCallback;
+                        if (svErrorCallback)
+                            this.parser.errorCallback = errorCapture;
+
+                        var oldScript = <Script>this.scripts.members[i];
+                        var newScript = this.parser.parse(sourceText, filename, i);
+
+                        if (svErrorCallback)
+                            this.parser.errorCallback = svErrorCallback;
+
+                        this.scripts.members[i] = newScript;
+                        this.units[i] = newScript.locationInfo;
+
+                        //for (var i = 0, len = updateResult.parseErrors.length; i < len; i++) {
+                        //    var e = updateResult.parseErrors[i];
+                        //    if (this.parser.errorCallback) {
+                        //        this.parser.errorCallback(e.minChar, e.limChar - e.minChar, e.message, e.unitIndex);
+                        //    }
+                        //}
+
+                        return this.pullUpdateScript(oldScript, newScript);
+                    }
+                }
+                throw new Error("Unknown file \"" + filename + "\"");
+            });
         }
     }
 
