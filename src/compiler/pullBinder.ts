@@ -411,30 +411,38 @@ module TypeScript {
         var linkKind = isStatic ? SymbolLinkKind.StaticProperty :
                         isPrivate ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
 
-        if (context.reBindingAfterChange && parent) {
-            // see if the parent already has a symbol for this class
-            var members = parent.hasBrand() && !isStatic ? (<PullClassSymbol>parent).getInstanceType().getMembers() : parent.getMembers();
-            var member: PullSymbol = null;
+        if (context.reBindingAfterChange) {
+            if (parent) {
+                // see if the parent already has a symbol for this class
+                var members = parent.hasBrand() && !isStatic ? (<PullClassSymbol>parent).getInstanceType().getMembers() : parent.getMembers();
+                var member: PullSymbol = null;
 
-            for (var i = 0 ; i < members.length; i++) {
-                member = members[i];
+                for (var i = 0 ; i < members.length; i++) {
+                    member = members[i];
 
-                if (member.getName() == funcName && (member.getKind() & declKind)) {
-                    parentHadSymbol = true;
-                    functionSymbol = <PullFunctionSymbol>member;
-                    
-                    // prune out-of-date decls...
-                    var decls = member.getDeclarations();
-                    var scriptName = funcDecl.getScriptName();
+                    if (member.getName() == funcName && (member.getKind() & declKind)) {
+                        parentHadSymbol = true;
+                        functionSymbol = <PullFunctionSymbol>member;
 
-                    for (var j = 0; j < decls.length; j++) {
-                        if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
-                            functionSymbol.removeDeclaration(decls[j]);
-                        }
+                        break;
                     }
-
-                    break;
                 }
+            }
+            else {
+                functionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
+            }
+            if (functionSymbol) {
+                // prune out-of-date decls...
+                var decls = functionSymbol.getDeclarations();
+                var scriptName = funcDecl.getScriptName();
+
+                for (var j = 0; j < decls.length; j++) {
+                    if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
+                        functionSymbol.removeDeclaration(decls[j]);
+                    }
+                }
+
+                functionSymbol.invalidate();
             }
         }
 

@@ -378,12 +378,19 @@ module TypeScript {
             else {
                 funcDeclSymbol.addCallSignature(signature);
             }
+            
+            var cccc: number;
+
+            funcDeclSymbol.
 
             // resolve the return type annotation
             if (funcDeclAST.returnTypeAnnotation) {
                 var returnTypeRef = <TypeReference>funcDeclAST.returnTypeAnnotation;
                 var returnTypeSymbol = this.resolveTypeReference(returnTypeRef, enclosingDecl);
-                
+                var larryd = signature;
+
+                asdfasdfasdf
+
                 signature.setReturnType(returnTypeSymbol);
             }
             else {
@@ -1082,6 +1089,31 @@ module TypeScript {
         }
 
         public resolveThisExpression(ast: AST, enclosingDecl: PullDecl) {
+
+            if (!enclosingDecl) {
+                return this.semanticInfoChain.anyTypeSymbol;
+            }
+
+            var declPath = this.getPathToDecl(enclosingDecl);
+            var decl: PullDecl;
+            var classSymbol: PullClassSymbol;
+
+            // work back up the decl path, until you can find a class
+            // PULLTODO: Obviously not correct, bug this sufficiently unblocks testing of the pull model
+            if (declPath.length) {
+                for (var i = declPath.length - 1; i >= 0; i--) {
+                    decl = declPath[i];
+
+                    if (decl.getKind() == DeclKind.Class) {
+                        classSymbol = <PullClassSymbol>decl.getSymbol();
+                        
+                        // set to the instance type
+                        classSymbol = <PullClassSymbol>classSymbol.getInstanceType();
+                        return classSymbol;
+                    }
+                }
+            }
+            
             return this.semanticInfoChain.anyTypeSymbol;
         }
 

@@ -943,9 +943,10 @@ module TypeScript {
                 getAstWalkerFactory().walk(script, pre);
 
                 if (resultASTs.length) {
-                    foundAST = resultASTs[resultASTs.length - 1];
 
                     this.pullTypeChecker.setUnit(script.locationInfo.filename, this.logger);
+
+                    foundAST = resultASTs[resultASTs.length - 1];
 
                     // are we within a decl?  if so, just grab its symbol
                     if (lastDeclAST == foundAST) {
@@ -972,6 +973,30 @@ module TypeScript {
                         if (declStack.length && (declStack[declStack.length - 1].getKind() & DeclKind.Variable)) {
                             assigningAST = semanticInfo.getASTForDecl(declStack[declStack.length - 1]);
                         }
+
+                        // if the found AST is a named, we want to check for previous dotted expressions,
+                        // since those will give us the right typing
+                        if (foundAST.nodeType == NodeType.Name && resultASTs.length > 1) {
+                            for (var i = resultASTs.length - 2; i >= 0; i--) {
+                                if (resultASTs[i].nodeType == NodeType.Dot || resultASTs[i].nodeType == NodeType.VarDecl) {
+                                    foundAST = resultASTs[i];
+                                }
+                                else {
+                                    break;
+                                }
+                            }
+                        }
+
+                        // if it's a list, we may not have an exact AST, so find the next nearest one
+                        if (foundAST.nodeType == NodeType.List) {
+                            for (var i = 0; i < (<ASTList>foundAST).members.length; i++) {
+                                if ((<ASTList>foundAST).members[i].minChar > pos) {
+                                    foundAST = (<ASTList>foundAST).members[i];
+                                    break;
+                                }
+                            }
+                        }
+
                         symbol = this.pullTypeChecker.resolver.resolveAST(foundAST, assigningAST, enclosingDecl);
                     }
                 }

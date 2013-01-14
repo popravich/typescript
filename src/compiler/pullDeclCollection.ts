@@ -7,7 +7,7 @@ module TypeScript {
 
     export class DeclCollectionContext {
 
-        private parentChain: PullDecl[] = [];
+        public parentChain: PullDecl[] = [];
         public scriptName: string = "";
 
         constructor (public semanticInfo: SemanticInfo) {
@@ -144,18 +144,24 @@ module TypeScript {
             declFlags |= DeclFlags.Private;
         }
 
-        var declType = hasFlag(argDecl.varFlags, VarFlags.Property) ? DeclKind.Field : DeclKind.Argument;
-
         var span = new ASTSpan();
 
         span.minChar = argDecl.minChar;
 
         span.limChar = argDecl.limChar;
 
-        var decl = new PullDecl(argDecl.id.text, declType, declFlags, span, context.scriptName);
+        var decl = new PullDecl(argDecl.id.text, DeclKind.Argument, declFlags, span, context.scriptName);
 
         context.getParent().addChildDecl(decl);
 
+        // if it's a property type, we'll need to add it to the parent's parent as well
+        if (hasFlag(argDecl.varFlags, VarFlags.Property)) {
+            var propDecl = new PullDecl(argDecl.id.text, DeclKind.Field, declFlags, span, context.scriptName);
+            context.parentChain[context.parentChain.length - 2].addChildDecl(propDecl);
+            context.semanticInfo.setASTForDecl(propDecl, ast);
+            //context.semanticInfo.setDeclForAST(ast, decl);
+        }
+         
         context.semanticInfo.setDeclForAST(ast, decl);
 
         context.semanticInfo.setASTForDecl(decl,ast);
@@ -330,8 +336,23 @@ module TypeScript {
 
             go = true;
         }
-        else if (ast.nodeType == NodeType.List) {
-            go = true;
+        else if (ast.nodeType == NodeType.Module) {
+            go = preCollectModuleDecls(ast, parent, context);
+        }
+        else if (ast.nodeType == NodeType.Class) {
+            go = preCollectClassDecls(ast, parent, context);
+        }
+        else if (ast.nodeType == NodeType.Interface) {
+            go = preCollectInterfaceDecls(ast, parent, context);
+        }
+        else if (ast.nodeType == NodeType.ArgDecl) {
+            go = preCollectArgDecls(ast, parent, context);
+        }
+        else if (ast.nodeType == NodeType.VarDecl) {
+            go = preCollectVarDecls(ast, parent, context);
+        }
+        else if (ast.nodeType == NodeType.FuncDecl) {
+            go = preCollectFuncDecls(ast, parent, context);
         }
         else if (ast.nodeType == NodeType.Import) {
             go = preCollectImportDecls(ast, parent, context);
@@ -351,26 +372,15 @@ module TypeScript {
         else if (ast.nodeType == NodeType.DoWhile) {
             go = true;
         }
-        else if (ast.nodeType == NodeType.Module) {
-            go = preCollectModuleDecls(ast, parent, context);
+        else if (ast.nodeType == NodeType.Return) {
+            // want to be able to bind lambdas in return positions
+            go = true;
         }
-        else if (ast.nodeType == NodeType.Class) {
-            go = preCollectClassDecls(ast, parent, context);
+        else if (ast.nodeType == NodeType.List) {
+            go = true;
         }
         else if (ast.nodeType == NodeType.Block) {
             go = true;
-        }
-        else if (ast.nodeType == NodeType.Interface) {
-            go = preCollectInterfaceDecls(ast, parent, context);
-        }
-        else if (ast.nodeType == NodeType.ArgDecl) {
-            go = preCollectArgDecls(ast, parent, context);
-        }
-        else if (ast.nodeType == NodeType.VarDecl) {
-            go = preCollectVarDecls(ast, parent, context);
-        }
-        else if (ast.nodeType == NodeType.FuncDecl) {
-            go = preCollectFuncDecls(ast, parent, context);
         }
         //// go into blocks, if necessary...
         //else if (ast.nodeType == NodeType.Block ||
