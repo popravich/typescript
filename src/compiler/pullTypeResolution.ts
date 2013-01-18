@@ -378,18 +378,11 @@ module TypeScript {
             else {
                 funcDeclSymbol.addCallSignature(signature);
             }
-            
-            var cccc: number;
-
-            funcDeclSymbol.
 
             // resolve the return type annotation
             if (funcDeclAST.returnTypeAnnotation) {
                 var returnTypeRef = <TypeReference>funcDeclAST.returnTypeAnnotation;
                 var returnTypeSymbol = this.resolveTypeReference(returnTypeRef, enclosingDecl);
-                var larryd = signature;
-
-                asdfasdfasdf
 
                 signature.setReturnType(returnTypeSymbol);
             }
@@ -1191,6 +1184,15 @@ module TypeScript {
 
         // PULLTODO
         public resolveIndexExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
+
+            var indexType = <PullTypeSymbol>this.resolveStatementOrExpression((<BinaryExpression>expressionAST).operand1, assigningAST, enclosingDecl).getType();
+
+            var arrayOfLinks = indexType.findOutgoingLinks(link => link.kind == SymbolLinkKind.ArrayOf);
+
+            if (arrayOfLinks.length) {
+                return arrayOfLinks[0].end;
+            }
+            
             return this.semanticInfoChain.anyTypeSymbol;
         }
 

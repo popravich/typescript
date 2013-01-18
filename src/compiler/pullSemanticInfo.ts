@@ -46,13 +46,13 @@ module TypeScript {
 
         public setDeclForAST(ast: AST, decl: PullDecl) { this.astDeclMap.link(ast.getID().toString(), decl); }
 
-        public getASTForDecl(decl: PullDecl) { return <AST>this.declASTMap.read(decl.getDeclID().toString()); }
+        public getASTForDecl(decl: PullDecl) { return <AST>this.declASTMap.read(decl.getDeclID().toString() + decl.getKind().toString()); }
 
-        public setASTForDecl(decl: PullDecl, ast: AST) { this.declASTMap.link(decl.getDeclID().toString(), ast); }
+        public setASTForDecl(decl: PullDecl, ast: AST) { this.declASTMap.link(decl.getDeclID().toString() + decl.getKind().toString(), ast); }
 
-        public setSymbolForDecl(decl: PullDecl, symbol: PullSymbol) { this.declSymbolMap.link(decl.getDeclID().toString(), symbol); }
+        public setSymbolForDecl(decl: PullDecl, symbol: PullSymbol) { this.declSymbolMap.link(decl.getDeclID().toString() + decl.getKind().toString(), symbol); }
 
-        public getSymbolForDecl(decl: PullDecl) { return <PullSymbol>this.declSymbolMap.read(decl.getDeclID().toString()); }
+        public getSymbolForDecl(decl: PullDecl) { return <PullSymbol>this.declSymbolMap.read(decl.getDeclID().toString() + decl.getKind().toString()); }
 
         public setTypeSymbolForAST(ast: AST, typeSymbol: PullTypeSymbol) { this.astTypeSymbolMap.link(ast.getID().toString(), typeSymbol); }
         
@@ -282,10 +282,8 @@ module TypeScript {
             var unit = <SemanticInfo>this.unitCache[unitPath];
 
             if (unit) {
-                return unit.setTypeSymbolForAST(ast, typeSymbol);
+                unit.setTypeSymbolForAST(ast, typeSymbol);
             }
-            
-            return null;
         }
     }
 }

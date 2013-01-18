@@ -159,13 +159,13 @@ module TypeScript {
             var propDecl = new PullDecl(argDecl.id.text, DeclKind.Field, declFlags, span, context.scriptName);
             context.parentChain[context.parentChain.length - 2].addChildDecl(propDecl);
             context.semanticInfo.setASTForDecl(propDecl, ast);
-            //context.semanticInfo.setDeclForAST(ast, decl);
+            context.semanticInfo.setDeclForAST(ast, propDecl);
+        }
+        else {
+            context.semanticInfo.setASTForDecl(decl,ast);
+            context.semanticInfo.setDeclForAST(ast, decl);   
         }
          
-        context.semanticInfo.setDeclForAST(ast, decl);
-
-        context.semanticInfo.setASTForDecl(decl,ast);
-        
         return false;
     }
 
@@ -336,6 +336,12 @@ module TypeScript {
 
             go = true;
         }
+        else if (ast.nodeType == NodeType.List) {
+            go = true;
+        }
+        else if (ast.nodeType == NodeType.Block) {
+            go = true;
+        }
         else if (ast.nodeType == NodeType.Module) {
             go = preCollectModuleDecls(ast, parent, context);
         }
@@ -372,14 +378,21 @@ module TypeScript {
         else if (ast.nodeType == NodeType.DoWhile) {
             go = true;
         }
+        else if (ast.nodeType == NodeType.Comma) {
+            go = true;
+        }
         else if (ast.nodeType == NodeType.Return) {
             // want to be able to bind lambdas in return positions
             go = true;
         }
-        else if (ast.nodeType == NodeType.List) {
+
+        // call and 'new' expressions may contain lambdas with bindings...
+        else if (ast.nodeType == NodeType.Call) {
+            // want to be able to bind lambdas in return positions
             go = true;
         }
-        else if (ast.nodeType == NodeType.Block) {
+        else if (ast.nodeType == NodeType.New) {
+            // want to be able to bind lambdas in return positions
             go = true;
         }
         //// go into blocks, if necessary...

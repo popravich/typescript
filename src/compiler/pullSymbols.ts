@@ -511,6 +511,13 @@ module TypeScript {
         public addExtendedType(extendedType: PullTypeSymbol) {
             var link = this.addOutgoingLink(extendedType, SymbolLinkKind.Extends);
             this.extendedTypeLinks[this.extendedTypeLinks.length] = link;
+            
+            var parentMembers = extendedType.getMembers();
+            
+			// PULLTODO: Restrict member list to public properties only
+            for (var i = 0; i < parentMembers.length; i++) {
+                this.addMember(parentMembers[i], SymbolLinkKind.PublicProperty);
+            }
         }
 
         public getExtendedTypes(): PullTypeSymbol[] {
@@ -695,7 +702,7 @@ module TypeScript {
         newArrayType.addDeclaration(arrayInterfaceType.getDeclarations()[0]);
 
         typeToSpecializeTo.setArrayType(newArrayType);
-        //newArrayType.addOutgoingLink(typeToSpecializeTo, SymbolLinkKind.ArrayOf);
+        newArrayType.addOutgoingLink(typeToSpecializeTo, SymbolLinkKind.ArrayOf);
 
         var field: PullSymbol = null;
         var newField: PullSymbol = null;
