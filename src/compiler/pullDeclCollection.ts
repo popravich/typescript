@@ -385,8 +385,11 @@ module TypeScript {
             // want to be able to bind lambdas in return positions
             go = true;
         }
+        else if (ast.nodeType == NodeType.Switch || ast.nodeType == NodeType.Case) {
+            go = true;
+        }
 
-        // call and 'new' expressions may contain lambdas with bindings...
+            // call and 'new' expressions may contain lambdas with bindings...
         else if (ast.nodeType == NodeType.Call) {
             // want to be able to bind lambdas in return positions
             go = true;

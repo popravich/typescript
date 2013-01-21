@@ -34,6 +34,8 @@ module TypeScript {
         ClassInstanceDecl = 1 << 18,
 
         Array = 1 << 19,
+
+        Enum = 1 << 20,
         
         SomeType = Module | Function | Class | ClassInstanceDecl | Interface | Primitive | Global,
         SomeSignature = CallSignature | ConstructSignature | IndexSignature,

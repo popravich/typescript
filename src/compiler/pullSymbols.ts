@@ -31,6 +31,8 @@ module TypeScript {
 
         private hasBeenResolved = false;
 
+        private isOptional = false;
+
         public typeChangeUpdateVersion = -1;
         public addUpdateVersion = -1;
         public removeUpdateVersion = -1;
@@ -51,6 +53,10 @@ module TypeScript {
             return (this.declKind & DeclKind.Array) != 0;
         }
 
+        public isPrimitive() {
+            return this.declKind == DeclKind.Primitive;
+        }
+
         constructor (name: string, declKind: DeclKind) {
             this.name = name;
             this.declKind = declKind;
@@ -60,6 +66,9 @@ module TypeScript {
 
         public getKind() { return this.declKind; }        
         public setKind(declType: DeclKind) { this.declKind = declType; }
+
+        public setIsOptional() { this.isOptional = true; }
+        public getIsOptional() { return this.isOptional; }
 
         // declaration methods
         public addDeclaration(decl: PullDecl) { this.declarations.addItem(decl); }
@@ -225,13 +234,23 @@ module TypeScript {
     export class PullSignatureSymbol extends PullSymbol {
         private parameterLinks: PullSymbolLink[] = [];
         private returnTypeLink: PullSymbolLink = null;
+        private hasOptionalParam = false;
+        private nonOptionalParamCount = 0;
 
         public isDefinition() { return false; }
+        public hasVariableParamList() { return this.hasOptionalParam; }
 
-        public addParameter(parameter: PullSymbol) {
+        public addParameter(parameter: PullSymbol, isOptional = false) {
             var link = this.addOutgoingLink(parameter, SymbolLinkKind.Parameter);
             this.parameterLinks[this.parameterLinks.length] = link;
+            this.hasOptionalParam = isOptional;
+
+            if (!isOptional) {
+                this.nonOptionalParamCount++;
+            }
         }
+
+        public getNonOptionalParameterCount() { return this.nonOptionalParamCount; }
 
         public setReturnType(returnType: PullTypeSymbol) {
             this.returnTypeLink = this.addOutgoingLink(returnType, SymbolLinkKind.ReturnType);            
@@ -284,6 +303,19 @@ module TypeScript {
             this.returnTypeLink = null;
 
             this.parameterLinks = this.findOutgoingLinks(psl => psl.kind == SymbolLinkKind.Parameter);
+            this.nonOptionalParamCount = 0;
+            this.hasOptionalParam = false;
+
+            // re-compute non-optional arg count, etc
+            for (var i = 0; i < this.parameterLinks.length; i++) {
+                if (!this.parameterLinks[i].end.getIsOptional()) {
+                    this.nonOptionalParamCount++;
+                }
+                else {
+                    this.hasOptionalParam;
+                    break;
+                }
+            }
 
             super.invalidate();
         }
@@ -326,12 +358,23 @@ module TypeScript {
 
         public isType() { return true; }
         public hasBrand() { return false; }
+        public hasMembers() { return this.memberLinks.length != 0; }
         public isInstanceType() { return false; }
         public isFunction() { return false; }
 
         public getType() { return this; }
 
         public getArrayType() { return this.arrayType; }
+        
+        public getElementType(): PullTypeSymbol {
+            var arrayOfLinks = this.findOutgoingLinks(link => link.kind == SymbolLinkKind.ArrayOf);
+
+            if (arrayOfLinks.length) {
+                return <PullTypeSymbol>arrayOfLinks[0].end;
+            }
+
+            return null;
+        }
         public setArrayType(arrayType: PullTypeSymbol) {
             this.arrayType = arrayType;
 
@@ -368,12 +411,22 @@ module TypeScript {
             this.invalidate();
         }
 
-        public getMembers() {
+        public getMembers(): PullSymbol[] {
             var members: PullSymbol[] = [];
             for (var i = 0; i < this.memberLinks.length; i++) {
                 members[members.length] = this.memberLinks[i].end;
             }
             return members;
+        }
+
+        public getMemberByName(name: string): PullSymbol {
+            for (var i = 0; i < this.memberLinks.length; i++) {
+                if (this.memberLinks[i].end.getName() == name) {
+                    return this.memberLinks[i].end;
+                }
+            }
+
+            return null;
         }
 
         public addCallSignature(callSignature: PullSignatureSymbol) { 
@@ -528,7 +581,24 @@ module TypeScript {
             return <PullTypeSymbol[]>members;
         }
 
-       public removeExtendedType(extendedType: PullTypeSymbol) {
+        public hasBase(potentialBase: PullTypeSymbol) {
+
+            if (this == potentialBase) {
+                return true;
+            }
+
+            var extendedTypes = this.getExtendedTypes();
+
+            for (var i = 0; i < extendedTypes.length; i++) {
+                if (extendedTypes[i].hasBase(potentialBase)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public removeExtendedType(extendedType: PullTypeSymbol) {
             var typeLink: PullSymbolLink;
 
             for (var i = 0; i < this.extendedTypeLinks.length; i++) {

@@ -30,7 +30,8 @@ module TypeScript {
         var createdNewSymbol = false;
 
         if (!moduleSymbol) {
-            var moduleSymbol = new PullTypeSymbol(modName, DeclKind.Module);
+            var declKind = moduleDecl.getDeclFlags() & DeclFlags.Enum ? DeclKind.Enum : DeclKind.Module;
+            var moduleSymbol = new PullTypeSymbol(modName, declKind);
             createdNewSymbol = true;
         }
 
@@ -228,6 +229,7 @@ module TypeScript {
         var isProperty = false;
         var isStatic = false;
         var isExported = false;
+        var isOptional = false;
         var linkKind = SymbolLinkKind.PrivateProperty;
         var variableSymbol: PullSymbol = null;
 
@@ -246,6 +248,9 @@ module TypeScript {
         }
         if (hasFlag(declFlags, DeclFlags.Private)) {
             isProperty = true;
+        }
+        if (hasFlag(declFlags, DeclFlags.Optional)) {
+            isOptional = true;
         }
 
         var declType =  varDecl ? varDecl.getKind() :
@@ -292,6 +297,10 @@ module TypeScript {
         if (varDecl) {
             variableSymbol.addDeclaration(varDecl);
             varDecl.setSymbol(variableSymbol);
+        }
+
+        if (isOptional) {
+            variableSymbol.setIsOptional();
         }
 
         if (parent && !parentHadSymbol) {

@@ -860,6 +860,8 @@ module TypeScript {
                 var pullSymbolCollectionContext = new PullSymbolBindingContext(this.semanticInfoChain, newScriptSemanticInfo.getPath());
                 pullSymbolCollectionContext.reBindingAfterChange = true;
 
+                this.semanticInfoChain.update(newScript.locationInfo.filename);
+
                 for (var i = 0; i < topLevelDecls.length; i++) {
 
                     bindDeclSymbol(topLevelDecls[i], pullSymbolCollectionContext);
@@ -917,6 +919,9 @@ module TypeScript {
                 var lastDeclAST: AST = null;
                 var foundAST: AST = null;
                 var symbol: PullSymbol = null;
+                var lambdaAST: FuncDecl = null;
+                var assigningAST: VarDecl = null;
+                var objectLitAST: UnaryExpression = null;
 
                 var pre = (cur: AST, parent: AST): AST => {
                     if (isValidAstNode(cur)) {
@@ -931,6 +936,16 @@ module TypeScript {
                                 if (decl) {
                                     declStack[declStack.length] = decl;
                                     lastDeclAST = cur;
+                                }
+
+                                if (cur.nodeType == NodeType.FuncDecl && hasFlag((<FuncDecl>cur).fncFlags, FncFlags.IsFatArrowFunction)) {
+                                    lambdaAST = <FuncDecl>cur;
+                                }
+                                else if (cur.nodeType == NodeType.VarDecl) {
+                                    assigningAST = cur;
+                                }
+                                else if (cur.nodeType == NodeType.ObjectLit) {
+                                    objectLitAST = <UnaryExpression>cur;
                                 }
 
                                 resultASTs[resultASTs.length] = cur;
@@ -968,11 +983,11 @@ module TypeScript {
 
                         // next, obtain the assigning AST, if applicable
                         // (this would be the ast for the last decl on the decl stack)
-                        var assigningAST: AST = null;
+                        //var assigningAST: AST = null;
 
-                        if (declStack.length && (declStack[declStack.length - 1].getKind() & DeclKind.Variable)) {
-                            assigningAST = semanticInfo.getASTForDecl(declStack[declStack.length - 1]);
-                        }
+                        //if (declStack.length && (declStack[declStack.length - 1].getKind() & DeclKind.Variable)) {
+                        //    assigningAST = semanticInfo.getASTForDecl(declStack[declStack.length - 1]);
+                        //}
 
                         // if the found AST is a named, we want to check for previous dotted expressions,
                         // since those will give us the right typing
@@ -996,6 +1011,21 @@ module TypeScript {
                                 }
                             }
                         }
+
+                        if (lambdaAST) {
+                            this.pullTypeChecker.resolver.resolveAST(lambdaAST, assigningAST, enclosingDecl);
+                            enclosingDecl = semanticInfo.getDeclForAST(lambdaAST);
+                        }
+
+                        if (objectLitAST) {
+                            this.pullTypeChecker.resolver.resolveAST(objectLitAST, assigningAST, enclosingDecl);
+                        }
+
+                        // if it's an arg decl without a symbol, it's likely the argument of a lambda expression,
+                        // which we'll need to resolve first
+                        //if (foundAST.nodeType == NodeType.ArgDecl) {
+                        //    this.pullTypeChecker.resolver.resolveAST(resultASTs[resultASTs.length - 2], assigningAST, enclosingDecl);
+                        //}
 
                         symbol = this.pullTypeChecker.resolver.resolveAST(foundAST, assigningAST, enclosingDecl);
                     }

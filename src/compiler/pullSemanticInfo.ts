@@ -24,7 +24,8 @@ module TypeScript {
         private astDeclMap: DataMap = new DataMap();
         private declASTMap: DataMap = new DataMap();
         private declSymbolMap: DataMap = new DataMap();
-        private astTypeSymbolMap: DataMap = new DataMap();
+        private astSymbolMap: DataMap = new DataMap();
+        private symbolASTMap: DataMap = new DataMap();
 
         constructor (compilationUnitPath: string) {
             this.compilationUnitPath = compilationUnitPath;
@@ -54,9 +55,11 @@ module TypeScript {
 
         public getSymbolForDecl(decl: PullDecl) { return <PullSymbol>this.declSymbolMap.read(decl.getDeclID().toString() + decl.getKind().toString()); }
 
-        public setTypeSymbolForAST(ast: AST, typeSymbol: PullTypeSymbol) { this.astTypeSymbolMap.link(ast.getID().toString(), typeSymbol); }
+        public setSymbolForAST(ast: AST, symbol: PullSymbol) { this.astSymbolMap.link(ast.getID().toString(), symbol);  this.symbolASTMap.link(symbol.getSymbolID().toString(), ast) }
         
-        public getTypeSymbolForAST(ast: AST) { return <PullTypeSymbol>this.astTypeSymbolMap.read(ast.getID().toString()); }
+        public getSymbolForAST(ast: AST) { return <PullSymbol>this.astSymbolMap.read(ast.getID().toString()); }
+
+        public getASTForSymbol(symbol: PullSymbol) { return <AST>this.symbolASTMap.read(symbol.getSymbolID().toString()); }
 
         public update() { }
     }
@@ -245,7 +248,8 @@ module TypeScript {
 
             // PULLTODO: Be less aggressive about clearing the cache
             this.declCache = <any>{};
-            this.unitCache[compilationUnitPath] = undefined;
+            this.symbolCache = <any>{};
+            //this.unitCache[compilationUnitPath] = undefined;
         }
 
         public getDeclForAST(ast: AST, unitPath: string): PullDecl {
@@ -268,21 +272,31 @@ module TypeScript {
             return null;
         }
 
-        public getTypeSymbolForAST(ast: AST, unitPath: string) {
+        public getSymbolForAST(ast: AST, unitPath: string) {
             var unit = <SemanticInfo>this.unitCache[unitPath];
 
             if (unit) {
-                return unit.getTypeSymbolForAST(ast);
+                return unit.getSymbolForAST(ast);
             }
             
             return null;
         }
 
-        public setTypeSymbolForAST(ast: AST, typeSymbol: PullTypeSymbol, unitPath: string) {
+        public getASTForSymbol(symbol: PullSymbol, unitPath: string) {
             var unit = <SemanticInfo>this.unitCache[unitPath];
 
             if (unit) {
-                unit.setTypeSymbolForAST(ast, typeSymbol);
+                return unit.getASTForSymbol(symbol);
+            }
+            
+            return null;
+        }
+
+        public setSymbolForAST(ast: AST, typeSymbol: PullSymbol, unitPath: string) {
+            var unit = <SemanticInfo>this.unitCache[unitPath];
+
+            if (unit) {
+                unit.setSymbolForAST(ast, typeSymbol);
             }
         }
     }
