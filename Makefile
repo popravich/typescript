@@ -61,6 +61,7 @@ COMPILER_SOURCES_BASE= \
   $(CSRC)\pullDecls.ts \
   $(CSRC)\pullSymbols.ts \
   $(CSRC)\pullSymbolBindingContext.ts \
+  $(CSRC)\pullTypeResolutionContext.ts \
   $(CSRC)\pullTypeResolution.ts \
   $(CSRC)\pullTypeChecker.ts \
   $(CSRC)\pullDeclDiffer.ts \

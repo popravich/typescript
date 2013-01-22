@@ -224,7 +224,14 @@ module TypeScript {
             var type = this.getType();
             
             if (type) {
-                str += ": " + type.getName();
+                var typeName: string;
+                if (type.isArray()) {
+                    typeName = type.getElementType().toString() + "[]";
+                }
+                else {
+                    typeName = type.getName();
+                }
+                str += ": " + typeName;
             }
 
             return this.name;

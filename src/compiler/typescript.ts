@@ -37,6 +37,7 @@
 ///<reference path='pullDecls.ts' />
 ///<reference path='pullSymbols.ts' />
 ///<reference path='pullSymbolBindingContext.ts' />
+///<reference path='pullTypeResolutionContext.ts' />
 ///<reference path='pullTypeResolution.ts' />
 ///<reference path='pullTypeChecker.ts' />
 ///<reference path='pullDeclDiffer.ts' />
@@ -922,6 +923,7 @@ module TypeScript {
                 var lambdaAST: FuncDecl = null;
                 var assigningAST: VarDecl = null;
                 var objectLitAST: UnaryExpression = null;
+                var typeAssertions: UnaryExpression[] = [];
 
                 var pre = (cur: AST, parent: AST): AST => {
                     if (isValidAstNode(cur)) {
@@ -938,7 +940,7 @@ module TypeScript {
                                     lastDeclAST = cur;
                                 }
 
-                                if (cur.nodeType == NodeType.FuncDecl && hasFlag((<FuncDecl>cur).fncFlags, FncFlags.IsFatArrowFunction)) {
+                                if (cur.nodeType == NodeType.FuncDecl && hasFlag((<FuncDecl>cur).fncFlags, FncFlags.IsFunctionExpression)) {
                                     lambdaAST = <FuncDecl>cur;
                                 }
                                 else if (cur.nodeType == NodeType.VarDecl) {
@@ -946,6 +948,9 @@ module TypeScript {
                                 }
                                 else if (cur.nodeType == NodeType.ObjectLit) {
                                     objectLitAST = <UnaryExpression>cur;
+                                }
+                                else if (cur.nodeType == NodeType.TypeAssertion) {
+                                    typeAssertions[typeAssertions.length] = <UnaryExpression>cur;
                                 }
 
                                 resultASTs[resultASTs.length] = cur;
@@ -1012,22 +1017,48 @@ module TypeScript {
                             }
                         }
 
-                        if (lambdaAST) {
-                            this.pullTypeChecker.resolver.resolveAST(lambdaAST, assigningAST, enclosingDecl);
-                            enclosingDecl = semanticInfo.getDeclForAST(lambdaAST);
+                        // PULLTODO: The code below isn't quite right...
+                        // What we need to do is 'typecheck' from the most enclosing object literal or 
+                        // type assertion on down.  That way, we can ensure that the surrounding type
+                        // information is as accurate as possible.
+                        // For example:
+                        //  <A> { p1: <B> (...some expression...) }
+                        // In the code above, using the approach below, <A> would never be applied, so
+                        // the type info we collected would not be quite right
+
+                        var isTypedAssignment = (assigningAST != null) && (assigningAST.typeExpr != null);
+                        var resolutionContext = new PullTypeResolutionContext();
+                        
+                        resolutionContext.resolveAggressively = true;
+
+                        if (isTypedAssignment) {
+                            var varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
+
+                            if (varSymbol) {
+                                var contextualType = varSymbol.getType();
+                                resolutionContext.pushContextualType(contextualType, false);
+                            }
+                            if (assigningAST.init) {
+                                this.pullTypeChecker.resolver.resolveAST(assigningAST.init, true, enclosingDecl, resolutionContext);
+                            }
+                        }
+
+                        if (typeAssertions.length) {
+                            for (var i = 0; i < typeAssertions.length; i++) {
+                                this.pullTypeChecker.resolver.resolveAST(typeAssertions[i], isTypedAssignment, enclosingDecl, resolutionContext);
+                            }
                         }
 
                         if (objectLitAST) {
-                            this.pullTypeChecker.resolver.resolveAST(objectLitAST, assigningAST, enclosingDecl);
+                            this.pullTypeChecker.resolver.resolveAST(objectLitAST, isTypedAssignment, enclosingDecl, resolutionContext);
                         }
 
-                        // if it's an arg decl without a symbol, it's likely the argument of a lambda expression,
-                        // which we'll need to resolve first
-                        //if (foundAST.nodeType == NodeType.ArgDecl) {
-                        //    this.pullTypeChecker.resolver.resolveAST(resultASTs[resultASTs.length - 2], assigningAST, enclosingDecl);
-                        //}
+                        if (lambdaAST) {
+                            this.pullTypeChecker.resolver.resolveAST(lambdaAST, true, enclosingDecl, resolutionContext);
+                            enclosingDecl = semanticInfo.getDeclForAST(lambdaAST);
+                        }
 
-                        symbol = this.pullTypeChecker.resolver.resolveAST(foundAST, assigningAST, enclosingDecl);
+                        symbol = this.pullTypeChecker.resolver.resolveAST(foundAST, isTypedAssignment, enclosingDecl, resolutionContext);
                     }
                 }
 

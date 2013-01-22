@@ -234,7 +234,6 @@ module TypeScript {
         var declType = DeclKind.Function;
         var isProperty = false;
         var isStatic = false;
-        var isOverload
 
         if (hasFlag(funcDecl.fncFlags, FncFlags.Ambient)) {
             declFlags |= DeclFlags.Ambient;
@@ -299,7 +298,7 @@ module TypeScript {
 
         span.limChar = funcDecl.limChar;
 
-        var funcName = funcDecl.name ? funcDecl.name.text : funcDecl.hint;
+        var funcName = funcDecl.name ? funcDecl.name.text : funcDecl.hint ? funcDecl.hint : "";
 
         var decl = new PullDecl(funcName, declType, declFlags, span, context.scriptName);
 
