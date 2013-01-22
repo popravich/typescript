@@ -355,6 +355,8 @@ module TypeScript {
                 this.resolveDeclaredSymbol(instanceMembers[i]);
             }
 
+            this.setSymbolForAST(classDeclAST.name, classDeclSymbol);
+
             return classDeclSymbol;
         }
 
@@ -384,6 +386,8 @@ module TypeScript {
             }
 
             interfaceDeclSymbol.setResolved();
+
+            this.setSymbolForAST(interfaceDeclAST.name, interfaceDeclSymbol);
 
             return interfaceDeclSymbol;
         }
@@ -432,6 +436,10 @@ module TypeScript {
 
             this.setSymbolForAST(funcDeclAST, funcDeclSymbol);
 
+            if (funcDeclAST.name) {
+                this.setSymbolForAST(funcDeclAST, funcDeclSymbol);
+            }
+
             return funcDeclSymbol;
         }
 
@@ -465,6 +473,7 @@ module TypeScript {
             }
 
             this.setSymbolForAST(argDeclAST, paramSymbol);
+            this.setSymbolForAST(argDeclAST.id, paramSymbol);
         }
 
         public resolveInterfaceTypeReference(interfaceDeclAST: NamedType, enclosingDecl: PullDecl): PullTypeSymbol {
@@ -698,9 +707,11 @@ module TypeScript {
             if (declPropertySymbol) {
                 declPropertySymbol.setResolved();
                 this.setSymbolForAST(varDecl, declPropertySymbol);
+                this.setSymbolForAST(varDecl.id, declPropertySymbol);
             }
             else {
                 this.setSymbolForAST(varDecl, declSymbol);
+                this.setSymbolForAST(varDecl.id, declSymbol);
             }            
 
             return declSymbol;
@@ -903,6 +914,10 @@ module TypeScript {
                 case NodeType.Void:
                     return this.semanticInfoChain.voidTypeSymbol;
 
+                // assignment
+                case NodeType.Asg:
+                    return this.resolveAssignmentStatement(expressionAST, isTypedAssignment, enclosingDecl, context);
+
                 // boolean operations
                 case NodeType.Not:
                 case NodeType.LogNot:
@@ -964,28 +979,35 @@ module TypeScript {
         }
 
         public resolveNameExpression(nameAST: Identifier, enclosingDecl: PullDecl, context: PullTypeResolutionContext): PullSymbol {
-  
-            var id = nameAST.actualText;
-
-            var declPath = this.getPathToDecl(enclosingDecl);
-
-            if (enclosingDecl && !declPath.length) {
-                declPath = [enclosingDecl];
-            }
-
-            // first, resolve the id as a value
-            //var nameSymbol: PullSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeValue);
-            var nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeValue);
-
-            // no luck? check the type space
-            if (!nameSymbol) {
-                //nameSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeType);
-                nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeType);
-            }
+            
+            var nameSymbol: PullSymbol = this.getSymbolForAST(nameAST);
 
             if (!nameSymbol) {
-                this.log("RESOLUTION ERROR: Could not find symbol '" + id + "'");
-                return this.semanticInfoChain.anyTypeSymbol;
+
+                var id = nameAST.actualText;
+
+                var declPath = this.getPathToDecl(enclosingDecl);
+
+                if (enclosingDecl && !declPath.length) {
+                    declPath = [enclosingDecl];
+                }
+
+                // first, resolve the id as a value
+                //var nameSymbol: PullSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeValue);
+                var nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeValue);
+
+                // no luck? check the type space
+                if (!nameSymbol) {
+                    //nameSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeType);
+                    nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeType);
+                }
+
+                if (!nameSymbol) {
+                    this.log("RESOLUTION ERROR: Could not find symbol '" + id + "'");
+                    return this.semanticInfoChain.anyTypeSymbol;
+                }
+
+                this.setSymbolForAST(nameAST, nameSymbol);
             }
 
             // PULLREVIEW: This requires that the AST related to the symbol in question be in memory
@@ -1303,6 +1325,8 @@ module TypeScript {
                     }
                     
                     memberSymbol.setType(memberExprType.getType());
+
+                    this.setSymbolForAST(binex.operand1, memberSymbol);
 
                     typeSymbol.addMember(memberSymbol, SymbolLinkKind.PublicProperty);
                 }
@@ -1652,7 +1676,7 @@ module TypeScript {
             var leftType = this.resolveStatementOrExpression(binex.operand1, isTypedAssignment, enclosingDecl, context).getType();
 
             context.pushContextualType(leftType, context.inProvisionalResolution());
-                this.resolveStatementOrExpression(binex.operand2, isTypedAssignment, enclosingDecl, context);
+                this.resolveStatementOrExpression(binex.operand2, true, enclosingDecl, context);
             context.popContextualType();
 
             return leftType;

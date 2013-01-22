@@ -920,10 +920,13 @@ module TypeScript {
                 var lastDeclAST: AST = null;
                 var foundAST: AST = null;
                 var symbol: PullSymbol = null;
+
+                // these are used to track intermediate nodes so that we can properly apply contextual types
                 var lambdaAST: FuncDecl = null;
                 var assigningAST: VarDecl = null;
                 var objectLitAST: UnaryExpression = null;
-                var typeAssertions: UnaryExpression[] = [];
+                var asgAST: BinaryExpression = null;
+                var typeAssertionASTs: UnaryExpression[] = [];
 
                 var pre = (cur: AST, parent: AST): AST => {
                     if (isValidAstNode(cur)) {
@@ -950,7 +953,10 @@ module TypeScript {
                                     objectLitAST = <UnaryExpression>cur;
                                 }
                                 else if (cur.nodeType == NodeType.TypeAssertion) {
-                                    typeAssertions[typeAssertions.length] = <UnaryExpression>cur;
+                                    typeAssertionASTs[typeAssertionASTs.length] = <UnaryExpression>cur;
+                                }
+                                else if (cur.nodeType == NodeType.Asg) {
+                                    asgAST = <BinaryExpression>cur;
                                 }
 
                                 resultASTs[resultASTs.length] = cur;
@@ -1025,6 +1031,7 @@ module TypeScript {
                         //  <A> { p1: <B> (...some expression...) }
                         // In the code above, using the approach below, <A> would never be applied, so
                         // the type info we collected would not be quite right
+                        // Also, for things like typerefs, we're not setting up the scope correctly
 
                         var isTypedAssignment = (assigningAST != null) && (assigningAST.typeExpr != null);
                         var resolutionContext = new PullTypeResolutionContext();
@@ -1034,19 +1041,29 @@ module TypeScript {
                         if (isTypedAssignment) {
                             var varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
 
+                            if (!varSymbol) {
+                                this.pullTypeChecker.resolver.resolveDeclaration(assigningAST);
+                                varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
+                            }
+
                             if (varSymbol) {
                                 var contextualType = varSymbol.getType();
                                 resolutionContext.pushContextualType(contextualType, false);
                             }
+
                             if (assigningAST.init) {
                                 this.pullTypeChecker.resolver.resolveAST(assigningAST.init, true, enclosingDecl, resolutionContext);
                             }
                         }
 
-                        if (typeAssertions.length) {
-                            for (var i = 0; i < typeAssertions.length; i++) {
-                                this.pullTypeChecker.resolver.resolveAST(typeAssertions[i], isTypedAssignment, enclosingDecl, resolutionContext);
+                        if (typeAssertionASTs.length) {
+                            for (var i = 0; i < typeAssertionASTs.length; i++) {
+                                this.pullTypeChecker.resolver.resolveAST(typeAssertionASTs[i], isTypedAssignment, enclosingDecl, resolutionContext);
                             }
+                        }
+
+                        if (asgAST) {
+                            this.pullTypeChecker.resolver.resolveAST(asgAST, isTypedAssignment, enclosingDecl, resolutionContext);
                         }
 
                         if (objectLitAST) {
