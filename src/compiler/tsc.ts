@@ -5,6 +5,17 @@
 ///<reference path='io.ts'/>
 ///<reference path='optionsParser.ts'/>
 
+class DiagnosticsLogger implements TypeScript.ILogger {
+    public information(): bool { return false; }
+    public debug(): bool { return false; }
+    public warning(): bool { return false; }
+    public error(): bool { return false; }
+    public fatal(): bool { return false; }
+    public log(s: string): void {
+        WScript.Echo(s);
+    }
+}
+
 class CommandLineHost implements TypeScript.IResolverHost {
 
     public pathMap: any = {};
@@ -113,7 +124,7 @@ class BatchCompiler {
         }
         var compiler: TypeScript.TypeScriptCompiler;
 
-        compiler = new TypeScript.TypeScriptCompiler(this.ioHost.stderr, new TypeScript.NullLogger(), this.compilationSettings);
+        compiler = new TypeScript.TypeScriptCompiler(this.ioHost.stderr, this.compilationSettings.gatherDiagnostics ? <any>(new DiagnosticsLogger()) : new TypeScript.NullLogger(), this.compilationSettings);
         compiler.setErrorOutput(this.ioHost.stderr);
         compiler.setErrorCallback(
             (minChar, charLen, message, unitIndex) => {
