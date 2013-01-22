@@ -24,7 +24,6 @@ module TypeScript {
         // 1. Test for existing decl - if it exists, use its symbol
         // 2. If no other decl exists, create a new symbol and use that one
         
-        // PULLTODO: Extends/Implements symbols
         var modName = moduleDecl.getName();
         var moduleSymbol: PullTypeSymbol = <PullTypeSymbol>findSymbolInContext(modName, DeclKind.Module, context, []);
         var createdNewSymbol = false;
@@ -75,8 +74,6 @@ module TypeScript {
 
     export function bindClassPullSymbol(classDecl: PullDecl, context: PullSymbolBindingContext) {
 
-        // PULLTODO: Check for name collisions
-        // PULLTODO: Extends/Implements symbols
         var className = classDecl.getName();
         var classSymbol: PullClassSymbol = null;
         var instanceSymbol: PullTypeSymbol = null;
@@ -348,7 +345,7 @@ module TypeScript {
 
                 signatureSymbol.addParameter(parameterSymbol);
 
-                // PULLTODO: REVIEW: Shouldn't need this, since parameters are created off of decl collection
+                // PULLREVIEW: Shouldn't need this, since parameters are created off of decl collection
                 // add a member to the parent type
                 //if (decl && isProperty) {
                 //    parameterSymbol = new PullSymbol(argDecl.id.actualText, DeclKind.Field);
@@ -406,7 +403,7 @@ module TypeScript {
         var parent = context.getParent();
         var parentHadSymbol = false;
 
-        // PULLTODO: On a re-bind, there's no need to search far-and-wide: just look in the parent's member list
+        // PULLREVIEW: On a re-bind, there's no need to search far-and-wide: just look in the parent's member list
         var functionSymbol: PullFunctionSymbol = null; //<PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
 
         // if it's a function definition, add a call signature to this signature

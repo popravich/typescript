@@ -13,6 +13,7 @@ Architectural TODO:
 - Replace assigningAST param on resolution methods with something that accepts both and AST or a PullSymbol
 - Adopt a consistent approach to determining if something has been resolved.  
  (Basically, we need to straighten out how we get the symbol - do we ask a decl for it, or just consult the cache?)
+- Straighten out default names ("" or null?)
 
 */
 module TypeScript {
@@ -471,7 +472,6 @@ module TypeScript {
 
             if (interfaceDeclAST.members) {
 
-                // PULLTODO: Why are the members in a TypeDecl an AST and not an ASTList?
                 var memberSymbol: PullSymbol = null;
                 var varDecl: VarDecl = null;
                 var funcDecl: FuncDecl = null;
@@ -487,13 +487,12 @@ module TypeScript {
                         if (varDecl.typeExpr) {
                             var typeExprSymbol = this.resolveTypeReference(<TypeReference>varDecl.typeExpr, enclosingDecl);
 
-                            // PULLTODOERROR
                             if (!typeExprSymbol) {
                                 this.log("RESOLUTION ERROR: Could not resolve type expression for variable '" + varDecl.id.actualText + "'");
                                 memberSymbol.setType(this.semanticInfoChain.anyTypeSymbol);
                             }
                             else {
-                                if (typeExprSymbol.hasBrand()) { // PULLTODO: These brand checks should go under resolveTypeReference
+                                if (typeExprSymbol.hasBrand()) {
                                     typeExprSymbol = (<PullClassSymbol>typeExprSymbol).getInstanceType();
                                 }
                                 memberSymbol.setType(typeExprSymbol);
@@ -533,7 +532,6 @@ module TypeScript {
             return interfaceSymbol;
         }
 
-        // PULLTODO: Watch for infinite recursion when resloving mutually recursive types
         public resolveTypeReference(typeRef: TypeReference, enclosingDecl: PullDecl): PullTypeSymbol {
             // the type reference can be
             // a name
@@ -555,7 +553,7 @@ module TypeScript {
                 //typeDeclSymbol = <PullTypeSymbol>this.findSymbolForPath([typeName.actualText], enclosingDecl, DeclKind.SomeType);
                 typeDeclSymbol = <PullTypeSymbol>this.getSymbolFromDeclPath(typeName.actualText, this.getPathToDecl(enclosingDecl), DeclKind.SomeType);
                 if (!typeDeclSymbol) {
-                    // PULLTODOERROR
+
                     this.log("RESOLUTION ERROR: Could not find type '" + typeName.actualText + "'");
                     return this.semanticInfoChain.anyTypeSymbol;
                 }
@@ -606,7 +604,6 @@ module TypeScript {
 
             // an array of any of the above
             // PULLTODO: Arity > 1
-            // PULLTODO: Lots to optimize here
             if (typeRef.arrayCount) {
                 var arraySymbol: PullTypeSymbol = typeDeclSymbol.getArrayType();
 
@@ -616,7 +613,6 @@ module TypeScript {
                     //var arrayInterfaceSymbol = <PullTypeSymbol>this.findSymbolForPath(["Array"], enclosingDecl, DeclKind.Interface);
                     
                     if (!this.cachedArrayInterfaceType) {
-                        // PULLTODO: We shouldn't need to keep searching out 'Array'
                         this.cachedArrayInterfaceType = <PullTypeSymbol>this.getSymbolFromDeclPath("Array", this.getPathToDecl(enclosingDecl), DeclKind.Interface);
                     }
                     arraySymbol = specializeToArrayType(this.cachedArrayInterfaceType, this.semanticInfoChain.elementTypeSymbol, typeDeclSymbol, this);
@@ -649,7 +645,6 @@ module TypeScript {
             if (varDecl.typeExpr) {
                 var typeExprSymbol = this.resolveTypeReference(<TypeReference>varDecl.typeExpr, this.getEnclosingDecl(decl));
 
-                // PULLTODOERROR
                 if (!typeExprSymbol) {
                     this.log("RESOLUTION ERROR: Could not resolve type expression for variable '" + varDecl.id.actualText + "'");
                     declSymbol.setType(this.semanticInfoChain.anyTypeSymbol);
@@ -658,7 +653,7 @@ module TypeScript {
                     }
                 }
                 else {
-                    if (typeExprSymbol.hasBrand()) { // PULLTODO: These brand checks should go under resolveTypeReference
+                    if (typeExprSymbol.hasBrand()) {
                         typeExprSymbol = (<PullClassSymbol>typeExprSymbol).getInstanceType();
                     }
                     declSymbol.setType(typeExprSymbol);
@@ -670,7 +665,7 @@ module TypeScript {
 
             // Does it have an initializer? If so, typecheck and use that
             else if (varDecl.init) {
-                // PULLTODO
+
                 var initExprSymbol = this.resolveStatementOrExpression(varDecl.init, varDecl, this.getEnclosingDecl(decl));
 
                 if (!initExprSymbol) {
@@ -969,7 +964,7 @@ module TypeScript {
         }
 
         public resolveNameExpression(nameAST: Identifier, enclosingDecl: PullDecl): PullSymbol {
-            // PULLTODO: We should just be searching the 
+  
             var id = nameAST.actualText;
 
             var declPath = this.getPathToDecl(enclosingDecl);
@@ -993,7 +988,7 @@ module TypeScript {
                 return this.semanticInfoChain.anyTypeSymbol;
             }
 
-            // PULLTODO: This requires that the AST related to the symbol in question be in memory
+            // PULLREVIEW: This requires that the AST related to the symbol in question be in memory
             if (!nameSymbol.isResolved()) {
                 this.resolveDeclaredSymbol(nameSymbol);
             }
@@ -1103,7 +1098,6 @@ module TypeScript {
             
             var funcDeclSymbol = new PullFunctionSymbol(funcName, DeclKind.Function);
 
-            // PULLTODO: "" or null for these names?
             var signature = new PullSignatureSymbol(null, sigDeclKind);
 
             funcDeclSymbol.addSignature(signature);
@@ -1189,7 +1183,7 @@ module TypeScript {
 
             funcDeclSymbol.setResolved();
 
-            // PULLTODO: REVIEW: Should this be placed in the file decl instead?
+            // PULLREVIEW: Should this be placed in the file decl instead?
             if (enclosingDecl) {
                 enclosingDecl.addContainedExpressionSymbol(funcDeclSymbol);
             }
@@ -1208,7 +1202,7 @@ module TypeScript {
             var classSymbol: PullClassSymbol;
 
             // work back up the decl path, until you can find a class
-            // PULLTODO: Obviously not correct, bug this sufficiently unblocks testing of the pull model
+            // PULLTODO: Obviously not completely correct, but this sufficiently unblocks testing of the pull model
             if (declPath.length) {
                 for (var i = declPath.length - 1; i >= 0; i--) {
                     decl = declPath[i];
@@ -1379,7 +1373,6 @@ module TypeScript {
             return arraySymbol;
         }
 
-        // PULLTODO
         public resolveIndexExpression(expressionAST: AST, assigningAST: AST, enclosingDecl: PullDecl): PullSymbol {
 
             var indexType = <PullTypeSymbol>this.resolveStatementOrExpression((<BinaryExpression>expressionAST).operand1, assigningAST, enclosingDecl).getType();
@@ -1434,7 +1427,7 @@ module TypeScript {
             var leftType = <PullTypeSymbol>this.resolveStatementOrExpression(binex.operand1, assigningAST, enclosingDecl);
             var rightType = <PullTypeSymbol>this.resolveStatementOrExpression(binex.operand2, assigningAST, enclosingDecl);
             
-            // PULLTODO: Eh?
+            // PULLREVIEW: Eh?  I've preserved the logic from the current implementation, but it could use cleaning up
             if (this.isNullOrUndefinedType(leftType)) {
                 leftType = rightType;
             }
