@@ -417,42 +417,57 @@ module TypeScript {
         var linkKind = isStatic ? SymbolLinkKind.StaticProperty :
                         isPrivate ? SymbolLinkKind.PrivateProperty : SymbolLinkKind.PublicProperty;
 
-        if (context.reBindingAfterChange) {
-            if (parent) {
+        if (funcName) {
+            if (context.reBindingAfterChange) {
+                if (parent) {
 
-                var members = parent.hasBrand() && !isStatic ? (<PullClassSymbol>parent).getInstanceType().getMembers() : parent.getMembers();
-                var member: PullSymbol = null;
+                    var members = parent.hasBrand() && !isStatic ? (<PullClassSymbol>parent).getInstanceType().getMembers() : parent.getMembers();
+                    var member: PullSymbol = null;
 
-                for (var i = 0 ; i < members.length; i++) {
-                    member = members[i];
+                    for (var i = 0 ; i < members.length; i++) {
+                        member = members[i];
 
-                    if (member.getName() == funcName && (member.getKind() & declKind)) {
-                        parentHadSymbol = true;
-                        functionSymbol = <PullFunctionSymbol>member;
+                        if (member.getName() == funcName && (member.getKind() & declKind)) {
+                            parentHadSymbol = true;
+                            functionSymbol = <PullFunctionSymbol>member;
 
-                        break;
+                            break;
+                        }
                     }
+                }
+                else {
+                    functionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
+                }
+                if (functionSymbol) {
+                    // prune out-of-date decls...
+                    var decls = functionSymbol.getDeclarations();
+                    var scriptName = funcDecl.getScriptName();
+
+                    for (var j = 0; j < decls.length; j++) {
+                        if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
+                            functionSymbol.removeDeclaration(decls[j]);
+                        }
+                    }
+
+                    functionSymbol.invalidate();
                 }
             }
             else {
-                functionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
-            }
-            if (functionSymbol) {
-                // prune out-of-date decls...
-                var decls = functionSymbol.getDeclarations();
-                var scriptName = funcDecl.getScriptName();
+                // if there's already a parent symbol, any preceeding overloads will be present there,
+                // so we can just check the parent's children
+                if (parent) {
+                    var candidateSym = parent.getMemberByName(funcName);
 
-                for (var j = 0; j < decls.length; j++) {
-                    if (decls[j].getScriptName() == scriptName && decls[j].getDeclID() < context.startingDeclForRebind) {
-                        functionSymbol.removeDeclaration(decls[j]);
+                    if (candidateSym && (candidateSym.getKind() & DeclKind.Function)) {
+                        functionSymbol = <PullFunctionSymbol>candidateSym;
                     }
-                }
 
-                functionSymbol.invalidate();
+                }
+                else {
+                    // PULLREVIEW: This call ends up being quite expensive - need to avoid it if at all possible
+                    functionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
+                }
             }
-        }
-        else {
-            functionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
         }
 
         if (!functionSymbol) {

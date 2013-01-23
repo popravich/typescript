@@ -17,7 +17,7 @@ module TypeScript {
             this.semanticInfo = this.semanticInfoChain.getUnit(this.scriptName);
         }
 
-        public getParent(n=0) { return this.parentChain ? this.parentChain[this.parentChain.length - 1 - n] : null; }
+        public getParent(n=0): PullTypeSymbol { return this.parentChain ? this.parentChain[this.parentChain.length - 1 - n] : null; }
         public getDeclPath() { return this.declPath; }
 
         public pushParent(parentDecl: PullTypeSymbol) { 
