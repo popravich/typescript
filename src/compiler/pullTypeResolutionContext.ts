@@ -8,9 +8,20 @@ module TypeScript {
     export class PullContextualTypeContext {
 
         public hadProvisionalErrors = false;
+        public provisionallyTypedSymbols: PullSymbol[] = [];
 
         constructor (public contextualType: PullTypeSymbol,
                      public provisional: bool) { }
+
+        public recordProvisionallyTypedSymbol(symbol: PullSymbol) {
+            this.provisionallyTypedSymbols[this.provisionallyTypedSymbols.length] = symbol;
+        }
+
+        public invalidateProvisionallyTypedSymbols() {
+            for (var i = 0; i < this.provisionallyTypedSymbols.length; i++) {
+                this.provisionallyTypedSymbols[i].invalidate();
+            }
+        }
     }
 
     export class PullTypeResolutionContext {
@@ -24,6 +35,8 @@ module TypeScript {
         
         public popContextualType(): PullContextualTypeContext {
             var tc = this.contextStack.pop();
+
+            tc.invalidateProvisionallyTypedSymbols();
 
             return tc;
         }
@@ -40,6 +53,15 @@ module TypeScript {
         
         public inProvisionalResolution() {
             return (!this.contextStack.length ? false : this.contextStack[this.contextStack.length - 1].provisional);
+        }
+
+        public setTypeInContext(symbol: PullSymbol, type: PullTypeSymbol) {
+
+            symbol.setType(type);
+
+            if (this.contextStack.length && this.inProvisionalResolution()) {
+                this.contextStack[this.contextStack.length].recordProvisionallyTypedSymbol(symbol);
+            }
         }
     }
 

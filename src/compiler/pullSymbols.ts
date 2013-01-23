@@ -771,7 +771,7 @@ module TypeScript {
     }
 
     // PULLTODO: This should be a part of the resolver class
-    export function specializeToArrayType(arrayInterfaceType: PullTypeSymbol, typeToReplace: PullTypeSymbol, typeToSpecializeTo: PullTypeSymbol, resolver: PullTypeResolver) {
+    export function specializeToArrayType(arrayInterfaceType: PullTypeSymbol, typeToReplace: PullTypeSymbol, typeToSpecializeTo: PullTypeSymbol, resolver: PullTypeResolver, context: PullTypeResolutionContext) {
 
         // For the time-being, only specialize interface types
         // this way we can assume only public members and non-static methods
@@ -810,12 +810,12 @@ module TypeScript {
         var members = arrayInterfaceType.getMembers();
             
         for (var i = 0; i < members.length; i++) {
-            resolver.resolveDeclaredSymbol(members[i]);
+            resolver.resolveDeclaredSymbol(members[i], context);
 
             if (members[i].isType()) { // must be a method
                 method = <PullFunctionSymbol> members[i];
 
-                resolver.resolveDeclaredSymbol(method);
+                resolver.resolveDeclaredSymbol(method, context);
 
                 newMethod = new PullFunctionSymbol(method.getName(), method.getKind());
                 newMethod.addDeclaration(method.getDeclarations()[0]);

@@ -73,6 +73,8 @@ module TypeScript {
 
         public resolver: PullTypeResolver = null;
 
+        public context: PullTypeResolutionContext = new PullTypeResolutionContext();
+
         constructor (semanticInfoChain) {
             this.semanticInfoChain = semanticInfoChain;
         }
@@ -90,27 +92,27 @@ module TypeScript {
         }
 
         public typeCheckFunction(funcDecl: FuncDecl): FuncDecl {
-            var sym = this.resolver.resolveFunctionDeclaration(funcDecl);
+            var sym = this.resolver.resolveFunctionDeclaration(funcDecl, this.context);
             return funcDecl;
         }
 
         public typeCheckClass(classDecl: ClassDecl): ClassDecl {
-            var sym = this.resolver.resolveClassDeclaration(classDecl);
+            var sym = this.resolver.resolveClassDeclaration(classDecl, this.context);
             return classDecl;
         }
 
         public typeCheckInterface(interfaceDecl: TypeDecl): TypeDecl {
-            var sym = this.resolver.resolveInterfaceDeclaration(interfaceDecl);
+            var sym = this.resolver.resolveInterfaceDeclaration(interfaceDecl, this.context);
             return interfaceDecl;
         }
 
         public typeCheckModule(moduleDecl: ModuleDecl): ModuleDecl {
-            var sym = this.resolver.resolveModuleDeclaration(moduleDecl);
+            var sym = this.resolver.resolveModuleDeclaration(moduleDecl, this.context);
             return moduleDecl;
         }
 
         public typeCheckBoundDecl(varDecl: BoundDecl): BoundDecl {
-            var sym = this.resolver.resolveVariableDeclaration(varDecl);
+            var sym = this.resolver.resolveVariableDeclaration(varDecl, this.context);
             return varDecl;
         }
 

@@ -790,7 +790,7 @@ module TypeScript {
                     }
 
                     this.pullTypeChecker.setUnit(this.units[i].filename, this.logger);
-                    this.pullTypeChecker.resolver.resolveBoundDecls(this.semanticInfoChain.units[this.settings.testPull ? (i > skipFirst ? i : i + 1) : i + 1].getTopLevelDecls()[0]);
+                    this.pullTypeChecker.resolver.resolveBoundDecls(this.semanticInfoChain.units[this.settings.testPull ? (i > skipFirst ? i : i + 1) : i + 1].getTopLevelDecls()[0], new PullTypeResolutionContext());
                 }
 
                 var typeCheckEndTime = new Date().getTime();
@@ -927,6 +927,7 @@ module TypeScript {
                 var objectLitAST: UnaryExpression = null;
                 var asgAST: BinaryExpression = null;
                 var typeAssertionASTs: UnaryExpression[] = [];
+                var resolutionContext = new PullTypeResolutionContext();
 
                 var pre = (cur: AST, parent: AST): AST => {
                     if (isValidAstNode(cur)) {
@@ -977,7 +978,7 @@ module TypeScript {
                     // are we within a decl?  if so, just grab its symbol
                     if (lastDeclAST == foundAST) {
                         symbol = declStack[declStack.length - 1].getSymbol();
-                        this.pullTypeChecker.resolver.resolveDeclaredSymbol(symbol);
+                        this.pullTypeChecker.resolver.resolveDeclaredSymbol(symbol, resolutionContext);
                     }
                     else {
                         // otherwise, it's an expression that needs to be resolved, so we must pull...
@@ -1034,7 +1035,6 @@ module TypeScript {
                         // Also, for things like typerefs, we're not setting up the scope correctly
 
                         var isTypedAssignment = (assigningAST != null) && (assigningAST.typeExpr != null);
-                        var resolutionContext = new PullTypeResolutionContext();
                         
                         resolutionContext.resolveAggressively = true;
 
@@ -1042,7 +1042,7 @@ module TypeScript {
                             var varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
 
                             if (!varSymbol) {
-                                this.pullTypeChecker.resolver.resolveDeclaration(assigningAST);
+                                this.pullTypeChecker.resolver.resolveDeclaration(assigningAST, resolutionContext);
                                 varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
                             }
 
