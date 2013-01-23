@@ -1392,6 +1392,8 @@ module TypeScript {
                     
                     memberSymbol.setType(memberExprType.getType());
 
+                    memberSymbol.setResolved();
+
                     this.setSymbolForAST(binex.operand1, memberSymbol);
 
                     typeSymbol.addMember(memberSymbol, SymbolLinkKind.PublicProperty);
@@ -1992,6 +1994,10 @@ module TypeScript {
             }
 
             if (!t1 || !t2) {
+                return false;
+            }
+
+            if (t1.isPrimitive() || t2.isPrimitive()) {
                 return false;
             }
 
@@ -2934,9 +2940,8 @@ module TypeScript {
                 // find the better conversion
                 for (i = 0; args && i < args.members.length; i++) {
 
-                    this.resolveStatementOrExpression(args.members[i], false, enclosingDecl, context);
+                    argSym = this.resolveStatementOrExpression(args.members[i], false, enclosingDecl, context);
 
-                    argSym = this.getSymbolForAST(args.members[i]);
                     AType = argSym.getType();
 
                     // invalidate the argument so that we may correctly resolve it later as part of the call expression

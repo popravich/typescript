@@ -82,10 +82,9 @@ module TypeScript {
         public addPrimitive(name: string, globalDecl: PullDecl) {
             var span = new ASTSpan();
             var decl = new PullDecl(name, DeclKind.Primitive, DeclFlags.None, span, "");
-            var symbol = new PullTypeSymbol(name, DeclKind.Primitive);
+            var symbol = new PullPrimitiveTypeSymbol(name);
             symbol.addDeclaration(decl);
             decl.setSymbol(symbol);
-            symbol.setResolved();
 
             globalDecl.addChildDecl(decl);
             this.units[0].setSymbolForDecl(decl, symbol);

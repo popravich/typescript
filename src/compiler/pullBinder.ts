@@ -419,7 +419,7 @@ module TypeScript {
 
         if (context.reBindingAfterChange) {
             if (parent) {
-                // see if the parent already has a symbol for this class
+
                 var members = parent.hasBrand() && !isStatic ? (<PullClassSymbol>parent).getInstanceType().getMembers() : parent.getMembers();
                 var member: PullSymbol = null;
 
@@ -450,6 +450,9 @@ module TypeScript {
 
                 functionSymbol.invalidate();
             }
+        }
+        else {
+            functionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
         }
 
         if (!functionSymbol) {

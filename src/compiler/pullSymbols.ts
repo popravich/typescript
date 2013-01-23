@@ -698,6 +698,15 @@ module TypeScript {
         }
     }
 
+    export class PullPrimitiveTypeSymbol extends PullTypeSymbol {
+        constructor (name: string) {
+            super(name, DeclKind.Primitive);
+        }
+
+        public isResolved() { return true; }
+        public invalidate() { }
+    }
+
     export class PullClassSymbol extends PullTypeSymbol {
         private instanceType: PullTypeSymbol = null;
         private staticMembers: PullSymbol[] = []; // constructor and static members
