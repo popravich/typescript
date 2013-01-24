@@ -352,6 +352,7 @@ module TypeScript {
 
             for (var i = 0; i < decls.length; i++) {
                 var decl = decls[i];
+                
                 var ast = this.semanticInfoChain.getASTForDecl(decl, decl.getScriptName());
 
                 this.setUnitPath(decl.getScriptName());
@@ -1046,35 +1047,31 @@ module TypeScript {
 
         public resolveNameExpression(nameAST: Identifier, enclosingDecl: PullDecl, context: PullTypeResolutionContext): PullSymbol {
             
-            var nameSymbol: PullSymbol = this.getSymbolForAST(nameAST);
+
+            var id = nameAST.actualText;
+
+            var declPath = this.getPathToDecl(enclosingDecl);
+
+            if (enclosingDecl && !declPath.length) {
+                declPath = [enclosingDecl];
+            }
+
+            // first, resolve the id as a value
+            //var nameSymbol: PullSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeValue);
+            var nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeValue);
+
+            // no luck? check the type space
+            if (!nameSymbol) {
+                //nameSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeType);
+                nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeType);
+            }
 
             if (!nameSymbol) {
-
-                var id = nameAST.actualText;
-
-                var declPath = this.getPathToDecl(enclosingDecl);
-
-                if (enclosingDecl && !declPath.length) {
-                    declPath = [enclosingDecl];
-                }
-
-                // first, resolve the id as a value
-                //var nameSymbol: PullSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeValue);
-                var nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeValue);
-
-                // no luck? check the type space
-                if (!nameSymbol) {
-                    //nameSymbol = this.findSymbolForPath([id], enclosingDecl, DeclKind.SomeType);
-                    nameSymbol = this.getSymbolFromDeclPath(id, declPath, DeclKind.SomeType);
-                }
-
-                if (!nameSymbol) {
-                    this.log("RESOLUTION ERROR: Could not find symbol '" + id + "'");
-                    return this.semanticInfoChain.anyTypeSymbol;
-                }
-
-                this.setSymbolForAST(nameAST, nameSymbol);
+                this.log("RESOLUTION ERROR: Could not find symbol '" + id + "'");
+                return this.semanticInfoChain.anyTypeSymbol;
             }
+
+            this.setSymbolForAST(nameAST, nameSymbol);
 
             // PULLREVIEW: This requires that the AST related to the symbol in question be in memory
             if (!nameSymbol.isResolved()) {
@@ -1114,6 +1111,11 @@ module TypeScript {
             }
             else if (lhsType == this.semanticInfoChain.boolTypeSymbol && this.cachedBooleanInterfaceType) {
                 lhsType = this.cachedBooleanInterfaceType;
+            }
+
+            if (!lhsType) {
+                this.log("RESOLUTION ERROR: Could not find lhs type for dotted name '" + rhsName + "'");
+                return this.semanticInfoChain.anyTypeSymbol;
             }
 
             if (!lhsType.isResolved()) {
