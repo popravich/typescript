@@ -1213,6 +1213,10 @@ module TypeScript {
                 funcDeclSymbol.addDeclaration(functionDecl);
             }
 
+            // bind any inner symbols
+            var pullSymbolBindingContext = new PullSymbolBindingContext(this.semanticInfoChain, this.unitPath);
+            bindDeclSymbol(functionDecl, pullSymbolBindingContext);
+
             // resolve the return type annotation
             if (funcDeclAST.returnTypeAnnotation) {
                 var returnTypeRef = <TypeReference>funcDeclAST.returnTypeAnnotation;
@@ -1232,21 +1236,6 @@ module TypeScript {
                     }
                 }
                 else {
-                    // create a new function decl
-                    var semanticInfo = this.semanticInfoChain.getUnit(this.unitPath);
-                    var declCollectionContext = new DeclCollectionContext(semanticInfo);
-
-                    declCollectionContext.scriptName = this.unitPath;
-
-                    getAstWalkerFactory().walk(funcDeclAST, preCollectDecls, postCollectDecls, null, declCollectionContext);
-
-                    var functionDecl = this.getDeclForAST(funcDeclAST);
-
-                    // bind the symbols
-
-                    var pullSymbolBindingContext = new PullSymbolBindingContext(this.semanticInfoChain, this.unitPath);
-                    bindDeclSymbol(functionDecl, pullSymbolBindingContext);
-
                     this.resolveFunctionBodyReturnTypes(funcDeclAST, signature, functionDecl, context);
                     //signature.setReturnType(this.semanticInfoChain.anyTypeSymbol);
                 }

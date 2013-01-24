@@ -923,7 +923,7 @@ module TypeScript {
 
                 // these are used to track intermediate nodes so that we can properly apply contextual types
                 var lambdaAST: FuncDecl = null;
-                var assigningAST: VarDecl = null;
+                var assigningASTs: VarDecl[] = [];
                 var objectLitAST: UnaryExpression = null;
                 var asgAST: BinaryExpression = null;
                 var typeAssertionASTs: UnaryExpression[] = [];
@@ -948,7 +948,7 @@ module TypeScript {
                                     lambdaAST = <FuncDecl>cur;
                                 }
                                 else if (cur.nodeType == NodeType.VarDecl) {
-                                    assigningAST = cur;
+                                    assigningASTs[assigningASTs.length] = cur;
                                 }
                                 else if (cur.nodeType == NodeType.ObjectLit) {
                                     objectLitAST = <UnaryExpression>cur;
@@ -987,7 +987,7 @@ module TypeScript {
                         var enclosingDecl: PullDecl = null;
 
                         for (var i = declStack.length - 1; i >= 0; i--) {
-                            if (!(declStack[i].getKind() & DeclKind.Variable)) {
+                            if (!(declStack[i].getKind() & (DeclKind.Variable | DeclKind.Argument))) {
                                 enclosingDecl = declStack[i];
                                 break;
                             }
@@ -1034,27 +1034,54 @@ module TypeScript {
                         // the type info we collected would not be quite right
                         // Also, for things like typerefs, we're not setting up the scope correctly
 
-                        var isTypedAssignment = (assigningAST != null) && (assigningAST.typeExpr != null);
                         
                         resolutionContext.resolveAggressively = true;
+                        var isTypedAssignment = false;
+                        
+                        if (assigningASTs.length) {
+                            var assigningAST: VarDecl;
+                            var varSymbol: PullSymbol;
 
-                        if (isTypedAssignment) {
-                            var varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
+                            for (var i = 0; i < assigningASTs.length; i++) {
 
-                            if (!varSymbol) {
-                                this.pullTypeChecker.resolver.resolveDeclaration(assigningAST, resolutionContext);
+                                assigningAST = assigningASTs[i];
+                                isTypedAssignment = (assigningAST != null) && (assigningAST.typeExpr != null);
+
                                 varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
-                            }
 
-                            if (varSymbol) {
-                                var contextualType = varSymbol.getType();
-                                resolutionContext.pushContextualType(contextualType, false);
-                            }
+                                if (!varSymbol) {
+                                    this.pullTypeChecker.resolver.resolveDeclaration(assigningAST, resolutionContext);
+                                    varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
+                                }
 
-                            if (assigningAST.init) {
-                                this.pullTypeChecker.resolver.resolveAST(assigningAST.init, true, enclosingDecl, resolutionContext);
+                                if (varSymbol && isTypedAssignment) {
+                                    var contextualType = varSymbol.getType();
+                                    resolutionContext.pushContextualType(contextualType, false);
+                                }
+
+                                if (assigningAST.init) {
+                                    this.pullTypeChecker.resolver.resolveAST(assigningAST.init, true, enclosingDecl, resolutionContext);
+                                }
                             }
                         }
+
+                        //if (assigningAST) {
+                        //    var varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
+
+                        //    if (!varSymbol) {
+                        //        this.pullTypeChecker.resolver.resolveDeclaration(assigningAST, resolutionContext);
+                        //        varSymbol = this.semanticInfoChain.getSymbolForAST(assigningAST, scriptName);
+                        //    }
+
+                        //    if (varSymbol && isTypedAssignment) {
+                        //        var contextualType = varSymbol.getType();
+                        //        resolutionContext.pushContextualType(contextualType, false);
+                        //    }
+
+                        //    if (assigningAST.init) {
+                        //        this.pullTypeChecker.resolver.resolveAST(assigningAST.init, true, enclosingDecl, resolutionContext);
+                        //    }
+                        //}
 
                         if (typeAssertionASTs.length) {
                             for (var i = 0; i < typeAssertionASTs.length; i++) {

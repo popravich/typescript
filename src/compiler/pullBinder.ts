@@ -453,19 +453,20 @@ module TypeScript {
                 }
             }
             else {
+                var candidateSym: PullSymbol;
+
                 // if there's already a parent symbol, any preceeding overloads will be present there,
                 // so we can just check the parent's children
                 if (parent) {
-                    var candidateSym = parent.getMemberByName(funcName);
-
-                    if (candidateSym && (candidateSym.getKind() & DeclKind.Function)) {
-                        functionSymbol = <PullFunctionSymbol>candidateSym;
-                    }
-
+                    candidateSym = parent.getMemberByName(funcName);
                 }
                 else {
                     // PULLREVIEW: This call ends up being quite expensive - need to avoid it if at all possible
-                    functionSymbol = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
+                    candidateSym = <PullFunctionSymbol>findSymbolInContext(funcName, declKind, context, []);
+                }
+
+                if (candidateSym && (candidateSym.getKind() & DeclKind.Function)) {
+                    functionSymbol = <PullFunctionSymbol>candidateSym;
                 }
             }
         }

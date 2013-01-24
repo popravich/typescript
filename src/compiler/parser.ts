@@ -864,7 +864,9 @@ module TypeScript {
                             funcDecl.classDecl = null;
                         }
                         funcDecl.minChar = minChar;
-                        return this.parseTypeReferenceTail(errorRecoverySet, minChar, funcDecl);
+                        var tr = this.parseTypeReferenceTail(errorRecoverySet, minChar, funcDecl);
+                        funcDecl.limChar = tr.limChar;
+                        return tr;
                     }
 
                     default:

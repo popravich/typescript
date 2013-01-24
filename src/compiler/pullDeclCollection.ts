@@ -125,7 +125,12 @@ module TypeScript {
 
         var decl = new PullDecl(interfaceDecl.name.text, DeclKind.Interface, declFlags, span, context.scriptName);
 
-        context.getParent().addChildDecl(decl);
+        var parent = context.getParent();
+
+        // if we're collecting a decl for a type annotation, we don't want to add the decl to the parent scope
+        if (parent) {
+            parent.addChildDecl(decl);
+        }
 
         context.pushParent(decl);
 
@@ -164,6 +169,17 @@ module TypeScript {
         else {
             context.semanticInfo.setASTForDecl(decl,ast);
             context.semanticInfo.setDeclForAST(ast, decl);   
+        }
+
+        if (argDecl.typeExpr && 
+            ((<TypeReference>argDecl.typeExpr).term.nodeType == NodeType.Interface ||
+            (<TypeReference>argDecl.typeExpr).term.nodeType == NodeType.FuncDecl)) {
+
+            var declCollectionContext = new DeclCollectionContext(context.semanticInfo);
+
+            declCollectionContext.scriptName = context.scriptName;
+
+            getAstWalkerFactory().walk((<TypeReference>argDecl.typeExpr).term, preCollectDecls, postCollectDecls, null, declCollectionContext);
         }
          
         return false;
@@ -223,6 +239,17 @@ module TypeScript {
         context.semanticInfo.setDeclForAST(ast, decl);
 
         context.semanticInfo.setASTForDecl(decl,ast);
+
+        if (varDecl.typeExpr && 
+            ((<TypeReference>varDecl.typeExpr).term.nodeType == NodeType.Interface ||
+            (<TypeReference>varDecl.typeExpr).term.nodeType == NodeType.FuncDecl)) {
+
+            var declCollectionContext = new DeclCollectionContext(context.semanticInfo);
+
+            declCollectionContext.scriptName = context.scriptName;
+
+            getAstWalkerFactory().walk((<TypeReference>varDecl.typeExpr).term, preCollectDecls, postCollectDecls, null, declCollectionContext);
+        }
 
         return false;
     }
@@ -313,6 +340,17 @@ module TypeScript {
         context.semanticInfo.setDeclForAST(ast, decl);
 
         context.semanticInfo.setASTForDecl(decl, ast);
+
+        if (funcDecl.returnTypeAnnotation && 
+            ((<TypeReference>funcDecl.returnTypeAnnotation).term.nodeType == NodeType.Interface ||
+            (<TypeReference>funcDecl.returnTypeAnnotation).term.nodeType == NodeType.FuncDecl)) {
+
+            var declCollectionContext = new DeclCollectionContext(context.semanticInfo);
+
+            declCollectionContext.scriptName = context.scriptName;
+
+            getAstWalkerFactory().walk((<TypeReference>funcDecl.returnTypeAnnotation).term, preCollectDecls, postCollectDecls, null, declCollectionContext);
+        }
 
         return true;
     }
