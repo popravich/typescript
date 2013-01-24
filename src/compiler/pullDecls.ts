@@ -37,7 +37,7 @@ module TypeScript {
 
         Enum = 1 << 20,
         
-        SomeType = Module | Function | Class | ClassInstanceDecl | Interface | Primitive | Global,
+        SomeType = Module | Function | Class | ClassInstanceDecl | Interface | Primitive | Enum | Global,
         SomeSignature = CallSignature | ConstructSignature | IndexSignature,
         SomeValue = Variable | Argument | Field | StaticField,
 

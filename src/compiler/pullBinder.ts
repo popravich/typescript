@@ -46,7 +46,13 @@ module TypeScript {
 
             if (parent) {
                 var linkKind = moduleDecl.getDeclFlags() & DeclFlags.Exported ? SymbolLinkKind.PublicProperty : SymbolLinkKind.PrivateProperty;
-                parent.addMember(moduleSymbol, linkKind);
+
+                if (linkKind == SymbolLinkKind.PublicProperty) {
+                    parent.addMember(moduleSymbol, linkKind);
+                }
+                else {
+                    moduleSymbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                }
             }
         }
         else if (context.reBindingAfterChange) {
@@ -133,7 +139,13 @@ module TypeScript {
         
         if (parent && !parentHadSymbol) {
             var linkKind = classDecl.getDeclFlags() & DeclFlags.Exported ? SymbolLinkKind.PublicProperty : SymbolLinkKind.PrivateProperty;
-            parent.addMember(classSymbol, linkKind);
+
+            if (linkKind == SymbolLinkKind.PublicProperty) {
+                parent.addMember(classSymbol, linkKind);
+            }
+            else {
+                classSymbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+            }
         }
 
         // PULLTODO: For now, remove stale signatures from the function type, but we want to be smarter about this when
@@ -194,7 +206,13 @@ module TypeScript {
 
             if (parent) {
                 var linkKind = interfaceDecl.getDeclFlags() & DeclFlags.Exported ? SymbolLinkKind.PublicProperty : SymbolLinkKind.PrivateProperty;
-                parent.addMember(interfaceSymbol, linkKind);
+                
+                if (linkKind == SymbolLinkKind.PublicProperty) {
+                    parent.addMember(interfaceSymbol, linkKind);
+                }
+                else {
+                    interfaceSymbol.addOutgoingLink(parent, SymbolLinkKind.ContainedBy);
+                }
             }
         }
         else if (context.reBindingAfterChange) {
