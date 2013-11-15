@@ -60,7 +60,7 @@ module TypeScript {
         public compilationSettings() { return this._settings; }
 
         constructor(compiler: TypeScriptCompiler,
-                    public resolvePath: (path: string) => string) {
+            public resolvePath: (path: string) => string) {
 
             var settings = compiler.compilationSettings();
             this._settings = settings;
@@ -136,7 +136,10 @@ module TypeScript {
                                 updatedPath = true;
 
                                 if (j === 0) {
-                                    if (this._outputDirectory || this._sourceMapRootDirectory) {
+                                    if (this._outputDirectory || // there is --outDir specified
+                                        this._sourceRootDirectory || // there is --sourceRoot specified
+                                        (this._sourceMapRootDirectory && // there is --map Specified and there would be multiple js files generated
+                                        (!this._sharedOutputFile || compiler._isDynamicModuleCompilation()))) {
                                         // Its error to not have common path
                                         this._diagnostic = new Diagnostic(null, null, 0, 0, DiagnosticCode.Cannot_find_the_common_subdirectory_path_for_the_input_files, null);
                                         return;
