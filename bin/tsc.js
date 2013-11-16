@@ -7412,11 +7412,11 @@ var TypeScript;
             };
 
             EmptySeparatedSyntaxList.prototype.leadingTrivia = function () {
-                return Syntax.emptyTriviaList;
+                return TypeScript.Syntax.emptyTriviaList;
             };
 
             EmptySeparatedSyntaxList.prototype.trailingTrivia = function () {
-                return Syntax.emptyTriviaList;
+                return TypeScript.Syntax.emptyTriviaList;
             };
 
             EmptySeparatedSyntaxList.prototype.leadingTriviaWidth = function () {
@@ -20525,7 +20525,7 @@ var TypeScript;
 
         function triviaList(trivia) {
             if (trivia === undefined || trivia === null || trivia.length === 0) {
-                return TypeScript.Syntax.emptyTriviaList;
+                return Syntax.emptyTriviaList;
             }
 
             if (trivia.length === 1) {
@@ -29496,7 +29496,7 @@ var TypeScript;
                                 updatedPath = true;
 
                                 if (j === 0) {
-                                    if (this._outputDirectory || this._sourceMapRootDirectory) {
+                                    if (this._outputDirectory || this._sourceRootDirectory || (this._sourceMapRootDirectory && (!this._sharedOutputFile || compiler._isDynamicModuleCompilation()))) {
                                         this._diagnostic = new TypeScript.Diagnostic(null, null, 0, 0, TypeScript.DiagnosticCode.Cannot_find_the_common_subdirectory_path_for_the_input_files, null);
                                         return;
                                     }
