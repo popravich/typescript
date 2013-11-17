@@ -5,6 +5,7 @@
 ///<reference path='text.ts' />
 ///<reference path='textLine.ts' />
 ///<reference path='lineMap.ts' />
+///<reference path='scriptVersionCache.ts' />
 ///<reference path='textFactory.ts' />
 ///<reference path='textUtilities.ts' />
 ///<reference path='textSpan.ts' />
