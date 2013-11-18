@@ -378,6 +378,12 @@ var fidelityTestsInFile1 = "tests/Fidelity/Program.ts";
 var fidelityTestsInFile2 = "tests/Fidelity/incremental/IncrementalParserTests.ts";
 compileFile(fidelityTestsOutFile, [fidelityTestsInFile1], [tscFile, fidelityTestsInFile2].concat(compilerSources.concat(servicesSources)), [], true);
 
+// VersionCache Tests
+var versionCacheTestsOutFile = "tests/VersionCache/client.js";
+var versionCacheTestsInFile = "tests/VersionCache/client.ts";
+compileFile(versionCacheTestsOutFile, [versionCacheTestsInFile],
+            [tscFile, versionCacheTestsInFile].concat(compilerSources.concat(servicesSources)), [], true);
+
 desc("Builds the web harness front end");
 task("test-harness", [perfCompilerPath]);
 
@@ -388,7 +394,7 @@ var localRwcBaseline = "tests/baselines/rwc/local/";
 var refRwcBaseline = "tests/baselines/rwc/reference/";
 
 desc("Builds the test infrastructure using the built compiler");
-task("tests", [run, serviceFile, perfCompilerPath, fidelityTestsOutFile].concat(libraryTargets), function() {	
+task("tests", [run, serviceFile, perfCompilerPath,fidelityTestsOutFile, versionCacheTestsOutFile].concat(libraryTargets), function() {	
 	// Copy the language service over to the test directory
 	jake.cpR(serviceFile, builtTestDirectory);
 	jake.cpR(path.join(libraryDirectory, "lib.d.ts"), builtTestDirectory);	
@@ -481,6 +487,25 @@ desc("Builds and runs the Fidelity tests");
 task("run-fidelity-tests", [fidelityTestsOutFile], function() {
 	host = process.env.host || process.env.TYPESCRIPT_HOST || "node";
 	var cmd = host + " " + fidelityTestsOutFile;
+	console.log(cmd);
+	var ex = jake.createExec([cmd]);
+	// Add listeners for output and error
+	ex.addListener("stdout", function(output) {
+		process.stdout.write(output);
+	});
+	ex.addListener("stderr", function(error) {
+		process.stderr.write(error);
+	});
+	ex.addListener("cmdEnd", function() {
+		complete();
+	});
+	ex.run();	
+}, {async: true});
+
+desc("Builds and runs the versionCache tests");
+task("run-versionCache-tests", [versionCacheTestsOutFile], function() {
+	host = process.env.host || process.env.TYPESCRIPT_HOST || "node";
+	var cmd = host + " " + versionCacheTestsOutFile;
 	console.log(cmd);
 	var ex = jake.createExec([cmd]);
 	// Add listeners for output and error
