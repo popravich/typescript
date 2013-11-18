@@ -56,6 +56,7 @@ module TypeScript {
 
     export interface ILineIndexWalker {
         goSubtree: boolean;
+        done: boolean;
         leaf(relativeStart: number, relativeLength: number, lineCollection: LineLeaf): void;
         pre? (relativeStart: number, relativeLength: number, lineCollection: LineCollection, parent: LineNode, nodeType: CharRangeSection): LineCollection;
         post? (relativeStart: number, relativeLength: number, lineCollection: LineCollection, parent: LineNode, nodeType: CharRangeSection): LineCollection;
@@ -63,6 +64,7 @@ module TypeScript {
 
     class BaseLineIndexWalker implements ILineIndexWalker {
         goSubtree = true;
+        done = false;
         leaf(rangeStart: number, rangeLength: number, ll: LineLeaf) {
         }
     }
@@ -418,12 +420,30 @@ module TypeScript {
         getText(rangeStart: number, rangeLength: number) {
             var accum = "";
             this.walk(rangeStart, rangeLength, {
-                goSubtree: true, 
+                goSubtree: true,
+                done: false,
                 leaf: (relativeStart: number, relativeLength: number, ll: LineLeaf) => {
                     accum = accum.concat(ll.text.substring(relativeStart,relativeStart+relativeLength));
                 }
             });
             return accum;
+        }
+
+        every(f: (ll: LineLeaf) => boolean, rangeStart: number, rangeEnd?: number) {
+            if (!rangeEnd) {
+                rangeEnd = this.root.charCount();
+            }
+            var walkFns = {
+                goSubtree: true,
+                done: false,
+                leaf: function (relativeStart: number, relativeLength: number, ll: LineLeaf) {
+                    if (!f(ll)) {
+                        this.done = true;
+                    }
+                }
+            }
+            this.walk(rangeStart, rangeEnd - rangeStart, walkFns);
+            return !walkFns.done;
         }
 
         edit(pos: number, deleteLength: number, newText?: string) {
@@ -557,10 +577,11 @@ module TypeScript {
             else {
                 walkFns.goSubtree = true;
             }
+            return walkFns.done;
         }
 
         skipChild(relativeStart: number, relativeLength: number, childIndex: number, walkFns: ILineIndexWalker, nodeType: CharRangeSection) {
-            if (walkFns.pre) {
+            if (walkFns.pre && (!walkFns.done)) {
                 walkFns.pre(relativeStart, relativeLength, this.children[childIndex], this, nodeType);
                 walkFns.goSubtree = true;
             }
@@ -581,22 +602,30 @@ module TypeScript {
             }
             // Case I: both start and end of range in same subtree
             if ((adjustedStart + rangeLength) <= childCharCount) {
-                this.execWalk(adjustedStart, rangeLength, walkFns, childIndex, CharRangeSection.Entire);
+                if (this.execWalk(adjustedStart, rangeLength, walkFns, childIndex, CharRangeSection.Entire)) {
+                    return;
+                }
             }
             else {
                 // Case II: start and end of range in different subtrees (possibly with subtrees in the middle)
-                this.execWalk(adjustedStart, childCharCount-adjustedStart, walkFns, childIndex, CharRangeSection.Start);
+                if (this.execWalk(adjustedStart, childCharCount - adjustedStart, walkFns, childIndex, CharRangeSection.Start)) {
+                    return;
+                }
                 var adjustedLength = rangeLength - (childCharCount - adjustedStart);
                 child = this.children[++childIndex];
                 childCharCount = child.charCount();
                 while (adjustedLength > childCharCount) {
-                    this.execWalk(0, childCharCount, walkFns, childIndex, CharRangeSection.Mid);
+                    if (this.execWalk(0, childCharCount, walkFns, childIndex, CharRangeSection.Mid)) {
+                        return;
+                    }
                     adjustedLength -= childCharCount;
                     child = this.children[++childIndex];
                     childCharCount = child.charCount();
                 }
                 if (adjustedLength > 0) {
-                    this.execWalk(0, adjustedLength,walkFns, childIndex, CharRangeSection.End);
+                    if (this.execWalk(0, adjustedLength, walkFns, childIndex, CharRangeSection.End)) {
+                        return;
+                    }
                 }
             }
             // Process any subtrees after the one containing range end

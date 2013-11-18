@@ -72,6 +72,12 @@ module Editor {
         lineIndex.print();
         TypeScript.IO.printLine(editedText);
 
+        // print via 'every' function
+        lineIndex.every((ll: TypeScript.LineLeaf) => {
+            TypeScript.IO.print(ll.text);
+            return true;
+        }, 0);
+        TypeScript.IO.printLine("...from every");
         var snapshot: TypeScript.LineIndex;
         var checkText: string;
         var insertString: string;
