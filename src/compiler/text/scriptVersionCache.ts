@@ -43,6 +43,7 @@ module TypeScript {
         line: number;
         offset: number;
         text: string;
+        leaf: LineLeaf;
     }
 
     export enum CharRangeSection {
@@ -645,7 +646,8 @@ module TypeScript {
                 return {
                     line: childInfo.lineNumber,
                     offset: childInfo.charOffset,
-                    text: (<LineLeaf>(childInfo.child)).text
+                    text: (<LineLeaf>(childInfo.child)).text,
+                    leaf: (<LineLeaf>(childInfo.child))
                 };
             }
             else {
