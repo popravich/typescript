@@ -429,7 +429,7 @@ module TypeScript {
             return accum;
         }
 
-        every(f: (ll: LineLeaf) => boolean, rangeStart: number, rangeEnd?: number) {
+        every(f: (ll: LineLeaf, s: number, len: number) => boolean, rangeStart: number, rangeEnd?: number) {
             if (!rangeEnd) {
                 rangeEnd = this.root.charCount();
             }
@@ -437,7 +437,7 @@ module TypeScript {
                 goSubtree: true,
                 done: false,
                 leaf: function (relativeStart: number, relativeLength: number, ll: LineLeaf) {
-                    if (!f(ll)) {
+                    if (!f(ll, relativeStart, relativeLength)) {
                         this.done = true;
                     }
                 }
