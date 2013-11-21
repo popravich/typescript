@@ -9768,15 +9768,15 @@ module TypeScript {
             }
 
             // If the target property is required, and the source property is optional, they are not compatible
-            if (sourceProp.isOptional && !targetProp.isOptional) {
-                if (comparisonInfo) {
-                    var enclosingSymbol = this.getEnclosingSymbolForAST(ast);
-                    comparisonInfo.flags |= TypeRelationshipFlags.RequiredPropertyIsMissing;
-                    comparisonInfo.addMessage(getDiagnosticMessage(DiagnosticCode.Property_0_defined_as_optional_in_type_1_but_is_required_in_type_2,
-                        [targetProp.getScopedNameEx().toString(), sourceProp.getContainer().toString(enclosingSymbol), targetProp.getContainer().toString(enclosingSymbol)]));
-                }
-                return false;
-            }
+            //if (sourceProp.isOptional && !targetProp.isOptional) {
+            //    if (comparisonInfo) {
+            //        var enclosingSymbol = this.getEnclosingSymbolForAST(ast);
+            //        comparisonInfo.flags |= TypeRelationshipFlags.RequiredPropertyIsMissing;
+            //        comparisonInfo.addMessage(getDiagnosticMessage(DiagnosticCode.Property_0_defined_as_optional_in_type_1_but_is_required_in_type_2,
+            //            [targetProp.getScopedNameEx().toString(), sourceProp.getContainer().toString(enclosingSymbol), targetProp.getContainer().toString(enclosingSymbol)]));
+            //    }
+            //    return false;
+            //}
 
             this.resolveDeclaredSymbol(sourceProp, context);
 

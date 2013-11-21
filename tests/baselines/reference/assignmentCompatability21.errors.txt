@@ -1,2 +1,4 @@
 assignmentCompatability21.ts line 9 col 1: error TS2012: Cannot convert '__test1__.interfaceWithPublicAndOptional<number, string>' to '{ two: string[]; }':
-	Property 'two' defined as optional in type '__test1__.interfaceWithPublicAndOptional<T, U>', but is required in type '{ two: string[]; }'.
+	Types of property 'two' of types '__test1__.interfaceWithPublicAndOptional<number, string>' and '{ two: string[]; }' are incompatible:
+		Types of property 'concat' of types 'String' and 'string[]' are incompatible:
+			Call signatures of types '(...strings: string[]) => string' and '{ <U extends T[]>(...items: U[]): string[]; (...items: string[]): string[]; }' are incompatible.

@@ -1,0 +1,15 @@
+=== tests/cases/compiler/functionOverloads22.ts ===
+Line 0 col 9 IdentifierName "foo" = typeof foo
+Line 0 col 13 IdentifierName "bar" = number
+Line 0 col 26 IdentifierName "a" = number
+Line 1 col 9 IdentifierName "foo" = typeof foo
+Line 1 col 13 IdentifierName "bar" = string
+Line 1 col 26 IdentifierName "a" = number
+Line 1 col 36 IdentifierName "b" = string
+Line 2 col 9 IdentifierName "foo" = typeof foo
+Line 2 col 13 IdentifierName "bar" = any
+Line 2 col 23 IdentifierName "a" = any
+Line 2 col 29 IdentifierName "b" = any
+Line 2 col 49 ArrayLiteralExpression "[{a:""}]" = { a: any; b?: any; }[]
+Line 2 col 50 ObjectLiteralExpression "{a:""}" = { a: string; }
+Line 2 col 51 IdentifierName "a" = string
