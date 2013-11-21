@@ -2303,6 +2303,7 @@ module TypeScript {
                 }
             }
 
+            // Unwrap an alias type to its true type.
             if (type && type.isAlias()) {
                 aliasType = <PullTypeAliasSymbol>type;
                 type = aliasType.getExportAssignedTypeSymbol();
@@ -2416,7 +2417,7 @@ module TypeScript {
             }
             else if (term.kind() === SyntaxKind.ArrayType) {
                 var arrayType = <ArrayType>term;
-                var underlying = this.computeTypeReferenceSymbol(arrayType.type, context);
+                var underlying = this.resolveTypeReference(arrayType.type, context);
                 var arraySymbol: PullTypeSymbol = underlying.getArrayType();
 
                 // otherwise, create a new array symbol
@@ -4589,7 +4590,8 @@ module TypeScript {
             var lhsType = this.resolveAST(binaryExpression.left, false, context).type;
             var rhsType = this.resolveAST(binaryExpression.right, false, context).type;
 
-            var enclosingSymbol = this.getEnclosingSymbolForAST(binaryExpression);            var isValidLHS = this.isAnyOrEquivalent(lhsType) || lhsType.isObject() || lhsType.isTypeParameter();
+            var enclosingSymbol = this.getEnclosingSymbolForAST(binaryExpression);
+            var isValidLHS = this.isAnyOrEquivalent(lhsType) || lhsType.isObject() || lhsType.isTypeParameter();
             var isValidRHS = this.isAnyOrEquivalent(rhsType) || this.typeIsSubtypeOfFunction(rhsType, binaryExpression, context);
 
             if (!isValidLHS) {
