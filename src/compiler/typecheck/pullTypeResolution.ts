@@ -9769,6 +9769,7 @@ module TypeScript {
                 }
             }
 
+            // The following block should only be commented out for 0.9.5. After that, the rule needs to be in effect.
             // If the target property is required, and the source property is optional, they are not compatible
             //if (sourceProp.isOptional && !targetProp.isOptional) {
             //    if (comparisonInfo) {
