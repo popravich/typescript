@@ -413,7 +413,15 @@ module TypeScript {
 
             if (decls.length) {
 
-                symbol = decls[0].getSymbol();
+                var decl = decls[0];
+                if (hasFlag(declType, PullElementKind.SomeContainer)) {
+                    var valueDecl = decl.getValueDecl();
+                    if (valueDecl) {
+                        valueDecl.ensureSymbolIsBound();
+                    }
+                }
+
+                symbol = decl.getSymbol();
 
                 if (symbol) {
                     this.symbolCache[cacheID] = symbol;
