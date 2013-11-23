@@ -10031,15 +10031,6 @@ module TypeScript {
 
             if (sourceSig.isGeneric()) {
 
-                var rootSourceSig = sourceSig.getRootSymbol();
-                var rootTargetSig = targetSig.getRootSymbol();
-
-                if (comparisonCache.valueAt(rootSourceSig.pullSymbolID, rootTargetSig.pullSymbolID) != undefined) {
-                    return true;
-                }
-
-                comparisonCache.setValueAt(rootSourceSig.pullSymbolID, rootTargetSig.pullSymbolID, false);
-
                 sourceSig = this.instantiateSignatureInContext(sourceSig, targetSig, context);
 
                 if (!sourceSig) {

@@ -18,15 +18,15 @@
 ////var r4/*4*/ = _.all([<any>true], _.identity);
 
 goTo.marker('1');
-verify.quickInfoIs('{}');
+verify.quickInfoIs('any');
 
 goTo.marker('2');
-verify.quickInfoIs('boolean');
+verify.quickInfoIs('any');
 
 goTo.marker('3');
-verify.quickInfoIs('{}');
+verify.quickInfoIs('any');
 
 goTo.marker('4');
 verify.quickInfoIs('any');
 
-verify.numberOfErrorsInCurrentFile(0);
+verify.numberOfErrorsInCurrentFile(8);
