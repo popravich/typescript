@@ -398,10 +398,11 @@ module Editor {
         }
         for (var ko = 0; ko < outer; ko++) {
             for (var k = 0, llen = lines.length; k < llen; k++) {
-                var lineIndexLine = lineIndex.lineNumberToCharOffset(k + 1);
+                var lineInfo = lineIndex.lineNumberToInfo(k + 1);
+                var lineIndexOffset = lineInfo.offset;
                 if (!timing) {
-                    var lineMapLine = lineMap.getLineStartPosition(k);
-                    if (lineIndexLine != lineMapLine) {
+                    var lineMapOffset = lineMap.getLineStartPosition(k);
+                    if (lineIndexOffset != lineMapOffset) {
                         gloError = true;
                         return;
                     }

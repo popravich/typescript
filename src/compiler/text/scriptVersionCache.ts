@@ -42,8 +42,8 @@ module TypeScript {
     export interface ILineInfo {
         line: number;
         offset: number;
-        text: string;
-        leaf: LineLeaf;
+        text?: string;
+        leaf?: LineLeaf;
     }
 
     export enum CharRangeSection {
@@ -374,7 +374,7 @@ module TypeScript {
 
         getLineMapper() {
             return ((line: number) => {
-                return this.index.lineNumberToCharOffset(line);
+                return this.index.lineNumberToInfo(line).offset;
             });
         }
 
@@ -389,6 +389,7 @@ module TypeScript {
 
     }
 
+
     export class LineIndex {
         root: LineNode;
 
@@ -396,8 +397,19 @@ module TypeScript {
             return this.root.charOffsetToLineNumberAndPos(1, charOffset);
         }
 
-        lineNumberToCharOffset(lineNumber: number) {
-            return this.root.lineNumberToCharOffset(lineNumber, 0);
+        lineNumberToInfo(lineNumber: number): ILineInfo {
+            var lineCount = this.root.lineCount();
+            if (lineNumber <= lineCount) {
+                var lineInfo = this.root.lineNumberToInfo(lineNumber, 0);
+                lineInfo.line = lineNumber;
+                return lineInfo;
+            }
+            else {
+                return {
+                    line: lineNumber,
+                    offset: this.root.charCount()
+                }
+            }
         }
 
         print() {
@@ -656,14 +668,19 @@ module TypeScript {
             }
         }
 
-        lineNumberToCharOffset(lineNumber: number, charOffset: number): number {
+        lineNumberToInfo(lineNumber: number, charOffset: number): ILineInfo {
             var childInfo = this.childFromLineNumber(lineNumber, charOffset);
             if (childInfo.child.isLeaf()) {
-                return childInfo.charOffset;
+                return {
+                    line: lineNumber,
+                    offset: childInfo.charOffset,
+                    text: (<LineLeaf>(childInfo.child)).text,
+                    leaf: (<LineLeaf>(childInfo.child))
+                }
             }
             else {
                 var lineNode = <LineNode>(childInfo.child);
-                return lineNode.lineNumberToCharOffset(childInfo.relativeLineNumber, childInfo.charOffset);
+                return lineNode.lineNumberToInfo(childInfo.relativeLineNumber, childInfo.charOffset);
             }
         }
 
