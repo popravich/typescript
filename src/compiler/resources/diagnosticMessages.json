@@ -163,7 +163,7 @@
         "category": "Error",
         "code": 1039
     },
-    "Parameter property declarations can only be used in constructors.": {
+    "Parameter property declarations can only be used in a non-ambient constructor declaration.": {
         "category": "Error",
         "code": 1040
     },
@@ -323,10 +323,6 @@
         "category": "Error",
         "code": 1081
     },
-    "Parameter property declarations cannot be used in an ambient context.": {
-        "category": "Error",
-        "code": 1082
-    },
     "Parameter property declarations cannot be used in a constructor overload.": {
         "category": "Error",
         "code": 1083
@@ -350,6 +346,10 @@
     "'{0}' modifier cannot appear on a parameter.": {
         "category": "Error",
         "code": 1090
+    },
+    "Only a single variable declaration is allowed in a 'for...in' statement.": {
+        "category": "Error",
+        "code": 1091
     },
     "Duplicate identifier '{0}'.": {
         "category": "Error",
@@ -731,7 +731,7 @@
         "category": "Error",
         "code": 2097
     },
-    "Static methods cannot reference class type parameters.": {
+    "Static members cannot reference class type parameters.": {
         "category": "Error",
         "code": 2099
     },
@@ -1007,7 +1007,7 @@
         "category": "Error",
         "code": 2173
     },
-    "Default arguments are not allowed in an overload parameter.": {
+    "Default arguments are only allowed in implementation.": {
         "category": "Error",
         "code": 2174
     },
@@ -1227,6 +1227,14 @@
         "category": "Error",
         "code": 2228
     },
+    "Type parameter '{0}' cannot be a direct or indirect constraint for itself.": {
+        "category": "Error",
+        "code": 2229
+    },
+    "Initializer of instance member variable '{0}' cannot reference identifier '{1}' declared in the constructor.": {
+        "category": "Error",
+        "code": 2230
+    },
     "Type '{0}' is missing property '{1}' from type '{2}'.": {
         "category": "NoPrefix",
         "code": 4000
@@ -1355,27 +1363,27 @@
         "category": "NoPrefix",
         "code": 4031
     },
-	"Types of property '{0}' of types '{1}' and '{2}' are not identical.": {
+    "Types of property '{0}' of types '{1}' and '{2}' are not identical.": {
         "category": "NoPrefix",
         "code": 4032
     },
-	"Types of string indexer of types '{0}' and '{1}' are not identical.": {
+    "Types of string indexer of types '{0}' and '{1}' are not identical.": {
         "category": "NoPrefix",
         "code": 4033
     },
-	"Types of number indexer of types '{0}' and '{1}' are not identical.": {
+    "Types of number indexer of types '{0}' and '{1}' are not identical.": {
         "category": "NoPrefix",
         "code": 4034
     },
-	"Type of number indexer in type '{0}' is not a subtype of string indexer type in type '{1}'.{NL}{2}": {
+    "Type of number indexer in type '{0}' is not a subtype of string indexer type in type '{1}'.{NL}{2}": {
         "category": "NoPrefix",
         "code": 4035
     },
-	"Type of property '{0}' in type '{1}' is not a subtype of string indexer type in type '{2}'.{NL}{3}": {
+    "Type of property '{0}' in type '{1}' is not a subtype of string indexer type in type '{2}'.{NL}{3}": {
         "category": "NoPrefix",
         "code": 4036
     },
-	"Type of property '{0}' in type '{1}' is not a subtype of number indexer type in type '{2}'.{NL}{3}": {
+    "Type of property '{0}' in type '{1}' is not a subtype of number indexer type in type '{2}'.{NL}{3}": {
         "category": "NoPrefix",
         "code": 4037
     },
@@ -1619,6 +1627,10 @@
         "category": "Message",
         "code": 6040
     },
+    "Additional locations:": {
+        "category": "Message",
+        "code": 6041
+    },
     "This version of the Javascript runtime does not support the '{0}' function.": {
         "category": "Error",
         "code": 7000
@@ -1682,5 +1694,13 @@
     "'{0}', which lacks 'get' accessor and parameter type annotation on 'set' accessor, implicitly has an 'any' type.":{
         "category": "Error",
         "code": 7016
+    },
+    "Index signature of object type implicitly has an 'any' type.": {
+        "category": "Error",
+        "code": 7017
+    },
+    "Object literal's property '{0}' implicitly has an 'any' type from widening.":{
+        "category": "Error",
+        "code": 7018
     },
 }

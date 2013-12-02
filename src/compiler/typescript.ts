@@ -181,17 +181,6 @@ module TypeScript {
             this.semanticInfoChain.removeDocument(fileName);
         }
 
-        public _isDynamicModuleCompilation(): boolean {
-            var fileNames = this.fileNames();
-            for (var i = 0, n = fileNames.length; i < n; i++) {
-                var document = this.getDocument(fileNames[i]);
-                if (!document.isDeclareFile() && document.isExternalModule()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public mapOutputFileName(document: Document, emitOptions: EmitOptions, extensionChanger: (fname: string, wholeFileNameReplaced: boolean) => string) {
             if (document.emitToOwnOutputFile()) {
                 var updatedFileName = document.fileName;
@@ -201,7 +190,8 @@ module TypeScript {
                     updatedFileName = emitOptions.outputDirectory() + updatedFileName;
                 }
                 return extensionChanger(updatedFileName, false);
-            } else {
+            }
+            else {
                 return extensionChanger(emitOptions.sharedOutputFile(), true);
             }
         }
@@ -275,7 +265,8 @@ module TypeScript {
 
             if (declarationEmitter) {
                 declarationEmitter.document = document;
-            } else {
+            }
+            else {
                 var declareFileName = this.mapOutputFileName(document, emitOptions, TypeScriptCompiler.mapToDTSFileName);
                 declarationEmitter = new DeclarationEmitter(declareFileName, document, this, emitOptions, this.semanticInfoChain);
             }
@@ -366,7 +357,8 @@ module TypeScript {
             if (wholeFileNameReplaced) {
                 // The complete output is redirected in this file so do not change extension
                 return fileName;
-            } else {
+            }
+            else {
                 // Change the extension of the file
                 var splitFname = fileName.split(".");
                 splitFname.pop();
@@ -689,7 +681,7 @@ module TypeScript {
                                 }
                             }
 
-                            resolutionContext.pushContextualType(contextualType, false, null);
+                            resolutionContext.pushNewContextualType(contextualType);
                         }
 
                         break;
@@ -703,7 +695,7 @@ module TypeScript {
                                 contextualType = currentContextualType.getElementType();
                             }
 
-                            resolutionContext.pushContextualType(contextualType, false, null);
+                            resolutionContext.pushNewContextualType(contextualType);
                         }
 
                         break;
@@ -732,7 +724,7 @@ module TypeScript {
                                     }
                                 }
 
-                                resolutionContext.pushContextualType(contextualType, false, null);
+                                resolutionContext.pushNewContextualType(contextualType);
                             }
                         }
 
@@ -752,7 +744,27 @@ module TypeScript {
                                 }
                             }
 
-                            resolutionContext.pushContextualType(contextualType, false, null);
+                            resolutionContext.pushNewContextualType(contextualType);
+                        }
+
+                        break;
+
+                    case SyntaxKind.CastExpression:
+                        var castExpression = <CastExpression>current;
+                        if (!(i + 1 < n && path[i + 1] === castExpression.type)) {
+                            // We are outside the cast term
+                            if (propagateContextualTypes) {
+                                var contextualType: PullTypeSymbol = null;
+                                var typeSymbol = resolver.resolveAST(castExpression, inContextuallyTypedAssignment, resolutionContext).type;
+
+                                // Set the context type
+                                if (typeSymbol) {
+                                    inContextuallyTypedAssignment = true;
+                                    contextualType = typeSymbol;
+                                }
+
+                                resolutionContext.pushNewContextualType(contextualType);
+                            }
                         }
 
                         break;
@@ -786,7 +798,7 @@ module TypeScript {
                                 }
                             }
 
-                            resolutionContext.pushContextualType(contextualType, false, null);
+                            resolutionContext.pushNewContextualType(contextualType);
                         }
 
                         break;
@@ -855,7 +867,7 @@ module TypeScript {
                         contextualType = varSymbol.type;
                     }
 
-                    resolutionContext.pushContextualType(contextualType, false, null);
+                    resolutionContext.pushNewContextualType(contextualType);
 
                     if (init) {
                         resolver.resolveAST(init, inContextuallyTypedAssignment, resolutionContext);
@@ -887,7 +899,7 @@ module TypeScript {
 
             if (!symbol) {
                 Debug.assert(
-                    ast.kind() == SyntaxKind.SourceUnit,
+                    ast.kind() === SyntaxKind.SourceUnit,
                     "No symbol was found for ast and ast was not source unit. Ast Kind: " + SyntaxKind[ast.kind()] );
                 return null;
             }
@@ -1036,6 +1048,33 @@ module TypeScript {
         public topLevelDecl(fileName: string): PullDecl {
             return this.semanticInfoChain.topLevelDecl(fileName);
         }
+
+        private static getLocationText(location: Location): string {
+            return location.fileName() + "(" + (location.line() + 1) + "," + (location.character() + 1) + ")";
+        }
+
+        public static getFullDiagnosticText(diagnostic: Diagnostic): string {
+            var result = "";
+            if (diagnostic.fileName()) {
+                result += this.getLocationText(diagnostic) + ": ";
+            }
+
+            result += diagnostic.message();
+
+            var additionalLocations = diagnostic.additionalLocations();
+            if (additionalLocations.length > 0) {
+                result += " " + getLocalizedText(DiagnosticCode.Additional_locations, null) + Environment.newLine;
+
+                for (var i = 0, n = additionalLocations.length; i < n; i++) {
+                    result += "\t" + this.getLocationText(additionalLocations[i]) + Environment.newLine;
+                }
+            }
+            else {
+                result += Environment.newLine;
+            }
+
+            return result;
+        }
     }
 
     enum CompilerPhase {
@@ -1123,13 +1162,13 @@ module TypeScript {
                 case CompilerPhase.Syntax:
                 case CompilerPhase.Semantics:
                     // Each of these phases are done when we've processed the last file.
-                    return this.index == this.fileNames.length;
+                    return this.index === this.fileNames.length;
 
                 case CompilerPhase.Emit:
                 case CompilerPhase.DeclarationEmit:
                     // Emitting is done when we get 'one' past the end of hte file list.  This is
                     // because we use that step to collect the results from the shared emitter.
-                    return this.index == (this.fileNames.length + 1);
+                    return this.index === (this.fileNames.length + 1);
             }
 
             return false;
@@ -1257,11 +1296,11 @@ module TypeScript {
 
     export function compareDataObjects(dst: any, src: any): boolean {
         for (var e in dst) {
-            if (typeof dst[e] == "object") {
+            if (typeof dst[e] === "object") {
                 if (!compareDataObjects(dst[e], src[e]))
                     return false;
             }
-            else if (typeof dst[e] != "function") {
+            else if (typeof dst[e] !== "function") {
                 if (dst[e] !== src[e])
                     return false;
             }

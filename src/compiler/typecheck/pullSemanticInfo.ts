@@ -55,28 +55,27 @@ module TypeScript {
         private _fileNames: string[] = null;
 
         constructor(private compiler: TypeScriptCompiler, private logger: ILogger) {
-            var span = new TextSpan(0, 0);
-            var globalDecl = new RootPullDecl(/*name:*/ "", /*fileName:*/ "", PullElementKind.Global, PullElementFlags.None, span, this, /*isExternalModule:*/ false);
+            var globalDecl = new RootPullDecl(/*name:*/ "", /*fileName:*/ "", PullElementKind.Global, PullElementFlags.None, this, /*isExternalModule:*/ false);
             this.documents[0] = new Document(this.compiler, this, /*fileName:*/ "", /*referencedFiles:*/[], /*scriptSnapshot:*/null, ByteOrderMark.None, /*version:*/0, /*isOpen:*/ false, /*syntaxTree:*/null, globalDecl);
 
-            this.anyTypeDecl = new NormalPullDecl("any", "any", PullElementKind.Primitive, PullElementFlags.None, globalDecl, span);
-            this.booleanTypeDecl = new NormalPullDecl("boolean", "boolean", PullElementKind.Primitive, PullElementFlags.None, globalDecl, span);
-            this.numberTypeDecl = new NormalPullDecl("number", "number", PullElementKind.Primitive, PullElementFlags.None, globalDecl, span);
-            this.stringTypeDecl = new NormalPullDecl("string", "string", PullElementKind.Primitive, PullElementFlags.None, globalDecl, span);
-            this.voidTypeDecl = new NormalPullDecl("void", "void", PullElementKind.Primitive, PullElementFlags.None, globalDecl, span);
+            this.anyTypeDecl = new NormalPullDecl("any", "any", PullElementKind.Primitive, PullElementFlags.None, globalDecl);
+            this.booleanTypeDecl = new NormalPullDecl("boolean", "boolean", PullElementKind.Primitive, PullElementFlags.None, globalDecl);
+            this.numberTypeDecl = new NormalPullDecl("number", "number", PullElementKind.Primitive, PullElementFlags.None, globalDecl);
+            this.stringTypeDecl = new NormalPullDecl("string", "string", PullElementKind.Primitive, PullElementFlags.None, globalDecl);
+            this.voidTypeDecl = new NormalPullDecl("void", "void", PullElementKind.Primitive, PullElementFlags.None, globalDecl);
             
             // add the global primitive values for "null" and "undefined"
             // Because you cannot reference them by name, they're not parented by any actual decl.
-            this.nullTypeDecl = new RootPullDecl("null", "", PullElementKind.Primitive, PullElementFlags.None, span, this, /*isExternalModule:*/ false);
-            this.undefinedTypeDecl = new RootPullDecl("undefined", "", PullElementKind.Primitive, PullElementFlags.None, span, this, /*isExternalModule:*/ false);
-            this.undefinedValueDecl = new NormalPullDecl("undefined", "undefined", PullElementKind.Variable, PullElementFlags.Ambient, globalDecl, span);
+            this.nullTypeDecl = new RootPullDecl("null", "", PullElementKind.Primitive, PullElementFlags.None, this, /*isExternalModule:*/ false);
+            this.undefinedTypeDecl = new RootPullDecl("undefined", "", PullElementKind.Primitive, PullElementFlags.None, this, /*isExternalModule:*/ false);
+            this.undefinedValueDecl = new NormalPullDecl("undefined", "undefined", PullElementKind.Variable, PullElementFlags.Ambient, globalDecl);
 
             this.invalidate();
         }
 
         public getDocument(fileName: string): Document {
             var document = this.fileNameToDocument[fileName];
-            return document ? document : null;
+            return document || null;
         }
 
         public lineMap(fileName: string): LineMap {
@@ -94,7 +93,7 @@ module TypeScript {
         }
 
         // Must pass in a new decl, or an old symbol that has a decl available for ownership transfer
-        private bindPrimitiveSymbol(decl: PullDecl, newSymbol: PullSymbol): PullSymbol {
+        private bindPrimitiveSymbol<TSymbol extends PullSymbol>(decl: PullDecl, newSymbol: TSymbol): TSymbol {
             newSymbol.addDeclaration(decl);
             decl.setSymbol(newSymbol);
             newSymbol.setResolved();
@@ -106,7 +105,7 @@ module TypeScript {
         // invalidation after every edit.
         private addPrimitiveTypeSymbol(decl: PullDecl): PullPrimitiveTypeSymbol {
             var newSymbol = new PullPrimitiveTypeSymbol(decl.name);
-            return <PullPrimitiveTypeSymbol>this.bindPrimitiveSymbol(decl, newSymbol);
+            return this.bindPrimitiveSymbol(decl, newSymbol);
         }
 
         // Creates a new value symbol to be bound to this decl, and has the specified type.
@@ -129,8 +128,7 @@ module TypeScript {
             this.undefinedValueSymbol = this.addPrimitiveValueSymbol(this.undefinedValueDecl, this.undefinedTypeSymbol);
 
             // other decls not reachable from the globalDecl
-            var span = new TextSpan(0, 0);
-            var emptyTypeDecl = new PullSynthesizedDecl("{}", "{}", PullElementKind.ObjectType, PullElementFlags.None, null, span, this);
+            var emptyTypeDecl = new PullSynthesizedDecl("{}", "{}", PullElementKind.ObjectType, PullElementFlags.None, null, this);
             var emptyTypeSymbol = new PullTypeSymbol("{}", PullElementKind.ObjectType);
             emptyTypeDecl.setSymbol(emptyTypeSymbol);
             emptyTypeSymbol.addDeclaration(emptyTypeDecl);
@@ -210,7 +208,7 @@ module TypeScript {
 
                     // We finished searching up to the file that included the stopping point decl.  
                     // no need to continue.
-                    if (doNotGoPastThisDecl && topLevelDecl.name == doNotGoPastThisDecl.fileName()) {
+                    if (doNotGoPastThisDecl && topLevelDecl.name === doNotGoPastThisDecl.fileName()) {
                         return null;
                     }
                 }
@@ -276,8 +274,8 @@ module TypeScript {
                 var topLevelDecl = document.topLevelDecl(); // Script
 
                 if (topLevelDecl.isExternalModule()) {
-                    var isDtsFile = document.fileName == dtsFile;
-                    if (isDtsFile || document.fileName == tsFile) {
+                    var isDtsFile = document.fileName === dtsFile;
+                    if (isDtsFile || document.fileName === tsFile) {
                         var dynamicModuleDecl = topLevelDecl.getChildDecls()[0];
                         symbol = <PullContainerSymbol>dynamicModuleDecl.getSymbol();
                         this.symbolCache[dtsCacheID] = isDtsFile ? symbol : null;
@@ -351,7 +349,7 @@ module TypeScript {
                     foundDecls = declsToSearch[j].searchChildDecls(path, declKind);
 
                     for (var k = 0; k < foundDecls.length; k++) {
-                        if (decls == sentinelEmptyArray) {
+                        if (decls === sentinelEmptyArray) {
                             decls = [];
                         }
                         decls[decls.length] = foundDecls[k];
@@ -413,7 +411,18 @@ module TypeScript {
 
             if (decls.length) {
 
-                symbol = decls[0].getSymbol();
+                // it might happen that container also has a value side: i.e fundule\clodule.
+                // if value side is not bound yet then binding of the module (caused by getSymbol) will create a fresh variable symbol for the value side
+                // instead of sharing one with function\enum\class => big problems with name resolution in future.
+                // To avoid we make sure that symbol for value decl is already bound prior to getSymbol call for the container decl(if value decl is present)
+                var decl = decls[0];
+                if (hasFlag(decl.kind, PullElementKind.SomeContainer)) {
+                    var valueDecl = decl.getValueDecl();
+                    if (valueDecl) {
+                        valueDecl.ensureSymbolIsBound();
+                    }
+                }
+                symbol = decl.getSymbol();
 
                 if (symbol) {
                     this.symbolCache[cacheID] = symbol;
@@ -476,7 +485,6 @@ module TypeScript {
 
             // Reset global counters
             TypeScript.pullSymbolID = 0;
-            TypeScript.globalTyvarID = 0;
 
             this.resetGlobalSymbols();
 
@@ -495,7 +503,7 @@ module TypeScript {
             // stored in the AST.
             return before.allowAutomaticSemicolonInsertion() !== after.allowAutomaticSemicolonInsertion() ||
                 before.codeGenTarget() !== after.codeGenTarget() ||
-                before.propagateEnumConstants() != after.propagateEnumConstants();
+                before.propagateEnumConstants() !== after.propagateEnumConstants();
         }
 
         public setSymbolForAST(ast: AST, symbol: PullSymbol): void {
@@ -503,7 +511,7 @@ module TypeScript {
         }
 
         public getSymbolForAST(ast: AST): PullSymbol {
-            return this.astSymbolMap[ast.syntaxID()];
+            return this.astSymbolMap[ast.syntaxID()] || null;
         }
 
         public setAliasSymbolForAST(ast: AST, symbol: PullTypeAliasSymbol): void {
@@ -553,7 +561,7 @@ module TypeScript {
 
         public getDiagnostics(fileName: string): Diagnostic[] {
             var diagnostics = this.fileNameToDiagnostics[fileName];
-            return diagnostics ? diagnostics : [];
+            return diagnostics || [];
         }
 
         public getBinder(): PullSymbolBinder {
@@ -585,9 +593,8 @@ module TypeScript {
 
             containingSymbol.addIndexSignature(indexSignature);
 
-            var span = TextSpan.fromBounds(ast.start(), ast.end());
-            var indexSigDecl = new PullSynthesizedDecl("", "", PullElementKind.IndexSignature, PullElementFlags.Signature, containingDecl, span, containingDecl.semanticInfoChain());
-            var indexParamDecl = new PullSynthesizedDecl(indexParamName, indexParamName, PullElementKind.Parameter, PullElementFlags.None, indexSigDecl, span, containingDecl.semanticInfoChain());
+            var indexSigDecl = new PullSynthesizedDecl("", "", PullElementKind.IndexSignature, PullElementFlags.Signature, containingDecl, containingDecl.semanticInfoChain());
+            var indexParamDecl = new PullSynthesizedDecl(indexParamName, indexParamName, PullElementKind.Parameter, PullElementFlags.None, indexSigDecl, containingDecl.semanticInfoChain());
             indexSigDecl.setSignatureSymbol(indexSignature);
             indexParamDecl.setSymbol(indexParameterSymbol);
             indexSignature.addDeclaration(indexSigDecl);
@@ -642,12 +649,25 @@ module TypeScript {
             return this._topLevelDecls;
         }
 
-        public addDiagnosticFromAST(ast: AST, diagnosticKey: string, arguments: any[]= null): void {
-            this.addDiagnostic(this.diagnosticFromAST(ast, diagnosticKey, arguments));
+        public addDiagnosticFromAST(ast: AST, diagnosticKey: string, arguments: any[] = null, additionalLocations: Location[] = null): void {
+            this.addDiagnostic(this.diagnosticFromAST(ast, diagnosticKey, arguments, additionalLocations));
         }
 
-        public diagnosticFromAST(ast: AST, diagnosticKey: string, arguments: any[]= null): Diagnostic {
-            return new Diagnostic(ast.fileName(), this.lineMap(ast.fileName()), ast.start(), ast.width(), diagnosticKey, arguments);
+        public diagnosticFromAST(ast: AST, diagnosticKey: string, arguments: any[] = null, additionalLocations: Location[] = null): Diagnostic {
+            return new Diagnostic(ast.fileName(), this.lineMap(ast.fileName()), ast.start(), ast.width(), diagnosticKey, arguments, additionalLocations);
+        }
+
+        public locationFromAST(ast: AST): Location {
+            return new Location(ast.fileName(), this.lineMap(ast.fileName()), ast.start(), ast.width());
+        }
+
+        public duplicateIdentifierDiagnosticFromAST(ast: AST, identifier: string, additionalLocationAST: AST): Diagnostic {
+            return this.diagnosticFromAST(ast, DiagnosticCode.Duplicate_identifier_0, [identifier],
+                additionalLocationAST ? [this.locationFromAST(additionalLocationAST)] : null);
+        }
+
+        public addDuplicateIdentifierDiagnosticFromAST(ast: AST, identifier: string, additionalLocationAST: AST): void {
+            this.addDiagnostic(this.duplicateIdentifierDiagnosticFromAST(ast, identifier, additionalLocationAST));
         }
     }
 }

@@ -33,16 +33,6 @@ class CompilerBaselineRunner extends RunnerBase {
         }
     }    
 
-    /** Replaces instances of full paths with filenames only */
-    static removeFullPaths(text: string) {
-        var fullPath = /(\w+:)?(\/|\\)([\w+\-\.]|\/)*\.ts/g;
-        var fullPathList = text.match(fullPath);
-        if (fullPathList) {
-            fullPathList.forEach((match: string) => text = text.replace(match, Harness.getFileName(match)));
-        }
-        return text;
-    }
-
     public checkTestCodeOutput(fileName: string) {
         // strips the fileName from the path.
         var justName = fileName.replace(/^.*[\\\/]/, '');
@@ -106,17 +96,11 @@ class CompilerBaselineRunner extends RunnerBase {
 
             // check errors
             if (this.errors) {
-                // Surface some errors that indicate test authoring failure
-                var badErrors = result.errors.filter(err => err.errorType === Harness.Compiler.ErrorType.Emit);
-                if (badErrors.length > 0) {
-                    throw new Error('Emit errors in ' + fileName + ': ' + badErrors.map(e => JSON.stringify(e)).join('\r\n'));
-                }
-
                 Harness.Baseline.runBaseline('Correct errors for ' + fileName, justName.replace(/\.ts/, '.errors.txt'), () => {
                     if (result.errors.length === 0) {
                         return null;
                     } else {
-                        var errorDescr = result.errors.map(err => CompilerBaselineRunner.removeFullPaths(Harness.getFileName(err.fileName) + ' line ' + err.line + ' col ' + err.column + ': ' + err.message)).join('\r\n');
+                        var errorDescr = result.errors.map(err => this._getDiagnosticText(err)).join("");
                         return errorDescr;
                     }
                 });
@@ -148,7 +132,7 @@ class CompilerBaselineRunner extends RunnerBase {
                     [declFile],
                     declOtherFiles,
                     function (result) {
-                        declErrors = result.errors.map(err => Harness.getFileName(err.fileName) + ' line ' + err.line + ' col ' + err.column + ': ' + err.message + '\r\n');
+                        declErrors = result.errors.map(err => this.getDiagnosticText(err) + "\r\n");
                     },
                     function (settings) {
                         harnessCompiler.setCompilerSettings(tcSettings);
@@ -161,8 +145,8 @@ class CompilerBaselineRunner extends RunnerBase {
 
             if (!TypeScript.isDTSFile(lastUnit.name)) {
                 if (this.emit) {
-                    if (result.files.length === 0) {
-                        throw new Error('Expected at least 1 js file to be emitted');
+                    if (result.files.length === 0 && result.errors.length === 0) {
+                        throw new Error('Expected at least one js file to be emitted or at least one error to be created.');
                     }
 
                     // check js output

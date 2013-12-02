@@ -252,7 +252,8 @@ module TypeScript.Services {
             var members: TypeScript.PullSymbol[];
             if (container.isClass()) {
                 members = container.getMembers();
-            } else if (container.isInterface()) {
+            }
+            else if (container.isInterface()) {
                 members = container.getMembers();
             }
 
@@ -325,7 +326,10 @@ module TypeScript.Services {
                         return;
                     }
 
-                    var nameAST = TypeScript.getAstAtPosition(sourceUnit, p);
+                    // Each position we're searching for should be at the start of an identifier.  
+                    // As such, we useTrailingTriviaAsLimChar=false so that the position doesn't
+                    // accidently return another node (which may end at that position).
+                    var nameAST = TypeScript.getAstAtPosition(sourceUnit, p, /*useTrailingTriviaAsLimChar:*/ false);
 
                     // Compare the length so we filter out strict superstrings of the symbol we are looking for
                     if (nameAST === null || nameAST.kind() !== TypeScript.SyntaxKind.IdentifierName || (nameAST.end() - nameAST.start() !== symbolName.length)) {
@@ -641,10 +645,10 @@ module TypeScript.Services {
         }
 
         private addDeclaration(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declaration: TypeScript.PullDecl, result: DefinitionInfo[]): void {
-            var span = declaration.getSpan();
+            var ast = declaration.ast();
             result.push(new DefinitionInfo(
                 this.compiler.getCachedHostFileName(declaration.fileName()),
-                span.start(), span.end(), symbolKind, symbolName, containerKind, containerName));
+                ast.start(), ast.end(), symbolKind, symbolName, containerKind, containerName));
         }
 
         private tryAddDefinition(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], result: DefinitionInfo[]): boolean {
@@ -769,6 +773,7 @@ module TypeScript.Services {
                 // create corresponding NavigateToItem and add it into results array
                 if (this.shouldIncludeDeclarationInNavigationItems(declaration)) {
                     fullName = parentName ? parentName + "." + declName : declName;
+                    var ast = declaration.ast();
                     if (matchKind) {
                         item = new NavigateToItem();
                         item.name = declName;
@@ -776,8 +781,8 @@ module TypeScript.Services {
                         item.kind = this.mapPullElementKind(declaration.kind);
                         item.kindModifiers = this.getScriptElementKindModifiersFromDecl(declaration);
                         item.fileName = this.compiler.getCachedHostFileName(fileName);
-                        item.minChar = declaration.getSpan().start();
-                        item.limChar = declaration.getSpan().end();
+                        item.minChar = ast.start();
+                        item.limChar = ast.end();
                         item.containerName = parentName || "";
                         item.containerKind = parentkindName || "";
                         results.push(item);
@@ -1223,7 +1228,7 @@ module TypeScript.Services {
 
                         // Add filtterd items to the completion list
                         this.getCompletionEntriesFromSymbols({
-                            symbols: CompletionHelpers.filterContextualMembersList(contextualMembers.symbols, existingMembers),
+                            symbols: CompletionHelpers.filterContextualMembersList(contextualMembers.symbols, existingMembers, fileName, position),
                             enclosingScopeSymbol: contextualMembers.enclosingScopeSymbol
                         }, entries);
                     }
@@ -1489,13 +1494,16 @@ module TypeScript.Services {
                     var declKind = declarations[i].kind;
                     if (declKind == TypeScript.PullElementKind.Container) {
                         return ScriptElementKind.moduleElement;
-                    } else if (declKind == TypeScript.PullElementKind.Enum) {
+                    }
+                    else if (declKind == TypeScript.PullElementKind.Enum) {
                         return ScriptElementKind.enumElement;
-                    } else if (declKind == TypeScript.PullElementKind.Variable) {
+                    }
+                    else if (declKind == TypeScript.PullElementKind.Variable) {
                         var declFlags = declarations[i].flags;
                         if (declFlags & TypeScript.PullElementFlags.InitializedModule) {
                             return ScriptElementKind.moduleElement;
-                        } else if (declFlags & TypeScript.PullElementFlags.Enum) {
+                        }
+                        else if (declFlags & TypeScript.PullElementFlags.Enum) {
                             return ScriptElementKind.enumElement;
                         }
                     }
@@ -1545,7 +1553,8 @@ module TypeScript.Services {
                     case TypeScript.PullElementKind.Primitive:
                         return ScriptElementKind.primitiveType;
                 }
-            } else {
+            }
+            else {
                 switch (kind) {
                     case TypeScript.PullElementKind.Script:
                         return ScriptElementKind.scriptElement;
@@ -1664,7 +1673,8 @@ module TypeScript.Services {
                 if (TypeScript.isNameOfMemberAccessExpression(node) ||
                     TypeScript.isRightSideOfQualifiedName(node)) {
                     node = node.parent;
-                } else {
+                }
+                else {
                     break;
                 }
             }

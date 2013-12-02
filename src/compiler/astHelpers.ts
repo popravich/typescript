@@ -52,32 +52,6 @@ module TypeScript {
         return false;
     }
 
-    export function importDeclarationIsElided(importDeclAST: ImportDeclaration, semanticInfoChain: SemanticInfoChain, compilationSettings: ImmutableCompilationSettings = null) {
-        var isExternalModuleReference = importDeclAST.moduleReference.kind() === SyntaxKind.ExternalModuleReference;
-        var importDecl = semanticInfoChain.getDeclForAST(importDeclAST);
-        var isExported = hasFlag(importDecl.flags, PullElementFlags.Exported);
-        var isAmdCodeGen = compilationSettings && compilationSettings.moduleGenTarget() == ModuleGenTarget.Asynchronous;
-
-        if (!isExternalModuleReference || // Any internal reference needs to check if the emit can happen
-            isExported || // External module reference with export modifier always needs to be emitted
-            !isAmdCodeGen) {// commonjs needs the var declaration for the import declaration
-            var importSymbol = <PullTypeAliasSymbol>importDecl.getSymbol();
-            if (importDeclAST.moduleReference.kind() !== SyntaxKind.ExternalModuleReference) {
-                if (importSymbol.getExportAssignedValueSymbol()) {
-                    return true;
-                }
-                var containerSymbol = importSymbol.getExportAssignedContainerSymbol();
-                if (containerSymbol && containerSymbol.getInstanceSymbol()) {
-                    return true;
-                }
-            }
-
-            return importSymbol.isUsedAsValue();
-        }
-
-        return false;
-    }
-
     export function isValidAstNode(ast: IASTSpan): boolean {
         if (!ast)
             return false;
@@ -248,6 +222,25 @@ module TypeScript {
 
     export function isDeclarationASTOrDeclarationNameAST(ast: AST) {
         return isNameOfSomeDeclaration(ast) || isDeclarationAST(ast);
+    }
+
+    export function getEnclosingMemberVariableDeclaration (ast: AST) {
+        var current = ast;
+
+        while (current) {
+            switch (current.kind()) {
+                case SyntaxKind.MemberVariableDeclaration:
+                    return current;
+                case SyntaxKind.ClassDeclaration:
+                case SyntaxKind.InterfaceDeclaration:
+                case SyntaxKind.ModuleDeclaration:
+                    // exit early
+                    return null;
+            }
+            current = current.parent;
+        }
+
+        return null;
     }
 
     export function isNameOfFunction(ast: AST) {

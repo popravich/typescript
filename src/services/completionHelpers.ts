@@ -5,7 +5,11 @@
 
 module TypeScript.Services {
     export class CompletionHelpers {
-        public static filterContextualMembersList(contextualMemberSymbols: TypeScript.PullSymbol[], existingMembers: TypeScript.PullVisibleSymbolsInfo): TypeScript.PullSymbol[] {
+        private static getSpan(ast: AST): TextSpan {
+            return new TextSpan(ast.start(), ast.width());
+        }
+
+        public static filterContextualMembersList(contextualMemberSymbols: TypeScript.PullSymbol[], existingMembers: TypeScript.PullVisibleSymbolsInfo, fileName: string, position: number): TypeScript.PullSymbol[] {
             if (!existingMembers || !existingMembers.symbols || existingMembers.symbols.length === 0) {
                 return contextualMemberSymbols;
             }
@@ -13,6 +17,12 @@ module TypeScript.Services {
             var existingMemberSymbols = existingMembers.symbols;
             var existingMemberNames = TypeScript.createIntrinsicsObject<boolean>();
             for (var i = 0, n = existingMemberSymbols.length; i < n; i++) {
+                var decl = existingMemberSymbols[i].getDeclarations()[0];
+                if (decl.fileName() === fileName && this.getSpan(decl.ast()).intersectsWithPosition(position)) {
+                    // If this is the current item we are editing right now, do not filter it out
+                    continue;
+                }
+
                 existingMemberNames[TypeScript.stripStartAndEndQuotes(existingMemberSymbols[i].getDisplayName())] = true;
             }
 
@@ -28,6 +38,14 @@ module TypeScript.Services {
         }
 
         public static isCompletionListBlocker(sourceUnit: TypeScript.SourceUnitSyntax, position: number): boolean {
+            // We shouldn't be getting a possition that is outside the file because
+            // isEntirelyInsideComment can't handle when the position is out of bounds, 
+            // callers should be fixed, however we should be resiliant to bad inputs
+            // so we return true (this position is a blocker for getting completions)
+            if (position < 0 || position > sourceUnit.fullWidth()) {
+                return true;
+            }
+
             // This method uses Fidelity completelly. Some information can be reached using the AST, but not everything.
             return TypeScript.Syntax.isEntirelyInsideComment(sourceUnit, position) ||
                 TypeScript.Syntax.isEntirelyInStringOrRegularExpressionLiteral(sourceUnit, position) ||

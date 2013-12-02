@@ -237,19 +237,14 @@ module TypeScript {
                     return true;
                 }
 
-                if (this.inAmbientDeclaration) {
-                    this.pushDiagnostic1(modifierFullStart, modifier,
-                        DiagnosticCode.Parameter_property_declarations_cannot_be_used_in_an_ambient_context);
-                    return true;
-                }
-                else if (this.currentConstructor && !this.currentConstructor.block && this.currentConstructor.parameterList === parameterList) {
+                if (!this.inAmbientDeclaration && this.currentConstructor && !this.currentConstructor.block && this.currentConstructor.parameterList === parameterList) {
                     this.pushDiagnostic1(modifierFullStart, modifier,
                         DiagnosticCode.Parameter_property_declarations_cannot_be_used_in_a_constructor_overload);
                     return true;
                 }
-                else if (this.currentConstructor === null || this.currentConstructor.parameterList !== parameterList) {
+                else if (this.inAmbientDeclaration || this.currentConstructor === null || this.currentConstructor.parameterList !== parameterList) {
                     this.pushDiagnostic1(modifierFullStart, modifier,
-                        DiagnosticCode.Parameter_property_declarations_can_only_be_used_in_constructors);
+                        DiagnosticCode.Parameter_property_declarations_can_only_be_used_in_a_non_ambient_constructor_declaration);
                     return true;
                 }
             }
@@ -1261,12 +1256,28 @@ module TypeScript {
         }
 
         public visitForInStatement(node: ForInStatementSyntax): void {
-            if (this.checkForStatementInAmbientContxt(node)) {
+            if (this.checkForStatementInAmbientContxt(node) ||
+                this.checkForInStatementVariableDeclaration(node)) {
                 this.skip(node);
                 return;
             }
 
             super.visitForInStatement(node);
+        }
+
+        private checkForInStatementVariableDeclaration(node: ForInStatementSyntax): boolean {
+            // The parser accepts a Variable Declaration in a ForInStatement, but the grammar only
+            // allows a very restricted form.  Specifically, there must be only a single Variable
+            // Declarator in the Declaration.
+            if (node.variableDeclaration && node.variableDeclaration.variableDeclarators.nonSeparatorCount() > 1) {
+                var variableDeclarationFullStart = this.childFullStart(node, node.variableDeclaration);
+
+                this.pushDiagnostic1(variableDeclarationFullStart, node.variableDeclaration,
+                    DiagnosticCode.Only_a_single_variable_declaration_is_allowed_in_a_for_in_statement);
+                return true;
+            }
+
+            return false;
         }
 
         public visitForStatement(node: ForStatementSyntax): void {

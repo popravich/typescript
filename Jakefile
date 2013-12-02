@@ -394,7 +394,11 @@ var localRwcBaseline = "tests/baselines/rwc/local/";
 var refRwcBaseline = "tests/baselines/rwc/reference/";
 
 desc("Builds the test infrastructure using the built compiler");
+<<<<<<< HEAD
 task("tests", [run, serviceFile, perfCompilerPath,fidelityTestsOutFile, versionCacheTestsOutFile].concat(libraryTargets), function() {	
+=======
+task("tests", [run, serviceFile, fidelityTestsOutFile, perfCompilerPath].concat(libraryTargets), function() {	
+>>>>>>> origin/develop
 	// Copy the language service over to the test directory
 	jake.cpR(serviceFile, builtTestDirectory);
 	jake.cpR(path.join(libraryDirectory, "lib.d.ts"), builtTestDirectory);	
