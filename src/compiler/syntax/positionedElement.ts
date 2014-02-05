@@ -102,6 +102,10 @@ module TypeScript {
             return this.element().fullWidth();
         }
 
+        public width(): number {
+            return this.element().width();
+        }
+
         public start(): number {
             return this.fullStart() + this.element().leadingTriviaWidth();
         }
