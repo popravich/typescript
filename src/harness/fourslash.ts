@@ -1083,10 +1083,10 @@ module FourSlash {
                 var compiler = new TypeScript.TypeScriptCompiler();
                 for (var i = 0; i < this.testData.files.length; i++) {
                     snapshot = this.languageServiceShimHost.getScriptSnapshot(this.testData.files[i].fileName);
-                    compiler.addFile(this.testData.files[i].fileName, TypeScript.ScriptSnapshot.fromString(snapshot.getText(0, snapshot.getLength())), TypeScript.ByteOrderMark.None, 0, true);
+                    compiler.addFile(this.testData.files[i].fileName, TypeScript.ScriptSnapshot.fromString(snapshot.getText(0, snapshot.getLength())), TypeScript.ByteOrderMark.None, "0", true);
                 }
 
-                compiler.addFile('lib.d.ts', TypeScript.ScriptSnapshot.fromString(Harness.Compiler.libTextMinimal), TypeScript.ByteOrderMark.None, 0, true);
+                compiler.addFile('lib.d.ts', TypeScript.ScriptSnapshot.fromString(Harness.Compiler.libTextMinimal), TypeScript.ByteOrderMark.None, "0", true);
 
                 for (var i = 0; i < this.testData.files.length; i++) {
                     var refSemanticErrs = JSON.stringify(compiler.getSemanticDiagnostics(this.testData.files[i].fileName));

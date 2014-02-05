@@ -32,7 +32,7 @@ module TypeScript.Services {
         //  { span: { start: number; length: number }; newLength: number }
         //
         // Or null value if there was no change.
-        getTextChangeRangeSinceVersion(scriptVersion: number): string;
+        getTextChangeRangeSinceVersion(scriptVersion: string): string;
     }
 
     //
@@ -44,7 +44,7 @@ module TypeScript.Services {
         // Returns a JSON encoded value of the type:
         // string[]
         getScriptFileNames(): string;
-        getScriptVersion(fileName: string): number;
+        getScriptVersion(fileName: string): string;
         getScriptIsOpen(fileName: string): boolean;
         getScriptByteOrderMark(fileName: string): number;
         getScriptSnapshot(fileName: string): IScriptSnapshotShim;
@@ -161,7 +161,7 @@ module TypeScript.Services {
             return this.lineStartPositions;
         }
 
-        public getTextChangeRangeSinceVersion(scriptVersion: number): TypeScript.TextChangeRange {
+        public getTextChangeRangeSinceVersion(scriptVersion: string): TypeScript.TextChangeRange {
             var encoded = this.scriptSnapshotShim.getTextChangeRangeSinceVersion(scriptVersion);
             if (encoded == null) {
                 return null;
@@ -219,7 +219,7 @@ module TypeScript.Services {
             return new ScriptSnapshotShimAdapter(this.shimHost.getScriptSnapshot(fileName));
         }
 
-        public getScriptVersion(fileName: string): number {
+        public getScriptVersion(fileName: string): string {
             return this.shimHost.getScriptVersion(fileName);
         }
 

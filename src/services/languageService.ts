@@ -25,7 +25,7 @@ module TypeScript.Services {
         getCompilationSettings(): TypeScript.CompilationSettings;
 
         getScriptFileNames(): string[];
-        getScriptVersion(fileName: string): number;
+        getScriptVersion(fileName: string): string;
         getScriptIsOpen(fileName: string): boolean;
         getScriptByteOrderMark(fileName: string): TypeScript.ByteOrderMark;
         getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot;

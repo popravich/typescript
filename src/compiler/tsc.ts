@@ -254,7 +254,7 @@ module TypeScript {
 
             this.resolvedFiles.forEach(resolvedFile => {
                 var sourceFile = this.getSourceFile(resolvedFile.path);
-                compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ 0, /*isOpen:*/ false, resolvedFile.referencedFiles);
+                compiler.addFile(resolvedFile.path, sourceFile.scriptSnapshot, sourceFile.byteOrderMark, /*version:*/ "0", /*isOpen:*/ false, resolvedFile.referencedFiles);
             });
 
             for (var it = compiler.compile((path: string) => this.resolvePath(path)); it.moveNext();) {

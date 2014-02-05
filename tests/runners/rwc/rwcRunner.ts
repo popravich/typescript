@@ -240,12 +240,12 @@ class RWCRunner extends RunnerBase {
                             new TypeScript.NullLogger());
 
                         compiler.addFile('lib.d.ts', TypeScript.ScriptSnapshot.fromString(Harness.Compiler.libText),
-                            TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
+                            TypeScript.ByteOrderMark.None, /*version:*/ "0", /*isOpen:*/ true);
 
                         spec.compileList.forEach((item: string) => {
                             content = TypeScript.IO.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
                             compiler.addFile(spec.projectRoot + "/" + item, TypeScript.ScriptSnapshot.fromString(content),
-                                TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
+                                TypeScript.ByteOrderMark.None, /*version:*/ "0", /*isOpen:*/ true);
                         });
 
                         spec.compileList.forEach(file => {

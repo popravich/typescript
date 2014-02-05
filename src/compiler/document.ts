@@ -19,7 +19,7 @@ module TypeScript {
                     public referencedFiles: string[],
                     private _scriptSnapshot: IScriptSnapshot,
                     public byteOrderMark: ByteOrderMark,
-                    public version: number,
+                    public version: string,
                     public isOpen: boolean,
                     private _syntaxTree: SyntaxTree,
                     private _topLevelDecl: PullDecl) {
@@ -263,7 +263,7 @@ module TypeScript {
             return !this._compiler.compilationSettings().outFileOption() || this.isExternalModule();
         }
 
-        public update(scriptSnapshot: IScriptSnapshot, version: number, isOpen: boolean, textChangeRange: TextChangeRange): Document {
+        public update(scriptSnapshot: IScriptSnapshot, version: string, isOpen: boolean, textChangeRange: TextChangeRange): Document {
             // See if we are currently holding onto a syntax tree.  We may not be because we're 
             // either a closed file, or we've just been lazy and haven't had to create the syntax
             // tree yet.  Access the field instead of the method so we don't accidently realize
@@ -298,7 +298,7 @@ module TypeScript {
             return new Document(this._compiler, this._semanticInfoChain, this.fileName, this.referencedFiles, scriptSnapshot, this.byteOrderMark, version, isOpen, newSyntaxTree, /*topLevelDecl:*/ null);
         }
 
-        public static create(compiler: TypeScriptCompiler, semanticInfoChain: SemanticInfoChain, fileName: string, scriptSnapshot: IScriptSnapshot, byteOrderMark: ByteOrderMark, version: number, isOpen: boolean, referencedFiles: string[]): Document {
+        public static create(compiler: TypeScriptCompiler, semanticInfoChain: SemanticInfoChain, fileName: string, scriptSnapshot: IScriptSnapshot, byteOrderMark: ByteOrderMark, version: string, isOpen: boolean, referencedFiles: string[]): Document {
             return new Document(compiler, semanticInfoChain, fileName, referencedFiles, scriptSnapshot, byteOrderMark, version, isOpen, /*syntaxTree:*/ null, /*topLevelDecl:*/ null);
         }
 

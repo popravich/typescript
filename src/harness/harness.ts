@@ -791,7 +791,7 @@ module Harness {
                     TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings));
 
                 var libCode = this.useMinimalDefaultLib ? Compiler.libTextMinimal : Compiler.libText;
-                this.compiler.addFile("lib.d.ts", TypeScript.ScriptSnapshot.fromString(libCode), TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ false);
+                this.compiler.addFile("lib.d.ts", TypeScript.ScriptSnapshot.fromString(libCode), TypeScript.ByteOrderMark.None, /*version:*/ "0", /*isOpen:*/ false);
             }
 
             public resolve() {
@@ -854,7 +854,7 @@ module Harness {
                 var addScriptSnapshot = (path: string, referencedFiles?: string[]) => {
                     if (path.indexOf('lib.d.ts') === -1) {
                         var scriptSnapshot = this.getScriptSnapshot(path);
-                        this.compiler.addFile(path, scriptSnapshot, /*BOM*/ null, /*version:*/ 0, /*isOpen:*/ false, referencedFiles);
+                        this.compiler.addFile(path, scriptSnapshot, /*BOM*/ null, /*version:*/ "0", /*isOpen:*/ false, referencedFiles);
                     }
                 }
 
@@ -930,7 +930,7 @@ module Harness {
                 }
 
                 if (!updatedExistingFile) {
-                    this.compiler.addFile(justName, TypeScript.ScriptSnapshot.fromString(code), TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true, []);
+                    this.compiler.addFile(justName, TypeScript.ScriptSnapshot.fromString(code), TypeScript.ByteOrderMark.None, /*version:*/ "0", /*isOpen:*/ true, []);
                 }
 
                 this.compile({ noResolve: true });
@@ -995,7 +995,7 @@ module Harness {
 
             /** Updates an existing unit in the compiler with new code. */
             public updateUnit(code: string, unitName: string) {
-                this.compiler.updateFile(unitName, TypeScript.ScriptSnapshot.fromString(code), /*version:*/ 0, /*isOpen:*/ true, null);
+                this.compiler.updateFile(unitName, TypeScript.ScriptSnapshot.fromString(code), /*version:*/ "0", /*isOpen:*/ true, null);
             }
 
             public emitAll(ioHost?: IEmitterIOHost) {
@@ -1501,8 +1501,8 @@ module Harness {
             return JSON.stringify(this.lineMap.lineStarts());
         }
 
-        public getTextChangeRangeSinceVersion(scriptVersion: number): string {
-            var range = this.scriptInfo.getTextChangeRangeBetweenVersions(scriptVersion, this.version);
+        public getTextChangeRangeSinceVersion(scriptVersion: string): string {
+            var range = this.scriptInfo.getTextChangeRangeBetweenVersions(parseInt(scriptVersion), this.version);
             if (range === null) {
                 return null;
             }
@@ -1584,8 +1584,8 @@ module Harness {
             return new ScriptSnapshotShim(this.getScriptInfo(fileName));
         }
 
-        public getScriptVersion(fileName: string): number {
-            return this.getScriptInfo(fileName).version;
+        public getScriptVersion(fileName: string): string {
+            return this.getScriptInfo(fileName).version.toString();
         }
 
         public getScriptIsOpen(fileName: string): boolean {

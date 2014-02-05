@@ -22,7 +22,7 @@ module TypeScript.Services {
         constructor(
             public fileName: string,
             private host: ILanguageServiceHost,
-            public version: number,
+            public version: string,
             public isOpen: boolean,
             public byteOrderMark: TypeScript.ByteOrderMark) {
             this._sourceText = null;
@@ -85,7 +85,7 @@ module TypeScript.Services {
             return this._fileNameToEntry.getAllKeys();
         }
 
-        public getVersion(fileName: string): number {
+        public getVersion(fileName: string): string {
             return this._fileNameToEntry.lookup(TypeScript.switchToForwardSlashes(fileName)).version;
         }
 
@@ -101,7 +101,7 @@ module TypeScript.Services {
             return this._fileNameToEntry.lookup(TypeScript.switchToForwardSlashes(fileName)).getScriptSnapshot();
         }
 
-        public getScriptTextChangeRangeSinceVersion(fileName: string, lastKnownVersion: number): TypeScript.TextChangeRange {
+        public getScriptTextChangeRangeSinceVersion(fileName: string, lastKnownVersion: string): TypeScript.TextChangeRange {
             var currentVersion = this.getVersion(fileName);
             if (lastKnownVersion === currentVersion) {
                 return TypeScript.TextChangeRange.unchanged; // "No changes"
@@ -118,7 +118,7 @@ module TypeScript.Services {
         // For our syntactic only features, we also keep a cache of the syntax tree for the 
         // currently edited file.  
         private _currentFileName: string = "";
-        private _currentFileVersion: number = -1;
+        private _currentFileVersion: string = "-1";
         private _currentFileSyntaxTree: TypeScript.SyntaxTree = null;
         private _currentFileScriptSnapshot: TypeScript.IScriptSnapshot = null;
 
@@ -164,7 +164,7 @@ module TypeScript.Services {
             return syntaxTree;
         }
 
-        private updateSyntaxTree(fileName: string, scriptSnapshot: TypeScript.IScriptSnapshot, previousSyntaxTree: TypeScript.SyntaxTree, previousFileVersion: number): TypeScript.SyntaxTree {
+        private updateSyntaxTree(fileName: string, scriptSnapshot: TypeScript.IScriptSnapshot, previousSyntaxTree: TypeScript.SyntaxTree, previousFileVersion: string): TypeScript.SyntaxTree {
             var editRange = this._hostCache.getScriptTextChangeRangeSinceVersion(fileName, previousFileVersion);
 
             // Debug.assert(newLength >= 0);

@@ -183,12 +183,12 @@ class CompilerBaselineRunner extends RunnerBase {
                         new TypeScript.NullLogger(), TypeScript.ImmutableCompilationSettings.defaultSettings());
 
                     compiler.addFile('lib.d.ts', TypeScript.ScriptSnapshot.fromString(Harness.Compiler.libTextMinimal),
-                        TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
+                        TypeScript.ByteOrderMark.None, /*version:*/ "0", /*isOpen:*/ true);
 
                     var allFiles = toBeCompiled.concat(otherFiles);
                     allFiles.forEach(file => {
                         compiler.addFile(file.unitName, TypeScript.ScriptSnapshot.fromString(file.content),
-                            TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
+                            TypeScript.ByteOrderMark.None, /*version:*/ "0", /*isOpen:*/ true);
                     });
 
                     allFiles.forEach(file => {

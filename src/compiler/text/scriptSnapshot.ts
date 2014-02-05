@@ -19,7 +19,7 @@ module TypeScript {
         // Returns a text change range representing what text has changed since the specified version.
         // If the change cannot be determined (say, because a file was opened/closed), then 'null' 
         // should be returned.
-        getTextChangeRangeSinceVersion(scriptVersion: number): TextChangeRange;
+        getTextChangeRangeSinceVersion(scriptVersion: string): TextChangeRange;
     }
 
     export module ScriptSnapshot {
@@ -45,7 +45,7 @@ module TypeScript {
                 return this._lineStartPositions;
             }
 
-            public getTextChangeRangeSinceVersion(scriptVersion: number): TypeScript.TextChangeRange {
+            public getTextChangeRangeSinceVersion(scriptVersion: string): TypeScript.TextChangeRange {
                 throw Errors.notYetImplemented();
             }
         }

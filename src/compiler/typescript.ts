@@ -162,7 +162,7 @@ module TypeScript {
         public addFile(fileName: string,
             scriptSnapshot: IScriptSnapshot,
             byteOrderMark: ByteOrderMark,
-            version: number,
+            version: string,
             isOpen: boolean,
             referencedFiles: string[] = []): void {
 
@@ -175,7 +175,7 @@ module TypeScript {
             this.semanticInfoChain.addDocument(document);
         }
 
-        public updateFile(fileName: string, scriptSnapshot: IScriptSnapshot, version: number, isOpen: boolean, textChangeRange: TextChangeRange): void {
+        public updateFile(fileName: string, scriptSnapshot: IScriptSnapshot, version: string, isOpen: boolean, textChangeRange: TextChangeRange): void {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var document = this.getDocument(fileName);
