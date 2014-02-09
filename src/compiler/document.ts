@@ -17,7 +17,7 @@ module TypeScript {
                     private _semanticInfoChain: SemanticInfoChain,
                     public fileName: string,
                     public referencedFiles: string[],
-                    private _scriptSnapshot: IScriptSnapshot,
+                    public scriptSnapshot: IScriptSnapshot,
                     public byteOrderMark: ByteOrderMark,
                     public version: string,
                     public isOpen: boolean,
@@ -207,7 +207,7 @@ module TypeScript {
 
                 result = Parser.parse(
                     this.fileName,
-                    SimpleText.fromScriptSnapshot(this._scriptSnapshot),
+                    SimpleText.fromScriptSnapshot(this.scriptSnapshot),
                     TypeScript.isDTSFile(this.fileName),
                     getParseOptions(this._compiler.compilationSettings()));
 
@@ -271,7 +271,7 @@ module TypeScript {
             var oldSyntaxTree = this._syntaxTree;
 
             if (textChangeRange !== null && Debug.shouldAssert(AssertionLevel.Normal)) {
-                var oldText = this._scriptSnapshot;
+                var oldText = this.scriptSnapshot;
                 var newText = scriptSnapshot;
 
                 TypeScript.Debug.assert((oldText.getLength() - textChangeRange.span().length() + textChangeRange.newLength()) === newText.getLength());

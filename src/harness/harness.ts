@@ -1501,8 +1501,9 @@ module Harness {
             return JSON.stringify(this.lineMap.lineStarts());
         }
 
-        public getTextChangeRangeSinceVersion(scriptVersion: string): string {
-            var range = this.scriptInfo.getTextChangeRangeBetweenVersions(parseInt(scriptVersion), this.version);
+        public getChangeRange(oldScript: TypeScript.Services.IScriptSnapshotShim): string {
+            var oldShim = <ScriptSnapshotShim>oldScript;
+            var range = this.scriptInfo.getTextChangeRangeBetweenVersions(oldShim.version, this.version);
             if (range === null) {
                 return null;
             }

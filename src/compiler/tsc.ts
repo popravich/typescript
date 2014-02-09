@@ -20,6 +20,7 @@
 module TypeScript {
     class SourceFile {
         constructor(public scriptSnapshot: IScriptSnapshot, public byteOrderMark: ByteOrderMark) {
+
         }
     }
 

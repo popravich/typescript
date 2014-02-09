@@ -101,14 +101,14 @@ module TypeScript.Services {
             return this._fileNameToEntry.lookup(TypeScript.switchToForwardSlashes(fileName)).getScriptSnapshot();
         }
 
-        public getScriptTextChangeRangeSinceVersion(fileName: string, lastKnownVersion: string): TypeScript.TextChangeRange {
+        public getScriptChangeRange(fileName: string, lastKnownVersion: string, oldScriptSnapshot: TypeScript.IScriptSnapshot): TypeScript.TextChangeRange {
             var currentVersion = this.getVersion(fileName);
             if (lastKnownVersion === currentVersion) {
                 return TypeScript.TextChangeRange.unchanged; // "No changes"
             }
 
-            var scriptSnapshot = this.getScriptSnapshot(fileName);
-            return scriptSnapshot.getTextChangeRangeSinceVersion(lastKnownVersion);
+            var newScriptSnapshot = this.getScriptSnapshot(fileName);
+            return newScriptSnapshot.getChangeRange(oldScriptSnapshot);
         }
     }
 
@@ -138,7 +138,8 @@ module TypeScript.Services {
             }
             else if (this._currentFileVersion !== version) {
                 var scriptSnapshot = this._hostCache.getScriptSnapshot(fileName);
-                syntaxTree = this.updateSyntaxTree(fileName, scriptSnapshot, this._currentFileSyntaxTree, this._currentFileVersion);
+                syntaxTree = this.updateSyntaxTree(
+                    fileName, scriptSnapshot, this._currentFileScriptSnapshot, this._currentFileSyntaxTree, this._currentFileVersion);
             }
 
             if (syntaxTree !== null) {
@@ -164,23 +165,29 @@ module TypeScript.Services {
             return syntaxTree;
         }
 
-        private updateSyntaxTree(fileName: string, scriptSnapshot: TypeScript.IScriptSnapshot, previousSyntaxTree: TypeScript.SyntaxTree, previousFileVersion: string): TypeScript.SyntaxTree {
-            var editRange = this._hostCache.getScriptTextChangeRangeSinceVersion(fileName, previousFileVersion);
+        private updateSyntaxTree(
+            fileName: string,
+            newScriptSnapshot: TypeScript.IScriptSnapshot,
+            oldScriptSnapshot: TypeScript.IScriptSnapshot,
+            previousSyntaxTree: TypeScript.SyntaxTree,
+            previousFileVersion: string): TypeScript.SyntaxTree {
+
+            var editRange = this._hostCache.getScriptChangeRange(fileName, previousFileVersion, oldScriptSnapshot);
 
             // Debug.assert(newLength >= 0);
 
             // The host considers the entire buffer changed.  So parse a completely new tree.
             if (editRange === null) {
-                return this.createSyntaxTree(fileName, scriptSnapshot);
+                return this.createSyntaxTree(fileName, newScriptSnapshot);
             }
 
             var nextSyntaxTree =
                 Parser.incrementalParse(
                     previousSyntaxTree,
                     editRange,
-                    SimpleText.fromScriptSnapshot(scriptSnapshot));
+                    SimpleText.fromScriptSnapshot(newScriptSnapshot));
 
-            this.ensureInvariants(fileName, editRange, nextSyntaxTree, this._currentFileScriptSnapshot, scriptSnapshot);
+            this.ensureInvariants(fileName, editRange, nextSyntaxTree, this._currentFileScriptSnapshot, newScriptSnapshot);
 
             return nextSyntaxTree;
         }
@@ -329,7 +336,7 @@ module TypeScript.Services {
             // new text buffer).
             var textChangeRange: TextChangeRange = null;
             if (document.isOpen && isOpen) {
-                textChangeRange = this.hostCache.getScriptTextChangeRangeSinceVersion(fileName, document.version);
+                textChangeRange = this.hostCache.getScriptChangeRange(fileName, document.version, document.scriptSnapshot);
             }
 
             compiler.updateFile(fileName, this.hostCache.getScriptSnapshot(fileName), version, isOpen, textChangeRange);

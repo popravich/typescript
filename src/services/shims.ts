@@ -32,7 +32,7 @@ module TypeScript.Services {
         //  { span: { start: number; length: number }; newLength: number }
         //
         // Or null value if there was no change.
-        getTextChangeRangeSinceVersion(scriptVersion: string): string;
+        getChangeRange(oldSnapshot: IScriptSnapshotShim): string;
     }
 
     //
@@ -161,8 +161,9 @@ module TypeScript.Services {
             return this.lineStartPositions;
         }
 
-        public getTextChangeRangeSinceVersion(scriptVersion: string): TypeScript.TextChangeRange {
-            var encoded = this.scriptSnapshotShim.getTextChangeRangeSinceVersion(scriptVersion);
+        public getChangeRange(oldSnapshot: IScriptSnapshot): TypeScript.TextChangeRange {
+            var oldSnapshotShim = <ScriptSnapshotShimAdapter>oldSnapshot;
+            var encoded = this.scriptSnapshotShim.getChangeRange(oldSnapshotShim.scriptSnapshotShim);
             if (encoded == null) {
                 return null;
             }
