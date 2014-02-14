@@ -22,6 +22,5 @@ module TypeScript.Services.Formatting {
         FormatOnEnter,
         FormatOnSemicolon,
         FormatOnClosingCurlyBrace,
-        FormatOnPaste
     }
 }

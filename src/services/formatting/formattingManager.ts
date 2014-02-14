@@ -19,7 +19,10 @@ module TypeScript.Services.Formatting {
     export class FormattingManager {
         private options: FormattingOptions;
 
-        constructor(private syntaxTree: SyntaxTree, private snapshot: ITextSnapshot, private rulesProvider: RulesProvider, editorOptions: TypeScript.Services.EditorOptions) {
+        constructor(private syntaxTree: SyntaxTree,
+                    private snapshot: ITextSnapshot,
+                    private rulesProvider: RulesProvider,
+                    editorOptions: TypeScript.Services.EditorOptions) {
             //
             // TODO: convert to use FormattingOptions instead of EditorOptions
             this.options = new FormattingOptions(!editorOptions.ConvertTabsToSpaces, editorOptions.TabSize, editorOptions.IndentSize, editorOptions.NewLineCharacter)
@@ -30,14 +33,9 @@ module TypeScript.Services.Formatting {
             return this.formatSpan(span, FormattingRequestKind.FormatSelection);
         }
 
-        public formatDocument(minChar: number, limChar: number): TypeScript.Services.TextEdit[] {
-            var span = TextSpan.fromBounds(minChar, limChar);
+        public formatDocument(): TypeScript.Services.TextEdit[] {
+            var span = TextSpan.fromBounds(0, this.snapshot.getLength());
             return this.formatSpan(span, FormattingRequestKind.FormatDocument);
-        }
-
-        public formatOnPaste(minChar: number, limChar: number): TypeScript.Services.TextEdit[] {
-            var span = TextSpan.fromBounds(minChar, limChar);
-            return this.formatSpan(span, FormattingRequestKind.FormatOnPaste);
         }
 
         public formatOnSemicolon(caretPosition: number): TypeScript.Services.TextEdit[] {

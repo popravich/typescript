@@ -1722,18 +1722,11 @@ module TypeScript.Services {
             return manager.formatSelection(minChar, limChar);
         }
 
-        public getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsForDocument(fileName: string, options: FormatCodeOptions): TextEdit[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
-            return manager.formatDocument(minChar, limChar);
-        }
-
-        public getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
-            fileName = TypeScript.switchToForwardSlashes(fileName);
-
-            var manager = this.getFormattingManager(fileName, options);
-            return manager.formatOnPaste(minChar, limChar);
+            return manager.formatDocument();
         }
 
         public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[] {

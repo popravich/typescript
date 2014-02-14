@@ -132,8 +132,7 @@ module TypeScript.Services {
         getIndentationAtPosition(fileName: string, position: number, options: string/*Services.EditorOptions*/): string;
 
         getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: string/*Services.FormatCodeOptions*/): string;
-        getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: string/*Services.FormatCodeOptions*/): string;
-        getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: string/*Services.FormatCodeOptions*/): string;
+        getFormattingEditsForDocument(fileName: string, options: string/*Services.FormatCodeOptions*/): string;
         getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: string/*Services.FormatCodeOptions*/): string;
 
         getEmitOutput(fileName: string): string;
@@ -553,23 +552,12 @@ module TypeScript.Services {
         }
 
         /// FORMAT DOCUMENT
-        public getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: string/*Services.FormatCodeOptions*/): string {
+        public getFormattingEditsForDocument(fileName: string, options: string/*Services.FormatCodeOptions*/): string {
             return this.forwardJSONCall(
-                "getFormattingEditsForDocument(\"" + fileName + "\", " + minChar + ", " + limChar + ")",
+                "getFormattingEditsForDocument(\"" + fileName + "\")",
                 () => {
                     var localOptions: TypeScript.Services.FormatCodeOptions = JSON.parse(options);
-                    var edits = this.languageService.getFormattingEditsForDocument(fileName, minChar, limChar, localOptions);
-                    return edits;
-                });
-        }
-
-        /// FORMAT ON PASTE
-        public getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: string/*Services.FormatCodeOptions*/): string {
-            return this.forwardJSONCall(
-                "getFormattingEditsOnPaste(\"" + fileName + "\", " + minChar + ", " + limChar + ")",
-                () => {
-                    var localOptions: TypeScript.Services.FormatCodeOptions = JSON.parse(options);
-                    var edits = this.languageService.getFormattingEditsOnPaste(fileName, minChar, limChar, localOptions);
+                    var edits = this.languageService.getFormattingEditsForDocument(fileName, localOptions);
                     return edits;
                 });
         }

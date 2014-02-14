@@ -1035,7 +1035,7 @@ module FourSlash {
 
             // Handle formatting
             if (this.enableFormatting) {
-                var edits = this.languageService.getFormattingEditsOnPaste(this.activeFile.fileName, start, offset, this.formatCodeOptions);
+                var edits = this.languageService.getFormattingEditsForRange(this.activeFile.fileName, start, offset, this.formatCodeOptions);
                 offset += this.applyEdits(this.activeFile.fileName, edits, true);
                 this.editCheckpoint(this.activeFile.fileName);
             }
@@ -1141,7 +1141,7 @@ module FourSlash {
         public formatDocument() {
             this.scenarioActions.push('<FormatDocument />');
 
-            var edits = this.languageService.getFormattingEditsForDocument(this.activeFile.fileName, 0, this.languageServiceShimHost.getScriptSnapshot(this.activeFile.fileName).getLength(), this.formatCodeOptions);
+            var edits = this.languageService.getFormattingEditsForDocument(this.activeFile.fileName, this.formatCodeOptions);
             this.currentCaretPosition += this.applyEdits(this.activeFile.fileName, edits, true);
             this.fixCaretPosition();
         }

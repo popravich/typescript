@@ -71,8 +71,7 @@ module TypeScript.Services {
         getIndentationAtPosition(fileName: string, position: number, options: TypeScript.Services.EditorOptions): number;
 
         getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[];
-        getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[];
-        getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[];
+        getFormattingEditsForDocument(fileName: string, options: FormatCodeOptions): TextEdit[];
         getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[];
 
         getEmitOutput(fileName: string): TypeScript.EmitOutput;
