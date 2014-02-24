@@ -1,0 +1,4 @@
+genericCallWithOverloadedFunctionTypedArguments2.ts(28,15): error TS2082: Supplied parameters do not match any signature of call target:
+	Call signatures of types '<T>(x: T, y: T) => string' and '{ (x: {}): string; (x: {}, y?: {}): string; }' are incompatible:
+		Call signature expects 1 or fewer parameters.
+genericCallWithOverloadedFunctionTypedArguments2.ts(28,15): error TS2087: Could not select overload for 'call' expression.

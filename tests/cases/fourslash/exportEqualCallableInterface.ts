@@ -1,14 +1,15 @@
 /// <reference path='fourslash.ts'/>
 
-////declare module "test" {
-////    interface x {
-////        (): Date;
-////        foo: string;
-////    }
-////    export = x;
+// @Filename: exportEqualCallableInterface_file0.ts
+////interface x {
+////    (): Date;
+////    foo: string;
 ////}
+////export = x;
 
-////import test = require('test');
+// @Filename: exportEqualCallableInterface_file1.ts
+///////<reference path='exportEqualCallableInterface_file0.ts'/>
+////import test = require('exportEqualCallableInterface_file0');
 ////var t2: test;
 ////t2./**/
 

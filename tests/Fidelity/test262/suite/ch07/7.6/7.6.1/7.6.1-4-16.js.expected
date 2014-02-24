@@ -180,7 +180,7 @@
                                     {
                                         "kind": "VariableDeclarator",
                                         "fullWidth": 9,
-                                        "identifier": {
+                                        "propertyName": {
                                             "kind": "IdentifierName",
                                             "width": 5,
                                             "fullWidth": 6,
@@ -240,7 +240,7 @@
                                     {
                                         "kind": "VariableDeclarator",
                                         "fullWidth": 9,
-                                        "identifier": {
+                                        "propertyName": {
                                             "kind": "IdentifierName",
                                             "width": 5,
                                             "fullWidth": 6,
@@ -300,7 +300,7 @@
                                     {
                                         "kind": "VariableDeclarator",
                                         "fullWidth": 9,
-                                        "identifier": {
+                                        "propertyName": {
                                             "kind": "IdentifierName",
                                             "width": 5,
                                             "fullWidth": 6,
@@ -394,7 +394,7 @@
                                     {
                                         "kind": "VariableDeclarator",
                                         "fullWidth": 491,
-                                        "identifier": {
+                                        "propertyName": {
                                             "kind": "IdentifierName",
                                             "width": 10,
                                             "fullWidth": 12,
@@ -448,8 +448,9 @@
                                                 },
                                                 "propertyAssignments": [
                                                     {
-                                                        "kind": "SetAccessorPropertyAssignment",
+                                                        "kind": "SetAccessor",
                                                         "fullWidth": 80,
+                                                        "modifiers": [],
                                                         "setKeyword": {
                                                             "kind": "SetKeyword",
                                                             "width": 3,
@@ -479,30 +480,37 @@
                                                             "value": "undefined",
                                                             "valueText": "undefined"
                                                         },
-                                                        "openParenToken": {
-                                                            "kind": "OpenParenToken",
-                                                            "width": 1,
-                                                            "text": "(",
-                                                            "value": "(",
-                                                            "valueText": "("
-                                                        },
-                                                        "parameter": {
-                                                            "kind": "Parameter",
-                                                            "fullWidth": 5,
-                                                            "identifier": {
-                                                                "kind": "IdentifierName",
-                                                                "width": 5,
-                                                                "text": "value",
-                                                                "value": "value",
-                                                                "valueText": "value"
+                                                        "parameterList": {
+                                                            "kind": "ParameterList",
+                                                            "fullWidth": 7,
+                                                            "openParenToken": {
+                                                                "kind": "OpenParenToken",
+                                                                "width": 1,
+                                                                "text": "(",
+                                                                "value": "(",
+                                                                "valueText": "("
+                                                            },
+                                                            "parameters": [
+                                                                {
+                                                                    "kind": "Parameter",
+                                                                    "fullWidth": 5,
+                                                                    "modifiers": [],
+                                                                    "identifier": {
+                                                                        "kind": "IdentifierName",
+                                                                        "width": 5,
+                                                                        "text": "value",
+                                                                        "value": "value",
+                                                                        "valueText": "value"
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "closeParenToken": {
+                                                                "kind": "CloseParenToken",
+                                                                "width": 1,
+                                                                "text": ")",
+                                                                "value": ")",
+                                                                "valueText": ")"
                                                             }
-                                                        },
-                                                        "closeParenToken": {
-                                                            "kind": "CloseParenToken",
-                                                            "width": 1,
-                                                            "text": ")",
-                                                            "value": ")",
-                                                            "valueText": ")"
                                                         },
                                                         "block": {
                                                             "kind": "Block",
@@ -627,8 +635,9 @@
                                                         ]
                                                     },
                                                     {
-                                                        "kind": "GetAccessorPropertyAssignment",
+                                                        "kind": "GetAccessor",
                                                         "fullWidth": 74,
+                                                        "modifiers": [],
                                                         "getKeyword": {
                                                             "kind": "GetKeyword",
                                                             "width": 3,
@@ -658,19 +667,24 @@
                                                             "value": "undefined",
                                                             "valueText": "undefined"
                                                         },
-                                                        "openParenToken": {
-                                                            "kind": "OpenParenToken",
-                                                            "width": 1,
-                                                            "text": "(",
-                                                            "value": "(",
-                                                            "valueText": "("
-                                                        },
-                                                        "closeParenToken": {
-                                                            "kind": "CloseParenToken",
-                                                            "width": 1,
-                                                            "text": ")",
-                                                            "value": ")",
-                                                            "valueText": ")"
+                                                        "parameterList": {
+                                                            "kind": "ParameterList",
+                                                            "fullWidth": 2,
+                                                            "openParenToken": {
+                                                                "kind": "OpenParenToken",
+                                                                "width": 1,
+                                                                "text": "(",
+                                                                "value": "(",
+                                                                "valueText": "("
+                                                            },
+                                                            "parameters": [],
+                                                            "closeParenToken": {
+                                                                "kind": "CloseParenToken",
+                                                                "width": 1,
+                                                                "text": ")",
+                                                                "value": ")",
+                                                                "valueText": ")"
+                                                            }
                                                         },
                                                         "block": {
                                                             "kind": "Block",
@@ -776,8 +790,9 @@
                                                         ]
                                                     },
                                                     {
-                                                        "kind": "SetAccessorPropertyAssignment",
+                                                        "kind": "SetAccessor",
                                                         "fullWidth": 74,
+                                                        "modifiers": [],
                                                         "setKeyword": {
                                                             "kind": "SetKeyword",
                                                             "width": 3,
@@ -807,30 +822,37 @@
                                                             "value": "NaN",
                                                             "valueText": "NaN"
                                                         },
-                                                        "openParenToken": {
-                                                            "kind": "OpenParenToken",
-                                                            "width": 1,
-                                                            "text": "(",
-                                                            "value": "(",
-                                                            "valueText": "("
-                                                        },
-                                                        "parameter": {
-                                                            "kind": "Parameter",
-                                                            "fullWidth": 5,
-                                                            "identifier": {
-                                                                "kind": "IdentifierName",
-                                                                "width": 5,
-                                                                "text": "value",
-                                                                "value": "value",
-                                                                "valueText": "value"
+                                                        "parameterList": {
+                                                            "kind": "ParameterList",
+                                                            "fullWidth": 7,
+                                                            "openParenToken": {
+                                                                "kind": "OpenParenToken",
+                                                                "width": 1,
+                                                                "text": "(",
+                                                                "value": "(",
+                                                                "valueText": "("
+                                                            },
+                                                            "parameters": [
+                                                                {
+                                                                    "kind": "Parameter",
+                                                                    "fullWidth": 5,
+                                                                    "modifiers": [],
+                                                                    "identifier": {
+                                                                        "kind": "IdentifierName",
+                                                                        "width": 5,
+                                                                        "text": "value",
+                                                                        "value": "value",
+                                                                        "valueText": "value"
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "closeParenToken": {
+                                                                "kind": "CloseParenToken",
+                                                                "width": 1,
+                                                                "text": ")",
+                                                                "value": ")",
+                                                                "valueText": ")"
                                                             }
-                                                        },
-                                                        "closeParenToken": {
-                                                            "kind": "CloseParenToken",
-                                                            "width": 1,
-                                                            "text": ")",
-                                                            "value": ")",
-                                                            "valueText": ")"
                                                         },
                                                         "block": {
                                                             "kind": "Block",
@@ -955,8 +977,9 @@
                                                         ]
                                                     },
                                                     {
-                                                        "kind": "GetAccessorPropertyAssignment",
+                                                        "kind": "GetAccessor",
                                                         "fullWidth": 68,
+                                                        "modifiers": [],
                                                         "getKeyword": {
                                                             "kind": "GetKeyword",
                                                             "width": 3,
@@ -986,19 +1009,24 @@
                                                             "value": "NaN",
                                                             "valueText": "NaN"
                                                         },
-                                                        "openParenToken": {
-                                                            "kind": "OpenParenToken",
-                                                            "width": 1,
-                                                            "text": "(",
-                                                            "value": "(",
-                                                            "valueText": "("
-                                                        },
-                                                        "closeParenToken": {
-                                                            "kind": "CloseParenToken",
-                                                            "width": 1,
-                                                            "text": ")",
-                                                            "value": ")",
-                                                            "valueText": ")"
+                                                        "parameterList": {
+                                                            "kind": "ParameterList",
+                                                            "fullWidth": 2,
+                                                            "openParenToken": {
+                                                                "kind": "OpenParenToken",
+                                                                "width": 1,
+                                                                "text": "(",
+                                                                "value": "(",
+                                                                "valueText": "("
+                                                            },
+                                                            "parameters": [],
+                                                            "closeParenToken": {
+                                                                "kind": "CloseParenToken",
+                                                                "width": 1,
+                                                                "text": ")",
+                                                                "value": ")",
+                                                                "valueText": ")"
+                                                            }
                                                         },
                                                         "block": {
                                                             "kind": "Block",
@@ -1104,8 +1132,9 @@
                                                         ]
                                                     },
                                                     {
-                                                        "kind": "SetAccessorPropertyAssignment",
+                                                        "kind": "SetAccessor",
                                                         "fullWidth": 79,
+                                                        "modifiers": [],
                                                         "setKeyword": {
                                                             "kind": "SetKeyword",
                                                             "width": 3,
@@ -1135,30 +1164,37 @@
                                                             "value": "Infinity",
                                                             "valueText": "Infinity"
                                                         },
-                                                        "openParenToken": {
-                                                            "kind": "OpenParenToken",
-                                                            "width": 1,
-                                                            "text": "(",
-                                                            "value": "(",
-                                                            "valueText": "("
-                                                        },
-                                                        "parameter": {
-                                                            "kind": "Parameter",
-                                                            "fullWidth": 5,
-                                                            "identifier": {
-                                                                "kind": "IdentifierName",
-                                                                "width": 5,
-                                                                "text": "value",
-                                                                "value": "value",
-                                                                "valueText": "value"
+                                                        "parameterList": {
+                                                            "kind": "ParameterList",
+                                                            "fullWidth": 7,
+                                                            "openParenToken": {
+                                                                "kind": "OpenParenToken",
+                                                                "width": 1,
+                                                                "text": "(",
+                                                                "value": "(",
+                                                                "valueText": "("
+                                                            },
+                                                            "parameters": [
+                                                                {
+                                                                    "kind": "Parameter",
+                                                                    "fullWidth": 5,
+                                                                    "modifiers": [],
+                                                                    "identifier": {
+                                                                        "kind": "IdentifierName",
+                                                                        "width": 5,
+                                                                        "text": "value",
+                                                                        "value": "value",
+                                                                        "valueText": "value"
+                                                                    }
+                                                                }
+                                                            ],
+                                                            "closeParenToken": {
+                                                                "kind": "CloseParenToken",
+                                                                "width": 1,
+                                                                "text": ")",
+                                                                "value": ")",
+                                                                "valueText": ")"
                                                             }
-                                                        },
-                                                        "closeParenToken": {
-                                                            "kind": "CloseParenToken",
-                                                            "width": 1,
-                                                            "text": ")",
-                                                            "value": ")",
-                                                            "valueText": ")"
                                                         },
                                                         "block": {
                                                             "kind": "Block",
@@ -1283,8 +1319,9 @@
                                                         ]
                                                     },
                                                     {
-                                                        "kind": "GetAccessorPropertyAssignment",
+                                                        "kind": "GetAccessor",
                                                         "fullWidth": 75,
+                                                        "modifiers": [],
                                                         "getKeyword": {
                                                             "kind": "GetKeyword",
                                                             "width": 3,
@@ -1314,19 +1351,24 @@
                                                             "value": "Infinity",
                                                             "valueText": "Infinity"
                                                         },
-                                                        "openParenToken": {
-                                                            "kind": "OpenParenToken",
-                                                            "width": 1,
-                                                            "text": "(",
-                                                            "value": "(",
-                                                            "valueText": "("
-                                                        },
-                                                        "closeParenToken": {
-                                                            "kind": "CloseParenToken",
-                                                            "width": 1,
-                                                            "text": ")",
-                                                            "value": ")",
-                                                            "valueText": ")"
+                                                        "parameterList": {
+                                                            "kind": "ParameterList",
+                                                            "fullWidth": 2,
+                                                            "openParenToken": {
+                                                                "kind": "OpenParenToken",
+                                                                "width": 1,
+                                                                "text": "(",
+                                                                "value": "(",
+                                                                "valueText": "("
+                                                            },
+                                                            "parameters": [],
+                                                            "closeParenToken": {
+                                                                "kind": "CloseParenToken",
+                                                                "width": 1,
+                                                                "text": ")",
+                                                                "value": ")",
+                                                                "valueText": ")"
+                                                            }
                                                         },
                                                         "block": {
                                                             "kind": "Block",
@@ -1498,7 +1540,7 @@
                                     {
                                         "kind": "VariableDeclarator",
                                         "fullWidth": 92,
-                                        "identifier": {
+                                        "propertyName": {
                                             "kind": "IdentifierName",
                                             "width": 3,
                                             "fullWidth": 4,
@@ -1721,7 +1763,7 @@
                                     {
                                         "kind": "VariableDeclarator",
                                         "fullWidth": 2,
-                                        "identifier": {
+                                        "propertyName": {
                                             "kind": "IdentifierName",
                                             "width": 1,
                                             "fullWidth": 2,
@@ -1847,7 +1889,7 @@
                                                 {
                                                     "kind": "VariableDeclarator",
                                                     "fullWidth": 3,
-                                                    "identifier": {
+                                                    "propertyName": {
                                                         "kind": "IdentifierName",
                                                         "width": 2,
                                                         "fullWidth": 3,

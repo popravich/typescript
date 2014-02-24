@@ -12,7 +12,6 @@ interface ITypeDefinition {
     name: string;
     baseType: string;
     interfaces?: string[];
-    isAbstract?: boolean;
     children: IMemberDefinition[];
     isTypeScriptSpecific: boolean;
 }
@@ -30,12 +29,18 @@ interface IMemberDefinition {
     elementType?: string;
 }
 
-var interfaces = {
+var interfaces: TypeScript.IIndexable<any> = {
     IMemberDeclarationSyntax: 'IClassElementSyntax',
     IStatementSyntax: 'IModuleElementSyntax',
     INameSyntax: 'ITypeSyntax',
-    ITypeSyntax: 'IUnaryExpressionSyntax',
     IUnaryExpressionSyntax: 'IExpressionSyntax',
+    IPostfixExpressionSyntax: 'IUnaryExpressionSyntax',
+    // Note: for simplicity's sake, we merge CallExpression, NewExpression and MemberExpression 
+    // into IMemberExpression.
+    IMemberExpressionSyntax: 'IPostfixExpressionSyntax',
+    IPrimaryExpressionSyntax: 'IMemberExpressionSyntax',
+    IArrowFunctionExpressionSyntax: 'IUnaryExpressionSyntax',
+    IIterationStatementSyntax: 'IStatementSyntax',
 };
 
 var definitions:ITypeDefinition[] = [
@@ -48,18 +53,11 @@ var definitions:ITypeDefinition[] = [
         ]
     },
     <any>{
-        name: 'ModuleReferenceSyntax',
+        name: 'ExternalModuleReferenceSyntax',
         baseType: 'SyntaxNode',
         interfaces: ['IModuleReferenceSyntax'],
-        isAbstract: true,
-        children: <any>[],
-        isTypeScriptSpecific: true
-    },
-    <any>{
-        name: 'ExternalModuleReferenceSyntax',
-        baseType: 'ModuleReferenceSyntax',
         children: [
-            <any>{ name: 'moduleOrRequireKeyword', isToken: true, tokenKinds: ['ModuleKeyword', 'RequireKeyword'] },
+            <any>{ name: 'requireKeyword', isToken: true, tokenKinds: ['RequireKeyword'] }, 
             <any>{ name: 'openParenToken', isToken: true },
             <any>{ name: 'stringLiteral', isToken: true },
             <any>{ name: 'closeParenToken', isToken: true }
@@ -68,7 +66,8 @@ var definitions:ITypeDefinition[] = [
     },
     <any>{
         name: 'ModuleNameModuleReferenceSyntax',
-        baseType: 'ModuleReferenceSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IModuleReferenceSyntax'],
         children: [
             <any>{ name: 'moduleName', type: 'INameSyntax' }
         ],
@@ -83,7 +82,7 @@ var definitions:ITypeDefinition[] = [
             <any>{ name: 'importKeyword', isToken: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'equalsToken', isToken: true },
-            <any>{ name: 'moduleReference', type: 'ModuleReferenceSyntax' },
+            <any>{ name: 'moduleReference', type: 'IModuleReferenceSyntax' },
             <any>{ name: 'semicolonToken', isToken: true }
         ],
         isTypeScriptSpecific: true
@@ -134,6 +133,7 @@ var definitions:ITypeDefinition[] = [
         name: 'HeritageClauseSyntax',
         baseType: 'SyntaxNode',
         children: [
+            <any>{ name: 'kind', type: 'SyntaxKind' },
             <any>{ name: 'extendsOrImplementsKeyword', isToken: true, tokenKinds: ['ExtendsKeyword', 'ImplementsKeyword'] },
             <any>{ name: 'typeNames', isSeparatedList: true, requiresAtLeastOneItem: true, elementType: 'INameSyntax' }
         ],
@@ -146,7 +146,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
             <any>{ name: 'moduleKeyword', isToken: true },
-            <any>{ name: 'moduleName', type: 'INameSyntax', isOptional: true },
+            <any>{ name: 'name', type: 'INameSyntax', isOptional: true },
             <any>{ name: 'stringLiteral', isToken: true, isOptional: true },
             <any>{ name: 'openBraceToken', isToken: true },
             <any>{ name: 'moduleElements', isList: true, elementType: 'IModuleElementSyntax' },
@@ -159,7 +159,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'SyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
+            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
             <any>{ name: 'functionKeyword', isToken: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
@@ -172,7 +172,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'SyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
+            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
             <any>{ name: 'variableDeclaration', type: 'VariableDeclarationSyntax' },
             <any>{ name: 'semicolonToken', isToken: true }
         ]
@@ -189,7 +189,7 @@ var definitions:ITypeDefinition[] = [
         name: 'VariableDeclaratorSyntax',
         baseType: 'SyntaxNode',
         children: [
-            <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
+            <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'typeAnnotation', type: 'TypeAnnotationSyntax', isOptional: true, isTypeScriptSpecific: true },
             <any>{ name: 'equalsValueClause', type: 'EqualsValueClauseSyntax', isOptional: true }
         ]
@@ -215,7 +215,7 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'ArrayLiteralExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IPrimaryExpressionSyntax'],
         children: [
             <any>{ name: 'openBracketToken', isToken: true },
             <any>{ name: 'expressions', isSeparatedList: true, elementType: 'IExpressionSyntax' },
@@ -231,7 +231,7 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'ParenthesizedExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IPrimaryExpressionSyntax'],
         children: [
             <any>{ name: 'openParenToken', isToken: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
@@ -239,30 +239,26 @@ var definitions:ITypeDefinition[] = [
         ]
     },
     <any>{
-        name: 'ArrowFunctionExpressionSyntax',
-        baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
-        isAbstract: true,
-        children: <any>[],
-        isTypeScriptSpecific: true
-    },
-    <any>{
         name: 'SimpleArrowFunctionExpressionSyntax',
-        baseType: 'ArrowFunctionExpressionSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IArrowFunctionExpressionSyntax'],
         children: [
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'equalsGreaterThanToken', isToken: true },
-            <any>{ name: 'body', type: 'ISyntaxNodeOrToken' }
+            <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
+            <any>{ name: 'expression', type: 'IExpressionSyntax', isOptional: true }
         ],
         isTypeScriptSpecific: true
     },
     <any>{
         name: 'ParenthesizedArrowFunctionExpressionSyntax',
-        baseType: 'ArrowFunctionExpressionSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IArrowFunctionExpressionSyntax'],
         children: [
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'equalsGreaterThanToken', isToken: true },
-            <any>{ name: 'body', type: 'ISyntaxNodeOrToken' }
+            <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
+            <any>{ name: 'expression', type: 'IExpressionSyntax', isOptional: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -380,7 +376,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'SyntaxNode',
         children: [
             <any>{ name: 'dotDotDotToken', isToken: true, isOptional: true, isTypeScriptSpecific: true },
-            <any>{ name: 'publicOrPrivateKeyword', isToken: true, isOptional: true, tokenKinds: ['PublicKeyword', 'PrivateKeyword'], isTypeScriptSpecific: true },
+            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'questionToken', isToken: true, isOptional: true, isTypeScriptSpecific: true },
             <any>{ name: 'typeAnnotation', type: 'TypeAnnotationSyntax', isOptional: true, isTypeScriptSpecific: true },
@@ -390,7 +386,7 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'MemberAccessExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IMemberExpressionSyntax'],
         children: [
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
             <any>{ name: 'dotToken', isToken: true },
@@ -400,17 +396,17 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'PostfixUnaryExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IPostfixExpressionSyntax'],
         children: [
             <any>{ name: 'kind', type: 'SyntaxKind' },
-            <any>{ name: 'operand', type: 'IExpressionSyntax' },
+            <any>{ name: 'operand', type: 'IMemberExpressionSyntax' },
             <any>{ name: 'operatorToken', isToken: true, tokenKinds:['PlusPlusToken', 'MinusMinusToken'] }
         ]
     },
     <any>{
         name: 'ElementAccessExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IMemberExpressionSyntax'],
         children: [
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
             <any>{ name: 'openBracketToken', isToken: true },
@@ -421,9 +417,9 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'InvocationExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IMemberExpressionSyntax'],
         children: [
-            <any>{ name: 'expression', type: 'IExpressionSyntax' },
+            <any>{ name: 'expression', type: 'IMemberExpressionSyntax' },
             <any>{ name: 'argumentList', type: 'ArgumentListSyntax' }
         ]
     },
@@ -492,7 +488,7 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'IndexSignatureSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['ITypeMemberSyntax', 'IClassElementSyntax'],
+        interfaces: ['ITypeMemberSyntax'],
         children: [
             <any>{ name: 'openBracketToken', isToken: true },
             <any>{ name: 'parameter', type: 'ParameterSyntax' },
@@ -594,8 +590,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'SyntaxNode',
         interfaces: ['IClassElementSyntax'],
         children: [
+            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
             <any>{ name: 'constructorKeyword', isToken: true },
-            <any>{ name: 'parameterList', type: 'ParameterListSyntax' },
+            <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
             <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
         ],
@@ -615,31 +612,24 @@ var definitions:ITypeDefinition[] = [
         isTypeScriptSpecific: true
     },
     <any>{
-        name: 'MemberAccessorDeclarationSyntax',
+        name: 'GetAccessorSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IMemberDeclarationSyntax'],
-        isAbstract: true,
-        children: <any>[],
-        isTypeScriptSpecific: true
-    },
-    <any>{
-        name: 'GetMemberAccessorDeclarationSyntax',
-        baseType: 'MemberAccessorDeclarationSyntax',
+        interfaces: ['IMemberDeclarationSyntax', 'IPropertyAssignmentSyntax' ],
         children: [
-            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
+            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
             <any>{ name: 'getKeyword', isToken: true },
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'parameterList', type: 'ParameterListSyntax' },
-            <any>{ name: 'typeAnnotation', type: 'TypeAnnotationSyntax', isOptional: true },
+            <any>{ name: 'typeAnnotation', type: 'TypeAnnotationSyntax', isOptional: true, isTypeScriptSpecific: true },
             <any>{ name: 'block', type: 'BlockSyntax' }
-        ],
-        isTypeScriptSpecific: true
+        ]
     },
     <any>{
-        name: 'SetMemberAccessorDeclarationSyntax',
-        baseType: 'MemberAccessorDeclarationSyntax',
+        name: 'SetAccessorSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IMemberDeclarationSyntax', 'IPropertyAssignmentSyntax'],
         children: [
-            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
+            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
             <any>{ name: 'setKeyword', isToken: true },
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'parameterList', type: 'ParameterListSyntax' },
@@ -654,6 +644,17 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
             <any>{ name: 'variableDeclarator', type: 'VariableDeclaratorSyntax' },
+            <any>{ name: 'semicolonToken', isToken: true }
+        ],
+        isTypeScriptSpecific: true
+    },
+    <any>{
+        name: 'IndexMemberDeclarationSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IClassElementSyntax'],
+        children: [
+            <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
+            <any>{ name: 'indexSignature', type: 'IndexSignatureSyntax' },
             <any>{ name: 'semicolonToken', isToken: true }
         ],
         isTypeScriptSpecific: true
@@ -681,10 +682,10 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'ObjectCreationExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IMemberExpressionSyntax'],
         children: [
             <any>{ name: 'newKeyword', isToken: true },
-            <any>{ name: 'expression', type: 'IExpressionSyntax' },
+            <any>{ name: 'expression', type: 'IMemberExpressionSyntax' },
             <any>{ name: 'argumentList', type: 'ArgumentListSyntax', isOptional: true }
         ]
     },
@@ -698,20 +699,14 @@ var definitions:ITypeDefinition[] = [
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
             <any>{ name: 'closeParenToken', isToken: true },
             <any>{ name: 'openBraceToken', isToken: true },
-            <any>{ name: 'switchClauses', isList: true, elementType: 'SwitchClauseSyntax' },
+            <any>{ name: 'switchClauses', isList: true, elementType: 'ISwitchClauseSyntax' },
             <any>{ name: 'closeBraceToken', isToken: true }
         ]
     },
     <any>{
-        name: 'SwitchClauseSyntax',
+        name: 'CaseSwitchClauseSyntax',
         baseType: 'SyntaxNode',
         interfaces: ['ISwitchClauseSyntax'],
-        isAbstract: true,
-        children: <any>[]
-    },
-    <any>{
-        name: 'CaseSwitchClauseSyntax',
-        baseType: 'SwitchClauseSyntax',
         children: [
             <any>{ name: 'caseKeyword', isToken: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
@@ -721,7 +716,8 @@ var definitions:ITypeDefinition[] = [
     },
     <any>{
         name: 'DefaultSwitchClauseSyntax',
-        baseType: 'SwitchClauseSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['ISwitchClauseSyntax'],
         children: [
             <any>{ name: 'defaultKeyword', isToken: true },
             <any>{ name: 'colonToken', isToken: true },
@@ -749,21 +745,9 @@ var definitions:ITypeDefinition[] = [
         ]
     },
     <any>{
-        name: 'IterationStatementSyntax',
-        baseType: 'SyntaxNode',
-        interfaces: ['IStatementSyntax'],
-        isAbstract: true,
-        children: <any>[]
-    },
-    <any>{
-        name: 'BaseForStatementSyntax',
-        baseType: 'IterationStatementSyntax',
-        isAbstract: true,
-        children: <any>[]
-    },
-    <any>{
         name: 'ForStatementSyntax',
-        baseType: 'BaseForStatementSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IIterationStatementSyntax'],
         children: [
             <any>{ name: 'forKeyword', isToken: true },
             <any>{ name: 'openParenToken', isToken: true },
@@ -779,7 +763,8 @@ var definitions:ITypeDefinition[] = [
     },
     <any>{
         name: 'ForInStatementSyntax',
-        baseType: 'BaseForStatementSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IIterationStatementSyntax'],
         children: [
             <any>{ name: 'forKeyword', isToken: true },
             <any>{ name: 'openParenToken', isToken: true },
@@ -793,7 +778,8 @@ var definitions:ITypeDefinition[] = [
     },
     <any>{
         name: 'WhileStatementSyntax',
-        baseType: 'IterationStatementSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IIterationStatementSyntax'],
         children: [
             <any>{ name: 'whileKeyword', isToken: true },
             <any>{ name: 'openParenToken', isToken: true },
@@ -851,22 +837,17 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'ObjectLiteralExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IPrimaryExpressionSyntax'],
         children: [
             <any>{ name: 'openBraceToken', isToken: true },
-            <any>{ name: 'propertyAssignments', isSeparatedList: true, elementType: 'PropertyAssignmentSyntax' },
+            <any>{ name: 'propertyAssignments', isSeparatedList: true, elementType: 'IPropertyAssignmentSyntax' },
             <any>{ name: 'closeBraceToken', isToken: true }
         ]
     },
     <any>{
-        name: 'PropertyAssignmentSyntax',
-        baseType: 'SyntaxNode',
-        isAbstract: true,
-        children: <any>[]
-    },
-    <any>{
         name: 'SimplePropertyAssignmentSyntax',
-        baseType: 'PropertyAssignmentSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IPropertyAssignmentSyntax'],
         children: [
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'colonToken', isToken: true },
@@ -875,7 +856,8 @@ var definitions:ITypeDefinition[] = [
     },
     <any> {
         name: 'FunctionPropertyAssignmentSyntax',
-        baseType: 'PropertyAssignmentSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IPropertyAssignmentSyntax'],
         children: [
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
@@ -883,37 +865,9 @@ var definitions:ITypeDefinition[] = [
         ]
     },
     <any>{
-        name: 'AccessorPropertyAssignmentSyntax',
-        baseType: 'PropertyAssignmentSyntax',
-        isAbstract: true,
-        children: <any>[]
-    },
-    <any>{
-        name: 'GetAccessorPropertyAssignmentSyntax',
-        baseType: 'AccessorPropertyAssignmentSyntax',
-        children: [
-            <any>{ name: 'getKeyword', isToken: true },
-            <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'openParenToken', isToken: true },
-            <any>{ name: 'closeParenToken', isToken: true },
-            <any>{ name: 'typeAnnotation', type: 'TypeAnnotationSyntax', isOptional: true },
-            <any>{ name: 'block', type: 'BlockSyntax' }]
-    },
-    <any>{
-        name: 'SetAccessorPropertyAssignmentSyntax',
-        baseType: 'AccessorPropertyAssignmentSyntax',
-        children: [
-            <any>{ name: 'setKeyword', isToken: true },
-            <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'openParenToken', isToken: true },
-            <any>{ name: 'parameter', type: 'ParameterSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true },
-            <any>{ name: 'block', type: 'BlockSyntax' }]
-    },
-    <any>{
         name: 'FunctionExpressionSyntax',
         baseType: 'SyntaxNode',
-        interfaces: ['IUnaryExpressionSyntax'],
+        interfaces: ['IPrimaryExpressionSyntax'],
         children: [
             <any>{ name: 'functionKeyword', isToken: true },
             <any>{ name: 'identifier', isToken: true, isOptional: true, tokenKinds: ['IdentifierName'] },
@@ -966,7 +920,8 @@ var definitions:ITypeDefinition[] = [
     },
     <any>{
         name: 'DoStatementSyntax',
-        baseType: 'IterationStatementSyntax',
+        baseType: 'SyntaxNode',
+        interfaces: ['IIterationStatementSyntax'],
         children: [
             <any>{ name: 'doKeyword', isToken: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' },
@@ -982,7 +937,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
             <any>{ name: 'typeOfKeyword', isToken: true },
-            <any>{ name: 'expression', type: 'IExpressionSyntax' }]
+            <any>{ name: 'expression', type: 'IUnaryExpressionSyntax' }]
     },
     <any>{
         name: 'DeleteExpressionSyntax',
@@ -990,7 +945,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
             <any>{ name: 'deleteKeyword', isToken: true },
-            <any>{ name: 'expression', type: 'IExpressionSyntax' }]
+            <any>{ name: 'expression', type: 'IUnaryExpressionSyntax' }]
     },
     <any>{
         name: 'VoidExpressionSyntax',
@@ -998,7 +953,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
             <any>{ name: 'voidKeyword', isToken: true },
-            <any>{ name: 'expression', type: 'IExpressionSyntax' }]
+            <any>{ name: 'expression', type: 'IUnaryExpressionSyntax' }]
     },
     <any>{
         name: 'DebuggerStatementSyntax',
@@ -1074,6 +1029,9 @@ function generateProperties(definition: ITypeDefinition): string {
 
         if (getType(child) === "SyntaxKind") {
             result += "    private _" + child.name + ": " + getType(child) + ";\r\n";
+        }
+        else if (child.name === "arguments") {
+            result += "    public " + child.name + ": " + getType(child) + ";\r\n";
         }
 
         hasKind = hasKind || (getType(child) === "SyntaxKind");
@@ -1256,45 +1214,29 @@ function generateArgumentChecks(definition: ITypeDefinition): string {
 }
 
 function generateConstructor(definition: ITypeDefinition): string {
-    if (definition.isAbstract) {
-        // return "";
-    }
-
     var i: number;
     var child: IMemberDefinition;
     var base = baseType(definition);
-    var subchildren = childrenInAllSubclasses(definition);
-    var baseSubchildren = childrenInAllSubclasses(base);
-    var baseSubchildrenNames = TypeScript.ArrayUtilities.select(baseSubchildren, c => c.name);
 
     var result = "";
     result += "        constructor("
 
     var children = definition.children;
-    if (subchildren.length > 0) {
-        children = subchildren;
-    }
-
     for (i = 0; i < children.length; i++) {
         child = children[i];
 
-        if (getType(child) !== "SyntaxKind" && !TypeScript.ArrayUtilities.contains(baseSubchildrenNames, child.name)) {
+        if (getType(child) !== "SyntaxKind" && child.name !== "arguments") {
             result += "public ";
         }
 
-        result += child.name + ": " + getType(child);
+        result += getSafeName(child) + ": " + getType(child);
         result += ",\r\n                    ";
     }
 
     result += "parsedInStrictMode: boolean) {\r\n";
     
-    result += "            super(";
+    result += "            super(parsedInStrictMode); \r\n";
 
-    for (i = 0; i < baseSubchildrenNames.length; i++) {
-        result += baseSubchildrenNames[i] + ", ";
-    }
-
-    result += "parsedInStrictMode); \r\n";
     if (definition.children.length > 0) {
         result += "\r\n";
     }
@@ -1304,8 +1246,8 @@ function generateConstructor(definition: ITypeDefinition): string {
     for (i = 0; i < definition.children.length; i++) {
         child = definition.children[i];
 
-        if (child.type === "SyntaxKind") {
-            result += "            " + getPropertyAccess(child) + " = " + child.name + ";\r\n";
+        if (child.type === "SyntaxKind" || child.name === "arguments") {
+            result += "            " + getPropertyAccess(child) + " = " + getSafeName(child) + ";\r\n";
         }
     }
 
@@ -1395,7 +1337,7 @@ function isKeywordOrPunctuation(kind: string): boolean {
 }
 
 function isDefaultConstructable(definition: ITypeDefinition): boolean {
-    if (definition === null || definition.isAbstract) {
+    if (definition === null) {
         return false;
     }
 
@@ -1495,25 +1437,16 @@ function generateFactoryMethod(definition: ITypeDefinition): string {
 function generateAcceptMethods(definition: ITypeDefinition): string {
     var result = "";
 
-    if (!definition.isAbstract) {
-        result += "\r\n";
-        result += "    public accept(visitor: ISyntaxVisitor): any {\r\n";
-        result += "        return visitor.visit" + getNameWithoutSuffix(definition) + "(this);\r\n";
-        result += "    }\r\n";
-    }
+    result += "\r\n";
+    result += "    public accept(visitor: ISyntaxVisitor): any {\r\n";
+    result += "        return visitor.visit" + getNameWithoutSuffix(definition) + "(this);\r\n";
+    result += "    }\r\n";
 
     return result;
 }
 
 function generateIsMethod(definition: ITypeDefinition): string {
     var result = "";
-
-    //if (definition.isAbstract) {
-    //    result += "\r\n";
-    //    result += "    private is" + getNameWithoutSuffix(definition) + "(): boolean {\r\n";
-    //    result += "        return true;\r\n";
-    //    result += "    }\r\n";
-    //}
 
     if (definition.interfaces) {
         var ifaces = definition.interfaces.slice(0);
@@ -1550,13 +1483,11 @@ function generateIsMethod(definition: ITypeDefinition): string {
 function generateKindMethod(definition: ITypeDefinition): string {
     var result = "";
 
-    if (!definition.isAbstract) {
-        if (!hasKind) {
-            result += "\r\n";
-            result += "    public kind(): SyntaxKind {\r\n";
-            result += "        return SyntaxKind." + getNameWithoutSuffix(definition) + ";\r\n";
-            result += "    }\r\n";
-        }
+    if (!hasKind) {
+        result += "\r\n";
+        result += "    public kind(): SyntaxKind {\r\n";
+        result += "        return SyntaxKind." + getNameWithoutSuffix(definition) + ";\r\n";
+        result += "    }\r\n";
     }
 
     return result;
@@ -1565,39 +1496,37 @@ function generateKindMethod(definition: ITypeDefinition): string {
 function generateSlotMethods(definition: ITypeDefinition): string {
     var result = "";
 
-    if (!definition.isAbstract) {
-        result += "\r\n";
-        result += "    public childCount(): number {\r\n";
-        var slotCount = hasKind ? (definition.children.length - 1) : definition.children.length;
+    result += "\r\n";
+    result += "    public childCount(): number {\r\n";
+    var slotCount = hasKind ? (definition.children.length - 1) : definition.children.length;
 
-        result += "        return " + slotCount + ";\r\n";
-        result += "    }\r\n\r\n";
+    result += "        return " + slotCount + ";\r\n";
+    result += "    }\r\n\r\n";
 
-        result += "    public childAt(slot: number): ISyntaxElement {\r\n";
+    result += "    public childAt(slot: number): ISyntaxElement {\r\n";
 
-        if (slotCount === 0) {
-            result += "        throw Errors.invalidOperation();\r\n";
-        }
-        else {
-            result += "        switch (slot) {\r\n";
+    if (slotCount === 0) {
+        result += "        throw Errors.invalidOperation();\r\n";
+    }
+    else {
+        result += "        switch (slot) {\r\n";
 
-            var index = 0;
-            for (var i = 0; i < definition.children.length; i++) {
-                var child = definition.children[i];
-                if (child.type === "SyntaxKind") {
-                    continue;
-                }
-
-                result += "            case " + index + ": return this." + definition.children[i].name + ";\r\n";
-                index++;
+        var index = 0;
+        for (var i = 0; i < definition.children.length; i++) {
+            var child = definition.children[i];
+            if (child.type === "SyntaxKind") {
+                continue;
             }
 
-            result += "            default: throw Errors.invalidOperation();\r\n";
-            result += "        }\r\n";
+            result += "            case " + index + ": return this." + child.name + ";\r\n";
+            index++;
         }
 
-        result += "    }\r\n";
+        result += "            default: throw Errors.invalidOperation();\r\n";
+        result += "        }\r\n";
     }
+
+    result += "    }\r\n";
 
     return result;
 }
@@ -1605,13 +1534,62 @@ function generateSlotMethods(definition: ITypeDefinition): string {
 function generateFirstTokenMethod(definition: ITypeDefinition): string {
     var result = "";
 
-    if (!definition.isAbstract) {
+    result += "\r\n";
+    result += "    public firstToken(): ISyntaxToken {\r\n";
+    result += "        var token = null;\r\n";
 
-        result += "\r\n";
-        result += "    public firstToken(): ISyntaxToken {\r\n";
+    for (var i = 0; i < definition.children.length; i++) {
+        var child = definition.children[i];
+
+        if (getType(child) === "SyntaxKind") {
+            continue;
+        }
+
+        if (child.name === "endOfFileToken") {
+            continue;
+        }
+
+        result += "        if (";
+
+        if (child.isOptional) {
+            result += getPropertyAccess(child) + " !== null && ";
+        }
+
+        if (child.isToken) {
+            result += getPropertyAccess(child) + ".width() > 0";
+            result += ") { return " + getPropertyAccess(child) + "; }\r\n";
+        }
+        else {
+            result += "(token = " + getPropertyAccess(child) + ".firstToken()) !== null";
+            result += ") { return token; }\r\n";
+        }
+    }
+
+    if (definition.name === "SourceUnitSyntax") {
+        result += "        return this._endOfFileToken;\r\n";
+    }
+    else {
+        result += "        return null;\r\n";
+    }
+
+    result += "    }\r\n";
+
+    return result;
+}
+
+function generateLastTokenMethod(definition: ITypeDefinition): string {
+    var result = "";
+
+    result += "\r\n";
+    result += "    public lastToken(): ISyntaxToken {\r\n";
+
+    if (definition.name === "SourceUnitSyntax") {
+        result += "        return this._endOfFileToken;\r\n";
+    }
+    else {
         result += "        var token = null;\r\n";
 
-        for (var i = 0; i < definition.children.length; i++) {
+        for (var i = definition.children.length - 1; i >= 0; i--) {
             var child = definition.children[i];
 
             if (getType(child) === "SyntaxKind") {
@@ -1633,70 +1611,15 @@ function generateFirstTokenMethod(definition: ITypeDefinition): string {
                 result += ") { return " + getPropertyAccess(child) + "; }\r\n";
             }
             else {
-                result += "(token = " + getPropertyAccess(child) + ".firstToken()) !== null";
+                result += "(token = " + getPropertyAccess(child) + ".lastToken()) !== null";
                 result += ") { return token; }\r\n";
             }
         }
 
-        if (definition.name === "SourceUnitSyntax") {
-            result += "        return this._endOfFileToken;\r\n";
-        }
-        else {
-            result += "        return null;\r\n";
-        }
-
-        result += "    }\r\n";
+        result += "        return null;\r\n";
     }
 
-    return result;
-}
-
-function generateLastTokenMethod(definition: ITypeDefinition): string {
-    var result = "";
-
-    if (!definition.isAbstract) {
-
-        result += "\r\n";
-        result += "    public lastToken(): ISyntaxToken {\r\n";
-        
-        if (definition.name === "SourceUnitSyntax") {
-            result += "        return this._endOfFileToken;\r\n";
-        }
-        else {
-            result += "        var token = null;\r\n";
-
-            for (var i = definition.children.length - 1; i >= 0; i--) {
-                var child = definition.children[i];
-
-                if (getType(child) === "SyntaxKind") {
-                    continue;
-                }
-
-                if (child.name === "endOfFileToken") {
-                    continue;
-                }
-
-                result += "        if (";
-
-                if (child.isOptional) {
-                    result += getPropertyAccess(child) + " !== null && ";
-                }
-
-                if (child.isToken) {
-                    result += getPropertyAccess(child) + ".width() > 0";
-                    result += ") { return " + getPropertyAccess(child) + "; }\r\n";
-                }
-                else {
-                    result += "(token = " + getPropertyAccess(child) + ".lastToken()) !== null";
-                    result += ") { return token; }\r\n";
-                }
-            }
-
-            result += "        return null;\r\n";
-        }
-
-        result += "    }\r\n";
-    }
+    result += "    }\r\n";
 
     return result;
 }
@@ -1704,31 +1627,28 @@ function generateLastTokenMethod(definition: ITypeDefinition): string {
 function generateInsertChildrenIntoMethod(definition: ITypeDefinition): string {
     var result = "";
 
-    if (!definition.isAbstract) {
+    result += "\r\n";
+    result += "    public insertChildrenInto(array: ISyntaxElement[], index: number) {\r\n";
 
-        result += "\r\n";
-        result += "    public insertChildrenInto(array: ISyntaxElement[], index: number) {\r\n";
+    for (var i = definition.children.length - 1; i >= 0; i--) {
+        var child = definition.children[i];
 
-        for (var i = definition.children.length - 1; i >= 0; i--) {
-            var child = definition.children[i];
-
-            if (child.type === "SyntaxKind") {
-                continue;
-            }
-
-            if (child.isList || child.isSeparatedList) {
-                result += "        " + getPropertyAccess(child) + ".insertChildrenInto(array, index);\r\n";
-            }
-            else if (child.isOptional) {
-                result += "        if (" + getPropertyAccess(child) + " !== null) { array.splice(index, 0, " + getPropertyAccess(child) + "); }\r\n";
-            }
-            else {
-                result += "        array.splice(index, 0, " + getPropertyAccess(child) + ");\r\n";
-            }
+        if (child.type === "SyntaxKind") {
+            continue;
         }
 
-        result += "    }\r\n";
+        if (child.isList || child.isSeparatedList) {
+            result += "        " + getPropertyAccess(child) + ".insertChildrenInto(array, index);\r\n";
+        }
+        else if (child.isOptional) {
+            result += "        if (" + getPropertyAccess(child) + " !== null) { array.splice(index, 0, " + getPropertyAccess(child) + "); }\r\n";
+        }
+        else {
+            result += "        array.splice(index, 0, " + getPropertyAccess(child) + ");\r\n";
+        }
     }
+
+    result += "    }\r\n";
 
     return result;
 }
@@ -1763,28 +1683,6 @@ function contains(definition: ITypeDefinition, child: IMemberDefinition) {
              c.isSeparatedList === child.isSeparatedList &&
              c.isToken === child.isToken &&
              c.type === child.type);
-}
-
-function childrenInAllSubclasses(definition: ITypeDefinition): IMemberDefinition[]{
-    var result: IMemberDefinition[] = [];
-
-    if (definition !== null && definition.isAbstract) {
-        var subclasses = TypeScript.ArrayUtilities.where(definitions, d => !d.isAbstract && derivesFrom(d, definition));
-
-        if (subclasses.length > 0) {
-            var firstSubclass = subclasses[0];
-
-            for (var i = 0; i < firstSubclass.children.length; i++) {
-                var child = firstSubclass.children[i];
-
-                if (TypeScript.ArrayUtilities.all(subclasses, s => contains(s, child))) {
-                    result.push(child);
-                }
-            }
-        }
-    }
-
-    return result;
 }
 
 function generateAccessors(definition: ITypeDefinition): string {
@@ -1877,24 +1775,11 @@ function generateTriviaMethods(definition: ITypeDefinition): string {
 }
 
 function generateUpdateMethod(definition: ITypeDefinition): string {
-    if (definition.isAbstract) {
-        return "";
-    }
-
     var result = "";
 
     result += "\r\n";
-    
-    // Don't need an public update method if there's only 1 child.  In that case, just call the
-    // 'withXXX' method.
-    //if (definition.children.length <= 1) {
-    //    result += "    private ";
-    //}
-    //else {
-        result += "    public ";
-    //}
-    
-    result += "update("
+    result += "    public update(";
+
     var i: number;
     var child: IMemberDefinition;
 
@@ -1962,14 +1847,19 @@ function generateIsTypeScriptSpecificMethod(definition: ITypeDefinition): string
             }
 
             if (child.isTypeScriptSpecific) {
-                result += "        if (" + getPropertyAccess(child) + " !== null) { return true; }\r\n";
+                if (child.isList) {
+                    result += "        if (" + getPropertyAccess(child) + ".childCount() > 0) { return true; }\r\n";
+                }
+                else {
+                    result += "        if (" + getPropertyAccess(child) + " !== null) { return true; }\r\n";
+                }
                 continue;
             }
 
             if (child.isToken) {
                 continue;
             }
-            
+
             if (child.isOptional) {
                 result += "        if (" + getPropertyAccess(child) + " !== null && " + getPropertyAccess(child) + ".isTypeScriptSpecific()) { return true; }\r\n";
             }
@@ -1994,10 +1884,6 @@ function couldBeRegularExpressionToken(child: IMemberDefinition): boolean {
 }
 
 function generateStructuralEqualsMethod(definition: ITypeDefinition): string {
-    if (definition.isAbstract) {
-        return "";
-    }
-
     var result = "\r\n    private structuralEquals(node: SyntaxNode): boolean {\r\n";
     result += "        if (this === node) { return true; }\r\n";
     result += "        if (node === null) { return false; }\r\n";
@@ -2164,7 +2050,6 @@ function generateRewriter(): string {
 
     for (var i = 0; i < definitions.length; i++) {
         var definition = definitions[i];
-        if (definition.isAbstract) { continue; }
 
         result += "\r\n";
         result += "        public visit" + getNameWithoutSuffix(definition) + "(node: " + definition.name + "): any {\r\n";
@@ -2228,8 +2113,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     var hasAnyTrivia = leading || trailing;
 
     var result = "    export class ";
-
-    var needsSourcetext = hasAnyTrivia || isVariableWidth;
+    var needsText = hasAnyTrivia || isVariableWidth;
 
     var className = isFixedWidth ? "FixedWidthToken" : "VariableWidthToken";
     className += leading && trailing ? "WithLeadingAndTrailingTrivia" :
@@ -2237,12 +2121,10 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
              !leading && trailing ? "WithTrailingTrivia" : "WithNoTrivia";
 
     result += className;
-
     result += " implements ISyntaxToken {\r\n";
 
-    if (needsSourcetext) {
-        result += "        private _sourceText: ISimpleText;\r\n";
-        result += "        private _fullStart: number;\r\n";
+    if (needsText) {
+        result += "        private _fullText: string;\r\n";
     }
 
     result += "        public tokenKind: SyntaxKind;\r\n";
@@ -2252,18 +2134,14 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
         result += "        private _leadingTriviaInfo: number;\r\n";
     }
 
-    if (isVariableWidth) {
-        result += "        private _textOrWidth: any;\r\n";
-    }
-
     if (trailing) {
         result += "        private _trailingTriviaInfo: number;\r\n";
     }
 
     result += "\r\n";
 
-    if (needsSourcetext) {
-        result += "        constructor(sourceText: ISimpleText, fullStart: number,";
+    if (needsText) {
+        result += "        constructor(fullText: string, ";
     }
     else {
         result += "        constructor(";
@@ -2275,29 +2153,20 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
         result += ", leadingTriviaInfo: number";
     }
 
-    if (isVariableWidth) {
-        result += ", textOrWidth: any";
-    }
-
     if (trailing) {
         result += ", trailingTriviaInfo: number";
     }
 
     result += ") {\r\n";
 
-    if (needsSourcetext) {
-        result += "            this._sourceText = sourceText;\r\n";
-        result += "            this._fullStart = fullStart;\r\n";
+    if (needsText) {
+        result += "            this._fullText = fullText;\r\n";
     }
 
     result += "            this.tokenKind = kind;\r\n";
 
     if (leading) {
         result += "            this._leadingTriviaInfo = leadingTriviaInfo;\r\n";
-    }
-
-    if (isVariableWidth) {
-        result += "            this._textOrWidth = textOrWidth;\r\n";
     }
 
     if (trailing) {
@@ -2309,25 +2178,14 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += "        public clone(): ISyntaxToken {\r\n";
     result += "            return new " + className + "(\r\n";
 
-    if (needsSourcetext) {
-        result += "                this._sourceText,\r\n";
-        result += "                this._fullStart,\r\n";
+    if (needsText) {
+        result += "                this._fullText,\r\n";
     }
 
-    //if (isKeyword) {
-    //    result += "                this.tokenKeywordKind";
-    //}
-    //else {
-    //    result += "                this.tokenKind";
-    //}
     result += "                this.tokenKind";
 
     if (leading) {
         result += ",\r\n                this._leadingTriviaInfo";
-    }
-
-    if (isVariableWidth) {
-        result += ",\r\n                this._textOrWidth";
     }
 
     if (trailing) {
@@ -2351,6 +2209,9 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     var leadingTriviaWidth = leading ? "getTriviaWidth(this._leadingTriviaInfo)" : "0";
     var trailingTriviaWidth = trailing ? "getTriviaWidth(this._trailingTriviaInfo)" : "0";
 
+    result += "        public fullWidth(): number { return this.fullText().length; }\r\n";
+
+    /*
     if (leading && trailing) {
         result += "        public fullWidth(): number { return " + leadingTriviaWidth + " + this.width() + " + trailingTriviaWidth + "; }\r\n";
     }
@@ -2363,8 +2224,10 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     else {
         result += "        public fullWidth(): number { return this.width(); }\r\n";
     }
+    */
 
-    if (needsSourcetext) {
+    /*
+    if (needsText) {
         if (leading) {
             result += "        private start(): number { return this._fullStart + " + leadingTriviaWidth + "; }\r\n";
         }
@@ -2374,31 +2237,24 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 
         result += "        private end(): number { return this.start() + this.width(); }\r\n\r\n";
     }
+    */
 
     if (isFixedWidth) {
-        result += "        public width(): number { return this.text().length; }\r\n";
+        result += "        public width(): number { return this.text().length; }\r\n\r\n";
     }
     else {
-        result += "        public width(): number { return typeof this._textOrWidth === 'number' ? this._textOrWidth : this._textOrWidth.length; }\r\n";
+        result += "        public width(): number { return this.fullWidth() - this.leadingTriviaWidth() - this.trailingTriviaWidth(); }\r\n\r\n";
     }
 
     if (isFixedWidth) {
         result += "        public text(): string { return SyntaxFacts.getText(this.tokenKind); }\r\n";
     }
     else {
-        result += "\r\n";
-        result += "        public text(): string {\r\n";
-        result += "            if (typeof this._textOrWidth === 'number') {\r\n";
-        result += "                this._textOrWidth = this._sourceText.substr(\r\n";
-        result += "                    this.start(), this._textOrWidth, /*intern:*/ this.tokenKind === SyntaxKind.IdentifierName);\r\n";
-        result += "            }\r\n";
-        result += "\r\n";
-        result += "            return this._textOrWidth;\r\n";
-        result += "        }\r\n\r\n";
+        result += "        public text(): string { return this.fullText().substr(this.leadingTriviaWidth(), this.width()); }\r\n";
     }
 
-    if (needsSourcetext) {
-        result += "        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }\r\n\r\n";
+    if (needsText) {
+        result += "        public fullText(): string { return this._fullText; }\r\n\r\n";
     }
     else {
         result += "        public fullText(): string { return this.text(); }\r\n\r\n";
@@ -2431,7 +2287,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += "        public hasLeadingSkippedText(): boolean { return false; }\r\n";
     result += "        public leadingTriviaWidth(): number { return " + (leading ? "getTriviaWidth(this._leadingTriviaInfo)" : "0") + "; }\r\n";
     result += "        public leadingTrivia(): ISyntaxTriviaList { return " + (leading
-        ? "Scanner.scanTrivia(this._sourceText, this._fullStart, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false)"
+        ? "Scanner.scanTrivia(SimpleText.fromString(this._fullText), 0, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false)"
         : "Syntax.emptyTriviaList") + "; }\r\n\r\n";
 
     result += "        public hasTrailingTrivia(): boolean { return " + (trailing ? "true" : "false") + "; }\r\n";
@@ -2440,7 +2296,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += "        public hasTrailingSkippedText(): boolean { return false; }\r\n";
     result += "        public trailingTriviaWidth(): number { return " + (trailing ? "getTriviaWidth(this._trailingTriviaInfo)" : "0") + "; }\r\n";
     result += "        public trailingTrivia(): ISyntaxTriviaList { return " + (trailing
-        ? "Scanner.scanTrivia(this._sourceText, this.end(), getTriviaWidth(this._trailingTriviaInfo), /*isTrailing:*/ true)"
+        ? "Scanner.scanTrivia(SimpleText.fromString(this._fullText), this.leadingTriviaWidth() + this.width(), getTriviaWidth(this._trailingTriviaInfo), /*isTrailing:*/ true)"
         : "Syntax.emptyTriviaList") + "; }\r\n\r\n";
     result += "        public hasSkippedToken(): boolean { return false; }\r\n";
 
@@ -2459,13 +2315,33 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 "            return new PositionedToken(parent, this, fullStart);\r\n" +
 "        }\r\n\r\n";
 
-    result += 
+    result +=
 "        public withLeadingTrivia(leadingTrivia: ISyntaxTriviaList): ISyntaxToken {\r\n" +
 "            return this.realize().withLeadingTrivia(leadingTrivia);\r\n" +
 "        }\r\n" +
 "\r\n" +
 "        public withTrailingTrivia(trailingTrivia: ISyntaxTriviaList): ISyntaxToken {\r\n" +
 "            return this.realize().withTrailingTrivia(trailingTrivia);\r\n" +
+"        }\r\n" +
+"\r\n" +
+"        public isExpression(): boolean {\r\n" +
+"            return isExpression(this);\r\n" +
+"        }\r\n" +
+"\r\n" +
+"        public isPrimaryExpression(): boolean {\r\n" +
+"            return this.isExpression();\r\n" +
+"        }\r\n" +
+"\r\n" +
+"        public isMemberExpression(): boolean {\r\n" +
+"            return this.isExpression();\r\n" +
+"        }\r\n" +
+"\r\n" +
+"        public isPostfixExpression(): boolean {\r\n" +
+"            return this.isExpression();\r\n" +
+"        }\r\n" +
+"\r\n" +
+"        public isUnaryExpression(): boolean {\r\n" +
+"            return this.isExpression();\r\n" +
 "        }\r\n"
 
 
@@ -2498,54 +2374,54 @@ function generateTokens(): string {
     result += generateToken(/*isFixedWidth:*/ true, /*leading:*/ true, /*trailing:*/ true);
     result += "\r\n";
 
-    result += 
-"    function collectTokenTextElements(token: ISyntaxToken, elements: string[]): void {\r\n" +
-"        token.leadingTrivia().collectTextElements(elements);\r\n" +
-"        elements.push(token.text());\r\n" +
-"        token.trailingTrivia().collectTextElements(elements);\r\n" +
-"    }\r\n" +
-"\r\n" +
-"    export function fixedWidthToken(sourceText: ISimpleText, fullStart: number,\r\n" +
-"        kind: SyntaxKind,\r\n" +
-"        leadingTriviaInfo: number,\r\n" +
-"        trailingTriviaInfo: number): ISyntaxToken {\r\n" +
-"\r\n" +
-"        if (leadingTriviaInfo === 0) {\r\n" +
-"            if (trailingTriviaInfo === 0) {\r\n" +
-"                return new FixedWidthTokenWithNoTrivia(kind);\r\n" +
-"            }\r\n" +
-"            else {\r\n" +
-"                return new FixedWidthTokenWithTrailingTrivia(sourceText, fullStart, kind, trailingTriviaInfo);\r\n" +
-"            }\r\n" +
-"        }\r\n" +
-"        else if (trailingTriviaInfo === 0) {\r\n" +
-"            return new FixedWidthTokenWithLeadingTrivia(sourceText, fullStart, kind, leadingTriviaInfo);\r\n" +
-"        }\r\n" +
-"        else {\r\n" +
-"            return new FixedWidthTokenWithLeadingAndTrailingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, trailingTriviaInfo);\r\n" +
-"        }\r\n" +
-"    }\r\n" +
-"\r\n" +
-"    export function variableWidthToken(sourceText: ISimpleText, fullStart: number,\r\n" +
-"        kind: SyntaxKind,\r\n" +
-"        leadingTriviaInfo: number,\r\n" +
-"        width: number,\r\n" +
-"        trailingTriviaInfo: number): ISyntaxToken {\r\n" +
-"\r\n" +
-"        if (leadingTriviaInfo === 0) {\r\n" +
-"            if (trailingTriviaInfo === 0) {\r\n" +
-"                return new VariableWidthTokenWithNoTrivia(sourceText, fullStart, kind, width);\r\n" +
-"            }\r\n" +
-"            else {\r\n" +
-"                return new VariableWidthTokenWithTrailingTrivia(sourceText, fullStart, kind, width, trailingTriviaInfo);\r\n" +
-"            }\r\n" +
-"        }\r\n" +
-"        else if (trailingTriviaInfo === 0) {\r\n" +
-"            return new VariableWidthTokenWithLeadingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, width);\r\n" +
-"        }\r\n" +
-"        else {\r\n" +
-"            return new VariableWidthTokenWithLeadingAndTrailingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, width, trailingTriviaInfo);\r\n" +
-"        }\r\n" +
+    result +=
+    "    function collectTokenTextElements(token: ISyntaxToken, elements: string[]): void {\r\n" +
+    "        token.leadingTrivia().collectTextElements(elements);\r\n" +
+    "        elements.push(token.text());\r\n" +
+    "        token.trailingTrivia().collectTextElements(elements);\r\n" +
+    "    }\r\n" +
+    "\r\n";// +
+//"    export function fixedWidthToken(sourceText: ISimpleText, fullStart: number,\r\n" +
+//"        kind: SyntaxKind,\r\n" +
+//"        leadingTriviaInfo: number,\r\n" +
+//"        trailingTriviaInfo: number): ISyntaxToken {\r\n" +
+//"\r\n" +
+//"        if (leadingTriviaInfo === 0) {\r\n" +
+//"            if (trailingTriviaInfo === 0) {\r\n" +
+//"                return new FixedWidthTokenWithNoTrivia(kind);\r\n" +
+//"            }\r\n" +
+//"            else {\r\n" +
+//"                return new FixedWidthTokenWithTrailingTrivia(sourceText, fullStart, kind, trailingTriviaInfo);\r\n" +
+//"            }\r\n" +
+//"        }\r\n" +
+//"        else if (trailingTriviaInfo === 0) {\r\n" +
+//"            return new FixedWidthTokenWithLeadingTrivia(sourceText, fullStart, kind, leadingTriviaInfo);\r\n" +
+//"        }\r\n" +
+//"        else {\r\n" +
+//"            return new FixedWidthTokenWithLeadingAndTrailingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, trailingTriviaInfo);\r\n" +
+//"        }\r\n" +
+//"    }\r\n" +
+//"\r\n" +
+//"    export function variableWidthToken(sourceText: ISimpleText, fullStart: number,\r\n" +
+//"        kind: SyntaxKind,\r\n" +
+//"        leadingTriviaInfo: number,\r\n" +
+//"        width: number,\r\n" +
+//"        trailingTriviaInfo: number): ISyntaxToken {\r\n" +
+//"\r\n" +
+//"        if (leadingTriviaInfo === 0) {\r\n" +
+//"            if (trailingTriviaInfo === 0) {\r\n" +
+//"                return new VariableWidthTokenWithNoTrivia(sourceText, fullStart, kind, width);\r\n" +
+//"            }\r\n" +
+//"            else {\r\n" +
+//"                return new VariableWidthTokenWithTrailingTrivia(sourceText, fullStart, kind, width, trailingTriviaInfo);\r\n" +
+//"            }\r\n" +
+//"        }\r\n" +
+//"        else if (trailingTriviaInfo === 0) {\r\n" +
+//"            return new VariableWidthTokenWithLeadingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, width);\r\n" +
+//"        }\r\n" +
+//"        else {\r\n" +
+//"            return new VariableWidthTokenWithLeadingAndTrailingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, width, trailingTriviaInfo);\r\n" +
+//"        }\r\n" +
 //"    }\r\n" +
 //"\r\n" +
 //"    export function tokenFromText(text: IText, fullStart: number,\r\n" +
@@ -2559,7 +2435,7 @@ function generateTokens(): string {
 //"        else {\r\n" +
 //"            return variableWidthToken(text, fullStart, kind, leadingTriviaInfo, width, trailingTriviaInfo);\r\n" +
 //"        }\r\n" +
-"    }\r\n\r\n"
+//"    }\r\n\r\n"
 
     result += 
 "    function getTriviaWidth(value: number): number {\r\n" +
@@ -2642,7 +2518,6 @@ function generateWalker(): string {
 
     for (var i = 0; i < definitions.length; i++) {
         var definition = definitions[i];
-        if (definition.isAbstract) { continue; }
 
         result += "\r\n";
         result += "        public visit" + getNameWithoutSuffix(definition) + "(node: " + definition.name + "): void {\r\n";
@@ -2734,7 +2609,7 @@ function generateKeywordCondition(keywords: { text: string; kind: TypeScript.Syn
         for (var c in groupedKeywords) {
             if (groupedKeywords.hasOwnProperty(c)) {
                 result += indent + "case CharacterCodes." + c + ":\r\n";
-                result += indent + "    // " + TypeScript.ArrayUtilities.select(groupedKeywords[c], k => k.text).join(", ") + "\r\n";
+                result += indent + "    // " + TypeScript.ArrayUtilities.select(groupedKeywords[c], (k: any) => k.text).join(", ") + "\r\n";
                 result += generateKeywordCondition(groupedKeywords[c], currentCharacter + 1, indent + "    ");
             }
         }
@@ -2803,9 +2678,7 @@ function generateVisitor(): string {
 
     for (i = 0; i < definitions.length; i++) {
         definition = definitions[i];
-        if (!definition.isAbstract) {
-            result += "        visit" + getNameWithoutSuffix(definition) + "(node: " + definition.name + "): any;\r\n";
-        }
+        result += "        visit" + getNameWithoutSuffix(definition) + "(node: " + definition.name + "): any;\r\n";
     }
 
     result += "    }\r\n\r\n";
@@ -2823,11 +2696,9 @@ function generateVisitor(): string {
         for (i = 0; i < definitions.length; i++) {
             definition = definitions[i];
 
-            if (!definition.isAbstract) {
-                result += "\r\n        public visit" + getNameWithoutSuffix(definition) + "(node: " + definition.name + "): any {\r\n";
-                result += "            return this.defaultVisit(node);\r\n";
-                result += "        }\r\n";
-            }
+            result += "\r\n        public visit" + getNameWithoutSuffix(definition) + "(node: " + definition.name + "): any {\r\n";
+            result += "            return this.defaultVisit(node);\r\n";
+            result += "        }\r\n";
         }
 
         result += "    }";
@@ -2851,9 +2722,6 @@ function generateFactory(): string {
 
     for (i = 0; i < definitions.length; i++) {
         definition = definitions[i];
-        if (definition.isAbstract) {
-            continue;
-        }
         result += "        " + camelCase(getNameWithoutSuffix(definition)) + "(";
 
         for (j = 0; j < definition.children.length; j++) {
@@ -2875,9 +2743,6 @@ function generateFactory(): string {
 
     for (i = 0; i < definitions.length; i++) {
         definition = definitions[i];
-        if (definition.isAbstract) {
-            continue;
-        }
         result += "        " + camelCase(getNameWithoutSuffix(definition)) + "(";
 
         for (j = 0; j < definition.children.length; j++) {
@@ -2909,9 +2774,6 @@ function generateFactory(): string {
 
     for (i = 0; i < definitions.length; i++) {
         definition = definitions[i];
-        if (definition.isAbstract) {
-            continue;
-        }
         result += "        " + camelCase(getNameWithoutSuffix(definition)) + "(";
 
         for (j = 0; j < definition.children.length; j++) {
@@ -2954,10 +2816,10 @@ var scannerUtilities = generateScannerUtilities();
 var visitor = generateVisitor();
 var factory = generateFactory();
 
-Environment.writeFile(Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxNodes.generated.ts", syntaxNodes, false);
-Environment.writeFile(Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxRewriter.generated.ts", rewriter, false);
-Environment.writeFile(Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxToken.generated.ts", tokens, false);
-Environment.writeFile(Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxWalker.generated.ts", walker, false);
-Environment.writeFile(Environment.currentDirectory() + "\\src\\compiler\\syntax\\scannerUtilities.generated.ts", scannerUtilities, false);
-Environment.writeFile(Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxVisitor.generated.ts", visitor, false);
-Environment.writeFile(Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxFactory.generated.ts", factory, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxNodes.generated.ts", syntaxNodes, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxRewriter.generated.ts", rewriter, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxToken.generated.ts", tokens, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxWalker.generated.ts", walker, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\scannerUtilities.generated.ts", scannerUtilities, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxVisitor.generated.ts", visitor, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxFactory.generated.ts", factory, false);

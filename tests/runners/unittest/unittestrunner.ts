@@ -1,27 +1,34 @@
 ///<reference path="../../../src/harness/harness.ts" />
-///<reference path="../runnerbase.ts" />
+///<reference path="../runnerBase.ts" />
+
+enum UnittestTestType {
+    Compiler,
+    LanguageService,
+    Services,
+    Harness,
+    Samples
+}
 
 class UnitTestRunner extends RunnerBase {
-
-    constructor(public testType?: string) {
-        super(testType);
+    constructor(public testType?: UnittestTestType) {
+        super();
     }
 
     public initializeTests() {
         switch (this.testType) {
-            case 'compiler':
+            case UnittestTestType.Compiler:
                 this.tests = this.enumerateFiles('tests/cases/unittests/compiler');
                 break;
-            case 'ls':
+            case UnittestTestType.LanguageService:
                 this.tests = this.enumerateFiles('tests/cases/unittests/ls');
                 break;
-            case 'services':
+            case UnittestTestType.Services:
                 this.tests = this.enumerateFiles('tests/cases/unittests/services');
                 break;
-            case 'harness':
+            case UnittestTestType.Harness:
                 this.tests = this.enumerateFiles('tests/cases/unittests/harness');
                 break;
-            case 'samples':
+            case UnittestTestType.Samples:
                 this.tests = this.enumerateFiles('tests/cases/unittests/samples');
                 break;
             default:
@@ -35,17 +42,11 @@ class UnitTestRunner extends RunnerBase {
         var outerr = new Harness.Compiler.WriterAggregator();
         var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.DesignTime);
 
-        for (var i = 0; i < this.tests.length; i++) {
-            try {
-                harnessCompiler.addInputFile(this.tests[i]);
-            }
-            catch (e) {
-                IO.printLine('FATAL ERROR COMPILING TEST: ' + this.tests[i]);
-                throw e;
-            }
-        }
-
-        harnessCompiler.compile(false);
+        var toBeAdded = this.tests.map(test => {
+            return { unitName: test, content: TypeScript.IO.readFile(test, /*codepage:*/ null).contents }
+        });
+        harnessCompiler.addInputFiles(toBeAdded);
+        harnessCompiler.compile({ noResolve: true });
         
         var stdout = new Harness.Compiler.EmitterIOHost();
         var emitDiagnostics = harnessCompiler.emitAll(stdout);
@@ -55,8 +56,7 @@ class UnitTestRunner extends RunnerBase {
         var code = lines.join("\n")
 
         describe("Setup compiler for compiler unittests", () => {
-            var useMinimalDefaultLib = this.testType !== 'samples'
-            Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, useMinimalDefaultLib);
+            Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: this.testType !== UnittestTestType.Samples, noImplicitAny: false });
         });
         
         if (typeof require !== "undefined") {
@@ -70,10 +70,9 @@ class UnitTestRunner extends RunnerBase {
                     it: it,
                     assert: Harness.Assert,
                     Harness: Harness,
-                    IO: IO,
+                    IO: TypeScript.IO,
                     Exec: Exec,
-                    Services: Services,
-                    DumpAST: DumpAST,
+                    Services: TypeScript.Services,
                     // Formatting: Formatting,
                     Diff: Diff,
                     FourSlash: FourSlash

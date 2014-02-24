@@ -4,16 +4,6 @@
     "parseOptions": {
         "allowAutomaticSemicolonInsertion": true
     },
-    "diagnostics": [
-        {
-            "start": 15,
-            "length": 1,
-            "diagnosticCode": "'{0}' expected.",
-            "arguments": [
-                "="
-            ]
-        }
-    ],
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullWidth": 17,
@@ -27,7 +17,6 @@
                 "variableDeclaration": {
                     "kind": "VariableDeclaration",
                     "fullWidth": 17,
-                    "isIncrementallyUnusable": true,
                     "varKeyword": {
                         "kind": "VarKeyword",
                         "width": 3,
@@ -47,8 +36,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 13,
-                            "isIncrementallyUnusable": true,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 1,
                                 "text": "v",
@@ -57,7 +45,7 @@
                             },
                             "typeAnnotation": {
                                 "kind": "TypeAnnotation",
-                                "fullWidth": 10,
+                                "fullWidth": 12,
                                 "colonToken": {
                                     "kind": "ColonToken",
                                     "width": 1,
@@ -74,44 +62,34 @@
                                     ]
                                 },
                                 "type": {
-                                    "kind": "TypeQuery",
-                                    "fullWidth": 8,
-                                    "typeOfKeyword": {
-                                        "kind": "TypeOfKeyword",
-                                        "width": 6,
-                                        "fullWidth": 7,
-                                        "text": "typeof",
-                                        "value": "typeof",
-                                        "valueText": "typeof",
-                                        "hasTrailingTrivia": true,
-                                        "trailingTrivia": [
-                                            {
-                                                "kind": "WhitespaceTrivia",
-                                                "text": " "
-                                            }
-                                        ]
+                                    "kind": "ArrayType",
+                                    "fullWidth": 10,
+                                    "type": {
+                                        "kind": "TypeQuery",
+                                        "fullWidth": 8,
+                                        "typeOfKeyword": {
+                                            "kind": "TypeOfKeyword",
+                                            "width": 6,
+                                            "fullWidth": 7,
+                                            "text": "typeof",
+                                            "value": "typeof",
+                                            "valueText": "typeof",
+                                            "hasTrailingTrivia": true,
+                                            "trailingTrivia": [
+                                                {
+                                                    "kind": "WhitespaceTrivia",
+                                                    "text": " "
+                                                }
+                                            ]
+                                        },
+                                        "name": {
+                                            "kind": "IdentifierName",
+                                            "width": 1,
+                                            "text": "A",
+                                            "value": "A",
+                                            "valueText": "A"
+                                        }
                                     },
-                                    "name": {
-                                        "kind": "IdentifierName",
-                                        "width": 1,
-                                        "text": "A",
-                                        "value": "A",
-                                        "valueText": "A"
-                                    }
-                                }
-                            },
-                            "equalsValueClause": {
-                                "kind": "EqualsValueClause",
-                                "fullWidth": 2,
-                                "isIncrementallyUnusable": true,
-                                "equalsToken": {
-                                    "kind": "EqualsToken",
-                                    "width": 0,
-                                    "text": ""
-                                },
-                                "value": {
-                                    "kind": "ArrayLiteralExpression",
-                                    "fullWidth": 2,
                                     "openBracketToken": {
                                         "kind": "OpenBracketToken",
                                         "width": 1,
@@ -119,7 +97,6 @@
                                         "value": "[",
                                         "valueText": "["
                                     },
-                                    "expressions": [],
                                     "closeBracketToken": {
                                         "kind": "CloseBracketToken",
                                         "width": 1,

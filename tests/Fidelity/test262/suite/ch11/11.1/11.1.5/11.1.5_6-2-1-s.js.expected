@@ -273,8 +273,8 @@
                                                         "kind": "StringLiteral",
                                                         "width": 160,
                                                         "text": "\"var obj = {\\\r\n                get _11_1_5_6_2_1() {\\\r\n                   public = 42;\\\r\n                   return public;\\\r\n                }\\\r\n            };\"",
-                                                        "value": "var obj = {\r\n                get _11_1_5_6_2_1() {\r\n                   public = 42;\r\n                   return public;\r\n                }\r\n            };",
-                                                        "valueText": "var obj = {\r\n                get _11_1_5_6_2_1() {\r\n                   public = 42;\r\n                   return public;\r\n                }\r\n            };"
+                                                        "value": "var obj = {                get _11_1_5_6_2_1() {                   public = 42;                   return public;                }            };",
+                                                        "valueText": "var obj = {                get _11_1_5_6_2_1() {                   public = 42;                   return public;                }            };"
                                                     }
                                                 ],
                                                 "closeParenToken": {
@@ -344,7 +344,7 @@
                                                     "kind": "VariableDeclarator",
                                                     "fullWidth": 33,
                                                     "parsedInStrictMode": true,
-                                                    "identifier": {
+                                                    "propertyName": {
                                                         "kind": "IdentifierName",
                                                         "width": 13,
                                                         "fullWidth": 14,

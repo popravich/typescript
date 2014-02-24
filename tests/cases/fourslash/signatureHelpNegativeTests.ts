@@ -3,16 +3,14 @@
 // Negative tests
 
 //////inside a comment foo(/*insideComment*/
+////cl/*invalidContext*/ass InvalidSignatureHelpLocation { }
+////InvalidSignatureHelpLocation(/*validContext*/);
 
 goTo.marker('insideComment');
 verify.not.signatureHelpPresent();
 
-
-////cl/*invalidContext*/ass InvalidSignatureHelpLocation { }
-////InvalidSignatureHelpLocation(/*invalidContext2*/);
-
 goTo.marker('invalidContext');
 verify.not.signatureHelpPresent();
 
-goTo.marker('invalidContext2');
-verify.not.signatureHelpPresent();
+goTo.marker('validContext');
+verify.signatureHelpPresent();

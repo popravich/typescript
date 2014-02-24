@@ -42,14 +42,15 @@ module TypeScript {
     // be a good thing.  If it decreases, that's not great (less reusability), but that may be 
     // unavoidable.  If it does decrease an investigation 
     function compareTrees(oldText: IText, newText: IText, textChangeRange: TextChangeRange, reusedElements: number = -1): void {
-        var oldTree = Parser.parse("", oldText, false, new ParseOptions(LanguageVersion.EcmaScript5, true, false));
-        var oldAST = SyntaxTreeToAstVisitor.visit(oldTree, "", new CompilationSettings(), /*incrementalAST:*/ true);
+        var oldTree = Parser.parse("", oldText, false, new ParseOptions(LanguageVersion.EcmaScript5, true));
+        var settings = ImmutableCompilationSettings.defaultSettings();
+        var oldAST = SyntaxTreeToAstVisitor.visit(oldTree, "", settings, /*incrementalAST:*/ true);
 
-        var newTree = Parser.parse("", newText, false, new ParseOptions(LanguageVersion.EcmaScript5, true, false));
-        var newAST = SyntaxTreeToAstVisitor.visit(newTree, "", new CompilationSettings(), /*incrementalAST:*/ true);
+        var newTree = Parser.parse("", newText, false, new ParseOptions(LanguageVersion.EcmaScript5, true));
+        var newAST = SyntaxTreeToAstVisitor.visit(newTree, "", settings, /*incrementalAST:*/ true);
 
         var incrementalNewTree = Parser.incrementalParse(oldTree, textChangeRange, newText);
-        var incrementalNewAST = SyntaxTreeToAstVisitor.visit(incrementalNewTree, "", new CompilationSettings(), /*incrementalAST:*/ true);
+        var incrementalNewAST = SyntaxTreeToAstVisitor.visit(incrementalNewTree, "", settings, /*incrementalAST:*/ true);
 
         // We should get the same tree when doign a full or incremental parse.
         Debug.assert(newTree.structuralEquals(incrementalNewTree));
@@ -69,7 +70,8 @@ module TypeScript {
         public static runAllTests() {
             for (var name in IncrementalParserTests) {
                 if (IncrementalParserTests.hasOwnProperty(name) && StringUtilities.startsWith(name, "test")) {
-                    IncrementalParserTests[name]();
+                    var o: TypeScript.IIndexable<any> = <any>IncrementalParserTests;
+                    o[name]();
                 }
             }
         }
@@ -329,7 +331,7 @@ module TypeScript {
             var newTextAndChange = withDelete(oldText, index, " => 1".length);
 
             // Note the decreased reuse of nodes compared to testStrictMode3
-            compareTrees(oldText, newTextAndChange.text, newTextAndChange.textChangeRange, 4);
+            compareTrees(oldText, newTextAndChange.text, newTextAndChange.textChangeRange, 6);
         }
 
         public static testGenerics3() {

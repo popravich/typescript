@@ -3,7 +3,7 @@
 
 ///<reference path='typescriptServices.ts' />
 
-module Services {
+module TypeScript.Services {
     export class KeywordCompletions {
         private static keywords = [
             "break",
@@ -34,6 +34,7 @@ module Services {
             "interface",
             "module",
             "new",
+            "null",
             "private",
             "public",
             "require",

@@ -19,30 +19,34 @@ var copyright = "CopyrightNotice.txt";
 var thirdParty = "ThirdPartyNoticeText.txt";
 var compilerSources = [
 	"ast.ts",
-	"astPath.ts",
+	"astHelpers.ts",
 	"astWalker.ts",
 	"base64.ts",
 	"bloomFilter.ts",
 	"declarationEmitter.ts",
 	"diagnostics.ts",
+	"document.ts",
 	"emitter.ts",
 	"enumerator.ts",
 	"flags.ts",
 	"hashTable.ts",
 	"identifierWalker.ts",
-	"nodeTypes.ts",
 	"pathUtils.ts",
 	"precompile.ts",
 	"process.ts",
+	"references.ts",
 	"referenceResolution.ts",
 	"referenceResolver.ts",
+	"settings.ts",
 	"sourceMapping.ts",
 	"syntaxTreeToAstVisitor.ts",
 	"types.ts",
 	"core/arrayUtilities.ts",
+	"core/bitVector.ts",
+	"core/bitMatrix.ts",
 	"core/constants.ts",
 	"core/debug.ts",
-	"core/diagnostic.ts",
+	"core/diagnosticCore.ts",
 	"core/diagnosticCategory.ts",
 	"core/diagnosticInfo.ts",
 	"core/environment.ts",
@@ -50,6 +54,9 @@ var compilerSources = [
 	"core/hash.ts",
 	"core/hashTable.ts",
 	"core/integerUtilities.ts",
+	"core/lineAndCharacter.ts",
+	"core/lineMap.ts",
+	"core/linePosition.ts",
 	"core/mathPrototype.ts",
 	"core/references.ts",
 	"core/require.ts",
@@ -100,12 +107,9 @@ var compilerSources = [
 	"syntax/syntaxUtilities.ts",
 	"syntax/syntaxVisitor.generated.ts",
 	"syntax/syntaxWalker.generated.ts",
-	"syntax/textSpanWalker.ts",
 	"syntax/unicode.ts",
 	"text/characterCodes.ts",
-	"text/lineAndCharacter.ts",
 	"text/lineMap.ts",
-	"text/linePosition.ts",
 	"text/references.ts",
 	"text/scriptSnapshot.ts",
 	"text/text.ts",
@@ -114,18 +118,18 @@ var compilerSources = [
 	"text/textLine.ts",
 	"text/textSpan.ts",
 	"text/textUtilities.ts",
-	"typecheck/dataMap.ts",
 	"typecheck/pullDeclCollection.ts",
 	"typecheck/pullDecls.ts",
 	"typecheck/pullFlags.ts",
 	"typecheck/pullHelpers.ts",	
+	"typecheck/pullInstantiationHelpers.ts",	
 	"typecheck/pullSemanticInfo.ts",
 	"typecheck/pullSymbolBinder.ts",
-	"typecheck/pullSymbolBindingContext.ts",
 	"typecheck/pullSymbols.ts",
 	"typecheck/pullTypeResolution.ts",
 	"typecheck/pullTypeResolutionContext.ts",
-	"typecheck/SemanticDiagnostic.ts",
+	"typecheck/pullTypeEnclosingTypeWalker.ts",
+	"typecheck/pullTypeInstantiation.ts",
 	"typescript.ts"
 ].map(function (f) {
 	return path.join(compilerDirectory, f);
@@ -197,14 +201,25 @@ var harnessSources = [
 	path.join(harnessDirectory, "harness.ts"),
 	path.join(harnessDirectory, "baselining.ts"),
 	path.join(harnessDirectory, "fourslash.ts"),
-	path.join(harnessDirectory, "dumpAST-baselining.ts"),
 	path.join(harnessDirectory, "runner.ts"),
 
-	path.join(runnersDirectory, "runnerbase.ts"),
-	path.join(runnersDirectory, "compiler/runner.ts"),
-	path.join(runnersDirectory, "fourslash/fsrunner.ts"),
-	path.join(runnersDirectory, "projects/runner.ts"),
-	path.join(runnersDirectory, "unittest/unittestrunner.ts")
+	path.join(runnersDirectory, "runnerBase.ts"),
+	path.join(runnersDirectory, "compiler/compilerRunner.ts"),
+	path.join(runnersDirectory, "fourslash/fourslashRunner.ts"),
+	path.join(runnersDirectory, "projects/projectsRunner.ts"),
+	path.join(runnersDirectory, "unittest/unittestRunner.ts"),
+	path.join(runnersDirectory, "rwc/rwcRunner.ts"),
+
+	path.join(runnersDirectory, "../cases/unittests/samples/samples.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/callSignatureTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/classOverloads.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/constructSignatureTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/declarationTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/functionSignaturesTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/identifiers.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
 ];
 
 var libraryFiles = [
@@ -339,6 +354,10 @@ task("LKG", libraryTargets, function() {
 	for (i in expectedFiles) {
 		jake.cpR(expectedFiles[i], LKGDirectory);
 	}
+	//var resourceDirectories = fs.readdirSync(builtLocalResourcesDirectory).map(function(p) { return path.join(builtLocalResourcesDirectory, p); });
+	//resourceDirectories.map(function(d) {
+	//	jake.cpR(d, LKGResourcesDirectory);
+	//});
 });
 
 // Test directory
@@ -346,18 +365,31 @@ directory(builtTestDirectory);
 
 // Task to build the tests infrastructure using the built compiler
 var run = path.join(builtTestDirectory, "run.js");
-var json2 = path.join(harnessDirectory, "external/json2.js")
-compileFile(run, harnessSources, [builtTestDirectory, tscFile].concat(libraryTargets).concat(harnessSources), [json2], true);
+var json2 = path.join(harnessDirectory, "external/json2.js")   
+compileFile(run, harnessSources, [builtTestDirectory, tscFile].concat(libraryTargets).concat(harnessSources), [json2], true);  
+
 
 // Webharness
 var frontEndPath = "tests/cases/webharness/frontEnd.ts";
 var perfCompilerPath = "tests/cases/webharness/perfCompiler.js";
 compileFile(perfCompilerPath, [frontEndPath], [tscFile], [], true);
 
+// Webhost
+var webhostPath = "tests/cases/webhost/webtsc.ts";
+var webhostJsPath = "tests/cases/webhost/webtsc.js";
+desc("Builds the web host");
+compileFile(webhostJsPath, [webhostPath], [tscFile, webhostPath], [], true);
+
+desc("Builds the tsc web host");
+task("webhost", [webhostJsPath], function() {
+    jake.cpR(path.join(libraryDirectory, "lib.d.ts"), "tests/cases/webhost");
+});
+
 // Fidelity Tests
 var fidelityTestsOutFile = "tests/Fidelity/program.js";
-var fidelityTestsInFile = "tests/Fidelity/Program.ts";
-compileFile(fidelityTestsOutFile, [fidelityTestsInFile], [tscFile], [], true);
+var fidelityTestsInFile1 = "tests/Fidelity/Program.ts";
+var fidelityTestsInFile2 = "tests/Fidelity/incremental/IncrementalParserTests.ts";
+compileFile(fidelityTestsOutFile, [fidelityTestsInFile1], [tscFile, fidelityTestsInFile2].concat(compilerSources.concat(servicesSources)), [], true);
 
 desc("Builds the web harness front end");
 task("test-harness", [perfCompilerPath]);
@@ -365,11 +397,16 @@ task("test-harness", [perfCompilerPath]);
 var localBaseline = "tests/baselines/local/";
 var refBaseline = "tests/baselines/reference/";
 
+var localRwcBaseline = "tests/baselines/rwc/local/";
+var refRwcBaseline = "tests/baselines/rwc/reference/";
+
 desc("Builds the test infrastructure using the built compiler");
-task("tests", [run, serviceFile, perfCompilerPath, fidelityTestsOutFile].concat(libraryTargets), function() {	
+task("tests", [run, serviceFile, fidelityTestsOutFile, perfCompilerPath].concat(libraryTargets), function() {	
 	// Copy the language service over to the test directory
 	jake.cpR(serviceFile, builtTestDirectory);
-	jake.cpR(path.join(libraryDirectory, "lib.d.ts"), builtTestDirectory);	
+	jake.cpR(path.join(libraryDirectory, "lib.d.ts"), builtTestDirectory);
+
+	jake.cpR(path.join(libraryDirectory, "lib.d.ts"), "tests/cases/webhost");
 });
 
 desc("Runs the tests using the built run.js file. Syntax is jake runtests. Optional parameters 'host=' and 'tests='.");
@@ -378,11 +415,17 @@ task("runtests", ["local", "tests", builtTestDirectory], function() {
 	if (fs.existsSync(localBaseline)) {
 		jake.rmRf(localBaseline);
 	}
+
+    // Clean the local Rwc baselines directory
+	if (fs.existsSync(localRwcBaseline)) {
+		jake.rmRf(localRwcBaseline);
+	}
+
 	jake.mkdirP(localBaseline);
 	host = process.env.host || process.env.TYPESCRIPT_HOST || "node";
 	tests = process.env.test || process.env.tests;
 	tests = tests ? tests.split(',').join(' ') : ([].slice.call(arguments).join(' ') || "");
-	var cmd = host + " " + run + " " + tests;
+        var cmd = host + " " + run + " " + tests;
 	console.log(cmd);
 	var ex = jake.createExec([cmd]);
 	// Add listeners for output and error
@@ -403,15 +446,32 @@ task("tests-debug", ["setDebugMode", "tests"]);
 
 // Makes the test results the new baseline
 desc("Makes the most recent test results the new baseline, overwriting the old baseline");
-task("baseline-accept", function() {
-	jake.rmRf(refBaseline);
-	fs.renameSync(localBaseline, refBaseline);
+task("baseline-accept", function(hardOrSoft) {
+	if (!hardOrSoft || hardOrSoft == "hard") {
+		jake.rmRf(refBaseline);
+		fs.renameSync(localBaseline, refBaseline);
+	}
+	else if (hardOrSoft == "soft") {
+		var files = jake.readdirR(localBaseline);
+		for (var i in files) {
+			jake.cpR(files[i], refBaseline);
+		}
+		jake.rmRf(path.join(refBaseline, "local"));
+	}
 });
 
+desc("Makes the most recent rwc test results the new baseline, overwriting the old baseline");
+task("baseline-accept-rwc", function() {
+	jake.rmRf(refRwcBaseline);
+	fs.renameSync(localRwcBaseline, refRwcBaseline);
+});
+                                          
 // Syntax Generator
 var syntaxGeneratorOutFile = compilerDirectory + "syntax/SyntaxGenerator.js";
 var syntaxGeneratorInFile = compilerDirectory + "syntax/SyntaxGenerator.ts";
-compileFile(syntaxGeneratorOutFile, [syntaxGeneratorInFile], [tscFile], [], true);
+file(compilerDirectory + "syntax/syntaxKind.ts");
+file(compilerDirectory + "syntax/syntaxFacts.ts");
+compileFile(syntaxGeneratorOutFile, [syntaxGeneratorInFile], [syntaxGeneratorInFile, compilerDirectory + "syntax/syntaxKind.ts", compilerDirectory + "syntax/syntaxFacts.ts"], [], /*useBuiltCompiler:*/ false);
 
 desc("Builds and runs the syntax generator");
 task("run-syntax-generator", [syntaxGeneratorOutFile], function() {

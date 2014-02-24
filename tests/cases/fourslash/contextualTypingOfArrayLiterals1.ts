@@ -27,7 +27,6 @@
 ////var x5/*5*/ = [a, b, c, d];
 ////var r5/*6*/ = x5[1];
 
-// BUG 733715
 // the above code should have a couple errors that will need to be updated with appropriate new (non-error) code and quick info checks
 verify.not.errorExistsBetweenMarkers('1', '6');
 
@@ -44,7 +43,7 @@ goTo.marker('4');
 verify.quickInfoIs('C');
 
 goTo.marker('5');
-verify.quickInfoIs('C[]');
+verify.quickInfoIs('{ name: string; age: number; }[]');
 
 goTo.marker('6');
-verify.quickInfoIs('C');
+verify.quickInfoIs('{ name: string; age: number; }');

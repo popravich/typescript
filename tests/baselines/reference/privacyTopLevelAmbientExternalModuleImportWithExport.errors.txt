@@ -1,4 +1,8 @@
-privacyTopLevelAmbientExternalModuleImportWithExport.ts line 22 col 1: error TS2185: Exported import declaration 'im_public_mi_private' is assigned container that is or is using inaccessible module 'im_public_mi_private'.
-privacyTopLevelAmbientExternalModuleImportWithExport.ts line 23 col 1: error TS2185: Exported import declaration 'im_public_mu_private' is assigned container that is or is using inaccessible module 'im_public_mu_private'.
-privacyTopLevelAmbientExternalModuleImportWithExport.ts line 29 col 12: error TS2027: Exported variable 'publicUse_im_public_mi_private' has or is using private type 'im_public_mi_private.c_private'.
-privacyTopLevelAmbientExternalModuleImportWithExport.ts line 31 col 12: error TS2027: Exported variable 'publicUse_im_public_mu_private' has or is using private type 'im_public_mu_private.c_private'.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(4,1): error TS2071: Unable to resolve external module '"m"'.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(4,1): error TS2072: Module cannot be aliased to a non-module type.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(5,1): error TS2071: Unable to resolve external module '"m2"'.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(5,1): error TS2072: Module cannot be aliased to a non-module type.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(8,64): error TS2094: The property 'c_private' does not exist on value of type 'typeof im_public_mi_private'.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(9,70): error TS2094: The property 'c_private' does not exist on value of type 'typeof im_public_mi_private'.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(10,64): error TS2094: The property 'c_private' does not exist on value of type 'typeof im_public_mu_private'.
+privacyTopLevelAmbientExternalModuleImportWithExport_core.ts(11,70): error TS2094: The property 'c_private' does not exist on value of type 'typeof im_public_mu_private'.

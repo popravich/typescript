@@ -93,6 +93,9 @@ interface PropertyDescriptorMap {
 }
 
 interface Object {
+    /** The initial value of Object.prototype.constructor is the standard built-in Object constructor. */
+    constructor: Function; 
+
     /** Returns a string representation of an object. */
     toString(): string;
 
@@ -119,8 +122,6 @@ interface Object {
       * @param v A property name.
       */
     propertyIsEnumerable(v: string): boolean;
-
-    [s: string]: any;
 }
 
 /**
@@ -365,7 +366,7 @@ interface String {
       * @param end The index to the end of the specified portion of stringObj. The substring includes the characters up to, but not including, the character indicated by end. 
       * If this value is not specified, the substring continues to the end of stringObj.
       */
-    slice(start: number, end?: number): string;
+    slice(start?: number, end?: number): string;
 
     /**
       * Split a string into substrings using the specified separator and return them as an array.
@@ -413,6 +414,8 @@ interface String {
       * @param length The number of characters to include in the returned substring.
       */
     substr(from: number, length?: number): string;
+
+    [index: number]: string;
 }
 
 /** 
@@ -437,7 +440,7 @@ interface Number {
     toString(radix?: number): string;
     toFixed(fractionDigits?: number): string;
     toExponential(fractionDigits?: number): string;
-    toPrecision(precision: number): string;
+    toPrecision(precision?: number): string;
 }
 /** An object that represents a number of any kind. All JavaScript numbers are 64-bit floating-point numbers. */
 declare var Number: {
@@ -584,6 +587,7 @@ interface Date {
     toDateString(): string;
     /** Returns a time as a string value. */
     toTimeString(): string;
+    /** Returns a value as a string value appropriate to the host environment's current locale. */
     toLocaleString(): string;
     /** Returns a date as a string value appropriate to the host environment's current locale. */
     toLocaleDateString(): string;
@@ -631,44 +635,44 @@ interface Date {
       * Sets the date and time value in the Date object.
       * @param time A numeric value representing the number of elapsed milliseconds since midnight, January 1, 1970 GMT. 
       */
-    setTime(time: number): void;
+    setTime(time: number): number;
     /**
       * Sets the milliseconds value in the Date object using local time. 
       * @param ms A numeric value equal to the millisecond value.
       */
-    setMilliseconds(ms: number): void;
+    setMilliseconds(ms: number): number;
     /** 
       * Sets the milliseconds value in the Date object using Universal Coordinated Time (UTC).
       * @param ms A numeric value equal to the millisecond value. 
       */
-    setUTCMilliseconds(ms: number): void;
+    setUTCMilliseconds(ms: number): number;
 
     /**
       * Sets the seconds value in the Date object using local time. 
       * @param sec A numeric value equal to the seconds value.
       * @param ms A numeric value equal to the milliseconds value.
       */
-    setSeconds(sec: number, ms?: number): void;
+    setSeconds(sec: number, ms?: number): number;
     /**
       * Sets the seconds value in the Date object using Universal Coordinated Time (UTC).
       * @param sec A numeric value equal to the seconds value.
       * @param ms A numeric value equal to the milliseconds value.
       */
-    setUTCSeconds(sec: number, ms?: number): void;
+    setUTCSeconds(sec: number, ms?: number): number;
     /**
       * Sets the minutes value in the Date object using local time. 
       * @param min A numeric value equal to the minutes value. 
       * @param sec A numeric value equal to the seconds value. 
       * @param ms A numeric value equal to the milliseconds value.
       */
-    setMinutes(min: number, sec?: number, ms?: number): void;
+    setMinutes(min: number, sec?: number, ms?: number): number;
     /**
       * Sets the minutes value in the Date object using Universal Coordinated Time (UTC).
       * @param min A numeric value equal to the minutes value. 
       * @param sec A numeric value equal to the seconds value. 
       * @param ms A numeric value equal to the milliseconds value.
       */
-    setUTCMinutes(min: number, sec?: number, ms?: number): void;
+    setUTCMinutes(min: number, sec?: number, ms?: number): number;
     /**
       * Sets the hour value in the Date object using local time.
       * @param hours A numeric value equal to the hours value.
@@ -676,7 +680,7 @@ interface Date {
       * @param sec A numeric value equal to the seconds value. 
       * @param ms A numeric value equal to the milliseconds value.
       */
-    setHours(hours: number, min?: number, sec?: number, ms?: number): void;
+    setHours(hours: number, min?: number, sec?: number, ms?: number): number;
     /**
       * Sets the hours value in the Date object using Universal Coordinated Time (UTC).
       * @param hours A numeric value equal to the hours value.
@@ -684,48 +688,48 @@ interface Date {
       * @param sec A numeric value equal to the seconds value. 
       * @param ms A numeric value equal to the milliseconds value.
       */
-    setUTCHours(hours: number, min?: number, sec?: number, ms?: number): void;
+    setUTCHours(hours: number, min?: number, sec?: number, ms?: number): number;
     /**
       * Sets the numeric day-of-the-month value of the Date object using local time. 
       * @param date A numeric value equal to the day of the month.
       */
-    setDate(date: number): void;
+    setDate(date: number): number;
     /** 
       * Sets the numeric day of the month in the Date object using Universal Coordinated Time (UTC).
       * @param date A numeric value equal to the day of the month. 
       */
-    setUTCDate(date: number): void;
+    setUTCDate(date: number): number;
     /** 
       * Sets the month value in the Date object using local time. 
       * @param month A numeric value equal to the month. The value for January is 0, and other month values follow consecutively. 
       * @param date A numeric value representing the day of the month. If this value is not supplied, the value from a call to the getDate method is used.
       */
-    setMonth(month: number, date?: number): void;
+    setMonth(month: number, date?: number): number;
     /**
       * Sets the month value in the Date object using Universal Coordinated Time (UTC).
       * @param month A numeric value equal to the month. The value for January is 0, and other month values follow consecutively.
       * @param date A numeric value representing the day of the month. If it is not supplied, the value from a call to the getUTCDate method is used.
       */
-    setUTCMonth(month: number, date?: number): void;
+    setUTCMonth(month: number, date?: number): number;
     /**
       * Sets the year of the Date object using local time.
       * @param year A numeric value for the year.
       * @param month A zero-based numeric value for the month (0 for January, 11 for December). Must be specified if numDate is specified.
       * @param date A numeric value equal for the day of the month.
       */
-    setFullYear(year: number, month?: number, date?: number): void;
+    setFullYear(year: number, month?: number, date?: number): number;
     /**
       * Sets the year value in the Date object using Universal Coordinated Time (UTC).
       * @param year A numeric value equal to the year.
       * @param month A numeric value equal to the month. The value for January is 0, and other month values follow consecutively. Must be supplied if numDate is supplied.
       * @param date A numeric value equal to the day of the month.
       */
-    setUTCFullYear(year: number, month?: number, date?: number): void;
+    setUTCFullYear(year: number, month?: number, date?: number): number;
     /** Returns a date converted to a string using Universal Coordinated Time (UTC). */
     toUTCString(): string;
     /** Returns a date as a string value in ISO format. */
     toISOString(): string;
-    /** Used by the JSON.stringify method to enable the transformation of an object's data for JavaScript Object Notation (JSON) serialization. */ 
+    /** Used by the JSON.stringify method to enable the transformation of an object's data for JavaScript Object Notation (JSON) serialization. */
     toJSON(key?: any): string;
 }
 /**
@@ -772,7 +776,7 @@ interface RegExpExecArray {
     push(...items: string[]): number;
     reverse(): string[];
     shift(): string;
-    slice(start: number, end?: number): string[];
+    slice(start?: number, end?: number): string[];
     sort(compareFn?: (a: string, b: string) => number): string[];
     splice(start: number): string[];
     splice(start: number, deleteCount: number, ...items: string[]): string[];
@@ -949,7 +953,7 @@ interface Array<T> {
     push(...items: T[]): number;
     reverse(): T[];
     shift(): T;
-    slice(start: number, end?: number): T[];
+    slice(start?: number, end?: number): T[];
     sort(compareFn?: (a: T, b: T) => number): T[];
     splice(start: number): T[];
     splice(start: number, deleteCount: number, ...items: T[]): T[];
@@ -972,10 +976,142 @@ interface Array<T> {
     [n: number]: T;
 }
 declare var Array: {
+    new(arrayLength?: number): any[];
     new <T>(arrayLength: number): T[];
     new <T>(...items: T[]): T[];
+    (arrayLength?: number): any[];
     <T>(arrayLength: number): T[];
     <T>(...items: T[]): T[];
     isArray(arg: any): boolean;
     prototype: Array<any>;
+}
+
+declare module Intl {
+
+    interface CollatorOptions {
+        usage?: string;
+        localeMatcher?: string;
+        numeric?: boolean;
+        caseFirst?: string;
+        sensitivity?: string;
+        ignorePunctuation?: boolean;
+    }
+
+    interface ResolvedCollatorOptions {
+        locale: string;
+        usage: string;
+        sensitivity: string;
+        ignorePunctuation: boolean;
+        collation: string;
+        caseFirst: string;
+        numeric: boolean;
+    }
+
+    interface Collator {
+        compare(x: string, y: string): number;
+        resolvedOptions(): ResolvedCollatorOptions;
+    }
+    var Collator: {
+        new (locales?: string[], options?: CollatorOptions): Collator;
+        new (locale?: string, options?: CollatorOptions): Collator;
+        (locales?: string[], options?: CollatorOptions): Collator;
+        (locale?: string, options?: CollatorOptions): Collator;
+        supportedLocalesOf(locales: string[], options?: CollatorOptions): string[];
+        supportedLocalesOf(locale: string, options?: CollatorOptions): string[];
+    }
+
+    interface NumberFormatOptions {
+        localeMatcher?: string;
+        style?: string;
+        currency?: string;
+        currencyDisplay?: string;
+        useGrouping?: boolean;
+    }
+
+    interface ResolvedNumberFormatOptions {
+        locale: string;
+        numberingSystem: string;
+        style: string;
+        currency?: string;
+        currencyDisplay?: string;
+        minimumintegerDigits: number;
+        minimumFractionDigits: number;
+        maximumFractionDigits: number;
+        minimumSignificantDigits?: number;
+        maximumSignificantDigits?: number;
+        useGrouping: boolean;
+    }
+
+    interface NumberFormat {
+        format(value: number): string;
+        resolvedOptions(): ResolvedNumberFormatOptions;
+    }
+    var NumberFormat: {
+        new (locales?: string[], options?: NumberFormatOptions): Collator;
+        new (locale?: string, options?: NumberFormatOptions): Collator;
+        (locales?: string[], options?: NumberFormatOptions): Collator;
+        (locale?: string, options?: NumberFormatOptions): Collator;
+        supportedLocalesOf(locales: string[], options?: NumberFormatOptions): string[];
+        supportedLocalesOf(locale: string, options?: NumberFormatOptions): string[];
+    }
+
+    interface DateTimeFormatOptions {
+        localeMatcher?: string;
+        weekday?: string;
+        era?: string;
+        year?: string;
+        month?: string;
+        day?: string;
+        hour?: string;
+        minute?: string;
+        second?: string;
+        timeZoneName?: string;
+        formatMatcher?: string;
+        hour12: boolean;
+    }
+
+    interface ResolvedDateTimeFormatOptions {
+        locale: string;
+        calendar: string;
+        numberingSystem: string;
+        timeZone: string;
+        hour12?: boolean;
+        weekday?: string;
+        era?: string;
+        year?: string;
+        month?: string;
+        day?: string;
+        hour?: string;
+        minute?: string;
+        second?: string;
+        timeZoneName?: string;
+    }
+
+    interface DateTimeFormat {
+        format(date: number): string;
+        resolvedOptions(): ResolvedDateTimeFormatOptions;
+    }
+    var DateTimeFormat: {
+        new (locales?: string[], options?: DateTimeFormatOptions): Collator;
+        new (locale?: string, options?: DateTimeFormatOptions): Collator;
+        (locales?: string[], options?: DateTimeFormatOptions): Collator;
+        (locale?: string, options?: DateTimeFormatOptions): Collator;
+        supportedLocalesOf(locales: string[], options?: DateTimeFormatOptions): string[];
+        supportedLocalesOf(locale: string, options?: DateTimeFormatOptions): string[];
+    }
+}
+
+interface String {
+    localeCompare(that: string, locales: string[], options?: Intl.CollatorOptions): number;
+    localeCompare(that: string, locale: string, options?: Intl.CollatorOptions): number;
+}
+
+interface Number {
+    toLocaleString(locales?: string[], options?: Intl.NumberFormatOptions): string;
+    toLocaleString(locale?: string, options?: Intl.NumberFormatOptions): string;
+}
+
+interface Date {
+    toLocaleString(locales?: string[], options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locale?: string, options?: Intl.DateTimeFormatOptions): string;
 }

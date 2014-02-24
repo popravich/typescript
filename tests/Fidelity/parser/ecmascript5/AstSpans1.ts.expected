@@ -1181,7 +1181,7 @@
                 },
                 "heritageClauses": [
                     {
-                        "kind": "HeritageClause",
+                        "kind": "ImplementsHeritageClause",
                         "fullWidth": 14,
                         "extendsOrImplementsKeyword": {
                             "kind": "ImplementsKeyword",
@@ -1264,7 +1264,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 13,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 5,
                                 "text": "i1_p1",
@@ -1455,7 +1455,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 17,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 5,
                                 "text": "i1_l1",
@@ -1582,7 +1582,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 16,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 8,
                                 "text": "i1_nc_p1",
@@ -1773,7 +1773,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 20,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 8,
                                 "text": "i1_nc_l1",
@@ -1914,7 +1914,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 10,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 2,
                                 "text": "p1",
@@ -2133,7 +2133,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 14,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 2,
                                 "text": "l1",
@@ -2274,7 +2274,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 13,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 5,
                                 "text": "nc_p1",
@@ -2493,7 +2493,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 17,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 5,
                                 "text": "nc_l1",
@@ -2634,7 +2634,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 8,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 4,
                                 "text": "i1_i",
@@ -3257,7 +3257,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 15,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 4,
                                 "fullWidth": 5,
@@ -4621,7 +4621,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 13,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 5,
                                 "text": "c2_p1",
@@ -4797,7 +4797,7 @@
                         }
                     },
                     {
-                        "kind": "GetMemberAccessorDeclaration",
+                        "kind": "GetAccessor",
                         "fullWidth": 77,
                         "modifiers": [
                             {
@@ -5011,7 +5011,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 16,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 8,
                                 "text": "c2_nc_p1",
@@ -5173,7 +5173,7 @@
                         }
                     },
                     {
-                        "kind": "GetMemberAccessorDeclaration",
+                        "kind": "GetAccessor",
                         "fullWidth": 58,
                         "modifiers": [
                             {
@@ -5387,7 +5387,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 10,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 2,
                                 "text": "p1",
@@ -5563,7 +5563,7 @@
                         }
                     },
                     {
-                        "kind": "GetMemberAccessorDeclaration",
+                        "kind": "GetAccessor",
                         "fullWidth": 71,
                         "modifiers": [
                             {
@@ -5777,7 +5777,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 13,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 5,
                                 "text": "nc_p1",
@@ -5939,7 +5939,7 @@
                         }
                     },
                     {
-                        "kind": "GetMemberAccessorDeclaration",
+                        "kind": "GetAccessor",
                         "fullWidth": 55,
                         "modifiers": [
                             {
@@ -6112,6 +6112,7 @@
                     {
                         "kind": "ConstructorDeclaration",
                         "fullWidth": 88,
+                        "modifiers": [],
                         "constructorKeyword": {
                             "kind": "ConstructorKeyword",
                             "width": 11,
@@ -6141,69 +6142,74 @@
                                 }
                             ]
                         },
-                        "parameterList": {
-                            "kind": "ParameterList",
+                        "callSignature": {
+                            "kind": "CallSignature",
                             "fullWidth": 12,
-                            "openParenToken": {
-                                "kind": "OpenParenToken",
-                                "width": 1,
-                                "text": "(",
-                                "value": "(",
-                                "valueText": "("
-                            },
-                            "parameters": [
-                                {
-                                    "kind": "Parameter",
-                                    "fullWidth": 9,
-                                    "identifier": {
-                                        "kind": "IdentifierName",
-                                        "width": 1,
-                                        "text": "a",
-                                        "value": "a",
-                                        "valueText": "a"
-                                    },
-                                    "typeAnnotation": {
-                                        "kind": "TypeAnnotation",
-                                        "fullWidth": 8,
-                                        "colonToken": {
-                                            "kind": "ColonToken",
+                            "parameterList": {
+                                "kind": "ParameterList",
+                                "fullWidth": 12,
+                                "openParenToken": {
+                                    "kind": "OpenParenToken",
+                                    "width": 1,
+                                    "text": "(",
+                                    "value": "(",
+                                    "valueText": "("
+                                },
+                                "parameters": [
+                                    {
+                                        "kind": "Parameter",
+                                        "fullWidth": 9,
+                                        "modifiers": [],
+                                        "identifier": {
+                                            "kind": "IdentifierName",
                                             "width": 1,
-                                            "fullWidth": 2,
-                                            "text": ":",
-                                            "value": ":",
-                                            "valueText": ":",
-                                            "hasTrailingTrivia": true,
-                                            "trailingTrivia": [
-                                                {
-                                                    "kind": "WhitespaceTrivia",
-                                                    "text": " "
-                                                }
-                                            ]
+                                            "text": "a",
+                                            "value": "a",
+                                            "valueText": "a"
                                         },
-                                        "type": {
-                                            "kind": "NumberKeyword",
-                                            "width": 6,
-                                            "text": "number",
-                                            "value": "number",
-                                            "valueText": "number"
+                                        "typeAnnotation": {
+                                            "kind": "TypeAnnotation",
+                                            "fullWidth": 8,
+                                            "colonToken": {
+                                                "kind": "ColonToken",
+                                                "width": 1,
+                                                "fullWidth": 2,
+                                                "text": ":",
+                                                "value": ":",
+                                                "valueText": ":",
+                                                "hasTrailingTrivia": true,
+                                                "trailingTrivia": [
+                                                    {
+                                                        "kind": "WhitespaceTrivia",
+                                                        "text": " "
+                                                    }
+                                                ]
+                                            },
+                                            "type": {
+                                                "kind": "NumberKeyword",
+                                                "width": 6,
+                                                "text": "number",
+                                                "value": "number",
+                                                "valueText": "number"
+                                            }
                                         }
                                     }
+                                ],
+                                "closeParenToken": {
+                                    "kind": "CloseParenToken",
+                                    "width": 1,
+                                    "fullWidth": 2,
+                                    "text": ")",
+                                    "value": ")",
+                                    "valueText": ")",
+                                    "hasTrailingTrivia": true,
+                                    "trailingTrivia": [
+                                        {
+                                            "kind": "WhitespaceTrivia",
+                                            "text": " "
+                                        }
+                                    ]
                                 }
-                            ],
-                            "closeParenToken": {
-                                "kind": "CloseParenToken",
-                                "width": 1,
-                                "fullWidth": 2,
-                                "text": ")",
-                                "value": ")",
-                                "valueText": ")",
-                                "hasTrailingTrivia": true,
-                                "trailingTrivia": [
-                                    {
-                                        "kind": "WhitespaceTrivia",
-                                        "text": " "
-                                    }
-                                ]
                             }
                         },
                         "block": {
@@ -6393,7 +6399,7 @@
                 },
                 "heritageClauses": [
                     {
-                        "kind": "HeritageClause",
+                        "kind": "ExtendsHeritageClause",
                         "fullWidth": 11,
                         "extendsOrImplementsKeyword": {
                             "kind": "ExtendsKeyword",
@@ -6449,6 +6455,7 @@
                     {
                         "kind": "ConstructorDeclaration",
                         "fullWidth": 80,
+                        "modifiers": [],
                         "constructorKeyword": {
                             "kind": "ConstructorKeyword",
                             "width": 11,
@@ -6464,31 +6471,35 @@
                                 }
                             ]
                         },
-                        "parameterList": {
-                            "kind": "ParameterList",
+                        "callSignature": {
+                            "kind": "CallSignature",
                             "fullWidth": 3,
-                            "openParenToken": {
-                                "kind": "OpenParenToken",
-                                "width": 1,
-                                "text": "(",
-                                "value": "(",
-                                "valueText": "("
-                            },
-                            "parameters": [],
-                            "closeParenToken": {
-                                "kind": "CloseParenToken",
-                                "width": 1,
-                                "fullWidth": 2,
-                                "text": ")",
-                                "value": ")",
-                                "valueText": ")",
-                                "hasTrailingTrivia": true,
-                                "trailingTrivia": [
-                                    {
-                                        "kind": "WhitespaceTrivia",
-                                        "text": " "
-                                    }
-                                ]
+                            "parameterList": {
+                                "kind": "ParameterList",
+                                "fullWidth": 3,
+                                "openParenToken": {
+                                    "kind": "OpenParenToken",
+                                    "width": 1,
+                                    "text": "(",
+                                    "value": "(",
+                                    "valueText": "("
+                                },
+                                "parameters": [],
+                                "closeParenToken": {
+                                    "kind": "CloseParenToken",
+                                    "width": 1,
+                                    "fullWidth": 2,
+                                    "text": ")",
+                                    "value": ")",
+                                    "valueText": ")",
+                                    "hasTrailingTrivia": true,
+                                    "trailingTrivia": [
+                                        {
+                                            "kind": "WhitespaceTrivia",
+                                            "text": " "
+                                        }
+                                    ]
+                                }
                             }
                         },
                         "block": {
@@ -6752,7 +6763,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 10,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 2,
                                 "text": "p1",
@@ -6928,7 +6939,7 @@
                         }
                     },
                     {
-                        "kind": "GetMemberAccessorDeclaration",
+                        "kind": "GetAccessor",
                         "fullWidth": 71,
                         "modifiers": [
                             {
@@ -7142,7 +7153,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 13,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 5,
                                 "text": "nc_p1",
@@ -7304,7 +7315,7 @@
                         }
                     },
                     {
-                        "kind": "GetMemberAccessorDeclaration",
+                        "kind": "GetAccessor",
                         "fullWidth": 55,
                         "modifiers": [
                             {
@@ -7518,7 +7529,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 17,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 4,
                                 "fullWidth": 5,
@@ -7651,7 +7662,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 15,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 4,
                                 "fullWidth": 5,
@@ -8676,7 +8687,7 @@
                 },
                 "heritageClauses": [
                     {
-                        "kind": "HeritageClause",
+                        "kind": "ExtendsHeritageClause",
                         "fullWidth": 11,
                         "extendsOrImplementsKeyword": {
                             "kind": "ExtendsKeyword",
@@ -8771,7 +8782,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 17,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 4,
                                 "fullWidth": 5,
@@ -10087,7 +10098,7 @@
                 },
                 "heritageClauses": [
                     {
-                        "kind": "HeritageClause",
+                        "kind": "ExtendsHeritageClause",
                         "fullWidth": 11,
                         "extendsOrImplementsKeyword": {
                             "kind": "ExtendsKeyword",
@@ -10734,7 +10745,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 8,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 4,
                                 "text": "i2_i",
@@ -10813,7 +10824,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 8,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 4,
                                 "text": "i3_i",
@@ -12670,7 +12681,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 9,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 1,
                                 "text": "b",
@@ -12775,7 +12786,7 @@
                 },
                 "heritageClauses": [
                     {
-                        "kind": "HeritageClause",
+                        "kind": "ExtendsHeritageClause",
                         "fullWidth": 11,
                         "extendsOrImplementsKeyword": {
                             "kind": "ExtendsKeyword",
@@ -12858,7 +12869,7 @@
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
                             "fullWidth": 1,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 1,
                                 "text": "d",
@@ -12886,6 +12897,7 @@
                     {
                         "kind": "ConstructorDeclaration",
                         "fullWidth": 73,
+                        "modifiers": [],
                         "constructorKeyword": {
                             "kind": "ConstructorKeyword",
                             "width": 11,
@@ -12901,31 +12913,35 @@
                                 }
                             ]
                         },
-                        "parameterList": {
-                            "kind": "ParameterList",
+                        "callSignature": {
+                            "kind": "CallSignature",
                             "fullWidth": 3,
-                            "openParenToken": {
-                                "kind": "OpenParenToken",
-                                "width": 1,
-                                "text": "(",
-                                "value": "(",
-                                "valueText": "("
-                            },
-                            "parameters": [],
-                            "closeParenToken": {
-                                "kind": "CloseParenToken",
-                                "width": 1,
-                                "fullWidth": 2,
-                                "text": ")",
-                                "value": ")",
-                                "valueText": ")",
-                                "hasTrailingTrivia": true,
-                                "trailingTrivia": [
-                                    {
-                                        "kind": "WhitespaceTrivia",
-                                        "text": " "
-                                    }
-                                ]
+                            "parameterList": {
+                                "kind": "ParameterList",
+                                "fullWidth": 3,
+                                "openParenToken": {
+                                    "kind": "OpenParenToken",
+                                    "width": 1,
+                                    "text": "(",
+                                    "value": "(",
+                                    "valueText": "("
+                                },
+                                "parameters": [],
+                                "closeParenToken": {
+                                    "kind": "CloseParenToken",
+                                    "width": 1,
+                                    "fullWidth": 2,
+                                    "text": ")",
+                                    "value": ")",
+                                    "valueText": ")",
+                                    "hasTrailingTrivia": true,
+                                    "trailingTrivia": [
+                                        {
+                                            "kind": "WhitespaceTrivia",
+                                            "text": " "
+                                        }
+                                    ]
+                                }
                             }
                         },
                         "block": {

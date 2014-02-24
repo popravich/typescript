@@ -1,5 +1,3 @@
-
-
 var RM = (function () {
     function RM() {
     }
@@ -17,4 +15,3 @@ var RM = (function () {
     return RM;
 })();
 exports.RM = RM;
-

@@ -1,13 +1,5 @@
 /// <reference path='fourslash.ts' />
 
-//lib.d.ts
-////interface Number {
-////    toString(radix?: number): string;
-////    toFixed(fractionDigits?: number): string;
-////    toExponential(fractionDigits?: number): string;
-////    toPrecision(precision: number): string;
-////}
-
 ////enum Foo {
 ////    bar,
 ////    baz
@@ -24,14 +16,9 @@ verify.memberListCount(2);
 
 
 goTo.marker('typeReference');
-verify.memberListContains("bar");
-verify.memberListContains("baz");
-verify.memberListCount(2);
-
+verify.memberListCount(0);
 
 goTo.marker('enumValueReference');
 verify.memberListContains("toString");
 verify.memberListContains("toFixed");
-verify.memberListCount(4);
-
-
+verify.memberListCount(5);

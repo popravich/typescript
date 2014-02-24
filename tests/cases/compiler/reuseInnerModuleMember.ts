@@ -1,15 +1,14 @@
-declare module 'foo' { }
+//@module: commonjs
+// @Filename: reuseInnerModuleMember_0.ts
+export module M { }
 
+// @Filename: reuseInnerModuleMember_1.ts
+///<reference path='reuseInnerModuleMember_0.ts'/>
 declare module bar {
-
-  interface alpha {}
-
+    interface alpha { }
 }
- 
-import f = require('foo');
 
+import f = require('reuseInnerModuleMember_0');
 module bar {
-
-  var x: alpha;
-
+    var x: alpha;
 }

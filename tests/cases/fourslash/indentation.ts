@@ -146,7 +146,7 @@
 ////
 ////
 ////class indentBeforeCurly 
-////{| "indent": 4 |} 
+////{| "indent": 0 |} 
 ////{| "indent": 0 |}{
 ////{| "indent": 4 |} 
 ////}
@@ -154,17 +154,30 @@
 ////
 ////function argumentsListIndentation(bar,
 ////             blah,
-////{| "indent": 13 |} 
+////{| "indent": 0 |} 
 ////);
+////
+////
+////function blockIndentAfterIndentedParameter1(bar,
+////             blah) {
+////{| "indent": 4 |} 
+////}
+////
+////
+////function blockIndentAfterIndentedParameter2(bar,
+////             blah) {
+////    if (foo) {
+////{| "indent": 8 |} 
+////    }
+////}
 ////
 ////
 ////// Note: Do not add more tests at the end of this file, as
 //////       the purpose of this test is to verity smart indent
 //////       works for unterminated function arguments at the end of a file.
 ////function unterminatedListIndentation(a,
-////{| "indent": 4 |} 
+////{| "indent": 0 |} 
 
-// BUG 732678
-//test.markers().forEach((marker) => {
-//        verify.indentationAtPositionIs('file_0.ts', marker.position, marker.data.indent);
-//    });
+test.markers().forEach((marker) => {
+        verify.indentationAtPositionIs('tests/cases/fourslash/indentation.ts', marker.position, marker.data.indent);
+    });

@@ -52,6 +52,7 @@
                             {
                                 "kind": "Parameter",
                                 "fullWidth": 24,
+                                "modifiers": [],
                                 "identifier": {
                                     "kind": "IdentifierName",
                                     "width": 1,
@@ -94,6 +95,7 @@
                                                 {
                                                     "kind": "Parameter",
                                                     "fullWidth": 9,
+                                                    "modifiers": [],
                                                     "identifier": {
                                                         "kind": "IdentifierName",
                                                         "width": 1,
@@ -333,7 +335,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 29,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 1,
                                 "fullWidth": 2,
@@ -386,6 +388,7 @@
                                                 {
                                                     "kind": "Parameter",
                                                     "fullWidth": 9,
+                                                    "modifiers": [],
                                                     "identifier": {
                                                         "kind": "IdentifierName",
                                                         "width": 1,
@@ -453,7 +456,7 @@
                                             }
                                         ]
                                     },
-                                    "body": {
+                                    "expression": {
                                         "kind": "AddExpression",
                                         "fullWidth": 10,
                                         "left": {
@@ -542,7 +545,7 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullWidth": 11,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 1,
                                 "fullWidth": 2,
@@ -624,7 +627,7 @@
                                             }
                                         ]
                                     },
-                                    "body": {
+                                    "expression": {
                                         "kind": "IdentifierName",
                                         "width": 1,
                                         "text": "g",
@@ -784,7 +787,7 @@
                                         }
                                     ]
                                 },
-                                "body": {
+                                "expression": {
                                     "kind": "IdentifierName",
                                     "width": 1,
                                     "text": "g",

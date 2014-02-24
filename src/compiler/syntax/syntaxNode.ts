@@ -77,11 +77,13 @@ module TypeScript {
         }
 
         public leadingTrivia(): ISyntaxTriviaList {
-            return this.firstToken().leadingTrivia();
+            var firstToken = this.firstToken();
+            return firstToken ? firstToken.leadingTrivia() : Syntax.emptyTriviaList;
         }
 
         public trailingTrivia(): ISyntaxTriviaList {
-            return this.lastToken().trailingTrivia();
+            var lastToken = this.lastToken();
+            return lastToken ? lastToken.trailingTrivia() : Syntax.emptyTriviaList;
         }
 
         public toJSON(key: any): any {
@@ -98,12 +100,13 @@ module TypeScript {
                 result.parsedInStrictMode = true;
             }
 
+            var thisAsIndexable: IIndexable<any> = <any>this;
             for (var i = 0, n = this.childCount(); i < n; i++) {
                 var value = this.childAt(i);
 
                 if (value) {
                     for (var name in this) {
-                        if (value === this[name]) {
+                        if (value === thisAsIndexable[name]) {
                             result[name] = value;
                             break;
                         }
@@ -339,6 +342,10 @@ module TypeScript {
         }
 
         public isStatement(): boolean {
+            return false;
+        }
+
+        public isExpression(): boolean {
             return false;
         }
 

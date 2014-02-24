@@ -2,7 +2,7 @@
 /// <reference path="../../src/harness/harness.ts" />
 
 class RunnerBase {
-    constructor(public testType?: string) { }
+    constructor() { }
 
     // contains the tests to run
     public tests: string[] = [];
@@ -12,14 +12,28 @@ class RunnerBase {
         this.tests.push(fileName);
     }
 
-    public enumerateFiles(folder: string, recursive: boolean = false): string[] {
-        return IO.dir(Harness.userSpecifiedroot + folder, /\.ts$/);
+    public enumerateFiles(folder: string, options?: { recursive: boolean }): string[] {
+        return TypeScript.IO.dir(Harness.userSpecifiedroot + folder, /\.ts$/, { recursive: (options ? options.recursive : false) });
     }
 
     /** Setup the runner's tests so that they are ready to be executed by the harness 
      *  The first test should be a describe/it block that sets up the harness's compiler instance appropriately
      */
     public initializeTests(): void {
-        throw new Error('run method not implemented');
+        throw new Error('method not implemented');
+    }
+
+    public _getDiagnosticText(diagnostic: TypeScript.Diagnostic): string {
+        return RunnerBase.removeFullPaths(TypeScript.TypeScriptCompiler.getFullDiagnosticText(diagnostic));
+    }
+
+    /** Replaces instances of full paths with filenames only */
+    static removeFullPaths(path: string) {
+        var fullPath = /(\w+:)?(\/|\\)([\w+\-\.]|\/)*\.ts/g;
+        var fullPathList = path.match(fullPath);
+        if (fullPathList) {
+            fullPathList.forEach((match: string) => path = path.replace(match, Harness.getFileName(match)));
+        }
+        return path;
     }
 }

@@ -1,4 +1,6 @@
+//@module: amd
 // @declaration: true
+
 /*
     Prefixes
     p -> public
@@ -12,7 +14,6 @@
 
     MAX DEPTH 3 LEVELS
 */
-
 var V;
 function F() { };
 class C {

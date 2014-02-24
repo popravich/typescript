@@ -15,7 +15,7 @@
 
 ///<reference path='typescriptServices.ts' />
 
-module Services {
+module TypeScript.Services {
 
     export interface IScriptSnapshotShim {
         // Get's a portion of the script snapshot specified by [start, end).  
@@ -52,7 +52,7 @@ module Services {
         fileExists(path: string): boolean;
         directoryExists(path: string): boolean;
         getParentDirectory(path: string): string;
-        getDiagnosticsObject(): Services.ILanguageServicesDiagnostics;
+        getDiagnosticsObject(): TypeScript.Services.ILanguageServicesDiagnostics;
         getLocalizedDiagnosticMessages(): string;
     }
 
@@ -78,14 +78,17 @@ module Services {
     }
 
     export interface ILanguageServiceShim extends IShim {
-        languageService: Services.ILanguageService;
+        languageService: TypeScript.Services.ILanguageService;
 
         dispose(dummy: any): void;
 
         refresh(throwOnError: boolean): void;
-        
+
+        cleanupSemanticCache(): void;
+
         getSyntacticDiagnostics(fileName: string): string;
         getSemanticDiagnostics(fileName: string): string;
+        getCompilerOptionsDiagnostics(): string;
 
         getCompletionsAtPosition(fileName: string, position: number, isMemberCompletion: boolean): string;
         getCompletionEntryDetails(fileName: string, position: number, entryName: string): string;
@@ -170,7 +173,7 @@ module Services {
         }
     }
 
-    export class LanguageServiceShimHostAdapter implements Services.ILanguageServiceHost {
+    export class LanguageServiceShimHostAdapter implements TypeScript.Services.ILanguageServiceHost {
         constructor(private shimHost: ILanguageServiceShimHost) {
         }
 
@@ -224,7 +227,7 @@ module Services {
             return this.shimHost.getScriptIsOpen(fileName);
         }
 
-        public getScriptByteOrderMark(fileName: string): ByteOrderMark {
+        public getScriptByteOrderMark(fileName: string): TypeScript.ByteOrderMark {
             return this.shimHost.getScriptByteOrderMark(fileName);
         }
 
@@ -286,8 +289,8 @@ module Services {
             return JSON.stringify({ result: result });
         }
         catch (err) {
-            Services.logInternalError(logger, err);
-            //throw err; //TODO: Remove this!
+            TypeScript.Services.logInternalError(logger, err);
+            err.description = actionDescription;
             return JSON.stringify({ error: err });
         }
     }
@@ -297,13 +300,13 @@ module Services {
 
         constructor(factory: IShimFactory,
                     private host: ILanguageServiceShimHost,
-                    public languageService: Services.ILanguageService) {
+                    public languageService: TypeScript.Services.ILanguageService) {
             super(factory);
             this.logger = this.host;
         }
 
         public forwardJSONCall(actionDescription: string, action: () =>any): string {
-            return Services.forwardJSONCall(this.logger, actionDescription, action);
+            return TypeScript.Services.forwardJSONCall(this.logger, actionDescription, action);
         }
 
         // DISPOSE
@@ -335,6 +338,14 @@ module Services {
                 });
         }
 
+        public cleanupSemanticCache(): void {
+            this.forwardJSONCall(
+                "cleanupSemanticCache()",
+                () => {
+                    this.languageService.cleanupSemanticCache();
+                    return <any>null;
+                });
+        }
         /// SQUIGGLES
         ///
 
@@ -356,7 +367,17 @@ module Services {
                 message: diagnostic.text(),
                 start: diagnostic.start(),
                 length: diagnostic.length(),
-                category: LanguageServiceShim.realizeDiagnosticCategory(TypeScript.getDiagnosticInfoFromKey(diagnostic.diagnosticKey()).category)
+                category: LanguageServiceShim.realizeDiagnosticCategory(diagnostic.info().category)
+            };
+        }
+
+        private realizeDiagnosticWithFileName(diagnostic: TypeScript.Diagnostic): { fileName: string; message: string; start: number; length: number; category: string; } {
+            return {
+                fileName:diagnostic.fileName(),
+                message: diagnostic.text(),
+                start: diagnostic.start(),
+                length: diagnostic.length(),
+                category: LanguageServiceShim.realizeDiagnosticCategory(diagnostic.info().category)
             };
         }
 
@@ -375,6 +396,15 @@ module Services {
                 () => {
                     var errors = this.languageService.getSemanticDiagnostics(fileName);
                     return errors.map(LanguageServiceShim.realizeDiagnostic);
+                });
+        }
+
+        public getCompilerOptionsDiagnostics(): string {
+            return this.forwardJSONCall(
+                "getCompilerOptionsDiagnostics()",
+                () => {
+                    var errors = this.languageService.getCompilerOptionsDiagnostics();
+                    return errors.map(d => this.realizeDiagnosticWithFileName(d))
                 });
         }
 
@@ -451,7 +481,7 @@ module Services {
             return this.forwardJSONCall(
                 "getIndentationAtPosition(\"" + fileName + "\", " + position + ")",
                 () => {
-                    var localOptions: Services.EditorOptions = JSON.parse(options);
+                    var localOptions: TypeScript.Services.EditorOptions = JSON.parse(options);
                     var columnOffset = this.languageService.getIndentationAtPosition(fileName, position, localOptions);
                     return { value: columnOffset };
                 });
@@ -515,7 +545,7 @@ module Services {
             return this.forwardJSONCall(
                 "getFormattingEditsForRange(\"" + fileName + "\", " + minChar + ", " + limChar + ")",
                 () => {
-                    var localOptions: Services.FormatCodeOptions = JSON.parse(options);
+                    var localOptions: TypeScript.Services.FormatCodeOptions = JSON.parse(options);
                     var edits = this.languageService.getFormattingEditsForRange(fileName, minChar, limChar, localOptions);
                     return edits;
                 });
@@ -526,7 +556,7 @@ module Services {
             return this.forwardJSONCall(
                 "getFormattingEditsForDocument(\"" + fileName + "\", " + minChar + ", " + limChar + ")",
                 () => {
-                    var localOptions: Services.FormatCodeOptions = JSON.parse(options);
+                    var localOptions: TypeScript.Services.FormatCodeOptions = JSON.parse(options);
                     var edits = this.languageService.getFormattingEditsForDocument(fileName, minChar, limChar, localOptions);
                     return edits;
                 });
@@ -537,7 +567,7 @@ module Services {
             return this.forwardJSONCall(
                 "getFormattingEditsOnPaste(\"" + fileName + "\", " + minChar + ", " + limChar + ")",
                 () => {
-                    var localOptions: Services.FormatCodeOptions = JSON.parse(options);
+                    var localOptions: TypeScript.Services.FormatCodeOptions = JSON.parse(options);
                     var edits = this.languageService.getFormattingEditsOnPaste(fileName, minChar, limChar, localOptions);
                     return edits;
                 });
@@ -548,7 +578,7 @@ module Services {
             return this.forwardJSONCall(
                 "getFormattingEditsAfterKeystroke(\"" + fileName + "\", " + position + ", \"" + key + "\")",
                 () => {
-                    var localOptions: Services.FormatCodeOptions = JSON.parse(options);
+                    var localOptions: TypeScript.Services.FormatCodeOptions = JSON.parse(options);
                     var edits = this.languageService.getFormattingEditsAfterKeystroke(fileName, position, key, localOptions);
                     return edits;
                 });
@@ -599,7 +629,7 @@ module Services {
                 });
         }
 
-        private _navigateToItemsToString(items: Services.NavigateToItem[]): any {
+        private _navigateToItemsToString(items: TypeScript.Services.NavigateToItem[]): any {
             var result: {
                 name: string;
                 kind: string;
@@ -633,11 +663,11 @@ module Services {
     }
 
     export class ClassifierShim extends ShimBase {
-        public classifier: Services.Classifier;
+        public classifier: TypeScript.Services.Classifier;
 
-        constructor(factory: IShimFactory, public host: Services.IClassifierHost) {
+        constructor(factory: IShimFactory, public host: TypeScript.Services.IClassifierHost) {
             super(factory);
-            this.classifier = new Services.Classifier(this.host);
+            this.classifier = new TypeScript.Services.Classifier(this.host);
         }
 
         /// COLORIZATION
@@ -656,16 +686,16 @@ module Services {
 
     export class CoreServicesShim extends ShimBase {
         public logger: TypeScript.ILogger;
-        public services: Services.CoreServices;
+        public services: TypeScript.Services.CoreServices;
 
-        constructor(factory: IShimFactory, public host: Services.ICoreServicesHost) {
+        constructor(factory: IShimFactory, public host: TypeScript.Services.ICoreServicesHost) {
             super(factory);
             this.logger = this.host.logger;
-            this.services = new Services.CoreServices(this.host);
+            this.services = new TypeScript.Services.CoreServices(this.host);
         }
 
         private forwardJSONCall(actionDescription: string, action: () =>any): any {
-            return Services.forwardJSONCall(this.logger, actionDescription, action);
+            return TypeScript.Services.forwardJSONCall(this.logger, actionDescription, action);
         }
 
         ///

@@ -15,7 +15,7 @@
 
 ///<reference path='formatting.ts' />
 
-module TypeScript.Formatting {
+module TypeScript.Services.Formatting {
     export class SingleTokenIndenter extends IndentationTrackingWalker {
         private indentationAmount: number = null;
         private indentationPosition: number;
@@ -37,7 +37,8 @@ module TypeScript.Formatting {
             if (token.fullWidth() === 0 || (this.indentationPosition - this.position() < token.leadingTriviaWidth())) {
                 // The position is in the leading trivia, use comment indentation
                 this.indentationAmount = commentIndentationAmount;
-            } else {
+            }
+            else {
                 this.indentationAmount = indentationAmount;
             }
         }

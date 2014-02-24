@@ -1,0 +1,18 @@
+assignmentCompatWithCallSignaturesWithRestParameters.ts(13,5): error TS2012: Cannot convert '(...args: string[]) => number' to '(...args: number[]) => number':
+	Call signatures of types '(...args: string[]) => number' and '(...args: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(17,5): error TS2012: Cannot convert '(x?: string) => number' to '(...args: number[]) => number':
+	Call signatures of types '(x?: string) => number' and '(...args: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(26,5): error TS2012: Cannot convert '(x: number, ...args: string[]) => number' to '(x: number, ...z: number[]) => number':
+	Call signatures of types '(x: number, ...args: string[]) => number' and '(x: number, ...z: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(35,5): error TS2012: Cannot convert '(x: number, y?: number, z?: number) => number' to '(x: number, y?: string, ...z: number[]) => number':
+	Call signatures of types '(x: number, y?: number, z?: number) => number' and '(x: number, y?: string, ...z: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(36,5): error TS2012: Cannot convert '(x: number, ...z: number[]) => number' to '(x: number, y?: string, ...z: number[]) => number':
+	Call signatures of types '(x: number, ...z: number[]) => number' and '(x: number, y?: string, ...z: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(37,5): error TS2012: Cannot convert '(x: string, y?: string, z?: string) => number' to '(x: number, y?: string, ...z: number[]) => number':
+	Call signatures of types '(x: string, y?: string, z?: string) => number' and '(x: number, y?: string, ...z: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(41,5): error TS2012: Cannot convert '(x?: number, y?: number) => number' to '(x?: number, y?: string, ...z: number[]) => number':
+	Call signatures of types '(x?: number, y?: number) => number' and '(x?: number, y?: string, ...z: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(43,5): error TS2012: Cannot convert '(x: number, y?: number) => number' to '(x?: number, y?: string, ...z: number[]) => number':
+	Call signatures of types '(x: number, y?: number) => number' and '(x?: number, y?: string, ...z: number[]) => number' are incompatible.
+assignmentCompatWithCallSignaturesWithRestParameters.ts(45,5): error TS2012: Cannot convert '(x: number, ...args: string[]) => number' to '(x?: number, y?: string, ...z: number[]) => number':
+	Call signatures of types '(x: number, ...args: string[]) => number' and '(x?: number, y?: string, ...z: number[]) => number' are incompatible.

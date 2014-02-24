@@ -8,13 +8,13 @@ module Sammy {
     export var x = 1;
 }
 interface JQueryStatic {
-    sammy: Sammy;
+    sammy: Sammy; // class instance
 }
 var $: JQueryStatic;
-var instanceOfClassSammy = new $.sammy();
+var instanceOfClassSammy: Sammy = new $.sammy(); // should be error (bug 725997)
 var r1 = instanceOfClassSammy.foo(); // r1 is string
-var r2 = $.sammy.foo(); // why is foo here?
-var r3 = $.sammy.bar(); // why isn't bar here?
-var r4 = $.sammy.x; // why is x an error?
+var r2 = $.sammy.foo();
+var r3 = $.sammy.bar(); // error
+var r4 = $.sammy.x; // error
 
 Sammy.bar();

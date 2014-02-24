@@ -1,28 +1,38 @@
-// private elements
-declare module "mi_private" {
-    export class c_private {
-    }
-}
-declare module "mu_private" {
-    export class c_private {
-    }
-}
-
+//@module: commonjs
+// @Filename: privacyTopLevelAmbientExternalModuleImportWithExport_require.ts
 // Public elements
-export declare module "mi_public" {
-    export class c_public {
-    }
+export class c_public {
+    foo: string;
 }
-export declare module "mu_public" {
-    export class c_public {
+
+// @Filename: privacyTopLevelAmbientExternalModuleImportWithExport_require1.ts
+export class c_public {
+    bar: string;
+}
+
+// @Filename: privacyTopLevelAmbientExternalModuleImportWithExport_require2.ts
+// private elements
+// Export - Error ambient modules allowed only in global
+declare module 'm' {
+    export class c_private {
+        baz: string;
     }
 }
 
+
+// @Filename: privacyTopLevelAmbientExternalModuleImportWithExport_require3.ts
+declare module 'm2' {
+    export class c_private {
+        bing: string;
+    }
+}
+
+// @Filename: privacyTopLevelAmbientExternalModuleImportWithExport_core.ts
 // Privacy errors - importing private elements
-export import im_public_mi_private = require("mi_private");
-export import im_public_mu_private = require("mu_private");
-export import im_public_mi_public = require("mi_public");
-export import im_public_mu_public = require("mu_public");
+export import im_public_mi_private = require("privacyTopLevelAmbientExternalModuleImportWithExport_require");
+export import im_public_mu_private = require("privacyTopLevelAmbientExternalModuleImportWithExport_require1");
+export import im_public_mi_public = require("m");
+export import im_public_mu_public = require("m2");
 
 // Usage of privacy error imports
 var privateUse_im_public_mi_private = new im_public_mi_private.c_private();

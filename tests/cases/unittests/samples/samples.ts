@@ -1,33 +1,41 @@
 ///<reference path="..\..\..\..\src\harness\harness.ts" />
 
+var samplesCompilerOptions = { useMinimalDefaultLib: false, noImplicitAny: false }
+describe("Setup compiler for samples", () => {
+    Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
+});
+
 describe('Compiling samples', function ()
 {
     var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
 
     function loadSample(path: string): string
     {
-        return IO.readFile(Harness.userSpecifiedroot + "samples/" + path, /*codepage*/ null).contents;
+        return TypeScript.IO.readFile(Harness.userSpecifiedroot + 'samples/' + path, /*codepage:*/null).contents;
     }
 
-    function addUnitsAndCompile(units: string[]) {
-        units.forEach(unit => {
-            var code = IO.readFile(Harness.userSpecifiedroot + "samples/" + unit, /*codepage*/ null).contents;
-            harnessCompiler.addInputFile(unit);
+    function addUnitsAndCompile(units: string[], includeWin8Libs = false) {
+        var filesToAdd = units.map(unit => {
+            return {
+                unitName: 'tests/cases/unittests/samples/' + unit,
+                content: loadSample(unit)
+            };
         });
-        harnessCompiler.compile();
+        if (includeWin8Libs) {
+            ['winrt.d.ts', 'winjs.d.ts'].forEach(file => filesToAdd.push({ unitName: file, content: TypeScript.IO.readFile('typings/' + file, null).contents }));
+        }
+
+        var result: Harness.Compiler.CompilerResult;
+        harnessCompiler.compileFiles(filesToAdd, [], res => result = res, null, { noResolve: includeWin8Libs });
+
+        assert.arrayLengthIs(result.errors, 0);
     }
 
     // d3
     it('compiles the d3 sample without error', function ()
     {
-        // clean the world before our first sample runs
-        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, false);
-        harnessCompiler.reset();
-
         var units = ["d3/data.ts", "d3/d3.d.ts"];
         addUnitsAndCompile(units);
-        var errLines = harnessCompiler.reportCompilationErrors();
-        assert.equal(errLines.length, 0);
     });
 
     // greeter
@@ -36,51 +44,42 @@ describe('Compiling samples', function ()
         var src = loadSample("greeter/greeter.ts");
         Harness.Compiler.compileString(src, 'greeter.ts', function (result)
         {
-            assert.equal(result.errors.length, 0);
+            assert.arrayLengthIs(result.errors, 0);
         });
     });
 
     // imageboard
     it('compiles the imageboard sample without error', function ()
     {
-        var units = ["node\\node.d.ts", "imageboard\\app.ts", "imageboard\\db.ts", "imageboard\\express.d.ts", "imageboard\\mongodb.ts", "imageboard\\routes\\index.ts"];
+        var units = ["node/node.d.ts", "imageboard/app.ts", "imageboard/db.ts", "imageboard/express.d.ts", "imageboard/mongodb.ts", "imageboard/routes/index.ts"];
     
-        addUnitsAndCompile(units);
-        var errLines = harnessCompiler.reportCompilationErrors();
-        assert.equal(errLines.length, 0);
+        addUnitsAndCompile(units, undefined);
     });
 
-    // interfaces
+    //// interfaces
     it('compiles the interfaces sample without error', function ()
     {
         var interfaces = loadSample("interfaces/interfaces.ts");
 
         Harness.Compiler.compileString(interfaces, 'interfaces.ts', function (result)
         {
-            assert.equal(result.errors.length, 0);
+            assert.arrayLengthIs(result.errors, 0);
         });
-
-        // Necessary because of some compiler bug that will make the raytracer test fail
-        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, false);
-        harnessCompiler.reset();
     });
 
     // jquery
     it('compiles the jquery sample without error', function ()
     {
+        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
         var units = ["jquery/parallax.ts", "jquery/jquery.d.ts"];
         addUnitsAndCompile(units);
-        var errLines = harnessCompiler.reportCompilationErrors();
-        assert.equal(errLines.length, 0);
     });
 
     // mankala
     it('compiles the mankala sample without error', function ()
     {
-        var units = ["mankala/Base.ts", "mankala/Driver.ts", "mankala/Features.ts", "mankala/Game.ts", "mankala/geometry.ts", "mankala/Position.ts" ];
+        var units = ["mankala/Base.ts", "mankala/Driver.ts", "mankala/Features.ts", "mankala/Game.ts", "mankala/Geometry.ts", "mankala/Position.ts" ];
         addUnitsAndCompile(units);
-        var errLines = harnessCompiler.reportCompilationErrors();
-        assert.equal(errLines.length, 0);
     });
 
     // node
@@ -88,16 +87,12 @@ describe('Compiling samples', function ()
     {
         var units = ["node/HttpServer.ts", "node/node.d.ts"];
         addUnitsAndCompile(units);
-        var errLines = harnessCompiler.reportCompilationErrors();
-        assert.equal(errLines.length, 0);
     });
 
     it('compiles the node sample-2 without error', function ()
     {
         var units = ["node/TcpServer.ts", "node/node.d.ts"];
         addUnitsAndCompile(units);
-        var errLines = harnessCompiler.reportCompilationErrors();
-        assert.equal(errLines.length, 0);
     });
 
     // raytracer
@@ -106,7 +101,7 @@ describe('Compiling samples', function ()
         var src = loadSample("raytracer/raytracer.ts");
         Harness.Compiler.compileString(src, 'raytracer.ts', function (result)
         {
-            assert.equal(result.errors.length, 0);
+            assert.arrayLengthIs(result.errors, 0);
         });
     });
 
@@ -116,7 +111,7 @@ describe('Compiling samples', function ()
         var src = loadSample("simple/animals.ts");
         Harness.Compiler.compileString(src, 'animals.ts', function (result)
         {
-            assert.equal(result.errors.length, 0);
+            assert.arrayLengthIs(result.errors, 0);
         });
     });
 
@@ -126,11 +121,11 @@ describe('Compiling samples', function ()
         var src = loadSample("todomvc/js/todos.ts");
         Harness.Compiler.compileString(src, 'todos.ts', function (result)
         {
-            assert.equal(result.errors.length, 0);
+            assert.arrayLengthIs(result.errors, 0);
         });
 
         // Necessary because both todomvc and warship declare var $
-        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, false);
+        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
         harnessCompiler.reset();
     });  
 
@@ -139,16 +134,12 @@ describe('Compiling samples', function ()
     {
         var units = ["warship/warship.ts", "warship/jquery.d.ts", "warship/jqueryui.d.ts"];
         addUnitsAndCompile(units);
-        var errLines = harnessCompiler.reportCompilationErrors();
-        assert.equal(errLines.length, 0);
     });
 
     // win8
     it('compiles the win8 sample without error', function ()
     {
        var units = [
-           "../typings/winrt.d.ts",
-           "../typings/winjs.d.ts",
            "win8/encyclopedia/Encyclopedia/js/data.ts",
            "win8/encyclopedia/Encyclopedia/js/default.ts",
            "win8/encyclopedia/Encyclopedia/js/groupDetailPage.ts",
@@ -159,14 +150,12 @@ describe('Compiling samples', function ()
            "win8/encyclopedia/Encyclopedia/js/win.ts"
        ]
 
-       Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, false);
+       Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
        harnessCompiler.reset();       
-
-       addUnitsAndCompile(units);
-       var errLines = harnessCompiler.reportCompilationErrors();
-       // if (errLines.length) {
-       //  WScript.Echo("Errors: " + errLines);
-       // }       
-       assert.equal(errLines.length, 0);
+       addUnitsAndCompile(units, true);
     });
+});
+
+describe("Clean up samples", () => {
+    Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: false });
 });

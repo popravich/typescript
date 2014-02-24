@@ -15,10 +15,10 @@
 
 ///<reference path='formatting.ts' />
 
-module TypeScript.Formatting {
+module TypeScript.Services.Formatting {
     export class Rules {
         public getRuleName(rule: Rule) {
-            var o = <any>this;
+            var o: IIndexable<any> = <any>this;
             for (var name in o) {
                 if (o[name] === rule) {
                     return name;
@@ -26,6 +26,8 @@ module TypeScript.Formatting {
             }
             throw new Error(TypeScript.getDiagnosticMessage(TypeScript.DiagnosticCode.Unknown_rule, null));
         }
+
+        [name: string]: any;
 
         public IgnoreBeforeComment: Rule;
         public IgnoreAfterLineComment: Rule;
@@ -564,10 +566,8 @@ module TypeScript.Formatting {
             switch (context.contextNode.kind()) {
                 case SyntaxKind.FunctionDeclaration:
                 case SyntaxKind.MemberFunctionDeclaration:
-                case SyntaxKind.GetMemberAccessorDeclaration:
-                case SyntaxKind.GetAccessorPropertyAssignment:
-                case SyntaxKind.SetMemberAccessorDeclaration:
-                case SyntaxKind.SetAccessorPropertyAssignment:
+                case SyntaxKind.GetAccessor:
+                case SyntaxKind.SetAccessor:
                 case SyntaxKind.MethodSignature:
                 case SyntaxKind.CallSignature:
                 case SyntaxKind.FunctionExpression:

@@ -1,4 +1,4 @@
-///<reference path='..\node\node.d.ts' />
+///<reference path='../node/node.d.ts' />
 
 import http = require("http")
 import url = require("url")
@@ -6,12 +6,13 @@ import routes = require("./routes/index")
 import db = require("./db")
 import express = require("express")
 
-var app = express.createServer();
+var app = express();
 
 // Configuration
 app.configure(function(){
   app.set('views', __dirname + '/views');
   app.set('view engine', 'jade');
+  app.set('view options', { layout: false });
   app.use(express.bodyParser());
   app.use(express.methodOverride());
   app.use(express.static(__dirname + '/public'));

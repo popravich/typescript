@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-///<reference path='typescript.ts' />
+///<reference path='references.ts' />
 
 module TypeScript {
     export module CompilerDiagnostics {
@@ -48,10 +48,6 @@ module TypeScript {
 
     }
 
-    export interface IDiagnosticReporter {
-        addDiagnostic(diagnostic: TypeScript.Diagnostic): void;
-    }
-
     export interface ILogger {
         information(): boolean;
         debug(): boolean;
@@ -75,7 +71,9 @@ module TypeScript {
         var start = (new Date()).getTime();
         var result = func();
         var end = (new Date()).getTime();
-        logger.log(funcDescription + " completed in " + (end - start) + " msec");
+        if (logger.information()) {
+            logger.log(funcDescription + " completed in " + (end - start) + " msec");
+        }
         return result;
     }
 }

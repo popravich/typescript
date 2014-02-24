@@ -1,9 +1,13 @@
-declare module "winjs" {
-    export class Promise {
-        static timeout(delay: number): Promise;
+//@module: amd
+// @Filename: staticInstanceResolution5_0.ts
+export class Promise {
+    static timeout(delay: number): Promise {
+        return null;
     }
 }
-import WinJS = require('winjs');
+
+// @Filename: staticInstanceResolution5_1.ts
+import WinJS = require('staticInstanceResolution5_0.ts');
 
 // these 3 should be errors
 var x = (w1: WinJS) => { };

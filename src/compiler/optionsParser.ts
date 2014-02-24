@@ -37,11 +37,14 @@ module TypeScript {
 
         // Find the option record for the given string. Returns null if not found.
         private findOption(arg: string) {
+            var upperCaseArg = arg && arg.toUpperCase();
 
             for (var i = 0; i < this.options.length; i++) {
+                var current = this.options[i];
 
-                if (arg === this.options[i].short || arg === this.options[i].name) {
-                    return this.options[i];
+                if (upperCaseArg === (current.short && current.short.toUpperCase()) ||
+                    upperCaseArg === (current.name && current.name.toUpperCase())) {
+                    return current;
                 }
             }
 
@@ -241,8 +244,15 @@ module TypeScript {
                             this.host.printLine(getDiagnosticMessage(DiagnosticCode.Unknown_option_0, [arg]));
                             this.host.printLine(getLocalizedText(DiagnosticCode.Use_the_0_flag_to_see_options, ["--help"]));
                         } else {
-                            if (!option.flag)
+                            if (!option.flag) {
                                 value = consume();
+                                if (value === undefined) {
+                                    // No value provided
+                                    this.host.printLine(getDiagnosticMessage(DiagnosticCode.Option_0_specified_without_1, [arg, getLocalizedText(option.type, null)]));
+                                    this.host.printLine(getLocalizedText(DiagnosticCode.Use_the_0_flag_to_see_options, ["--help"]));
+                                    continue;
+                                }
+                            }
 
                             option.set(value);
                         }

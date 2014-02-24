@@ -1,0 +1,16 @@
+=== tests/cases/compiler/recursiveInferenceBug.ts ===
+Line 0 col 9 IdentifierName "f" = typeof f
+Line 0 col 11 IdentifierName "x" = number
+Line 1 col 8 IdentifierName "z" = number
+Line 1 col 12 InvocationExpression "f(x)" = number
+Line 1 col 12 IdentifierName "f" = typeof f
+Line 1 col 14 IdentifierName "x" = number
+Line 2 col 11 IdentifierName "x" = number
+Line 6 col 4 IdentifierName "zz" = { g: () => void; f: string; }
+Line 6 col 9 ObjectLiteralExpression "{
+    g: () =>{ },
+    get f() { return "abc"; },
+}" = { g: () => void; f: string; }
+Line 7 col 0 IdentifierName "g" = () => void
+Line 7 col 7 ParenthesizedArrowFunctionExpression "() =>{ }" = () => void
+Line 8 col 8 IdentifierName "f" = string

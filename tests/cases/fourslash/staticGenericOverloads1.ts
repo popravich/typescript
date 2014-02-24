@@ -12,7 +12,11 @@
 ////A.B(/**/
 
 goTo.marker();
-verify.currentSignatureHelpIs('B<S>(v: A<S>): A<S>')
-// BUG 701161
-//edit.insert('a');
-//verify.currentSignatureHelpIs('B<S>(v: A<S>): A<S>');
+verify.signatureHelpCountIs(2);
+edit.insert('a');
+verify.signatureHelpCountIs(2);
+verify.currentSignatureHelpIs('B(v: A<number>): A<number>')
+edit.insert('); A.B(');
+verify.currentSignatureHelpIs('B<S>(v: A<S>): A<S>');
+edit.insert('a');
+verify.currentSignatureHelpIs('B(v: A<number>): A<number>')

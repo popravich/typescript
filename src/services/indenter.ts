@@ -15,9 +15,9 @@
 
 ///<reference path='typescriptServices.ts' />
 
-module Services {
+module TypeScript.Services {
     export class Indenter {
-        public static getIndentation(node: TypeScript.SourceUnitSyntax, soruceText: TypeScript.IScriptSnapshot, position: number, editorOptions: Services.EditorOptions): number {
+        public static getIndentation(node: TypeScript.SourceUnitSyntax, soruceText: TypeScript.IScriptSnapshot, position: number, editorOptions: TypeScript.Services.EditorOptions): number {
             
             var indentation = 0;
             var currentToken = node.findToken(position);
@@ -26,7 +26,8 @@ module Services {
             if (currentToken.token().kind() === TypeScript.SyntaxKind.EndOfFileToken) {
                 // Ignore EOF tokens, pick the one before it
                 currentNode = currentToken.previousToken();
-            } else if (Indenter.belongsToBracket(soruceText, currentToken, position)) {
+            }
+            else if (Indenter.belongsToBracket(soruceText, currentToken, position)) {
                 // Let braces and brackets take the indentation of thier parents
                 currentNode = currentToken.parent();
             }
@@ -49,7 +50,8 @@ module Services {
                 if (parent.fullStart() !== currentNode.fullStart()) {
                     if (Indenter.isInContainerNode(parent.element(), currentElement)) {
                         indentation += editorOptions.IndentSize;
-                    } else {
+                    }
+                    else {
                         var listIndentation = Indenter.getCustomListIndentation(parent.element(), currentElement);
                         if (listIndentation !== -1) {
                             // Found a list node with special indentation, If the list items span multiple lines, we want 
@@ -108,10 +110,8 @@ module Services {
 
                 case TypeScript.SyntaxKind.FunctionDeclaration:
                 case TypeScript.SyntaxKind.MemberFunctionDeclaration:
-                case TypeScript.SyntaxKind.GetMemberAccessorDeclaration:
-                case TypeScript.SyntaxKind.SetMemberAccessorDeclaration:
-                case TypeScript.SyntaxKind.GetAccessorPropertyAssignment:
-                case TypeScript.SyntaxKind.SetAccessorPropertyAssignment:
+                case TypeScript.SyntaxKind.GetAccessor:
+                case TypeScript.SyntaxKind.SetAccessor:
                 case TypeScript.SyntaxKind.FunctionExpression:
                 case TypeScript.SyntaxKind.CatchClause:
                 case TypeScript.SyntaxKind.FinallyClause:
@@ -152,9 +152,9 @@ module Services {
                     // The separated list has been handled in the previous case, this is just if we are after
                     // the last element of the list, we want to get the indentation of the last element of the list
                     var argumentList = <TypeScript.ArgumentListSyntax> list;
-                    var arguments = argumentList.arguments;
-                    if (arguments !== null && argumentList.closeParenToken === element) {
-                        return Indenter.getListItemIndentation(arguments, arguments.childCount() - 1);
+                    var _arguments = argumentList.arguments;
+                    if (_arguments !== null && argumentList.closeParenToken === element) {
+                        return Indenter.getListItemIndentation(_arguments, _arguments.childCount() - 1);
                     }
                     break;
 

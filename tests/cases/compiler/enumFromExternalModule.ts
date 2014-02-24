@@ -1,8 +1,9 @@
-﻿// bug: 684225
-declare module 'filexx'{
-export enum Mode{ Open }
-}
+//@module: commonjs
+// @Filename: enumFromExternalModule_0.ts
+export enum Mode { Open }
 
-import f = require('filexx');
+// @Filename: enumFromExternalModule_1.ts
+///<reference path='enumFromExternalModule_0.ts'/>
+import f = require('enumFromExternalModule_0');
 
 var x = f.Mode.Open;

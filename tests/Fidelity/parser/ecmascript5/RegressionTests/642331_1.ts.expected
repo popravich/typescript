@@ -6,12 +6,9 @@
     },
     "diagnostics": [
         {
-            "start": 48,
-            "length": 6,
-            "diagnosticCode": "Unexpected token; '{0}' expected.",
-            "arguments": [
-                "parameter"
-            ]
+            "start": 54,
+            "length": 1,
+            "diagnosticCode": "Identifier expected."
         }
     ],
     "sourceUnit": {
@@ -112,6 +109,7 @@
                         "fullWidth": 30,
                         "isIncrementallyUnusable": true,
                         "parsedInStrictMode": true,
+                        "modifiers": [],
                         "constructorKeyword": {
                             "kind": "ConstructorKeyword",
                             "width": 11,
@@ -134,48 +132,60 @@
                                 }
                             ]
                         },
-                        "parameterList": {
-                            "kind": "ParameterList",
+                        "callSignature": {
+                            "kind": "CallSignature",
                             "fullWidth": 9,
                             "isIncrementallyUnusable": true,
                             "parsedInStrictMode": true,
-                            "openParenToken": {
-                                "kind": "OpenParenToken",
-                                "width": 1,
-                                "fullWidth": 7,
-                                "text": "(",
-                                "value": "(",
-                                "valueText": "(",
-                                "hasTrailingTrivia": true,
-                                "hasTrailingSkippedText": true,
-                                "trailingTrivia": [
+                            "parameterList": {
+                                "kind": "ParameterList",
+                                "fullWidth": 9,
+                                "isIncrementallyUnusable": true,
+                                "parsedInStrictMode": true,
+                                "openParenToken": {
+                                    "kind": "OpenParenToken",
+                                    "width": 1,
+                                    "text": "(",
+                                    "value": "(",
+                                    "valueText": "("
+                                },
+                                "parameters": [
                                     {
-                                        "kind": "SkippedTokenTrivia",
-                                        "skippedToken": {
-                                            "kind": "StaticKeyword",
-                                            "width": 6,
-                                            "text": "static",
-                                            "value": "static",
-                                            "valueText": "static"
+                                        "kind": "Parameter",
+                                        "fullWidth": 6,
+                                        "isIncrementallyUnusable": true,
+                                        "parsedInStrictMode": true,
+                                        "modifiers": [
+                                            {
+                                                "kind": "StaticKeyword",
+                                                "width": 6,
+                                                "text": "static",
+                                                "value": "static",
+                                                "valueText": "static"
+                                            }
+                                        ],
+                                        "identifier": {
+                                            "kind": "IdentifierName",
+                                            "width": 0,
+                                            "text": ""
                                         }
                                     }
-                                ]
-                            },
-                            "parameters": [],
-                            "closeParenToken": {
-                                "kind": "CloseParenToken",
-                                "width": 1,
-                                "fullWidth": 2,
-                                "text": ")",
-                                "value": ")",
-                                "valueText": ")",
-                                "hasTrailingTrivia": true,
-                                "trailingTrivia": [
-                                    {
-                                        "kind": "WhitespaceTrivia",
-                                        "text": " "
-                                    }
-                                ]
+                                ],
+                                "closeParenToken": {
+                                    "kind": "CloseParenToken",
+                                    "width": 1,
+                                    "fullWidth": 2,
+                                    "text": ")",
+                                    "value": ")",
+                                    "valueText": ")",
+                                    "hasTrailingTrivia": true,
+                                    "trailingTrivia": [
+                                        {
+                                            "kind": "WhitespaceTrivia",
+                                            "text": " "
+                                        }
+                                    ]
+                                }
                             }
                         },
                         "block": {

@@ -2,6 +2,10 @@
 
 ////var a;
 
+// this line triggers a semantic/syntactic error check, remove line when 788570 is fixed
+edit.insert('');
+
+debugger;
 goTo.eof();
 verify.completionListContains("a");
 

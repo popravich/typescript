@@ -1,12 +1,14 @@
-declare module 'Car' {
-    class Car {
-
-    }
-
-    export = Car;
+//@module: commonjs
+// @Filename: arrayOfExportedClass_0.ts
+class Car {
+    foo: string;
 }
 
-import Car = require('Car');
+export = Car;
+
+// @Filename: arrayOfExportedClass_1.ts
+///<reference path='arrayOfExportedClass_0.ts'/>
+import Car = require('arrayOfExportedClass_0');
 
 class Road {
 

@@ -4,20 +4,6 @@
 ///<reference path='.\quotedLib.ts'/>
 ///<reference path='.\quotedCompiler.ts'/>
 
-class StringTextWriter implements ITextWriter {
-    public buff = "";
-
-    Write(s: string) {
-        this.buff += s;
-    }
-
-    WriteLine(s: string) {
-        this.buff += s + "\n";
-    }
-
-    Close() { }
-}
-
 class DiagnosticsLogger implements TypeScript.ILogger {
 
     public information(): boolean { return false; }
@@ -33,7 +19,7 @@ class DiagnosticsLogger implements TypeScript.ILogger {
 var libraryFileName = "lib.d.ts";
 var compilerFileName = "compiler.ts";
 
-class BatchCompiler implements Services.ILanguageServiceHost {
+class BatchCompiler {
     public compiler: TypeScript.TypeScriptCompiler;
     private simpleText = TypeScript.SimpleText.fromString(compilerString);
     private libScriptSnapshot = TypeScript.ScriptSnapshot.fromString(libString);
@@ -44,113 +30,20 @@ class BatchCompiler implements Services.ILanguageServiceHost {
         settings.generateDeclarationFiles = true;
         settings.outFileOption = "Output.ts";
 
-        this.compiler = new TypeScript.TypeScriptCompiler(new DiagnosticsLogger(), settings);
+        this.compiler = new TypeScript.TypeScriptCompiler(new DiagnosticsLogger(),
+            TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings));
 
-        this.compiler.addSourceUnit("lib.d.ts", this.libScriptSnapshot, ByteOrderMark.None, 0, false, []);
-        this.compiler.addSourceUnit("compiler.ts", this.compilerScriptSnapshot, ByteOrderMark.None, 0, false, []);
+        this.compiler.addFile("lib.d.ts", this.libScriptSnapshot, TypeScript.ByteOrderMark.None, 0, false, []);
+        this.compiler.addFile("compiler.ts", this.compilerScriptSnapshot, TypeScript.ByteOrderMark.None, 0, false, []);
 
-        this.compiler.pullTypeCheck();
-
-        var emitterIOHost = {
-            writeFile: (fileName: string, contents: string, writeByteOrderMark: boolean) => { },
-            directoryExists: (a: string) => false,
-            fileExists: (a: string) => true,
-            resolvePath: (a: string) => a,
-        };
-
-        var mapInputToOutput = (inputFile: string, outputFile: string): void => { };
-
-        // TODO: if there are any emit diagnostics.  Don't proceed.
-        var emitDiagnostics = this.compiler.emitAll(emitterIOHost, mapInputToOutput);
-
-        var emitDeclarationsDiagnostics = this.compiler.emitAllDeclarations();
-    }
-
-    public information(): boolean {
-        return true;
-    }
-
-    public debug(): boolean {
-        return true;
-    }
-
-    public warning(): boolean {
-        return true;
-    }
-
-    public error(): boolean {
-        return true;
-    }
-
-    public fatal(): boolean {
-        return true;
-    }
-
-    public log(s: string): void {
-
-    }
-
-    public getCompilationSettings(): TypeScript.CompilationSettings {
-        return new TypeScript.CompilationSettings();
-    }
-
-    public getScriptFileNames(): string[] {
-        return [libraryFileName, compilerFileName];
-    }
-
-    public getScriptVersion(fileName: string): number {
-        return 1;
-    }
-
-    public getScriptIsOpen(fileName: string): boolean {
-        return fileName !== libraryFileName;
-    }
-
-    public getScriptByteOrderMark(fileName: string): ByteOrderMark {
-        return ByteOrderMark.None;
-    }
-
-    public getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
-        switch (fileName) {
-            case libraryFileName: return this.libScriptSnapshot;
-            case compilerFileName: return this.compilerScriptSnapshot;
-        }
-
-        throw new Error("Invalid file name");
-    }
-
-    public getDiagnosticsObject(): Services.ILanguageServicesDiagnostics {
-        return null;
-    }
-
-    public getLocalizedDiagnosticMessages(): any {
-        return null;
-    }
-
-    public createLanguageService() {
-        return new Services.LanguageService(this);
-    }
-
-    // use this to test "clean" re-typecheck speed
-    public reTypeCheck() {
-        var settings = new TypeScript.CompilationSettings();
-
-        if (!this.compiler) {
-            this.compiler = new TypeScript.TypeScriptCompiler(new DiagnosticsLogger(), settings);
-
-            this.compiler.addSourceUnit("lib.d.ts", this.libScriptSnapshot, ByteOrderMark.None, 0, false, []);
-            this.compiler.addSourceUnit("compiler.ts", this.compilerScriptSnapshot, ByteOrderMark.None, 0, false, []);
-            this.compiler.pullTypeCheck();
-        }
-
-        this.compiler.semanticInfoChain.update();
-        this.compiler.semanticInfoChain.forceTypeCheck("compiler.ts");
+        this.compiler.getSyntacticDiagnostics("lib.d.ts");
+        this.compiler.getSyntacticDiagnostics("compiler.ts");
         this.compiler.getSemanticDiagnostics("compiler.ts");
     }
 
     public newParse(): TypeScript.SyntaxTree {
         return TypeScript.Parser.parse(compilerFileName, this.simpleText, false,
-            TypeScript.getParseOptions(new TypeScript.CompilationSettings()));
+            TypeScript.getParseOptions(TypeScript.ImmutableCompilationSettings.defaultSettings()));
     }
 
     public newIncrementalParse(tree: TypeScript.SyntaxTree): TypeScript.SyntaxTree {
@@ -159,11 +52,6 @@ class BatchCompiler implements Services.ILanguageServiceHost {
         var range = new TypeScript.TextChangeRange(span, width);
         return TypeScript.Parser.incrementalParse(tree, range, this.simpleText);
     }
-
-    public resolveRelativePath(path: string, directory: string): string { throw new Error(); }
-    public fileExists(path: string): boolean { throw new Error(); }
-    public directoryExists(path: string): boolean { throw new Error(); }
-    public getParentDirectory(path: string): string { throw new Error(); }
 }
 
 function compile() {

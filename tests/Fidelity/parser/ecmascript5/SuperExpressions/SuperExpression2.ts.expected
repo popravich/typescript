@@ -6,9 +6,12 @@
     },
     "diagnostics": [
         {
-            "start": 24,
-            "length": 11,
-            "diagnosticCode": "'super' invocation cannot have type arguments."
+            "start": 29,
+            "length": 1,
+            "diagnosticCode": "'{0}' expected.",
+            "arguments": [
+                "."
+            ]
         }
     ],
     "sourceUnit": {
@@ -19,6 +22,7 @@
             {
                 "kind": "ClassDeclaration",
                 "fullWidth": 44,
+                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "classKeyword": {
                     "kind": "ClassKeyword",
@@ -70,6 +74,7 @@
                     {
                         "kind": "MemberFunctionDeclaration",
                         "fullWidth": 32,
+                        "isIncrementallyUnusable": true,
                         "modifiers": [],
                         "propertyName": {
                             "kind": "IdentifierName",
@@ -120,6 +125,7 @@
                         "block": {
                             "kind": "Block",
                             "fullWidth": 26,
+                            "isIncrementallyUnusable": true,
                             "openBraceToken": {
                                 "kind": "OpenBraceToken",
                                 "width": 1,
@@ -140,23 +146,40 @@
                                 {
                                     "kind": "ExpressionStatement",
                                     "fullWidth": 18,
+                                    "isIncrementallyUnusable": true,
                                     "expression": {
                                         "kind": "InvocationExpression",
                                         "fullWidth": 15,
+                                        "isIncrementallyUnusable": true,
                                         "expression": {
-                                            "kind": "SuperKeyword",
-                                            "width": 5,
+                                            "kind": "MemberAccessExpression",
                                             "fullWidth": 9,
-                                            "text": "super",
-                                            "value": "super",
-                                            "valueText": "super",
-                                            "hasLeadingTrivia": true,
-                                            "leadingTrivia": [
-                                                {
-                                                    "kind": "WhitespaceTrivia",
-                                                    "text": "    "
-                                                }
-                                            ]
+                                            "isIncrementallyUnusable": true,
+                                            "expression": {
+                                                "kind": "SuperKeyword",
+                                                "width": 5,
+                                                "fullWidth": 9,
+                                                "text": "super",
+                                                "value": "super",
+                                                "valueText": "super",
+                                                "hasLeadingTrivia": true,
+                                                "leadingTrivia": [
+                                                    {
+                                                        "kind": "WhitespaceTrivia",
+                                                        "text": "    "
+                                                    }
+                                                ]
+                                            },
+                                            "dotToken": {
+                                                "kind": "DotToken",
+                                                "width": 0,
+                                                "text": ""
+                                            },
+                                            "name": {
+                                                "kind": "IdentifierName",
+                                                "width": 0,
+                                                "text": ""
+                                            }
                                         },
                                         "argumentList": {
                                             "kind": "ArgumentList",

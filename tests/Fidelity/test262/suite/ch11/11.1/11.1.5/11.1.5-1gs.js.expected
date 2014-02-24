@@ -166,7 +166,7 @@
                             "kind": "VariableDeclarator",
                             "fullWidth": 35,
                             "parsedInStrictMode": true,
-                            "identifier": {
+                            "propertyName": {
                                 "kind": "IdentifierName",
                                 "width": 3,
                                 "fullWidth": 4,
@@ -221,9 +221,10 @@
                                     },
                                     "propertyAssignments": [
                                         {
-                                            "kind": "SetAccessorPropertyAssignment",
+                                            "kind": "SetAccessor",
                                             "fullWidth": 26,
                                             "parsedInStrictMode": true,
+                                            "modifiers": [],
                                             "setKeyword": {
                                                 "kind": "SetKeyword",
                                                 "width": 3,
@@ -246,39 +247,47 @@
                                                 "value": "_11_1_5_1_fun",
                                                 "valueText": "_11_1_5_1_fun"
                                             },
-                                            "openParenToken": {
-                                                "kind": "OpenParenToken",
-                                                "width": 1,
-                                                "text": "(",
-                                                "value": "(",
-                                                "valueText": "("
-                                            },
-                                            "parameter": {
-                                                "kind": "Parameter",
-                                                "fullWidth": 4,
+                                            "parameterList": {
+                                                "kind": "ParameterList",
+                                                "fullWidth": 7,
                                                 "parsedInStrictMode": true,
-                                                "identifier": {
-                                                    "kind": "IdentifierName",
-                                                    "width": 4,
-                                                    "text": "eval",
-                                                    "value": "eval",
-                                                    "valueText": "eval"
-                                                }
-                                            },
-                                            "closeParenToken": {
-                                                "kind": "CloseParenToken",
-                                                "width": 1,
-                                                "fullWidth": 2,
-                                                "text": ")",
-                                                "value": ")",
-                                                "valueText": ")",
-                                                "hasTrailingTrivia": true,
-                                                "trailingTrivia": [
+                                                "openParenToken": {
+                                                    "kind": "OpenParenToken",
+                                                    "width": 1,
+                                                    "text": "(",
+                                                    "value": "(",
+                                                    "valueText": "("
+                                                },
+                                                "parameters": [
                                                     {
-                                                        "kind": "WhitespaceTrivia",
-                                                        "text": " "
+                                                        "kind": "Parameter",
+                                                        "fullWidth": 4,
+                                                        "parsedInStrictMode": true,
+                                                        "modifiers": [],
+                                                        "identifier": {
+                                                            "kind": "IdentifierName",
+                                                            "width": 4,
+                                                            "text": "eval",
+                                                            "value": "eval",
+                                                            "valueText": "eval"
+                                                        }
                                                     }
-                                                ]
+                                                ],
+                                                "closeParenToken": {
+                                                    "kind": "CloseParenToken",
+                                                    "width": 1,
+                                                    "fullWidth": 2,
+                                                    "text": ")",
+                                                    "value": ")",
+                                                    "valueText": ")",
+                                                    "hasTrailingTrivia": true,
+                                                    "trailingTrivia": [
+                                                        {
+                                                            "kind": "WhitespaceTrivia",
+                                                            "text": " "
+                                                        }
+                                                    ]
+                                                }
                                             },
                                             "block": {
                                                 "kind": "Block",

@@ -2,7 +2,7 @@
 
 // Global variable reference.
 
-// @Filename: ReferencesForGlobals1.ts
+// @Filename: referencesForGlobals_1.ts
 ////var /*1*/global = 2;
 ////
 ////class foo {
@@ -22,8 +22,11 @@
 ////
 ////var k = global;
 
-// @Filename: ReferencesForGlobals2.ts
+// @Filename: referencesForGlobals_2.ts
 ////var m = global;
+
+// this line triggers a semantic/syntactic error check, remove line when 788570 is fixed
+edit.insert('');
 
 goTo.marker("1");
 verify.referencesCountIs(4);

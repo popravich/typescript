@@ -1,3 +1,5 @@
-mismatchedExplicitTypeParameterAndArgumentType.ts line 10 col 10: error TS2081: Supplied parameters do not match any signature of call target.
-mismatchedExplicitTypeParameterAndArgumentType.ts line 10 col 10: error TS2087: Could not select overload for 'call' expression.
-mismatchedExplicitTypeParameterAndArgumentType.ts line 11 col 11: error TS2087: Could not select overload for 'call' expression.
+mismatchedExplicitTypeParameterAndArgumentType.ts(10,10): error TS2082: Supplied parameters do not match any signature of call target:
+	Types of property 'pop' of types '{}[]' and 'number[]' are incompatible:
+		Call signatures of types '() => {}' and '() => number' are incompatible.
+mismatchedExplicitTypeParameterAndArgumentType.ts(10,10): error TS2087: Could not select overload for 'call' expression.
+mismatchedExplicitTypeParameterAndArgumentType.ts(11,11): error TS4027: Signature expected 2 type arguments, got 1 instead.

@@ -90,6 +90,7 @@ module TypeScript {
     class GrammarCheckerWalker extends PositionTrackingWalker {
         private inAmbientDeclaration: boolean = false;
         private inBlock: boolean = false;
+        private inObjectLiteralExpression: boolean = false;
         private currentConstructor: ConstructorDeclarationSyntax = null;
 
         constructor(private syntaxTree: SyntaxTree,
@@ -107,12 +108,12 @@ module TypeScript {
 
         private pushDiagnostic(start: number, length: number, diagnosticKey: string, args: any[] = null): void {
             this.diagnostics.push(new Diagnostic(
-                this.syntaxTree.fileName(), start, length, diagnosticKey, args));
+                this.syntaxTree.fileName(), this.syntaxTree.lineMap(), start, length, diagnosticKey, args));
         }
 
         private pushDiagnostic1(elementFullStart: number, element: ISyntaxElement, diagnosticKey: string, args: any[] = null): void {
             this.diagnostics.push(new Diagnostic(
-                this.syntaxTree.fileName(), elementFullStart + element.leadingTriviaWidth(), element.width(), diagnosticKey, args));
+                this.syntaxTree.fileName(), this.syntaxTree.lineMap(), elementFullStart + element.leadingTriviaWidth(), element.width(), diagnosticKey, args));
         }
 
         public visitCatchClause(node: CatchClauseSyntax): void {
@@ -187,16 +188,6 @@ module TypeScript {
         }
 
         private checkParameterListAcessibilityModifiers(node: ParameterListSyntax): boolean {
-            // Only constructor parameters can have public/private modifiers.  Also, the constructor
-            // needs to have a body, and it can't be in an ambient context.
-            if (this.currentConstructor !== null &&
-                this.currentConstructor.parameterList === node &&
-                this.currentConstructor.block &&
-                !this.inAmbientDeclaration) {
-
-                return false;
-            }
-
             var parameterFullStart = this.childFullStart(node, node.parameters);
 
             for (var i = 0, n = node.parameters.childCount(); i < n; i++) {
@@ -204,25 +195,58 @@ module TypeScript {
                 if (i % 2 === 0) {
                     var parameter = <ParameterSyntax>node.parameters.childAt(i);
 
-                    if (parameter.publicOrPrivateKeyword) {
-                        var keywordFullStart = parameterFullStart + Syntax.childOffset(parameter, parameter.publicOrPrivateKeyword);
-
-                        if (this.inAmbientDeclaration) {
-                            this.pushDiagnostic1(keywordFullStart, parameter.publicOrPrivateKeyword,
-                                DiagnosticCode.Parameter_property_declarations_cannot_be_used_in_an_ambient_context);
-                        }
-                        else if (!this.currentConstructor.block) {
-                            this.pushDiagnostic1(keywordFullStart, parameter.publicOrPrivateKeyword,
-                                DiagnosticCode.Parameter_property_declarations_cannot_be_used_in_a_constructor_overload);
-                        }
-                        else {
-                            this.pushDiagnostic1(keywordFullStart, parameter.publicOrPrivateKeyword,
-                                DiagnosticCode.Parameter_property_declarations_can_only_be_used_in_constructors);
-                        }
+                    if (this.checkParameterAccessibilityModifiers(node, parameter, parameterFullStart)) {
+                        return true;
                     }
                 }
 
                 parameterFullStart += nodeOrToken.fullWidth();
+            }
+
+            return false;
+        }
+
+        private checkParameterAccessibilityModifiers(parameterList: ParameterListSyntax, parameter: ParameterSyntax, parameterFullStart: number): boolean {
+            if (parameter.modifiers.childCount() > 0) {
+                var modifiers = parameter.modifiers;
+                var modifierFullStart = parameterFullStart + Syntax.childOffset(parameter, modifiers);
+
+                for (var i = 0, n = modifiers.childCount(); i < n; i++) {
+                    var modifier = <ISyntaxToken>modifiers.childAt(i);
+
+                    if (this.checkParameterAccessibilityModifier(parameterList, modifier, modifierFullStart, i)) {
+                        return true;
+                    }
+
+                    modifierFullStart += modifier.fullWidth();
+                }
+            }
+
+            return false;
+        }
+
+        private checkParameterAccessibilityModifier(parameterList: ParameterListSyntax, modifier: ISyntaxToken, modifierFullStart: number, modifierIndex: number): boolean {
+            if (modifier.tokenKind !== SyntaxKind.PublicKeyword && modifier.tokenKind !== SyntaxKind.PrivateKeyword) {
+                this.pushDiagnostic1(modifierFullStart, modifier,
+                    DiagnosticCode._0_modifier_cannot_appear_on_a_parameter, [modifier.text()]);
+                return true;
+            }
+            else {
+                if (modifierIndex > 0) {
+                    this.pushDiagnostic1(modifierFullStart, modifier, DiagnosticCode.Accessibility_modifier_already_seen);
+                    return true;
+                }
+
+                if (!this.inAmbientDeclaration && this.currentConstructor && !this.currentConstructor.block && this.currentConstructor.callSignature.parameterList === parameterList) {
+                    this.pushDiagnostic1(modifierFullStart, modifier,
+                        DiagnosticCode.Parameter_property_declarations_cannot_be_used_in_a_constructor_overload);
+                    return true;
+                }
+                else if (this.inAmbientDeclaration || this.currentConstructor === null || this.currentConstructor.callSignature.parameterList !== parameterList) {
+                    this.pushDiagnostic1(modifierFullStart, modifier,
+                        DiagnosticCode.Parameter_property_declarations_can_only_be_used_in_a_non_ambient_constructor_declaration);
+                    return true;
+                }
             }
 
             return false;
@@ -333,7 +357,7 @@ module TypeScript {
                     DiagnosticCode.Index_signatures_cannot_have_rest_parameters);
                 return true;
             }
-            else if (parameter.publicOrPrivateKeyword) {
+            else if (parameter.modifiers.childCount() > 0) {
                 this.pushDiagnostic1(
                     parameterFullStart, parameter,
                     DiagnosticCode.Index_signature_parameter_cannot_have_accessibility_modifiers);
@@ -494,10 +518,30 @@ module TypeScript {
                             inFunctionOverloadChain = functionDeclaration.block === null;
                             functionOverloadChainName = functionDeclaration.identifier.valueText();
 
-                            if (lastElement && inFunctionOverloadChain) {
-                                this.pushDiagnostic1(moduleElementFullStart, moduleElement.firstToken(),
-                                    DiagnosticCode.Function_implementation_expected);
-                                return true;
+                            if (inFunctionOverloadChain) {
+                                if (lastElement) {
+                                    this.pushDiagnostic1(moduleElementFullStart, moduleElement.firstToken(),
+                                        DiagnosticCode.Function_implementation_expected);
+                                    return true;
+                                }
+                                else {
+                                    // We're a function without a body, and there's another element 
+                                    // after us.  If it's another overload that doesn't have a body,
+                                    // then report an error that we're missing an implementation here.
+
+                                    var nextElement = moduleElements.childAt(i + 1);
+                                    if (nextElement.kind() === SyntaxKind.FunctionDeclaration) {
+                                        var nextFunction = <FunctionDeclarationSyntax>nextElement;
+
+                                        if (nextFunction.identifier.valueText() !== functionOverloadChainName &&
+                                            nextFunction.block === null) {
+
+                                            var identifierFullStart = moduleElementFullStart + Syntax.childOffset(moduleElement, functionDeclaration.identifier);
+                                            this.pushDiagnostic1(identifierFullStart, functionDeclaration.identifier, DiagnosticCode.Function_implementation_expected);
+                                            return true;
+                                        }
+                                    }
+                                }
                             }
                         }
                         else {
@@ -543,9 +587,10 @@ module TypeScript {
                                 DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
                             return true;
                         }
+
                         isStaticOverload = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
                         if (isStaticOverload !== isInStaticOverloadChain) {
-                            propertyNameFullStart = classElementFullStart + Syntax.childOffset(classElement, memberFunctionDeclaration.propertyName);
+                            var propertyNameFullStart = classElementFullStart + Syntax.childOffset(classElement, memberFunctionDeclaration.propertyName);
                             var diagnostic = isInStaticOverloadChain ? DiagnosticCode.Function_overload_must_be_static : DiagnosticCode.Function_overload_must_not_be_static;
                             this.pushDiagnostic1(propertyNameFullStart, memberFunctionDeclaration.propertyName,
                                 diagnostic, null);
@@ -567,10 +612,30 @@ module TypeScript {
                         functionOverloadChainName = memberFunctionDeclaration.propertyName.valueText();
                         isInStaticOverloadChain = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
 
-                        if (lastElement && inFunctionOverloadChain) {
-                            this.pushDiagnostic1(classElementFullStart, classElement.firstToken(),
-                                DiagnosticCode.Function_implementation_expected);
-                            return true;
+                        if (inFunctionOverloadChain) {
+                            if (lastElement) {
+                                this.pushDiagnostic1(classElementFullStart, classElement.firstToken(),
+                                    DiagnosticCode.Function_implementation_expected);
+                                return true;
+                            }
+                            else {
+                                // We're a function without a body, and there's another element 
+                                // after us.  If it's another overload that doesn't have a body,
+                                // then report an error that we're missing an implementation here.
+
+                                var nextElement = node.classElements.childAt(i + 1);
+                                if (nextElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
+                                    var nextMemberFunction = <MemberFunctionDeclarationSyntax>nextElement;
+
+                                    if (nextMemberFunction.propertyName.valueText() !== functionOverloadChainName &&
+                                        nextMemberFunction.block === null) {
+
+                                        var propertyNameFullStart = classElementFullStart + Syntax.childOffset(classElement, memberFunctionDeclaration.propertyName);
+                                        this.pushDiagnostic1(propertyNameFullStart, memberFunctionDeclaration.propertyName, DiagnosticCode.Function_implementation_expected);
+                                        return true;
+                                    }
+                                }
+                            }
                         }
                     }
                     else if (classElement.kind() === SyntaxKind.ConstructorDeclaration) {
@@ -614,7 +679,6 @@ module TypeScript {
                 switch (token.valueText()) {
                     case "any":
                     case "number":
-                    case "bool":
                     case "boolean":
                     case "string":
                     case "void":
@@ -770,11 +834,30 @@ module TypeScript {
             super.visitMemberFunctionDeclaration(node);
         }
 
-        private checkGetMemberAccessorParameter(node: GetMemberAccessorDeclarationSyntax): boolean {
-            var getKeywordFullStart = this.childFullStart(node, node.getKeyword);
-            if (node.parameterList.parameters.childCount() !== 0) {
-                this.pushDiagnostic1(getKeywordFullStart, node.getKeyword,
+        private checkGetAccessorParameter(node: SyntaxNode, getKeyword: ISyntaxToken, parameterList: ParameterListSyntax): boolean {
+            var getKeywordFullStart = this.childFullStart(node, getKeyword);
+            if (parameterList.parameters.childCount() !== 0) {
+                this.pushDiagnostic1(getKeywordFullStart, getKeyword,
                     DiagnosticCode.get_accessor_cannot_have_parameters);
+                return true;
+            }
+
+            return false;
+        }
+
+        public visitIndexMemberDeclaration(node: IndexMemberDeclarationSyntax): void {
+            if (this.checkIndexMemberModifiers(node)) {
+                this.skip(node);
+                return;
+            }
+
+            super.visitIndexMemberDeclaration(node);
+        }
+
+        private checkIndexMemberModifiers(node: IndexMemberDeclarationSyntax): boolean {
+            if (node.modifiers.childCount() > 0) {
+                var modifierFullStart = this.childFullStart(node, node.modifiers);
+                this.pushDiagnostic1(modifierFullStart, node.modifiers.childAt(0), DiagnosticCode.Modifiers_cannot_appear_here);
                 return true;
             }
 
@@ -791,34 +874,46 @@ module TypeScript {
             return false;
         }
 
-        public visitGetMemberAccessorDeclaration(node: GetMemberAccessorDeclarationSyntax): void {
-            if (this.checkEcmaScriptVersionIsAtLeast(node, node.getKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
+        public visitObjectLiteralExpression(node: ObjectLiteralExpressionSyntax): void {
+            var savedInObjectLiteralExpression = this.inObjectLiteralExpression;
+            this.inObjectLiteralExpression = true;
+            super.visitObjectLiteralExpression(node);
+            this.inObjectLiteralExpression = savedInObjectLiteralExpression;
+        }
+
+        public visitGetAccessor(node: GetAccessorSyntax): void {
+            if (this.checkForAccessorDeclarationInAmbientContext(node) ||
+                this.checkEcmaScriptVersionIsAtLeast(node, node.getKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
+                this.checkForDisallowedModifiers(node, node.modifiers) ||
                 this.checkClassElementModifiers(node.modifiers) ||
-                this.checkGetMemberAccessorParameter(node)) {
+                this.checkGetAccessorParameter(node, node.getKeyword, node.parameterList)) {
                 this.skip(node);
                 return;
             }
 
-            super.visitGetMemberAccessorDeclaration(node);
+            super.visitGetAccessor(node);
         }
 
-        private checkSetMemberAccessorParameter(node: SetMemberAccessorDeclarationSyntax): boolean {
-            var setKeywordFullStart = this.childFullStart(node, node.setKeyword);
-            if (node.parameterList.parameters.childCount() !== 1) {
-                this.pushDiagnostic1(setKeywordFullStart, node.setKeyword,
+        private checkForAccessorDeclarationInAmbientContext(accessor: SyntaxNode): boolean {
+            if (this.inAmbientDeclaration) {
+                this.pushDiagnostic1(this.position(), accessor, DiagnosticCode.Accessors_are_not_allowed_in_ambient_contexts, null);
+                return true;
+            }
+
+            return false;
+        }
+
+        private checkSetAccessorParameter(node: SyntaxNode, setKeyword: ISyntaxToken, parameterList: ParameterListSyntax): boolean {
+            var setKeywordFullStart = this.childFullStart(node, setKeyword);
+            if (parameterList.parameters.childCount() !== 1) {
+                this.pushDiagnostic1(setKeywordFullStart, setKeyword,
                     DiagnosticCode.set_accessor_must_have_one_and_only_one_parameter);
                 return true;
             }
 
-            var parameterListFullStart = this.childFullStart(node, node.parameterList);
-            var parameterFullStart = parameterListFullStart + Syntax.childOffset(node.parameterList, node.parameterList.openParenToken);
-            var parameter = <ParameterSyntax>node.parameterList.parameters.childAt(0);
-
-            if (parameter.publicOrPrivateKeyword) {
-                this.pushDiagnostic1(parameterFullStart, parameter,
-                    DiagnosticCode.set_accessor_parameter_cannot_have_accessibility_modifier);
-                return true;
-            }
+            var parameterListFullStart = this.childFullStart(node, parameterList);
+            var parameterFullStart = parameterListFullStart + Syntax.childOffset(parameterList, parameterList.openParenToken);
+            var parameter = <ParameterSyntax>parameterList.parameters.childAt(0);
 
             if (parameter.questionToken) {
                 this.pushDiagnostic1(parameterFullStart, parameter,
@@ -841,33 +936,17 @@ module TypeScript {
             return false;
         }
 
-        public visitSetMemberAccessorDeclaration(node: SetMemberAccessorDeclarationSyntax): void {
-            if (this.checkEcmaScriptVersionIsAtLeast(node, node.setKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
+        public visitSetAccessor(node: SetAccessorSyntax): void {
+            if (this.checkForAccessorDeclarationInAmbientContext(node) ||
+                this.checkEcmaScriptVersionIsAtLeast(node, node.setKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
+                this.checkForDisallowedModifiers(node, node.modifiers) ||
                 this.checkClassElementModifiers(node.modifiers) ||
-                this.checkSetMemberAccessorParameter(node)) {
+                this.checkSetAccessorParameter(node, node.setKeyword, node.parameterList)) {
                 this.skip(node);
                 return;
             }
 
-            super.visitSetMemberAccessorDeclaration(node);
-        }
-
-        public visitGetAccessorPropertyAssignment(node: GetAccessorPropertyAssignmentSyntax): void {
-            if (this.checkEcmaScriptVersionIsAtLeast(node, node.getKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher)) {
-                this.skip(node);
-                return;
-            }
-
-            super.visitGetAccessorPropertyAssignment(node);
-        }
-
-        public visitSetAccessorPropertyAssignment(node: SetAccessorPropertyAssignmentSyntax): void {
-            if (this.checkEcmaScriptVersionIsAtLeast(node, node.setKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher)) {
-                this.skip(node);
-                return;
-            }
-
-            super.visitSetAccessorPropertyAssignment(node);
+            super.visitSetAccessor(node);
         }
 
         public visitEnumDeclaration(node: EnumDeclarationSyntax): void {
@@ -890,23 +969,21 @@ module TypeScript {
         private checkEnumElements(node: EnumDeclarationSyntax): boolean {
             var enumElementFullStart = this.childFullStart(node, node.enumElements);
 
-            var seenComputedValue = false;
+            var previousValueWasComputed = false;
             for (var i = 0, n = node.enumElements.childCount(); i < n; i++) {
                 var child = node.enumElements.childAt(i);
 
                 if (i % 2 === 0) {
                     var enumElement = <EnumElementSyntax>child;
 
-                    if (!enumElement.equalsValueClause && seenComputedValue) {
+                    if (!enumElement.equalsValueClause && previousValueWasComputed) {
                         this.pushDiagnostic1(enumElementFullStart, enumElement, DiagnosticCode.Enum_member_must_have_initializer, null);
                         return true;
                     }
 
                     if (enumElement.equalsValueClause) {
                         var value = enumElement.equalsValueClause.value;
-                        if (!Syntax.isIntegerLiteral(value)) {
-                            seenComputedValue = true;
-                        }
+                        previousValueWasComputed = !Syntax.isIntegerLiteral(value);
                     }
                 }
 
@@ -988,21 +1065,21 @@ module TypeScript {
         }
 
         private checkForDisallowedImportDeclaration(node: ModuleDeclarationSyntax): boolean {
-            if (node.stringLiteral === null) {
-                var currentElementFullStart = this.childFullStart(node, node.moduleElements);
+            var currentElementFullStart = this.childFullStart(node, node.moduleElements);
 
-                for (var i = 0, n = node.moduleElements.childCount(); i < n; i++) {
-                    var child = node.moduleElements.childAt(i);
-                    if (child.kind() === SyntaxKind.ImportDeclaration) {
-                        var importDeclaration = <ImportDeclarationSyntax>child;
-                        if (importDeclaration.moduleReference.kind() === SyntaxKind.ExternalModuleReference) {
+            for (var i = 0, n = node.moduleElements.childCount(); i < n; i++) {
+                var child = node.moduleElements.childAt(i);
+                if (child.kind() === SyntaxKind.ImportDeclaration) {
+                    var importDeclaration = <ImportDeclarationSyntax>child;
+                    if (importDeclaration.moduleReference.kind() === SyntaxKind.ExternalModuleReference) {
+                        if (node.stringLiteral === null) {
                             this.pushDiagnostic1(currentElementFullStart, importDeclaration,
                                 DiagnosticCode.Import_declarations_in_an_internal_module_cannot_reference_an_external_module, null);
                         }
                     }
-
-                    currentElementFullStart += child.fullWidth();
                 }
+
+                currentElementFullStart += child.fullWidth();
             }
 
             return false;
@@ -1029,7 +1106,7 @@ module TypeScript {
         }
 
         public visitModuleDeclaration(node: ModuleDeclarationSyntax): void {
-            if (this.checkForReservedName(node, node.moduleName, DiagnosticCode.Module_name_cannot_be_0) ||
+            if (this.checkForReservedName(node, node.name, DiagnosticCode.Module_name_cannot_be_0) ||
                 this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.moduleKeyword, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
@@ -1218,12 +1295,28 @@ module TypeScript {
         }
 
         public visitForInStatement(node: ForInStatementSyntax): void {
-            if (this.checkForStatementInAmbientContxt(node)) {
+            if (this.checkForStatementInAmbientContxt(node) ||
+                this.checkForInStatementVariableDeclaration(node)) {
                 this.skip(node);
                 return;
             }
 
             super.visitForInStatement(node);
+        }
+
+        private checkForInStatementVariableDeclaration(node: ForInStatementSyntax): boolean {
+            // The parser accepts a Variable Declaration in a ForInStatement, but the grammar only
+            // allows a very restricted form.  Specifically, there must be only a single Variable
+            // Declarator in the Declaration.
+            if (node.variableDeclaration && node.variableDeclaration.variableDeclarators.nonSeparatorCount() > 1) {
+                var variableDeclarationFullStart = this.childFullStart(node, node.variableDeclaration);
+
+                this.pushDiagnostic1(variableDeclarationFullStart, node.variableDeclaration,
+                    DiagnosticCode.Only_a_single_variable_declaration_is_allowed_in_a_for_in_statement);
+                return true;
+            }
+
+            return false;
         }
 
         public visitForStatement(node: ForStatementSyntax): void {
@@ -1308,10 +1401,12 @@ module TypeScript {
         }
 
         private checkForDisallowedModifiers(parent: ISyntaxElement, modifiers: ISyntaxList): boolean {
-            if (this.inBlock && modifiers.childCount() > 0) {
-                var modifierFullStart = this.childFullStart(parent, modifiers);
-                this.pushDiagnostic1(modifierFullStart, modifiers.childAt(0), DiagnosticCode.Modifiers_cannot_appear_here);
-                return true;
+            if (this.inBlock || this.inObjectLiteralExpression) {
+                if (modifiers.childCount() > 0) {
+                    var modifierFullStart = this.childFullStart(parent, modifiers);
+                    this.pushDiagnostic1(modifierFullStart, modifiers.childAt(0), DiagnosticCode.Modifiers_cannot_appear_here);
+                    return true;
+                }
             }
 
             return false;
@@ -1413,10 +1508,61 @@ module TypeScript {
         }
 
         public visitConstructorDeclaration(node: ConstructorDeclarationSyntax): void {
+            if (this.checkClassElementModifiers(node.modifiers) ||
+                this.checkConstructorModifiers(node.modifiers) ||
+                this.checkConstructorTypeParameterList(node) ||
+                this.checkConstructorTypeAnnotation(node)) {
+
+                this.skip(node);
+                return;
+            }
+
             var savedCurrentConstructor = this.currentConstructor;
             this.currentConstructor = node;
             super.visitConstructorDeclaration(node);
             this.currentConstructor = savedCurrentConstructor;
+        }
+
+        private checkConstructorModifiers(modifiers: ISyntaxList): boolean {
+            var currentElementFullStart = this.position();
+
+            for (var i = 0, n = modifiers.childCount(); i < n; i++) {
+                var child = modifiers.childAt(i);
+                if (child.kind() !== SyntaxKind.PublicKeyword) {
+                    this.pushDiagnostic1(currentElementFullStart, child, DiagnosticCode._0_modifier_cannot_appear_on_a_constructor_declaration, [SyntaxFacts.getText(child.kind())]);
+                    return true;
+                }
+
+                currentElementFullStart += child.fullWidth();
+            }
+
+            return false;
+        }
+
+        private checkConstructorTypeParameterList(node: ConstructorDeclarationSyntax): boolean {
+            var currentElementFullStart = this.position();
+
+            if (node.callSignature.typeParameterList) {
+                var callSignatureFullStart = this.childFullStart(node, node.callSignature);
+                var typeParameterListFullStart = callSignatureFullStart + Syntax.childOffset(node.callSignature, node.callSignature.typeAnnotation);
+                this.pushDiagnostic1(callSignatureFullStart, node.callSignature.typeParameterList, DiagnosticCode.Type_parameters_cannot_appear_on_a_constructor_declaration);
+                return true;
+            }
+
+            return false;
+        }
+
+        private checkConstructorTypeAnnotation(node: ConstructorDeclarationSyntax): boolean {
+            var currentElementFullStart = this.position();
+
+            if (node.callSignature.typeAnnotation) {
+                var callSignatureFullStart = this.childFullStart(node, node.callSignature);
+                var typeAnnotationFullStart = callSignatureFullStart + Syntax.childOffset(node.callSignature, node.callSignature.typeAnnotation);
+                this.pushDiagnostic1(typeAnnotationFullStart, node.callSignature.typeAnnotation, DiagnosticCode.Type_annotation_cannot_appear_on_a_constructor_declaration);
+                return true;
+            }
+
+            return false;
         }
 
         public visitSourceUnit(node: SourceUnitSyntax): void {
@@ -1429,16 +1575,6 @@ module TypeScript {
             }
 
             super.visitSourceUnit(node);
-        }
-
-        public visitExternalModuleReference(node: ExternalModuleReferenceSyntax): void {
-            if (node.moduleOrRequireKeyword.tokenKind === SyntaxKind.ModuleKeyword && !this.syntaxTree.parseOptions().allowModuleKeywordInExternalModuleReference()) {
-                this.pushDiagnostic1(this.position(), node.moduleOrRequireKeyword, DiagnosticCode.module_is_deprecated_Use_require_instead);
-                this.skip(node);
-                return;
-            }
-
-            super.visitExternalModuleReference(node);
         }
     }
 }

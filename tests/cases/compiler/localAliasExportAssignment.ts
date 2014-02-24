@@ -1,18 +1,14 @@
-declare module 'connect' {
+//@module: commonjs
+// @Filename: localAliasExportAssignment_0.ts
+var server: {
+    (): any;
+};
 
-    var server: {
+export = server;
 
-        (): any;
-
-    };
-
-    export = server;
-
-}
-
- 
-
-import connect = require('connect');
+// @Filename: localAliasExportAssignment_1.ts
+///<reference path='localAliasExportAssignment_0.ts'/>
+import connect = require('localAliasExportAssignment_0');
 
 connect();
 
