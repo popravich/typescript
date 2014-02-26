@@ -2,6 +2,18 @@
 
 module TypeScript {
     export interface ISyntaxTriviaList {
+        parent: ISyntaxToken;
+        syntaxTree(): SyntaxTree;
+
+        isNode(): boolean;
+        isToken(): boolean;
+        isTrivia(): boolean;
+        isList(): boolean;
+        isSeparatedList(): boolean;
+        isTriviaList(): boolean;
+
+        isShared(): boolean;
+
         count(): number;
         syntaxTriviaAt(index: number): ISyntaxTrivia;
 
@@ -21,38 +33,87 @@ module TypeScript {
         concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList;
 
         collectTextElements(elements: string[]): void;
+
+        clone(): ISyntaxTriviaList;
     }
 }
 
 module TypeScript.Syntax {
-    export var emptyTriviaList: ISyntaxTriviaList = {
-        kind: (): SyntaxKind => SyntaxKind.TriviaList,
+    class EmptyTriviaList implements ISyntaxTriviaList {
+        public parent: ISyntaxToken = null;
 
-        count: (): number => 0,
+        public isNode(): boolean { return false; }
+        public isToken(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
+        public isList(): boolean { return false; }
+        public isSeparatedList(): boolean { return false; }
+        public isTriviaList(): boolean { return true; }
 
-        syntaxTriviaAt: (index: number): ISyntaxTrivia => {
+        public isShared(): boolean {
+            return true;
+        }
+
+        public syntaxTree(): SyntaxTree {
+            throw Errors.invalidOperation("Shared lists do not belong to a single tree.");
+        }
+
+        public kind() {
+            return SyntaxKind.TriviaList;
+        }
+
+        public count(): number {
+            return 0;
+        }
+
+        public syntaxTriviaAt(index: number): ISyntaxTrivia {
             throw Errors.argumentOutOfRange("index");
-        },
+        }
 
-        last: (): ISyntaxTrivia => {
+        public last(): ISyntaxTrivia {
             throw Errors.argumentOutOfRange("index");
-        },
+        }
 
-        fullWidth: (): number => 0,
-        fullText: (): string => "",
+        public fullWidth(): number {
+            return 0;
+        }
 
-        hasComment: (): boolean => false,
-        hasNewLine: (): boolean => false,
-        hasSkippedToken: (): boolean => false,
+        public fullText(): string {
+            return "";
+        }
 
-        toJSON: (key: any): any => [],
+        public hasComment(): boolean {
+            return false;
+        }
 
-        collectTextElements: (elements: string[]): void => { },
+        public hasNewLine(): boolean {
+            return false;
+        }
 
-        toArray: (): ISyntaxTrivia[] => [],
+        public hasSkippedToken(): boolean {
+            return false;
+        }
 
-        concat: (trivia: ISyntaxTriviaList): ISyntaxTriviaList => trivia,
+        public toJSON(key: any): any {
+            return [];
+        }
+
+        public collectTextElements(elements: string[]): void {
+        }
+
+        public toArray(): ISyntaxTrivia[] {
+            return [];
+        }
+
+        public concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList {
+            return trivia;
+        }
+
+        public clone() {
+            return this;
+        }
     };
+
+    export var emptyTriviaList: ISyntaxTriviaList = new EmptyTriviaList();
 
     function concatTrivia(list1: ISyntaxTriviaList, list2: ISyntaxTriviaList): ISyntaxTriviaList {
         if (list1.count() === 0) {
@@ -74,10 +135,27 @@ module TypeScript.Syntax {
     }
 
     class SingletonSyntaxTriviaList implements ISyntaxTriviaList {
+        public parent: ISyntaxToken = null;
         private item: ISyntaxTrivia;
 
         constructor(item: ISyntaxTrivia) {
-            this.item = item;
+            this.item = item.clone();
+            this.item.parent = this;
+        }
+
+        public isNode(): boolean { return false; }
+        public isToken(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
+        public isList(): boolean { return false; }
+        public isSeparatedList(): boolean { return false; }
+        public isTriviaList(): boolean { return true; }
+
+        public syntaxTree(): SyntaxTree {
+            return this.parent.syntaxTree();
+        }
+
+        public isShared(): boolean {
+            return false;
         }
 
         public kind(): SyntaxKind { return SyntaxKind.TriviaList; }
@@ -133,13 +211,37 @@ module TypeScript.Syntax {
         public concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList {
             return concatTrivia(this, trivia);
         }
+
+        public clone(): ISyntaxTriviaList {
+            return new SingletonSyntaxTriviaList(this.item.clone());
+        }
     }
 
     class NormalSyntaxTriviaList implements ISyntaxTriviaList {
+        public parent: ISyntaxToken = null;
         private trivia: ISyntaxTrivia[];
 
         constructor(trivia: ISyntaxTrivia[]) {
-            this.trivia = trivia;
+            this.trivia = trivia.map(t => {
+                var cloned = t.clone();
+                cloned.parent = this;
+                return cloned;
+            });
+        }
+
+        public isNode(): boolean { return false; }
+        public isToken(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
+        public isList(): boolean { return false; }
+        public isSeparatedList(): boolean { return false; }
+        public isTriviaList(): boolean { return true; }
+
+        public isShared(): boolean {
+            return false;
+        }
+
+        public syntaxTree(): SyntaxTree {
+            return this.parent.syntaxTree();
         }
 
         public kind(): SyntaxKind { return SyntaxKind.TriviaList; }
@@ -220,6 +322,10 @@ module TypeScript.Syntax {
 
         public concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList {
             return concatTrivia(this, trivia);
+        }
+
+        public clone(): ISyntaxTriviaList {
+            return new NormalSyntaxTriviaList(this.trivia.map(t => t.clone()));
         }
     }
 

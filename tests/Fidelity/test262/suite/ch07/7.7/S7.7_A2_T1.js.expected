@@ -40,17 +40,31 @@
     ],
     "sourceUnit": {
         "kind": "SourceUnit",
+        "fullStart": 0,
+        "fullEnd": 393,
+        "start": 379,
+        "end": 393,
         "fullWidth": 393,
+        "width": 14,
         "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ExpressionStatement",
+                "fullStart": 0,
+                "fullEnd": 385,
+                "start": 379,
+                "end": 384,
                 "fullWidth": 385,
+                "width": 5,
                 "isIncrementallyUnusable": true,
                 "expression": {
                     "kind": "IdentifierName",
-                    "width": 5,
+                    "fullStart": 0,
+                    "fullEnd": 385,
+                    "start": 379,
+                    "end": 384,
                     "fullWidth": 385,
+                    "width": 5,
                     "text": "u007B",
                     "value": "u007B",
                     "valueText": "u007B",
@@ -63,40 +77,61 @@
                     "leadingTrivia": [
                         {
                             "kind": "SingleLineCommentTrivia",
+                            "fullStart": 0,
+                            "fullEnd": 60,
                             "text": "// Copyright 2009 the Sputnik authors.  All rights reserved."
                         },
                         {
                             "kind": "NewLineTrivia",
+                            "fullStart": 60,
+                            "fullEnd": 61,
                             "text": "\n"
                         },
                         {
                             "kind": "SingleLineCommentTrivia",
+                            "fullStart": 61,
+                            "fullEnd": 131,
                             "text": "// This code is governed by the BSD license found in the LICENSE file."
                         },
                         {
                             "kind": "NewLineTrivia",
+                            "fullStart": 131,
+                            "fullEnd": 132,
                             "text": "\n"
                         },
                         {
                             "kind": "NewLineTrivia",
+                            "fullStart": 132,
+                            "fullEnd": 133,
                             "text": "\n"
                         },
                         {
                             "kind": "MultiLineCommentTrivia",
+                            "fullStart": 133,
+                            "fullEnd": 376,
                             "text": "/**\n * Punctuator cannot be expressed as a Unicode escape sequence consisting of six characters, namely \\u plus four hexadecimal digits\n *\n * @path ch07/7.7/S7.7_A2_T1.js\n * @description Try to use {} as a Unicode \\u007B\\u007D\n * @negative\n */"
                         },
                         {
                             "kind": "NewLineTrivia",
+                            "fullStart": 376,
+                            "fullEnd": 377,
                             "text": "\n"
                         },
                         {
                             "kind": "NewLineTrivia",
+                            "fullStart": 377,
+                            "fullEnd": 378,
                             "text": "\n"
                         },
                         {
                             "kind": "SkippedTokenTrivia",
                             "skippedToken": {
                                 "kind": "ErrorToken",
+                                "fullStart": 378,
+                                "fullEnd": 379,
+                                "start": 378,
+                                "end": 379,
+                                "fullWidth": 1,
                                 "width": 1,
                                 "text": "\\"
                             }
@@ -107,6 +142,11 @@
                             "kind": "SkippedTokenTrivia",
                             "skippedToken": {
                                 "kind": "ErrorToken",
+                                "fullStart": 384,
+                                "fullEnd": 385,
+                                "start": 384,
+                                "end": 385,
+                                "fullWidth": 1,
                                 "width": 1,
                                 "text": "\\"
                             }
@@ -115,15 +155,30 @@
                 },
                 "semicolonToken": {
                     "kind": "SemicolonToken",
+                    "fullStart": 385,
+                    "fullEnd": 385,
+                    "start": 385,
+                    "end": 385,
+                    "fullWidth": 0,
                     "width": 0,
                     "text": ""
                 }
             },
             {
                 "kind": "ExpressionStatement",
+                "fullStart": 385,
+                "fullEnd": 392,
+                "start": 385,
+                "end": 391,
                 "fullWidth": 7,
+                "width": 6,
                 "expression": {
                     "kind": "IdentifierName",
+                    "fullStart": 385,
+                    "fullEnd": 390,
+                    "start": 385,
+                    "end": 390,
+                    "fullWidth": 5,
                     "width": 5,
                     "text": "u007D",
                     "value": "u007D",
@@ -131,8 +186,12 @@
                 },
                 "semicolonToken": {
                     "kind": "SemicolonToken",
-                    "width": 1,
+                    "fullStart": 390,
+                    "fullEnd": 392,
+                    "start": 390,
+                    "end": 391,
                     "fullWidth": 2,
+                    "width": 1,
                     "text": ";",
                     "value": ";",
                     "valueText": ";",
@@ -141,6 +200,8 @@
                     "trailingTrivia": [
                         {
                             "kind": "NewLineTrivia",
+                            "fullStart": 391,
+                            "fullEnd": 392,
                             "text": "\n"
                         }
                     ]
@@ -149,14 +210,20 @@
         ],
         "endOfFileToken": {
             "kind": "EndOfFileToken",
-            "width": 0,
+            "fullStart": 392,
+            "fullEnd": 393,
+            "start": 393,
+            "end": 393,
             "fullWidth": 1,
+            "width": 0,
             "text": "",
             "hasLeadingTrivia": true,
             "hasLeadingNewLine": true,
             "leadingTrivia": [
                 {
                     "kind": "NewLineTrivia",
+                    "fullStart": 392,
+                    "fullEnd": 393,
                     "text": "\n"
                 }
             ]

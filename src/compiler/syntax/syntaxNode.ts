@@ -2,16 +2,36 @@
 
 module TypeScript {
     export class SyntaxNode implements ISyntaxNodeOrToken {
+        public parent: ISyntaxElement = null;
         private _data: number;
+        private _syntaxID: number = 0;
 
         constructor(parsedInStrictMode: boolean) {
             this._data = parsedInStrictMode ? SyntaxConstants.NodeParsedInStrictModeMask : 0;
         }
 
+        public syntaxTree(): SyntaxTree {
+            return this.parent.syntaxTree();
+        }
+
+        public fileName(): string {
+            return this.syntaxTree().fileName();
+        }
+
+        public syntaxID(): number {
+            if (this._syntaxID === 0) {
+                this._syntaxID = TypeScript.Syntax._nextSyntaxID++;
+            }
+
+            return this._syntaxID;
+        }
+
         public isNode(): boolean { return true; }
         public isToken(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
+        public isTriviaList(): boolean { return false; }
 
         public kind(): SyntaxKind {
             throw Errors.abstract();
@@ -25,14 +45,43 @@ module TypeScript {
             throw Errors.abstract();
         }
 
+        public isShared(): boolean {
+            return false;
+        }
+
+        public fullStart(): number {
+            var firstToken = this.firstToken();
+            return firstToken ? firstToken.fullStart() : -1;
+        }
+
+        public fullEnd(): number {
+            var lastToken = this.lastToken();
+            return lastToken ? lastToken.fullEnd() : -1;
+        }
+
+        public start(): number {
+            var firstToken = this.firstToken();
+            return firstToken ? firstToken.start() : -1;
+        }
+
+        public end(): number {
+            var lastToken = this.lastToken();
+            return lastToken ? lastToken.end() : -1;
+        }
+
         // Returns the first non-missing token inside this node (or null if there are no such token).
         public firstToken(): ISyntaxToken {
             for (var i = 0, n = this.childCount(); i < n; i++) {
                 var element = this.childAt(i);
 
                 if (element !== null) {
-                    if (element.fullWidth() > 0 || element.kind() === SyntaxKind.EndOfFileToken) {
-                        return element.firstToken();
+                    if (element.kind() === SyntaxKind.EndOfFileToken) {
+                        return <ISyntaxToken>element;
+                    }
+
+                    var token = element.firstToken();
+                    if (token && token.fullWidth() > 0) {
+                        return token;
                     }
                 }
             }
@@ -46,8 +95,13 @@ module TypeScript {
                 var element = this.childAt(i);
 
                 if (element !== null) {
-                    if (element.fullWidth() > 0 || element.kind() === SyntaxKind.EndOfFileToken) {
-                        return element.lastToken();
+                    if (element.kind() === SyntaxKind.EndOfFileToken) {
+                        return <ISyntaxToken>element;
+                    }
+
+                    var token = element.lastToken();
+                    if (token && token.fullWidth() > 0) {
+                        return token;
                     }
                 }
             }
@@ -64,10 +118,10 @@ module TypeScript {
                         array.splice(index, 0, element);
                     }
                     else if (element.isList()) {
-                        (<ISyntaxList>element).insertChildrenInto(array, index);
+                        (<ISyntaxList<ISyntaxNodeOrToken>>element).insertChildrenInto(array, index);
                     }
                     else if (element.isSeparatedList()) {
-                        (<ISeparatedSyntaxList>element).insertChildrenInto(array, index);
+                        (<ISeparatedSyntaxList<ISyntaxNodeOrToken>>element).insertChildrenInto(array, index);
                     }
                     else {
                         throw Errors.invalidOperation();
@@ -89,8 +143,16 @@ module TypeScript {
         public toJSON(key: any): any {
             var result: any = {
                 kind: SyntaxKind[this.kind()],
-                fullWidth: this.fullWidth()
             };
+
+            result.fullStart = this.fullStart();
+            result.fullEnd = this.fullEnd();
+
+            result.start = this.start();
+            result.end = this.end();
+
+            result.fullWidth = this.fullWidth();
+            result.width = this.width();
 
             if (this.isIncrementallyUnusable()) {
                 result.isIncrementallyUnusable = true;
@@ -219,7 +281,7 @@ module TypeScript {
 
         /**
          * Finds a token according to the following rules:
-         * 1) If position matches the End of the node/s FullSpan and the node is SourceUnit,
+         * 1) If position matches the End of the node/s FullSpan and the node is SourceUnitSyntax,
          *    then the EOF token is returned. 
          * 
          *  2) If node.FullSpan.Contains(position) then the token that contains given position is
@@ -230,7 +292,7 @@ module TypeScript {
          * Note: findToken will always return a non-missing token with width greater than or equal to
          * 1 (except for EOF).  Empty tokens synthesized by the parser are never returned.
          */
-        public findToken(position: number, includeSkippedTokens: boolean = false): PositionedToken {
+        public findToken(position: number, includeSkippedTokens: boolean = false): ISyntaxToken {
             var endOfFileToken = this.tryGetEndOfFileAt(position);
             if (endOfFileToken !== null) {
                 return endOfFileToken;
@@ -240,7 +302,7 @@ module TypeScript {
                 throw Errors.argumentOutOfRange("position");
             }
 
-            var positionedToken= this.findTokenInternal(null, position, 0);
+            var positionedToken = Syntax.findToken(this, position);
 
             if (includeSkippedTokens) {
                 return Syntax.findSkippedTokenInPositionedToken(positionedToken, position) || positionedToken;
@@ -251,40 +313,16 @@ module TypeScript {
 
         }
 
-        private tryGetEndOfFileAt(position: number): PositionedToken {
+        private tryGetEndOfFileAt(position: number): ISyntaxToken {
             if (this.kind() === SyntaxKind.SourceUnit && position === this.fullWidth()) {
                 var sourceUnit = <SourceUnitSyntax>this;
-                return new PositionedToken(
-                    new PositionedNode(null, sourceUnit, 0),
-                    sourceUnit.endOfFileToken, sourceUnit.moduleElements.fullWidth());
+                return sourceUnit.endOfFileToken;
             }
 
             return null;
         }
 
-        private findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {
-            // Debug.assert(position >= 0 && position < this.fullWidth());
-
-            parent = new PositionedNode(parent, this, fullStart);
-            for (var i = 0, n = this.childCount(); i < n; i++) {
-                var element = this.childAt(i);
-
-                if (element !== null) {
-                    var childWidth = element.fullWidth();
-
-                    if (position < childWidth) {
-                        return (<any>element).findTokenInternal(parent, position, fullStart);
-                    }
-
-                    position -= childWidth;
-                    fullStart += childWidth;
-                }
-            }
-
-            throw Errors.invalidOperation();
-        }
-
-        public findTokenOnLeft(position: number, includeSkippedTokens: boolean = false): PositionedToken {
+        public findTokenOnLeft(position: number, includeSkippedTokens: boolean = false): ISyntaxToken {
             var positionedToken = this.findToken(position, /*includeSkippedTokens*/ false);
             var start = positionedToken.start();
             
@@ -310,7 +348,7 @@ module TypeScript {
             return positionedToken.previousToken(includeSkippedTokens);
         }
 
-        public findCompleteTokenOnLeft(position: number, includeSkippedTokens: boolean = false): PositionedToken {
+        public findCompleteTokenOnLeft(position: number, includeSkippedTokens: boolean = false): ISyntaxToken {
             var positionedToken = this.findToken(position, /*includeSkippedTokens*/ false);
 
             // Position better fall within this token.
@@ -322,7 +360,7 @@ module TypeScript {
             }
 
             // if position is after the end of the token, then this token is the token on the left.
-            if (positionedToken.token().width() > 0 && position >= positionedToken.end()) {
+            if (positionedToken.width() > 0 && position >= positionedToken.end()) {
                 return positionedToken;
             }
 

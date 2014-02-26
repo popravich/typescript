@@ -301,7 +301,7 @@ module TypeScript {
             return false;
         }
 
-        public ast(): AST {
+        public ast(): ISyntaxElement {
             return this.semanticInfoChain.getASTForDecl(this);
         }
 

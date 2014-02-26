@@ -3,4 +3,4 @@
 var g;
 var h;
 
-g = h;
+g = h; // ok

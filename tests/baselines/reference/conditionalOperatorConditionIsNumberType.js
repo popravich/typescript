@@ -21,7 +21,6 @@ condNumber ? exprString1 : exprString2;
 condNumber ? exprIsObject1 : exprIsObject2;
 
 //Cond is a number type literal
-//Cond is a number type literal
 1 ? exprAny1 : exprAny2;
 0 ? exprBoolean1 : exprBoolean2;
 0.123456789 ? exprNumber1 : exprNumber2;

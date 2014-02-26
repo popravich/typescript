@@ -192,7 +192,7 @@ module TypeScript {
             var parent = this.getParent(enumContainerDecl);
             var parentInstanceSymbol = this.getParent(enumContainerDecl, true);
             var parentDecl = enumContainerDecl.getParentDecl();
-            var enumAST = <EnumDeclaration>this.semanticInfoChain.getASTForDecl(enumContainerDecl);
+            var enumAST = <EnumDeclarationSyntax>this.semanticInfoChain.getASTForDecl(enumContainerDecl);
 
             var isExported = enumContainerDecl.flags & PullElementFlags.Exported;
 
@@ -458,7 +458,8 @@ module TypeScript {
             var parentInstanceSymbol = this.getParent(moduleContainerDecl, true);
             var parentDecl = moduleContainerDecl.getParentDecl();
             var moduleNameAST = this.semanticInfoChain.getASTForDecl(moduleContainerDecl);
-            var moduleDeclAST: AST = ASTHelpers.getEnclosingModuleDeclaration(moduleNameAST);
+            var moduleDeclAST: ISyntaxElement = ASTHelpers.getEnclosingModuleDeclaration(moduleNameAST);
+
             if (!moduleDeclAST) {
                 Debug.assert(moduleKind === PullElementKind.DynamicModule);
                 Debug.assert(moduleNameAST.kind() === SyntaxKind.SourceUnit);
@@ -582,7 +583,7 @@ module TypeScript {
         private bindImportDeclaration(importDeclaration: PullDecl) {
             var declFlags = importDeclaration.flags;
             var declKind = importDeclaration.kind;
-            var importDeclAST = <VariableDeclarator>this.semanticInfoChain.getASTForDecl(importDeclaration);
+            var importDeclAST = <VariableDeclaratorSyntax>this.semanticInfoChain.getASTForDecl(importDeclaration);
 
             var isExported = false;
             var importSymbol: PullTypeAliasSymbol = null;
@@ -663,7 +664,7 @@ module TypeScript {
             var constructorSymbol: PullSymbol = null;
             var constructorTypeSymbol: PullTypeSymbol = null;
 
-            var classAST = <ClassDeclaration>this.semanticInfoChain.getASTForDecl(classDecl);
+            var classAST = <ClassDeclarationSyntax>this.semanticInfoChain.getASTForDecl(classDecl);
 
             var parent = this.getParent(classDecl);
 
@@ -781,7 +782,7 @@ module TypeScript {
             var interfaceName = interfaceDecl.name;
             var interfaceSymbol: PullTypeSymbol = null;
 
-            var interfaceAST = <InterfaceDeclaration>this.semanticInfoChain.getASTForDecl(interfaceDecl);
+            var interfaceAST = <InterfaceDeclarationSyntax>this.semanticInfoChain.getASTForDecl(interfaceDecl);
             var createdNewSymbol = false;
             var parent = this.getParent(interfaceDecl);
 
@@ -862,7 +863,7 @@ module TypeScript {
         }
 
         private bindObjectTypeDeclarationToPullSymbol(objectDecl: PullDecl) {
-            var objectSymbolAST: AST = this.semanticInfoChain.getASTForDecl(objectDecl);
+            var objectSymbolAST: ISyntaxElement = this.semanticInfoChain.getASTForDecl(objectDecl);
 
             var objectSymbol = new PullTypeSymbol("", PullElementKind.ObjectType);
 
@@ -891,7 +892,7 @@ module TypeScript {
 
             var signature = new PullSignatureSymbol(PullElementKind.ConstructSignature);
 
-            var funcDecl = <ConstructorType>this.semanticInfoChain.getASTForDecl(constructorTypeDeclaration);
+            var funcDecl = <ConstructorTypeSyntax>this.semanticInfoChain.getASTForDecl(constructorTypeDeclaration);
             if (lastParameterIsRest(funcDecl.parameterList)) {
                 signature.hasVarArgs = true;
             }
@@ -930,14 +931,15 @@ module TypeScript {
         private bindVariableDeclarationToPullSymbol(variableDeclaration: PullDecl) {
             var declFlags = variableDeclaration.flags;
             var declKind = variableDeclaration.kind;
+
             var varDeclAST = this.semanticInfoChain.getASTForDecl(variableDeclaration);
             var nameAST = varDeclAST.kind() === SyntaxKind.ClassDeclaration
-                ? (<ClassDeclaration>varDeclAST).identifier
+                ? (<ClassDeclarationSyntax>varDeclAST).identifier
                 : varDeclAST.kind() === SyntaxKind.VariableDeclarator
-                    ? (<VariableDeclarator>varDeclAST).propertyName
+                    ? (<VariableDeclaratorSyntax>varDeclAST).propertyName
                     : varDeclAST.kind() === SyntaxKind.EnumDeclaration
-                        ? (<EnumDeclaration>varDeclAST).identifier
-                        : <AST>varDeclAST;
+                        ? (<EnumDeclarationSyntax>varDeclAST).identifier
+                        : varDeclAST;
 
             var isExported = (declFlags & PullElementFlags.Exported) !== 0;
 
@@ -967,7 +969,7 @@ module TypeScript {
 
             var decl: PullDecl;
             var decls: PullDecl[];
-            var ast: AST;
+            var ast: ISyntaxElement;
             var members: PullSymbol[];
 
             if (variableSymbol) {
@@ -1083,7 +1085,7 @@ module TypeScript {
                         variableSymbol = classTypeSymbol.getConstructorMethod();
                         variableDeclaration.setSymbol(variableSymbol);
 
-                        // set the AST to the constructor method's if possible
+                        // set the ISyntaxElement to the constructor method's if possible
                         decls = classTypeSymbol.getDeclarations();
 
                         if (decls.length) {
@@ -1182,7 +1184,7 @@ module TypeScript {
         private bindCatchVariableToPullSymbol(variableDeclaration: PullDecl) {
             var declFlags = variableDeclaration.flags;
             var declKind = variableDeclaration.kind;
-            var identifier = <Identifier>this.semanticInfoChain.getASTForDecl(variableDeclaration);
+            var identifier = <ISyntaxToken>this.semanticInfoChain.getASTForDecl(variableDeclaration);
 
             var declName = variableDeclaration.name;
 
@@ -1201,7 +1203,7 @@ module TypeScript {
         private bindEnumMemberDeclarationToPullSymbol(propertyDeclaration: PullDecl) {
             var declFlags = propertyDeclaration.flags;
             var declKind = propertyDeclaration.kind;
-            var propDeclAST = <EnumElement>this.semanticInfoChain.getASTForDecl(propertyDeclaration);
+            var propDeclAST = <EnumElementSyntax>this.semanticInfoChain.getASTForDecl(propertyDeclaration);
 
             var declName = propertyDeclaration.name;
 
@@ -1241,12 +1243,12 @@ module TypeScript {
 
             var ast = this.semanticInfoChain.getASTForDecl(propertyDeclaration);
             var astName = ast.kind() === SyntaxKind.MemberVariableDeclaration
-                ? (<MemberVariableDeclaration>ast).variableDeclarator.propertyName
+                ? (<MemberVariableDeclarationSyntax>ast).variableDeclarator.propertyName
                 : ast.kind() === SyntaxKind.PropertySignature
-                    ? (<PropertySignature>ast).propertyName
+                    ? (<PropertySignatureSyntax>ast).propertyName
                     : ast.kind() === SyntaxKind.Parameter
-                        ? (<Parameter>ast).identifier
-                        : (<VariableDeclarator>ast).propertyName;
+                        ? (<ParameterSyntax>ast).identifier
+                        : (<VariableDeclaratorSyntax>ast).propertyName;
 
             var isStatic = false;
             var isOptional = false;
@@ -1304,7 +1306,7 @@ module TypeScript {
         }
 
         // parameters
-        private bindParameterSymbols(functionDeclaration: AST, parameterList: IParameters, funcType: PullTypeSymbol, signatureSymbol: PullSignatureSymbol) {
+        private bindParameterSymbols(functionDeclaration: ISyntaxElement, parameterList: IParameters, funcType: PullTypeSymbol, signatureSymbol: PullSignatureSymbol) {
             // create a symbol for each ast
             // if it's a property, add the symbol to the enclosing type's member list
             var parameters: PullSymbol[] = [];
@@ -1369,7 +1371,7 @@ module TypeScript {
         private bindFunctionDeclarationToPullSymbol(functionDeclaration: PullDecl) {
             var declKind = functionDeclaration.kind;
             var declFlags = functionDeclaration.flags;
-            var funcDeclAST = <FunctionDeclaration>this.semanticInfoChain.getASTForDecl(functionDeclaration);
+            var funcDeclAST = <FunctionDeclarationSyntax>this.semanticInfoChain.getASTForDecl(functionDeclaration);
 
             var isExported = (declFlags & PullElementFlags.Exported) !== 0;
 
@@ -1464,7 +1466,7 @@ module TypeScript {
                 signature.hasVarArgs = true;
             }
 
-            var funcDecl = <FunctionDeclaration>this.semanticInfoChain.getASTForDecl(functionDeclaration);
+            var funcDecl = <FunctionDeclarationSyntax>this.semanticInfoChain.getASTForDecl(functionDeclaration);
             this.bindParameterSymbols(funcDecl, ASTHelpers.parametersFromParameterList(funcDecl.callSignature.parameterList), functionTypeSymbol, signature);
 
             var typeParameters = functionDeclaration.getTypeParameters();
@@ -1498,7 +1500,7 @@ module TypeScript {
             var ast = this.semanticInfoChain.getASTForDecl(functionExpressionDeclaration);
 
             var parameters = ast.kind() === SyntaxKind.SimpleArrowFunctionExpression
-                ? ASTHelpers.parametersFromIdentifier((<SimpleArrowFunctionExpression>ast).identifier)
+                ? ASTHelpers.parametersFromIdentifier((<SimpleArrowFunctionExpressionSyntax>ast).identifier)
                 : ASTHelpers.parametersFromParameterList(ASTHelpers.getParameterList(ast));
             var funcExpAST = ast;
 
@@ -1519,9 +1521,9 @@ module TypeScript {
             functionTypeSymbol.addDeclaration(functionExpressionDeclaration);
 
             var name = funcExpAST.kind() === SyntaxKind.FunctionExpression
-                ? (<FunctionExpression>funcExpAST).identifier
+                ? (<FunctionExpressionSyntax>funcExpAST).identifier
                 : funcExpAST.kind() === SyntaxKind.FunctionPropertyAssignment
-                    ? (<FunctionPropertyAssignment>funcExpAST).propertyName
+                    ? (<FunctionPropertyAssignmentSyntax>funcExpAST).propertyName
                     : null;
             if (name) {
                 this.semanticInfoChain.setSymbolForAST(name, functionSymbol);
@@ -1568,7 +1570,7 @@ module TypeScript {
         private bindFunctionTypeDeclarationToPullSymbol(functionTypeDeclaration: PullDecl) {
             var declKind = functionTypeDeclaration.kind;
             var declFlags = functionTypeDeclaration.flags;
-            var funcTypeAST = <FunctionType>this.semanticInfoChain.getASTForDecl(functionTypeDeclaration);
+            var funcTypeAST = <FunctionTypeSyntax>this.semanticInfoChain.getASTForDecl(functionTypeDeclaration);
 
             // 1. Test for existing decl - if it exists, use its symbol
             // 2. If no other decl exists, create a new symbol and use that one
@@ -1671,8 +1673,8 @@ module TypeScript {
             methodTypeSymbol.addDeclaration(methodDeclaration);
 
             var nameAST = methodAST.kind() === SyntaxKind.MemberFunctionDeclaration
-                ? (<MemberFunctionDeclaration>methodAST).propertyName
-                : (<MethodSignature>methodAST).propertyName;
+                ? (<MemberFunctionDeclarationSyntax>methodAST).propertyName
+                : (<MethodSignatureSyntax>methodAST).propertyName;
 
             Debug.assert(nameAST)
 
@@ -1699,11 +1701,11 @@ module TypeScript {
             var typeParameters = methodDeclaration.getTypeParameters();
             var typeParameter: PullTypeParameterSymbol;
             var typeParameterName: string;
-            var typeParameterAST: TypeParameter;
+            var typeParameterAST: TypeParameterSyntax;
 
             for (var i = 0; i < typeParameters.length; i++) {
                 typeParameterName = typeParameters[i].name;
-                typeParameterAST = <TypeParameter>this.semanticInfoChain.getASTForDecl(typeParameters[i]);
+                typeParameterAST = <TypeParameterSyntax>this.semanticInfoChain.getASTForDecl(typeParameters[i]);
 
                 typeParameter = signature.findTypeParameter(typeParameterName);
 
@@ -1730,7 +1732,7 @@ module TypeScript {
             methodTypeSymbol.insertCallSignatureAtIndex(signature, signatureIndex);
         }
 
-        private bindStaticPrototypePropertyOfClass(classAST: ClassDeclaration, classTypeSymbol: PullTypeSymbol, constructorTypeSymbol: PullTypeSymbol) {
+        private bindStaticPrototypePropertyOfClass(classAST: ClassDeclarationSyntax, classTypeSymbol: PullTypeSymbol, constructorTypeSymbol: PullTypeSymbol) {
             var prototypeStr = "prototype";
 
             var prototypeSymbol = constructorTypeSymbol.findMember(prototypeStr, /*lookInParent*/ false);
@@ -1764,7 +1766,7 @@ module TypeScript {
         private bindConstructorDeclarationToPullSymbol(constructorDeclaration: PullDecl) {
             var declKind = constructorDeclaration.kind;
             var declFlags = constructorDeclaration.flags;
-            var constructorAST = <ConstructorDeclaration>this.semanticInfoChain.getASTForDecl(constructorDeclaration);
+            var constructorAST = <ConstructorDeclarationSyntax>this.semanticInfoChain.getASTForDecl(constructorDeclaration);
 
             var constructorName = constructorDeclaration.name;
 
@@ -1838,7 +1840,7 @@ module TypeScript {
 
         private bindConstructSignatureDeclarationToPullSymbol(constructSignatureDeclaration: PullDecl) {
             var parent = this.getParent(constructSignatureDeclaration, true);
-            var constructorAST = <ConstructSignature>this.semanticInfoChain.getASTForDecl(constructSignatureDeclaration);
+            var constructorAST = <ConstructSignatureSyntax>this.semanticInfoChain.getASTForDecl(constructSignatureDeclaration);
 
             var constructSignature = new PullSignatureSymbol(PullElementKind.ConstructSignature);
 
@@ -1881,7 +1883,7 @@ module TypeScript {
 
         private bindCallSignatureDeclarationToPullSymbol(callSignatureDeclaration: PullDecl) {
             var parent = this.getParent(callSignatureDeclaration, true);
-            var callSignatureAST = <CallSignature>this.semanticInfoChain.getASTForDecl(callSignatureDeclaration);
+            var callSignatureAST = <CallSignatureSyntax>this.semanticInfoChain.getASTForDecl(callSignatureDeclaration);
 
             var callSignature = new PullSignatureSymbol(PullElementKind.CallSignature);
 
@@ -1913,7 +1915,7 @@ module TypeScript {
             callSignature.addDeclaration(callSignatureDeclaration);
             callSignatureDeclaration.setSignatureSymbol(callSignature);
 
-            var funcDecl = <CallSignature>this.semanticInfoChain.getASTForDecl(callSignatureDeclaration);
+            var funcDecl = <CallSignatureSyntax>this.semanticInfoChain.getASTForDecl(callSignatureDeclaration);
             this.bindParameterSymbols(funcDecl, ASTHelpers.parametersFromParameterList(funcDecl.parameterList), null, callSignature);
 
             this.semanticInfoChain.setSymbolForAST(this.semanticInfoChain.getASTForDecl(callSignatureDeclaration), callSignature);
@@ -1928,7 +1930,7 @@ module TypeScript {
             indexSignature.addDeclaration(indexSignatureDeclaration);
             indexSignatureDeclaration.setSignatureSymbol(indexSignature);
 
-            var funcDecl = <IndexSignature>this.semanticInfoChain.getASTForDecl(indexSignatureDeclaration);
+            var funcDecl = <IndexSignatureSyntax>this.semanticInfoChain.getASTForDecl(indexSignatureDeclaration);
             this.bindParameterSymbols(funcDecl, ASTHelpers.parametersFromParameter(funcDecl.parameter), null, indexSignature);
 
             this.semanticInfoChain.setSymbolForAST(this.semanticInfoChain.getASTForDecl(indexSignatureDeclaration), indexSignature);
@@ -1942,7 +1944,7 @@ module TypeScript {
         private bindGetAccessorDeclarationToPullSymbol(getAccessorDeclaration: PullDecl) {
             var declKind = getAccessorDeclaration.kind;
             var declFlags = getAccessorDeclaration.flags;
-            var funcDeclAST = <GetAccessor>this.semanticInfoChain.getASTForDecl(getAccessorDeclaration);
+            var funcDeclAST = <GetAccessorSyntax>this.semanticInfoChain.getASTForDecl(getAccessorDeclaration);
 
             var isExported = (declFlags & PullElementFlags.Exported) !== 0;
 
@@ -2012,9 +2014,9 @@ module TypeScript {
             accessorSymbol.addDeclaration(getAccessorDeclaration);
             getterSymbol.addDeclaration(getAccessorDeclaration);
 
-            // Note that the name AST binds to the full accessor symbol, whereas the declaration AST
+            // Note that the name ISyntaxElement binds to the full accessor symbol, whereas the declaration ISyntaxElement
             // binds to just the getter symbol. This is because when the resolver resolves an
-            // accessor declaration AST, it just expects the getter/setter symbol. But when
+            // accessor declaration ISyntaxElement, it just expects the getter/setter symbol. But when
             // the language service looks up the name of an accessor, it should treat it as a
             // property and display it to the user as such.
             var nameAST = funcDeclAST.propertyName;
@@ -2039,7 +2041,7 @@ module TypeScript {
         private bindSetAccessorDeclarationToPullSymbol(setAccessorDeclaration: PullDecl) {
             var declKind = setAccessorDeclaration.kind;
             var declFlags = setAccessorDeclaration.flags;
-            var funcDeclAST = <SetAccessor>this.semanticInfoChain.getASTForDecl(setAccessorDeclaration);
+            var funcDeclAST = <SetAccessorSyntax>this.semanticInfoChain.getASTForDecl(setAccessorDeclaration);
 
             var isExported = (declFlags & PullElementFlags.Exported) !== 0;
 
@@ -2109,9 +2111,9 @@ module TypeScript {
             accessorSymbol.addDeclaration(setAccessorDeclaration);
             setterSymbol.addDeclaration(setAccessorDeclaration);
 
-            // Note that the name AST binds to the full accessor symbol, whereas the declaration AST
+            // Note that the name ISyntaxElement binds to the full accessor symbol, whereas the declaration ISyntaxElement
             // binds to just the setter symbol. This is because when the resolver resolves an
-            // accessor declaration AST, it just expects the getter/setter symbol. But when
+            // accessor declaration ISyntaxElement, it just expects the getter/setter symbol. But when
             // the language service looks up the name of an accessor, it should treat it as a
             // property and display it to the user as such.
 

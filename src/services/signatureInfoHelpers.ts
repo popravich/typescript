@@ -6,8 +6,8 @@
 module TypeScript.Services {
 
     export interface IPartiallyWrittenTypeArgumentListInformation {
-        genericIdentifer: TypeScript.PositionedToken;
-        lessThanToken: TypeScript.PositionedToken;
+        genericIdentifer: TypeScript.ISyntaxToken;
+        lessThanToken: TypeScript.ISyntaxToken;
         argumentIndex: number;
     }
 
@@ -224,7 +224,7 @@ module TypeScript.Services {
             return [signatureGroupInfo];
         }
 
-        public static getActualSignatureInfoFromCallExpression(ast: TypeScript.ICallExpression, caretPosition: number, typeParameterInformation: IPartiallyWrittenTypeArgumentListInformation): ActualSignatureInfo {
+        public static getActualSignatureInfoFromCallExpression(ast: TypeScript.ICallExpressionSyntax, caretPosition: number, typeParameterInformation: IPartiallyWrittenTypeArgumentListInformation): ActualSignatureInfo {
             if (!ast) {
                 return null;
             }
@@ -242,8 +242,9 @@ module TypeScript.Services {
             }
 
             if (ast.argumentList.arguments) {
-                parameterMinChar = Math.min(parameterMinChar, ast.argumentList.arguments.start());
-                parameterLimChar = Math.max(parameterLimChar, Math.max(ast.argumentList.arguments.start(), ast.argumentList.arguments.end() + ast.argumentList.arguments.trailingTriviaWidth()));
+                parameterMinChar = Math.min(parameterMinChar, ast.argumentList.openParenToken.end());
+                parameterLimChar = Math.max(parameterLimChar,
+                    ast.argumentList.closeParenToken.fullWidth() > 0 ? ast.argumentList.closeParenToken.start() : ast.argumentList.fullEnd());
             }
 
             result.parameterMinChar = parameterMinChar;
@@ -290,10 +291,10 @@ module TypeScript.Services {
             return TypeScript.Syntax.isEntirelyInsideComment(sourceUnit, position);
         }
 
-        public static isTargetOfObjectCreationExpression(positionedToken: TypeScript.PositionedToken): boolean {
+        public static isTargetOfObjectCreationExpression(positionedToken: TypeScript.ISyntaxToken): boolean {
             var positionedParent = TypeScript.Syntax.getAncestorOfKind(positionedToken, TypeScript.SyntaxKind.ObjectCreationExpression);
             if (positionedParent) {
-                var objectCreationExpression = <TypeScript.ObjectCreationExpressionSyntax> positionedParent.element();
+                var objectCreationExpression = <TypeScript.ObjectCreationExpressionSyntax> positionedParent;
                 var expressionRelativeStart = objectCreationExpression.newKeyword.fullWidth();
                 var tokenRelativeStart = positionedToken.fullStart() - positionedParent.fullStart();
                 return tokenRelativeStart >= expressionRelativeStart &&
@@ -303,7 +304,7 @@ module TypeScript.Services {
             return false;
         }
 
-        private static moveBackUpTillMatchingTokenKind(token: TypeScript.PositionedToken, tokenKind: TypeScript.SyntaxKind, matchingTokenKind: TypeScript.SyntaxKind): TypeScript.PositionedToken {
+        private static moveBackUpTillMatchingTokenKind(token: TypeScript.ISyntaxToken, tokenKind: TypeScript.SyntaxKind, matchingTokenKind: TypeScript.SyntaxKind): TypeScript.ISyntaxToken {
             if (!token || token.kind() !== tokenKind) {
                 throw TypeScript.Errors.invalidOperation();
             }

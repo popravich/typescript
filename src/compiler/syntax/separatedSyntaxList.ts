@@ -1,7 +1,7 @@
 ///<reference path='references.ts' />
 
 module TypeScript {
-    export interface ISeparatedSyntaxList extends ISyntaxElement {
+    export interface ISeparatedSyntaxList<T extends ISyntaxNodeOrToken> extends ISyntaxElement {
         childAt(index: number): ISyntaxNodeOrToken;
 
         toArray(): ISyntaxNodeOrToken[];
@@ -11,14 +11,28 @@ module TypeScript {
         separatorAt(index: number): ISyntaxToken;
 
         nonSeparatorCount(): number;
-        nonSeparatorAt(index: number): ISyntaxNodeOrToken;
+        nonSeparatorAt(index: number): T;
 
         insertChildrenInto(array: ISyntaxElement[], index: number): void;
     }
 }
 
 module TypeScript.Syntax {
-    class EmptySeparatedSyntaxList implements ISeparatedSyntaxList {
+    class EmptySeparatedSyntaxList<T extends ISyntaxNodeOrToken> implements ISeparatedSyntaxList<T> {
+        public parent: ISyntaxElement = null;
+
+        public syntaxID(): number {
+            throw Errors.invalidOperation("Should not use shared syntax element as a key.");
+        }
+
+        public syntaxTree(): SyntaxTree {
+            throw Errors.invalidOperation("Shared lists do not belong to a single tree.");
+        }
+
+        public fileName(): string {
+            throw Errors.invalidOperation("Shared lists do not belong to a single file.");
+        }
+
         public kind() {
             return SyntaxKind.SeparatedList;
         }
@@ -31,6 +45,10 @@ module TypeScript.Syntax {
             return false;
         }
 
+        public isTrivia(): boolean {
+            return false;
+        }
+
         public isList() {
             return false;
         }
@@ -39,12 +57,20 @@ module TypeScript.Syntax {
             return true;
         }
 
+        public isTriviaList(): boolean {
+            return false;
+        }
+
         toJSON(key: any): any[] {
             return [];
         }
 
         public childCount() {
             return 0;
+        }
+
+        public isShared(): boolean {
+            return true;
         }
 
         public nonSeparatorCount() {
@@ -59,7 +85,7 @@ module TypeScript.Syntax {
             return [];
         }
 
-        public toNonSeparatorArray(): ISyntaxNodeOrToken[] {
+        public toNonSeparatorArray(): T[] {
             return [];
         }
 
@@ -67,7 +93,7 @@ module TypeScript.Syntax {
             throw Errors.argumentOutOfRange("index");
         }
 
-        public nonSeparatorAt(index: number): ISyntaxNodeOrToken {
+        public nonSeparatorAt(index: number): T {
             throw Errors.argumentOutOfRange("index");
         }
 
@@ -90,12 +116,28 @@ module TypeScript.Syntax {
             return 0;
         }
 
-        fullText() {
-            return "";
-        }
-
         width() {
             return 0;
+        }
+
+        public fullStart(): number {
+            throw Errors.invalidOperation("'fullStart' invalid on a singleton element.");
+        }
+
+        public fullEnd(): number {
+            throw Errors.invalidOperation("'fullEnd' invalid on a singleton element.");
+        }
+
+        public start(): number {
+            throw Errors.invalidOperation("'start' invalid on a singleton element.");
+        }
+
+        public end(): number {
+            throw Errors.invalidOperation("'end' invalid on a singleton element.");
+        }
+
+        fullText() {
+            return "";
         }
 
         isTypeScriptSpecific() {
@@ -104,12 +146,6 @@ module TypeScript.Syntax {
 
         isIncrementallyUnusable() {
             return false;
-        }
-
-        findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {
-            // This should never have been called on this list.  It has a 0 width, so the client 
-            // should have skipped over this.
-            throw Errors.invalidOperation();
         }
 
         insertChildrenInto(array: ISyntaxElement[], index: number): void {
@@ -132,13 +168,34 @@ module TypeScript.Syntax {
         }
     }
 
-    export var emptySeparatedList: ISeparatedSyntaxList = new EmptySeparatedSyntaxList();
+    var _emptySeparatedList: ISeparatedSyntaxList<ISyntaxNodeOrToken> = new EmptySeparatedSyntaxList<ISyntaxNodeOrToken>();
 
-    class SingletonSeparatedSyntaxList implements ISeparatedSyntaxList {
-        private item: ISyntaxNodeOrToken;
+    export function emptySeparatedList<T extends ISyntaxNodeOrToken>(): ISeparatedSyntaxList<T> {
+        return <ISeparatedSyntaxList<T>>_emptySeparatedList;
+    }
 
-        constructor(item: ISyntaxNodeOrToken) {
-            this.item = item;
+    class SingletonSeparatedSyntaxList<T extends ISyntaxNodeOrToken> implements ISeparatedSyntaxList<T> {
+        public parent: ISyntaxElement = null;
+        private _syntaxID: number = 0;
+
+        constructor(private item: T) {
+            Syntax.setParentForChildren(this);
+        }
+
+        public syntaxTree(): SyntaxTree {
+            return this.parent.syntaxTree();
+        }
+
+        public fileName(): string {
+            return this.parent.fileName();
+        }
+
+        public syntaxID(): number {
+            if (this._syntaxID === 0) {
+                this._syntaxID = _nextSyntaxID++;
+            }
+
+            return this._syntaxID;
         }
 
         public toJSON(key: any) {
@@ -149,15 +206,21 @@ module TypeScript.Syntax {
 
         public isNode(): boolean { return false; }
         public isToken(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return true; }
+        public isTriviaList(): boolean { return false; }
 
         public childCount() { return 1; }
         public nonSeparatorCount() { return 1; }
         public separatorCount() { return 0; }
 
+        public isShared(): boolean {
+            return false;
+        }
+
         public toArray() { return [this.item]; }
-        public toNonSeparatorArray() { return [this.item]; }
+        public toNonSeparatorArray(): T[] { return [this.item]; }
 
         public childAt(index: number): ISyntaxNodeOrToken {
             if (index !== 0) {
@@ -167,7 +230,7 @@ module TypeScript.Syntax {
             return this.item;
         }
 
-        public nonSeparatorAt(index: number): ISyntaxNodeOrToken {
+        public nonSeparatorAt(index: number): T {
             if (index !== 0) {
                 throw Errors.argumentOutOfRange("index");
             }
@@ -199,6 +262,22 @@ module TypeScript.Syntax {
             return this.item.width();
         }
 
+        public fullStart(): number {
+            return this.firstToken().fullStart();
+        }
+
+        public fullEnd(): number {
+            return this.lastToken().fullEnd();
+        }
+
+        public start(): number {
+            return this.firstToken().start();
+        }
+
+        public end(): number {
+            return this.lastToken().end();
+        }
+
         public fullText(): string {
             return this.item.fullText();
         }
@@ -227,41 +306,59 @@ module TypeScript.Syntax {
             return this.item.isIncrementallyUnusable();
         }
 
-        public findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {
-            // Debug.assert(position >= 0 && position < this.item.fullWidth());
-            return (<any>this.item).findTokenInternal(
-                new PositionedSeparatedList(parent, this, fullStart), position, fullStart);
-        }
-
         public insertChildrenInto(array: ISyntaxElement[], index: number): void {
             array.splice(index, 0, this.item);
         }
     }
 
-    class NormalSeparatedSyntaxList implements ISeparatedSyntaxList {
-        private elements: ISyntaxNodeOrToken[];
+    class NormalSeparatedSyntaxList<T extends ISyntaxNodeOrToken> implements ISeparatedSyntaxList<T> {
+        public parent: ISyntaxElement = null;
         private _data: number = 0;
+        private _syntaxID: number = 0;
 
-        constructor(elements: ISyntaxNodeOrToken[]) {
-            this.elements = elements;
+        constructor(private elements: ISyntaxNodeOrToken[]) {
+            Syntax.setParentForChildren(this);
+        }
+
+        public syntaxTree(): SyntaxTree {
+            return this.parent.syntaxTree();
+        }
+
+        public fileName(): string {
+            return this.parent.fileName();
+        }
+
+        public syntaxID(): number {
+            if (this._syntaxID === 0) {
+                this._syntaxID = _nextSyntaxID++;
+            }
+
+            return this._syntaxID;
         }
 
         public kind() { return SyntaxKind.SeparatedList; }
 
         public isToken(): boolean { return false; }
         public isNode(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return true; }
+        public isTriviaList(): boolean { return false; }
+
         public toJSON(key: any) { return this.elements; }
 
         public childCount() { return this.elements.length; }
         public nonSeparatorCount() { return IntegerUtilities.integerDivide(this.elements.length + 1, 2); }
         public separatorCount() { return IntegerUtilities.integerDivide(this.elements.length, 2); }
 
+        public isShared(): boolean {
+            return false;
+        }
+
         public toArray(): ISyntaxNodeOrToken[] { return this.elements.slice(0); }
 
-        public toNonSeparatorArray(): ISyntaxNodeOrToken[] {
-            var result: ISyntaxNodeOrToken[] = [];
+        public toNonSeparatorArray(): T[] {
+            var result: T[] = [];
             for (var i = 0, n = this.nonSeparatorCount(); i < n; i++) {
                 result.push(this.nonSeparatorAt(i));
             }
@@ -277,13 +374,13 @@ module TypeScript.Syntax {
             return this.elements[index];
         }
 
-        public nonSeparatorAt(index: number): ISyntaxNodeOrToken {
+        public nonSeparatorAt(index: number): T {
             var value = index * 2;
             if (value < 0 || value >= this.elements.length) {
                 throw Errors.argumentOutOfRange("index");
             }
 
-            return this.elements[value];
+            return <T>this.elements[value];
         }
 
         public separatorAt(index: number): ISyntaxToken {
@@ -296,20 +393,11 @@ module TypeScript.Syntax {
         }
 
         public firstToken(): ISyntaxToken {
-            var token: ISyntaxToken;
             for (var i = 0, n = this.elements.length; i < n; i++) {
-                if (i % 2 === 0) {
-                    var nodeOrToken = this.elements[i];
-                    token = nodeOrToken.firstToken();
-                    if (token !== null) {
-                        return token;
-                    }
-                }
-                else {
-                    token = <ISyntaxToken>this.elements[i];
-                    if (token.width() > 0) {
-                        return token;
-                    }
+                var nodeOrToken = this.elements[i];
+                var token = nodeOrToken.firstToken();
+                if (token !== null && token.fullWidth() > 0) {
+                    return token;
                 }
             }
 
@@ -319,18 +407,10 @@ module TypeScript.Syntax {
         public lastToken(): ISyntaxToken {
             var token: ISyntaxToken;
             for (var i = this.elements.length - 1; i >= 0; i--) {
-                if (i % 2 === 0) {
-                    var nodeOrToken = this.elements[i];
-                    token = nodeOrToken.lastToken();
-                    if (token !== null) {
-                        return token;
-                    }
-                }
-                else {
-                    token = <ISyntaxToken>this.elements[i];
-                    if (token.width() > 0) {
-                        return token;
-                    }
+                var nodeOrToken = this.elements[i];
+                var token = nodeOrToken.lastToken();
+                if (token !== null && token.fullWidth() > 0) {
+                    return token;
                 }
             }
 
@@ -364,6 +444,22 @@ module TypeScript.Syntax {
         public width(): number {
             var fullWidth = this.fullWidth();
             return fullWidth - this.leadingTriviaWidth() - this.trailingTriviaWidth();
+        }
+
+        public fullStart(): number {
+            return this.firstToken().fullStart();
+        }
+
+        public fullEnd(): number {
+            return this.lastToken().fullEnd();
+        }
+
+        public start(): number {
+            return this.firstToken().start();
+        }
+
+        public end(): number {
+            return this.lastToken().end();
         }
 
         public leadingTrivia(): ISyntaxTriviaList {
@@ -408,23 +504,6 @@ module TypeScript.Syntax {
             return this._data;
         }
 
-        public findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {
-            parent = new PositionedSeparatedList(parent, this, fullStart);
-            for (var i = 0, n = this.elements.length; i < n; i++) {
-                var element = this.elements[i];
-
-                var childWidth = element.fullWidth();
-                if (position < childWidth) {
-                    return (<any>element).findTokenInternal(parent, position, fullStart);
-                }
-
-                position -= childWidth;
-                fullStart += childWidth;
-            }
-
-            throw Errors.invalidOperation();
-        }
-
         public collectTextElements(elements: string[]): void {
             for (var i = 0, n = this.elements.length; i < n; i++) {
                 var element = this.elements[i];
@@ -443,13 +522,13 @@ module TypeScript.Syntax {
         }
     }
 
-    export function separatedList(nodes: ISyntaxNodeOrToken[]): ISeparatedSyntaxList {
-        return separatedListAndValidate(nodes, false);
+    export function separatedList<T extends ISyntaxNodeOrToken>(nodes: ISyntaxNodeOrToken[]): ISeparatedSyntaxList<T> {
+        return separatedListAndValidate<T>(nodes, false);
     }
 
-    function separatedListAndValidate(nodes: ISyntaxNodeOrToken[], validate: boolean): ISeparatedSyntaxList {
+    function separatedListAndValidate<T extends ISyntaxNodeOrToken>(nodes: ISyntaxNodeOrToken[], validate: boolean): ISeparatedSyntaxList<T> {
         if (nodes === undefined || nodes === null || nodes.length === 0) {
-            return emptySeparatedList;
+            return emptySeparatedList<T>();
         }
 
         if (validate) {
@@ -463,9 +542,19 @@ module TypeScript.Syntax {
         }
 
         if (nodes.length === 1) {
-            return new SingletonSeparatedSyntaxList(nodes[0]);
+            return new SingletonSeparatedSyntaxList(<T>nodes[0]);
         }
 
-        return new NormalSeparatedSyntaxList(nodes);
+        return new NormalSeparatedSyntaxList<T>(nodes);
+    }
+
+    export function nonSeparatorIndexOf<T extends ISyntaxNodeOrToken>(list: ISeparatedSyntaxList<T>, ast: ISyntaxNodeOrToken): number {
+        for (var i = 0, n = list.nonSeparatorCount(); i < n; i++) {
+            if (list.nonSeparatorAt(i) === ast) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

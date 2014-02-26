@@ -7,18 +7,27 @@
 ///<reference path='incremental\IncrementalParserTests.ts' />
 ///<reference path='..\..\src\compiler\core\environment.ts' />
 ///<reference path='..\..\src\harness\diff.ts' />
-///<reference path='..\..\src\compiler\syntaxTreeToAstVisitor.ts' />
+///<reference path='..\..\src\compiler\references.ts' />
 
 var timer = new TypeScript.Timer();
 
 var specificFile: string =
-    // "ExportAssignment5.ts";
+    // "S7.9_A4.js";
     undefined;
 
 var generate = false;
 
 var htmlReport = new Diff.HtmlBaselineReport("fidelity-report.html");
 htmlReport.reset();
+
+class PositionValidatingWalker extends TypeScript.SyntaxWalker {
+    private position = 0;
+
+    public visitToken(token: TypeScript.ISyntaxToken): void {
+        TypeScript.Debug.assert(this.position === token.fullStart());
+        this.position += token.fullWidth();
+    }
+}
 
 class Program {
     runAllTests(verify: boolean): void {
@@ -27,23 +36,6 @@ class Program {
         if (generate) {
             TypeScript.Environment.standardOut.WriteLine("!!!!!!!!!! WARNING - GENERATING !!!!!!!!!");
             TypeScript.Environment.standardOut.WriteLine("");
-        }
-
-        // TypeScript.Environment.standardOut.WriteLine("Testing against fuzz.");
-        // this.runTests("C:\\temp\\fuzz",
-        //    fileName => this.runParser(fileName, LanguageVersion.EcmaScript5, /*verify:*/ false, /*generateBaselines:*/ generate), 2000);
-
-        if (true) {
-            // return;
-        }
-
-        //TypeScript.Environment.standardOut.WriteLine("Testing Monoco.");
-        //this.runTests(TypeScript.Environment.currentDirectory() + "c:\\temp\\monoco",
-        //    fileName => this.runParser(fileName, TypeScript.LanguageVersion.EcmaScript5, false, /*generateBaselines:*/ generate, /*allowErrors:*/ false));
-
-        if (specificFile === undefined) {
-            TypeScript.Environment.standardOut.WriteLine("Testing Incremental 2.");
-            TypeScript.IncrementalParserTests.runAllTests();
         }
 
         TypeScript.Environment.standardOut.WriteLine("Testing scanner ES3.");
@@ -62,17 +54,25 @@ class Program {
         this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\parser\\ecmascript3",
             fileName => this.runParser(fileName, TypeScript.LanguageVersion.EcmaScript3, verify, /*generateBaselines:*/ generate));
 
+        TypeScript.Environment.standardOut.WriteLine("Testing emitter 2.");
+        this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\emitter2\\ecmascript5",
+            fileName => this.runEmitter(fileName, TypeScript.LanguageVersion.EcmaScript5, verify, /*generateBaselines:*/ generate, /*justText:*/ true));
+
+        //TypeScript.Environment.standardOut.WriteLine("Testing Monoco.");
+        //this.runTests(TypeScript.Environment.currentDirectory() + "c:\\temp\\monoco",
+        //    fileName => this.runParser(fileName, TypeScript.LanguageVersion.EcmaScript5, false, /*generateBaselines:*/ generate, /*allowErrors:*/ false));
+        TypeScript.Environment.standardOut.WriteLine("Testing Incremental 1.");
+        this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\parser\\ecmascript5",
+            fileName => this.runIncremental(fileName, TypeScript.LanguageVersion.EcmaScript5));
+
         if (specificFile === undefined) {
-            this.testIncrementalSpeed(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\Syntax\\SyntaxNodes.generated.ts");
+            TypeScript.Environment.standardOut.WriteLine("Testing Incremental 2.");
+            TypeScript.IncrementalParserTests.runAllTests();
         }
 
         TypeScript.Environment.standardOut.WriteLine("Testing emitter 1.");
         this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\emitter\\ecmascript5",
             fileName => this.runEmitter(fileName, TypeScript.LanguageVersion.EcmaScript5, verify, /*generateBaselines:*/ generate, /*justText:*/ false));
-
-        TypeScript.Environment.standardOut.WriteLine("Testing against 262.");
-        this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\test262",
-            fileName => this.runParser(fileName, TypeScript.LanguageVersion.EcmaScript5, /*verify:*/ true, /*generateBaselines:*/ generate));
 
         TypeScript.Environment.standardOut.WriteLine("Testing pretty printer.");
         this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\prettyPrinter\\ecmascript5",
@@ -86,13 +86,13 @@ class Program {
         this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\trivia\\ecmascript5",
             fileName => this.runTrivia(fileName, TypeScript.LanguageVersion.EcmaScript5, verify, /*generateBaselines:*/ generate));
 
-        TypeScript.Environment.standardOut.WriteLine("Testing Incremental 1.");
-        this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\parser\\ecmascript5",
-            fileName => this.runIncremental(fileName, TypeScript.LanguageVersion.EcmaScript5));
-            
-        TypeScript.Environment.standardOut.WriteLine("Testing emitter 2.");
-        this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\emitter2\\ecmascript5",
-            fileName => this.runEmitter(fileName, TypeScript.LanguageVersion.EcmaScript5, verify, /*generateBaselines:*/ generate, /*justText:*/ true));
+        if (specificFile === undefined) {
+            this.testIncrementalSpeed(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\Syntax\\SyntaxNodes.generated.ts");
+        }
+
+        TypeScript.Environment.standardOut.WriteLine("Testing against 262.");
+        this.runTests(TypeScript.Environment.currentDirectory() + "\\tests\\Fidelity\\test262",
+            fileName => this.runParser(fileName, TypeScript.LanguageVersion.EcmaScript5, /*verify:*/ true, /*generateBaselines:*/ generate));
     }
 
     private static reusedElements(oldNode: TypeScript.SourceUnitSyntax, newNode: TypeScript.SourceUnitSyntax, key: any): { originalElements: number; reusedElements: number; } {
@@ -136,10 +136,8 @@ class Program {
         var text = TypeScript.TextFactory.createText(contents);
         var tree = TypeScript.Parser.parse(fileName, text, TypeScript.isDTSFile(fileName), new TypeScript.ParseOptions(TypeScript.LanguageVersion.EcmaScript5, true));
         var originalTree = tree;
-        var ast = TypeScript.SyntaxTreeToAstVisitor.visit(tree, fileName, TypeScript.ImmutableCompilationSettings.defaultSettings(), /*incrementalAST:*/ true);
 
         var totalIncrementalTime = 0;
-        var totalIncrementalASTTime = 0;
         var timer = new TypeScript.Timer();
 
         for (var i = 0; i < repeat; i++) {
@@ -152,15 +150,7 @@ class Program {
 
             TypeScript.Debug.assert(tree.structuralEquals(tree2));
 
-            timer.start();
-            var ast2 = TypeScript.SyntaxTreeToAstVisitor.visit(tree2, fileName, TypeScript.ImmutableCompilationSettings.defaultSettings(), /*incrementalAST:*/ true);
-            timer.end();
-            totalIncrementalASTTime += timer.time;
-
-            TypeScript.Debug.assert(ast.structuralEquals(ast2, true));
-
             tree = tree2;
-            ast = ast2;
         }
         
         var rateBytesPerMillisecond = (contents.length * repeat) / totalIncrementalTime;
@@ -169,13 +159,6 @@ class Program {
 
         // TypeScript.Environment.standardOut.WriteLine("Incremental     time: " + totalIncrementalTime);
         TypeScript.Environment.standardOut.WriteLine("Incremental     rate: " + rateMBPerSecond + " MB/s");
-
-        rateBytesPerMillisecond = (contents.length * repeat) / totalIncrementalASTTime;
-        rateBytesPerSecond = rateBytesPerMillisecond * 1000;
-        rateMBPerSecond = rateBytesPerSecond / (1024 * 1024);
-
-        // TypeScript.Environment.standardOut.WriteLine("Incremental AST time: " + totalIncrementalASTTime);
-        TypeScript.Environment.standardOut.WriteLine("Incremental AST rate: " + rateMBPerSecond + " MB/s");
 
         var allOldElements = TypeScript.SyntaxElementsCollector.collectElements(originalTree.sourceUnit());
         var allNewElements = TypeScript.SyntaxElementsCollector.collectElements(tree.sourceUnit());
@@ -197,7 +180,6 @@ class Program {
         var text = TypeScript.TextFactory.createText(contents);
         var tree = TypeScript.Parser.parse(fileName, text, TypeScript.isDTSFile(fileName), new TypeScript.ParseOptions(TypeScript.LanguageVersion.EcmaScript5, true));
         var originalTree = tree;
-        var ast = TypeScript.SyntaxTreeToAstVisitor.visit(tree, fileName, TypeScript.ImmutableCompilationSettings.defaultSettings(), /*incrementalAST:*/ true);
 
         var totalIncrementalTime = 0;
         var totalIncrementalASTTime = 0;
@@ -232,28 +214,18 @@ class Program {
             timer.end();
             totalIncrementalTime += timer.time;
 
-            timer.start();
-            var ast2 = TypeScript.SyntaxTreeToAstVisitor.visit(tree2, fileName, TypeScript.ImmutableCompilationSettings.defaultSettings(), /*incrementalAST:*/ true);
-            timer.end();
-            totalIncrementalASTTime += timer.time;
-
             tree = tree2;
-            ast = ast2;
         }
 
         var rateBytesPerMillisecond = (contents.length * repeat) / totalIncrementalTime;
         var rateBytesPerSecond = rateBytesPerMillisecond * 1000;
         var rateMBPerSecond = rateBytesPerSecond / (1024 * 1024);
 
-        // TypeScript.Environment.standardOut.WriteLine("Incremental     time: " + totalIncrementalTime);
         TypeScript.Environment.standardOut.WriteLine("Incremental     rate: " + rateMBPerSecond + " MB/s");
 
         rateBytesPerMillisecond = (contents.length * repeat) / totalIncrementalASTTime;
         rateBytesPerSecond = rateBytesPerMillisecond * 1000;
         rateMBPerSecond = rateBytesPerSecond / (1024 * 1024);
-
-        // TypeScript.Environment.standardOut.WriteLine("Incremental AST time: " + totalIncrementalASTTime);
-        TypeScript.Environment.standardOut.WriteLine("Incremental AST rate: " + rateMBPerSecond + " MB/s");
 
         var allOldElements = TypeScript.SyntaxElementsCollector.collectElements(originalTree.sourceUnit());
         var allNewElements = TypeScript.SyntaxElementsCollector.collectElements(tree.sourceUnit());
@@ -435,8 +407,7 @@ class Program {
 
         if (verify) {
             TypeScript.Debug.assert(tree.sourceUnit().fullWidth() === contents.length);
-
-            TypeScript.SyntaxTreeToAstVisitor.visit(tree, "", TypeScript.ImmutableCompilationSettings.defaultSettings(), /*incrementalAST:*/ true);
+            tree.sourceUnit().accept(new PositionValidatingWalker());
 
             this.checkResult(fileName, tree, verify, generateBaseline, /*justText:*/ false);
         }
@@ -492,10 +463,10 @@ class Program {
         var rightToLeft: TypeScript.ISyntaxToken[] = [];
 
         for (var i = 0; i <= contents.length; i++) {
-            var token = sourceUnit.findToken(i).token();
+            var token = sourceUnit.findToken(i);
 
             var left = sourceUnit.findTokenOnLeft(i);
-            var tokenOnLeft = left === null ? null : left.token();
+            var tokenOnLeft = left === null ? null : left;
 
             TypeScript.Debug.assert(token.isToken());
             if (i === contents.length) {
@@ -512,13 +483,13 @@ class Program {
 
         var positionedToken = sourceUnit.findToken(0);
         while (positionedToken !== null) {
-            leftToRight.push(positionedToken.token());
+            leftToRight.push(positionedToken);
             positionedToken = positionedToken.nextToken();
         }
 
         positionedToken = sourceUnit.findToken(contents.length);
         while (positionedToken !== null) {
-            rightToLeft.push(positionedToken.token());
+            rightToLeft.push(positionedToken);
             positionedToken = positionedToken.previousToken();
         }
 
@@ -572,10 +543,14 @@ class Program {
         var tokens: TypeScript.ISyntaxToken[] = [];
         var textArray: string[] = [];
         var diagnostics: TypeScript.Diagnostic[] = [];
+        var position = 0;
 
         while (true) {
             var token = scanner.scan(diagnostics, /*allowRegularExpression:*/ false);
             tokens.push(token);
+
+            TypeScript.Debug.assert(position === token.fullStart());
+            position += token.fullWidth();
 
             if (token.tokenKind === TypeScript.SyntaxKind.EndOfFileToken) {
                 break;

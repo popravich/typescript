@@ -128,7 +128,8 @@ module TypeScript {
             resolver: PullTypeResolver,
             context: PullTypeResolutionContext,
             signatureBeingInferred: PullSignatureSymbol,
-            public argumentASTs: ISeparatedSyntaxList2) {
+            public argumentList: ArgumentListSyntax) {
+
             super(resolver, context, signatureBeingInferred);
         }
 
@@ -138,8 +139,8 @@ module TypeScript {
 
         public inferTypeArguments(): PullTypeSymbol[] {
             // Resolve all of the argument ASTs in the callback
-            this.signatureBeingInferred.forAllParameterTypes(/*length*/ this.argumentASTs.nonSeparatorCount(), (parameterType, argumentIndex) => {
-                var argumentAST = this.argumentASTs.nonSeparatorAt(argumentIndex);
+            this.signatureBeingInferred.forAllParameterTypes(/*length*/ this.argumentList.arguments.nonSeparatorCount(), (parameterType, argumentIndex) => {
+                var argumentAST = this.argumentList.arguments.nonSeparatorAt(argumentIndex);
 
                 this.context.pushInferentialType(parameterType, this);
                 var argumentType = this.resolver.resolveAST(argumentAST, /*isContextuallyTyped*/ true, this.context).type;
@@ -212,12 +213,13 @@ module TypeScript {
             }
         }
 
-        public setSymbolForAST(ast: AST, symbol: PullSymbol): void {
+        public setSymbolForAST(ast: ISyntaxElement, symbol: PullSymbol): void {
+            Debug.assert(!ast.isShared());
             this.astSymbolMap[ast.syntaxID()] = symbol;
         }
 
-        public getSymbolForAST(ast: AST): PullSymbol {
-            return this.astSymbolMap[ast.syntaxID()];
+        public getSymbolForAST(ast: ISyntaxElement): PullSymbol {
+            return ast.isShared() ? null : this.astSymbolMap[ast.syntaxID()];
         }
     }
 
@@ -234,13 +236,13 @@ module TypeScript {
             }
         }
 
-        public setTypeChecked(ast: AST): void {
+        public setTypeChecked(ast: ISyntaxElement): void {
             if (!this.inProvisionalResolution()) {
                 this.typeCheckedNodes.setValueAt(ast.syntaxID(), true);
             }
         }
 
-        public canTypeCheckAST(ast: AST): boolean {
+        public canTypeCheckAST(ast: ISyntaxElement): boolean {
             // If we're in a context where we're type checking, and the ast we're typechecking
             // hasn't been typechecked in this phase yet, *and* the ast is from the file we're
             // currently typechecking, then we can typecheck.
@@ -249,8 +251,9 @@ module TypeScript {
             // it again.  Also, if it's from another file, there's no need to typecheck it since
             // whatever host we're in will eventually get around to typechecking it.  This is 
             // also important as it's very possible to stack overflow when typechecking if we 
-            // keep jumping around to AST nodes all around a large project.
-            return this.typeCheck() &&
+            // keep jumping around to ISyntaxElement nodes all around a large project.
+            return !ast.isShared() &&
+                this.typeCheck() &&
                 !this.typeCheckedNodes.valueAt(ast.syntaxID()) &&
                 this.fileName === ast.fileName();
         }
@@ -408,11 +411,11 @@ module TypeScript {
             return this.inTypeCheck && !this.inProvisionalResolution();
         }
 
-        public setSymbolForAST(ast: AST, symbol: PullSymbol): void {
+        public setSymbolForAST(ast: ISyntaxElement, symbol: PullSymbol): void {
             this.contextStack[this.contextStack.length - 1].setSymbolForAST(ast, symbol);
         }
 
-        public getSymbolForAST(ast: AST): PullSymbol {
+        public getSymbolForAST(ast: ISyntaxElement): PullSymbol {
             for (var i = this.contextStack.length - 1; i >= 0; i--) {
                 var typeContext = this.contextStack[i];
                 if (!typeContext.provisional) {

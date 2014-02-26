@@ -110,20 +110,20 @@ module TypeScript {
             if (!isVariableWidthKeyword && kind >= SyntaxKind.FirstFixedWidth) {
                 if (leadingTriviaInfo === 0) {
                     if (trailingTriviaInfo === 0) {
-                        return new Syntax.FixedWidthTokenWithNoTrivia(kind);
+                        return new Syntax.FixedWidthTokenWithNoTrivia(fullStart, kind);
                     }
                     else {
                         var fullText = this.text.substr(fullStart, fullEnd - fullStart, false);
-                        return new Syntax.FixedWidthTokenWithTrailingTrivia(fullText, kind, trailingTriviaInfo);
+                        return new Syntax.FixedWidthTokenWithTrailingTrivia(fullText, fullStart, kind, trailingTriviaInfo);
                     }
                 }
                 else if (trailingTriviaInfo === 0) {
                     var fullText = this.text.substr(fullStart, fullEnd - fullStart, false);
-                    return new Syntax.FixedWidthTokenWithLeadingTrivia(fullText, kind, leadingTriviaInfo);
+                    return new Syntax.FixedWidthTokenWithLeadingTrivia(fullText, fullStart, kind, leadingTriviaInfo);
                 }
                 else {
                     var fullText = this.text.substr(fullStart, fullEnd - fullStart, false);
-                    return new Syntax.FixedWidthTokenWithLeadingAndTrailingTrivia(fullText, kind, leadingTriviaInfo, trailingTriviaInfo);
+                    return new Syntax.FixedWidthTokenWithLeadingAndTrailingTrivia(fullText, fullStart, kind, leadingTriviaInfo, trailingTriviaInfo);
                 }
             }
             else {
@@ -133,17 +133,17 @@ module TypeScript {
 
                 if (leadingTriviaInfo === 0) {
                     if (trailingTriviaInfo === 0) {
-                        return new Syntax.VariableWidthTokenWithNoTrivia(fullText, kind);
+                        return new Syntax.VariableWidthTokenWithNoTrivia(fullText, fullStart, kind);
                     }
                     else {
-                        return new Syntax.VariableWidthTokenWithTrailingTrivia(fullText, kind, trailingTriviaInfo);
+                        return new Syntax.VariableWidthTokenWithTrailingTrivia(fullText, fullStart, kind, trailingTriviaInfo);
                     }
                 }
                 else if (trailingTriviaInfo === 0) {
-                    return new Syntax.VariableWidthTokenWithLeadingTrivia(fullText, kind, leadingTriviaInfo);
+                    return new Syntax.VariableWidthTokenWithLeadingTrivia(fullText, fullStart, kind, leadingTriviaInfo);
                 }
                 else {
-                    return new Syntax.VariableWidthTokenWithLeadingAndTrailingTrivia(fullText, kind, leadingTriviaInfo, trailingTriviaInfo);
+                    return new Syntax.VariableWidthTokenWithLeadingAndTrailingTrivia(fullText, fullStart, kind, leadingTriviaInfo, trailingTriviaInfo);
                 }
             }
         }
@@ -151,18 +151,20 @@ module TypeScript {
         private static triviaWindow: number[] = ArrayUtilities.createArray<number>(2048, 0);
 
         // Scans a subsection of 'text' as trivia.
-        public static scanTrivia(text: ISimpleText, start: number, length: number, isTrailing: boolean): ISyntaxTriviaList {
+        public static scanTrivia(parent: ISyntaxToken, tokenText: string, tokenFullStart: number, firstTriviaStartInToken: number, triviaLength: number, isTrailing: boolean): ISyntaxTriviaList {
             // Debug.assert(length > 0);
 
             // Note: the scanner operates upon a subrange of the text passed in. However, we also
             // pass hte originl text along to 'scanTrivia' so the trivia can point back at it
             // directly (and not at the subtext wrapper).  This allows the subtext to get GC'ed
             // and means trivia can be represented with only a single allocation.
-            var scanner = new Scanner(/*fileName:*/ null, text.subText(new TextSpan(start, length)), LanguageVersion.EcmaScript5, Scanner.triviaWindow);
-            return scanner.scanTrivia(text, start, isTrailing);
+            var scanner = new Scanner(/*fileName:*/ null,
+                SimpleText.fromSubstr(tokenText, firstTriviaStartInToken, triviaLength), LanguageVersion.EcmaScript5, Scanner.triviaWindow);
+
+            return scanner.scanTrivia(parent, tokenText, tokenFullStart, firstTriviaStartInToken, isTrailing);
         }
 
-        private scanTrivia(underlyingText: ISimpleText, underlyingTextStart: number, isTrailing: boolean): ISyntaxTriviaList {
+        private scanTrivia(parent: ISyntaxToken, tokenText: string, tokenFullStart: number, triviaStartInToken: number, isTrailing: boolean): ISyntaxTriviaList {
             // Keep this exactly in sync with scanTriviaInfo
             var trivia = new Array<ISyntaxTrivia>();
 
@@ -194,19 +196,19 @@ module TypeScript {
                         case CharacterCodes.formFeed:
                         case CharacterCodes.byteOrderMark:
                             // Normal whitespace.  Consume and continue.
-                            trivia.push(this.scanWhitespaceTrivia(underlyingText, underlyingTextStart));
+                            trivia.push(this.scanWhitespaceTrivia(tokenText, tokenFullStart, triviaStartInToken));
                             continue;
 
                         case CharacterCodes.slash:
                             // Potential comment.  Consume if so.  Otherwise, break out and return.
                             var ch2 = this.slidingWindow.peekItemN(1);
                             if (ch2 === CharacterCodes.slash) {
-                                trivia.push(this.scanSingleLineCommentTrivia(underlyingText, underlyingTextStart));
+                                trivia.push(this.scanSingleLineCommentTrivia(tokenText, tokenFullStart, triviaStartInToken));
                                 continue;
                             }
 
                             if (ch2 === CharacterCodes.asterisk) {
-                                trivia.push(this.scanMultiLineCommentTrivia(underlyingText, underlyingTextStart));
+                                trivia.push(this.scanMultiLineCommentTrivia(tokenText, tokenFullStart, triviaStartInToken));
                                 continue;
                             }
 
@@ -217,7 +219,7 @@ module TypeScript {
                         case CharacterCodes.lineFeed:
                         case CharacterCodes.paragraphSeparator:
                         case CharacterCodes.lineSeparator:
-                            trivia.push(this.scanLineTerminatorSequenceTrivia(ch));
+                            trivia.push(this.scanLineTerminatorSequenceTrivia(tokenText, tokenFullStart, triviaStartInToken, ch));
 
                             // If we're consuming leading trivia, then we will continue consuming more 
                             // trivia (including newlines) up to the first token we see.  If we're 
@@ -234,7 +236,10 @@ module TypeScript {
                 }
 
                 // Debug.assert(trivia.length > 0);
-                return Syntax.triviaList(trivia);
+                var triviaList = Syntax.triviaList(trivia);
+                triviaList.parent = parent;
+
+                return triviaList;
             }
         }
 
@@ -325,12 +330,11 @@ module TypeScript {
             }
         }
 
-        private scanWhitespaceTrivia(underlyingText: ISimpleText, underlyingTextStart: number): ISyntaxTrivia {
+        private scanWhitespaceTrivia(tokenText: string, tokenFullStart: number, firstTriviaStartInToken: number): ISyntaxTrivia {
             // We're going to be extracting text out of sliding window.  Make sure it can't move past
             // this point.
             var absoluteStartIndex = this.absoluteIndex();
 
-            var width = 0;
             while (true) {
                 var ch = this.currentCharCode();
 
@@ -359,23 +363,29 @@ module TypeScript {
                     case CharacterCodes.byteOrderMark:
                         // Normal whitespace.  Consume and continue.
                         this.slidingWindow.moveToNextItem();
-                        width++;
                         continue;
                 }
 
                 break;
             }
 
-            return Syntax.deferredTrivia(SyntaxKind.WhitespaceTrivia,
-                underlyingText, underlyingTextStart + absoluteStartIndex, width);
+            return this.createTrivia(SyntaxKind.WhitespaceTrivia, tokenText, tokenFullStart, firstTriviaStartInToken, absoluteStartIndex);
         }
 
-        private scanSingleLineCommentTrivia(underlyingText: ISimpleText, underlyingTextStart: number): ISyntaxTrivia {
-            var absoluteStartIndex = this.slidingWindow.absoluteIndex();
-            var width = this.scanSingleLineCommentTriviaLength();
+        private createTrivia(kind: SyntaxKind, tokenText: string, tokenFullStart: number, firstTriviaStartInToken: number, absoluteStartIndex: number): ISyntaxTrivia {
+            var thisTriviaStartInToken = firstTriviaStartInToken + absoluteStartIndex;
+            return Syntax.deferredTrivia(kind,
+                /*fullStart:*/ tokenFullStart + thisTriviaStartInToken,
+                tokenText,
+                /*startInTokenText:*/ thisTriviaStartInToken,
+                /*fullWidth:*/ this.absoluteIndex() - absoluteStartIndex);
+        }
 
-            return Syntax.deferredTrivia(SyntaxKind.SingleLineCommentTrivia,
-                underlyingText, underlyingTextStart + absoluteStartIndex, width);
+        private scanSingleLineCommentTrivia(tokenText: string, tokenFullStart: number, firstTriviaStartInToken: number): ISyntaxTrivia {
+            var absoluteStartIndex = this.absoluteIndex();
+            this.scanSingleLineCommentTriviaLength();
+
+            return this.createTrivia(SyntaxKind.SingleLineCommentTrivia, tokenText, tokenFullStart, firstTriviaStartInToken, absoluteStartIndex);
         }
 
         private scanSingleLineCommentTriviaLength(): number {
@@ -394,12 +404,11 @@ module TypeScript {
             }
         }
 
-        private scanMultiLineCommentTrivia(underlyingText: ISimpleText, underlyingTextStart: number): ISyntaxTrivia {
+        private scanMultiLineCommentTrivia(tokenText: string, tokenFullStart: number, firstTriviaStartInToken: number): ISyntaxTrivia {
             var absoluteStartIndex = this.absoluteIndex();
-            var width = this.scanMultiLineCommentTriviaLength(null);
+            this.scanMultiLineCommentTriviaLength(null);
 
-            return Syntax.deferredTrivia(SyntaxKind.MultiLineCommentTrivia,
-                underlyingText, underlyingTextStart + absoluteStartIndex, width);
+            return this.createTrivia(SyntaxKind.MultiLineCommentTrivia, tokenText, tokenFullStart, firstTriviaStartInToken, absoluteStartIndex);
         }
 
         private scanMultiLineCommentTriviaLength(diagnostics: Diagnostic[]): number {
@@ -433,14 +442,11 @@ module TypeScript {
             }
         }
 
-        private scanLineTerminatorSequenceTrivia(ch: number): ISyntaxTrivia {
-            var absoluteStartIndex = this.slidingWindow.getAndPinAbsoluteIndex();
-            var width = this.scanLineTerminatorSequenceLength(ch);
+        private scanLineTerminatorSequenceTrivia(tokenText: string, tokenFullStart: number, firstTriviaStartInToken: number, ch: number): ISyntaxTrivia {
+            var absoluteStartIndex = this.absoluteIndex();
+            this.scanLineTerminatorSequenceLength(ch);
 
-            var text = this.substring(absoluteStartIndex, absoluteStartIndex + width, /*intern:*/ false);
-            this.slidingWindow.releaseAndUnpinAbsoluteIndex(absoluteStartIndex);
-
-            return Syntax.trivia(SyntaxKind.NewLineTrivia, text);
+            return this.createTrivia(SyntaxKind.NewLineTrivia, tokenText, tokenFullStart, firstTriviaStartInToken, absoluteStartIndex);
         }
 
         private scanLineTerminatorSequenceLength(ch: number): number {

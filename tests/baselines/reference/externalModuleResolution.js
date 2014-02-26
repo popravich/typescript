@@ -6,4 +6,4 @@ var M2;
 module.exports = M2;
 //// [consumer.js]
 var x = require('./foo');
-x.Y;
+x.Y; // .ts should be picked

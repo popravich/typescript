@@ -5,7 +5,7 @@
 
 module TypeScript.Services {
     export class CompletionHelpers {
-        private static getSpan(ast: AST): TextSpan {
+        private static getSpan(ast: ISyntaxElement): TextSpan {
             return new TextSpan(ast.start(), ast.width());
         }
 
@@ -59,25 +59,25 @@ module TypeScript.Services {
                 return true;
             }
 
-            // This method uses Fidelity completelly. Some information can be reached using the AST, but not everything.
+            // This method uses Fidelity completely. Some information can be reached using the AST, but not everything.
             return TypeScript.Syntax.isEntirelyInsideComment(sourceUnit, position) ||
                 TypeScript.Syntax.isEntirelyInStringOrRegularExpressionLiteral(sourceUnit, position) ||
                 CompletionHelpers.isIdentifierDefinitionLocation(sourceUnit, position) ||
                 CompletionHelpers.isRightOfIllegalDot(sourceUnit, position);
         }
 
-        public static getContainingObjectLiteralApplicableForCompletion(sourceUnit: TypeScript.SourceUnitSyntax, position: number): TypeScript.PositionedElement {
+        public static getContainingObjectLiteralApplicableForCompletion(sourceUnit: TypeScript.SourceUnitSyntax, position: number): TypeScript.ISyntaxElement {
             // The locations in an object literal expression that are applicable for completion are property name definition locations.
             var previousToken = CompletionHelpers.getNonIdentifierCompleteTokenOnLeft(sourceUnit, position);
 
             if (previousToken) {
-                var parent = previousToken.parent();
+                var parent = previousToken.parent;
 
                 switch (previousToken.kind()) {
                     case TypeScript.SyntaxKind.OpenBraceToken:  // var x = { |
                     case TypeScript.SyntaxKind.CommaToken:      // var x = { a: 0, |
                         if (parent && parent.kind() === TypeScript.SyntaxKind.SeparatedList) {
-                            parent = parent.parent();
+                            parent = parent.parent;
                         }
 
                         if (parent && parent.kind() === TypeScript.SyntaxKind.ObjectLiteralExpression) {
@@ -95,7 +95,7 @@ module TypeScript.Services {
             var positionedToken = CompletionHelpers.getNonIdentifierCompleteTokenOnLeft(sourceUnit, position);
 
             if (positionedToken) {
-                var containingNodeKind = positionedToken.containingNode() && positionedToken.containingNode().kind();
+                var containingNodeKind = Syntax.containingNode(positionedToken) && Syntax.containingNode(positionedToken).kind();
                 switch (positionedToken.kind()) {
                     case TypeScript.SyntaxKind.CommaToken:
                         return containingNodeKind === TypeScript.SyntaxKind.ParameterList ||
@@ -127,7 +127,7 @@ module TypeScript.Services {
                 }
 
                 // Previous token may have been a keyword that was converted to an identifier.
-                switch (positionedToken.token().text()) {
+                switch (positionedToken.text()) {
                     case "class":
                     case "interface":
                     case "enum":
@@ -139,7 +139,7 @@ module TypeScript.Services {
             return false;
         }
 
-        public static getNonIdentifierCompleteTokenOnLeft(sourceUnit: TypeScript.SourceUnitSyntax, position: number): TypeScript.PositionedToken {
+        public static getNonIdentifierCompleteTokenOnLeft(sourceUnit: TypeScript.SourceUnitSyntax, position: number): TypeScript.ISyntaxToken {
             var positionedToken = sourceUnit.findCompleteTokenOnLeft(position, /*includeSkippedTokens*/true);
 
             if (positionedToken && position === positionedToken.end() && positionedToken.kind() == TypeScript.SyntaxKind.EndOfFileToken) {
@@ -165,7 +165,7 @@ module TypeScript.Services {
                         return leftOfDotPositionedToken && leftOfDotPositionedToken.kind() === TypeScript.SyntaxKind.NumericLiteral;
 
                     case TypeScript.SyntaxKind.NumericLiteral:
-                        var text = positionedToken.token().text();
+                        var text = positionedToken.text();
                         return text.charAt(text.length - 1) === ".";
                 }
             }

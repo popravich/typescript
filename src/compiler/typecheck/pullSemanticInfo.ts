@@ -436,6 +436,12 @@ module TypeScript {
                 symbol = decl.getSymbol();
 
                 if (symbol) {
+                    // This is just a workaround for making sure all the declarations are bound 
+                    // It can be removed later when binder can deal with all declarations of any type
+                    for (var i = 1; i < decls.length; i++) {
+                        decls[i].ensureSymbolIsBound();
+                    }
+
                     this.symbolCache[cacheID] = symbol;
                 }
             }
@@ -511,33 +517,36 @@ module TypeScript {
             // we have to dump all syntax trees.
             //
             // If propagateEnumConstants changes, then that affects the constant value data we've 
-            // stored in the AST.
+            // stored in the ISyntaxElement.
             return before.allowAutomaticSemicolonInsertion() !== after.allowAutomaticSemicolonInsertion() ||
                 before.codeGenTarget() !== after.codeGenTarget() ||
                 before.propagateEnumConstants() !== after.propagateEnumConstants();
         }
 
-        public setSymbolForAST(ast: AST, symbol: PullSymbol): void {
+        public setSymbolForAST(ast: ISyntaxElement, symbol: PullSymbol): void {
+            Debug.assert(!ast.isShared());
             this.astSymbolMap[ast.syntaxID()] = symbol;
         }
 
-        public getSymbolForAST(ast: AST): PullSymbol {
+        public getSymbolForAST(ast: ISyntaxElement): PullSymbol {
             return this.astSymbolMap[ast.syntaxID()] || null;
         }
 
-        public setAliasSymbolForAST(ast: AST, symbol: PullTypeAliasSymbol): void {
+        public setAliasSymbolForAST(ast: ISyntaxElement, symbol: PullTypeAliasSymbol): void {
+            Debug.assert(!ast.isShared());
             this.astAliasSymbolMap[ast.syntaxID()] = symbol;
         }
 
-        public getAliasSymbolForAST(ast: AST): PullTypeAliasSymbol {
-            return this.astAliasSymbolMap[ast.syntaxID()];
+        public getAliasSymbolForAST(ast: ISyntaxElement): PullTypeAliasSymbol {
+            return ast.isShared() ? null : this.astAliasSymbolMap[ast.syntaxID()];
         }
 
-        public getCallResolutionDataForAST(ast: AST): PullAdditionalCallResolutionData {
-            return this.astCallResolutionDataMap[ast.syntaxID()];
+        public getCallResolutionDataForAST(ast: ISyntaxElement): PullAdditionalCallResolutionData {
+            return ast.isShared() ? null : this.astCallResolutionDataMap[ast.syntaxID()];
         }
 
-        public setCallResolutionDataForAST(ast: AST, callResolutionData: PullAdditionalCallResolutionData) {
+        public setCallResolutionDataForAST(ast: ISyntaxElement, callResolutionData: PullAdditionalCallResolutionData) {
+            Debug.assert(!ast.isShared());
             if (callResolutionData) {
                 this.astCallResolutionDataMap[ast.syntaxID()] = callResolutionData;
             }
@@ -591,7 +600,7 @@ module TypeScript {
             return this._resolver;
         }
 
-        public addSyntheticIndexSignature(containingDecl: PullDecl, containingSymbol: PullTypeSymbol, ast: AST,
+        public addSyntheticIndexSignature(containingDecl: PullDecl, containingSymbol: PullTypeSymbol, ast: ISyntaxElement,
             indexParamName: string, indexParamType: PullTypeSymbol, returnType: PullTypeSymbol): void {
 
             var indexSignature = new PullSignatureSymbol(PullElementKind.IndexSignature);
@@ -612,7 +621,7 @@ module TypeScript {
             indexParameterSymbol.addDeclaration(indexParamDecl);
         }
 
-        public getDeclForAST(ast: AST): PullDecl {
+        public getDeclForAST(ast: ISyntaxElement): PullDecl {
             var document = this.getDocument(ast.fileName());
 
             if (document) {
@@ -622,15 +631,15 @@ module TypeScript {
             return null;
         }
 
-        public getEnclosingDecl(ast: AST): PullDecl {
+        public getEnclosingDecl(ast: ISyntaxElement): PullDecl {
             return this.getDocument(ast.fileName()).getEnclosingDecl(ast);
         }
 
-        public setDeclForAST(ast: AST, decl: PullDecl): void {
+        public setDeclForAST(ast: ISyntaxElement, decl: PullDecl): void {
             this.getDocument(decl.fileName())._setDeclForAST(ast, decl);
         }
 
-        public getASTForDecl(decl: PullDecl): AST {
+        public getASTForDecl(decl: PullDecl): ISyntaxElement {
             var document = this.getDocument(decl.fileName());
             if (document) {
                 return document._getASTForDecl(decl);
@@ -639,7 +648,7 @@ module TypeScript {
             return null;
         }
 
-        public setASTForDecl(decl: PullDecl, ast: AST): void {
+        public setASTForDecl(decl: PullDecl, ast: ISyntaxElement): void {
             this.getDocument(decl.fileName())._setASTForDecl(decl, ast);
         }
 
@@ -660,24 +669,24 @@ module TypeScript {
             return this._topLevelDecls;
         }
 
-        public addDiagnosticFromAST(ast: AST, diagnosticKey: string, _arguments: any[] = null, additionalLocations: Location[] = null): void {
+        public addDiagnosticFromAST(ast: ISyntaxElement, diagnosticKey: string, _arguments: any[] = null, additionalLocations: Location[] = null): void {
             this.addDiagnostic(this.diagnosticFromAST(ast, diagnosticKey, _arguments, additionalLocations));
         }
 
-        public diagnosticFromAST(ast: AST, diagnosticKey: string, _arguments: any[] = null, additionalLocations: Location[] = null): Diagnostic {
+        public diagnosticFromAST(ast: ISyntaxElement, diagnosticKey: string, _arguments: any[] = null, additionalLocations: Location[] = null): Diagnostic {
             return new Diagnostic(ast.fileName(), this.lineMap(ast.fileName()), ast.start(), ast.width(), diagnosticKey, _arguments, additionalLocations);
         }
 
-        public locationFromAST(ast: AST): Location {
+        public locationFromAST(ast: ISyntaxElement): Location {
             return new Location(ast.fileName(), this.lineMap(ast.fileName()), ast.start(), ast.width());
         }
 
-        public duplicateIdentifierDiagnosticFromAST(ast: AST, identifier: string, additionalLocationAST: AST): Diagnostic {
+        public duplicateIdentifierDiagnosticFromAST(ast: ISyntaxElement, identifier: string, additionalLocationAST: ISyntaxElement): Diagnostic {
             return this.diagnosticFromAST(ast, DiagnosticCode.Duplicate_identifier_0, [identifier],
                 additionalLocationAST ? [this.locationFromAST(additionalLocationAST)] : null);
         }
 
-        public addDuplicateIdentifierDiagnosticFromAST(ast: AST, identifier: string, additionalLocationAST: AST): void {
+        public addDuplicateIdentifierDiagnosticFromAST(ast: ISyntaxElement, identifier: string, additionalLocationAST: ISyntaxElement): void {
             this.addDiagnostic(this.duplicateIdentifierDiagnosticFromAST(ast, identifier, additionalLocationAST));
         }
     }

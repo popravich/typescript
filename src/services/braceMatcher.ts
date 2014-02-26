@@ -30,7 +30,7 @@ module TypeScript.Services {
                 var matchKind = BraceMatcher.getMatchingTokenKind(token);
 
                 if (matchKind !== null) {
-                    var parentElement = token.parent();
+                    var parentElement = token.parent;
 
                     for (var i = 0, n = parentElement.childCount(); i < n; i++) {
                         var current = parentElement.childAt(i);
@@ -55,7 +55,7 @@ module TypeScript.Services {
             return result;
         }
 
-        private static getMatchingTokenKind(token: TypeScript.PositionedToken): TypeScript.SyntaxKind {
+        private static getMatchingTokenKind(token: TypeScript.ISyntaxToken): TypeScript.SyntaxKind {
             switch (token.kind()) {
                 case TypeScript.SyntaxKind.OpenBraceToken:    return TypeScript.SyntaxKind.CloseBraceToken
                 case TypeScript.SyntaxKind.OpenParenToken:    return TypeScript.SyntaxKind.CloseParenToken;

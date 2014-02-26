@@ -6,7 +6,6 @@
 ///<reference path='indentation.ts' />
 ///<reference path='languageVersion.ts' />
 ///<reference path='parseOptions.ts' />
-///<reference path='positionedElement.ts' />
 
 // Scanner depends on SyntaxKind and SyntaxFacts
 ///<reference path='syntaxKind.ts' />
@@ -16,7 +15,6 @@
 ///<reference path='scannerUtilities.generated.ts' />
 ///<reference path='separatedSyntaxList.ts' />
 ///<reference path='slidingWindow.ts' />
-///<reference path='strings.ts' />
 ///<reference path='syntax.ts' />
 ///<reference path='syntaxElement.ts' />
 ///<reference path='syntaxFactory.generated.ts' />
@@ -40,12 +38,6 @@
 ///<reference path='syntaxUtilities.ts' />
 ///<reference path='syntaxVisitor.generated.ts' />
 ///<reference path='syntaxWalker.generated.ts' />
-
-// PositionTrackingWalker depends on SyntaxWalker
-///<reference path='positionTrackingWalker.ts' />
-
-// SyntaxInformationMap depends on SyntaxWalker
-///<reference path='syntaxInformationMap.ts' />
 
 // SyntaxInformationMap depends on SyntaxWalker
 ///<reference path='syntaxNodeInvariantsChecker.ts' />

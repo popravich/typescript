@@ -1,23 +1,48 @@
 ///<reference path='references.ts' />
 
 module TypeScript {
-    export interface ISyntaxList extends ISyntaxElement {
-        childAt(index: number): ISyntaxNodeOrToken;
-        toArray(): ISyntaxNodeOrToken[];
+    export interface ISyntaxList<T extends ISyntaxNodeOrToken> extends ISyntaxElement {
+        childAt(index: number): T;
+        toArray(): T[];
 
         insertChildrenInto(array: ISyntaxElement[], index: number): void;
+
+        any(func: (v: T) => boolean): boolean;
+
+        firstOrDefault(func: (v: T, index: number) => boolean): T;
+        lastOrDefault(func: (v: T, index: number) => boolean): T;
     }
 }
 
 module TypeScript.Syntax {
     // TODO: stop exporting this once typecheck bug is fixed.
-    export class EmptySyntaxList implements ISyntaxList {
+    export class EmptySyntaxList<T extends ISyntaxNodeOrToken> implements ISyntaxList<T> {
+        public parent: ISyntaxElement = null;
+
+        public syntaxID(): number {
+            throw Errors.invalidOperation("Should not use shared syntax element as a key.");
+        }
+
+        public syntaxTree(): SyntaxTree {
+            throw Errors.invalidOperation("Shared lists do not belong to a single tree.");
+        }
+
+        public fileName(): string {
+            throw Errors.invalidOperation("Shared lists do not belong to a single file.");
+        }
+
+        public any(func: (v: ISyntaxNodeOrToken) => boolean): boolean {
+            return false;
+        }
+
         public kind(): SyntaxKind { return SyntaxKind.List; }
 
         public isNode(): boolean { return false; }
         public isToken(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
         public isList(): boolean { return true; }
         public isSeparatedList(): boolean { return false; }
+        public isTriviaList(): boolean { return false; }
 
         public toJSON(key: any): any {
             return [];
@@ -27,11 +52,15 @@ module TypeScript.Syntax {
             return 0;
         }
 
-        public childAt(index: number): ISyntaxNodeOrToken {
+        public childAt(index: number): T {
             throw Errors.argumentOutOfRange("index");
         }
 
-        public toArray(): ISyntaxNodeOrToken[] {
+        public isShared(): boolean {
+            return true;
+        }
+
+        public toArray(): T[] {
             return [];
         }
 
@@ -52,6 +81,22 @@ module TypeScript.Syntax {
 
         public width(): number {
             return 0;
+        }
+
+        public fullStart(): number {
+            throw Errors.invalidOperation("'fullStart' invalid on a singleton element.");
+        }
+
+        public fullEnd(): number {
+            throw Errors.invalidOperation("'fullEnd' invalid on a singleton element.");
+        }
+
+        public start(): number {
+            throw Errors.invalidOperation("'start' invalid on a singleton element.");
+        }
+
+        public end(): number {
+            throw Errors.invalidOperation("'end' invalid on a singleton element.");
         }
 
         public leadingTrivia(): ISyntaxTriviaList {
@@ -82,31 +127,60 @@ module TypeScript.Syntax {
             return false;
         }
 
-        public findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {
-            // This should never have been called on this list.  It has a 0 width, so the client 
-            // should have skipped over this.
-            throw Errors.invalidOperation();
+        public insertChildrenInto(array: ISyntaxElement[], index: number): void {
         }
 
-        public insertChildrenInto(array: ISyntaxElement[], index: number): void {
+        public firstOrDefault(func: (v: ISyntaxNodeOrToken, index: number) => boolean): T {
+            return null;
+        }
+
+        public lastOrDefault(func: (v: ISyntaxNodeOrToken, index: number) => boolean): T {
+            return null;
         }
     }
 
-    export var emptyList: ISyntaxList = new EmptySyntaxList();
+    var _emptyList: ISyntaxList<ISyntaxNodeOrToken> = <any>new EmptySyntaxList<ISyntaxNodeOrToken>();
 
-    class SingletonSyntaxList implements ISyntaxList {
-        private item: ISyntaxNodeOrToken;
+    export function emptyList<T extends ISyntaxNodeOrToken>(): ISyntaxList<T> {
+        return <ISyntaxList<T>>_emptyList;
+    }
 
-        constructor(item: ISyntaxNodeOrToken) {
-            this.item = item;
+    class SingletonSyntaxList<T extends ISyntaxNodeOrToken> implements ISyntaxList<T> {
+        public parent: ISyntaxElement = null;
+        private _syntaxID: number = 0;
+
+        constructor(private item: T) {
+            Syntax.setParentForChildren(this);
+        }
+
+        public syntaxTree(): SyntaxTree {
+            return this.parent.syntaxTree();
+        }
+
+        public fileName(): string {
+            return this.parent.fileName();
+        }
+
+        public syntaxID(): number {
+            if (this._syntaxID === 0) {
+                this._syntaxID = _nextSyntaxID++;
+            }
+
+            return this._syntaxID;
+        }
+
+        public any(func: (v: ISyntaxNodeOrToken) => boolean): boolean {
+            return func(this.item);
         }
 
         public kind(): SyntaxKind { return SyntaxKind.List; }
 
         public isToken(): boolean { return false; }
         public isNode(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
         public isList(): boolean { return true; }
         public isSeparatedList(): boolean { return false; }
+        public isTriviaList(): boolean { return false; }
 
         public toJSON(key: any) {
             return [this.item];
@@ -116,7 +190,7 @@ module TypeScript.Syntax {
             return 1;
         }
 
-        public childAt(index: number): ISyntaxNodeOrToken {
+        public childAt(index: number): T {
             if (index !== 0) {
                 throw Errors.argumentOutOfRange("index");
             }
@@ -124,7 +198,11 @@ module TypeScript.Syntax {
             return this.item;
         }
 
-        public toArray(): ISyntaxNodeOrToken[] {
+        public isShared(): boolean {
+            return false;
+        }
+
+        public toArray(): T[] {
             return [this.item];
         }
 
@@ -147,7 +225,23 @@ module TypeScript.Syntax {
         public width(): number {
             return this.item.width();
         }
-        
+
+        public fullStart(): number {
+            return this.firstToken().fullStart();
+        }
+
+        public fullEnd(): number {
+            return this.lastToken().fullEnd();
+        }
+
+        public start(): number {
+            return this.firstToken().start();
+        }
+
+        public end(): number {
+            return this.lastToken().end();
+        }
+
         public leadingTrivia(): ISyntaxTriviaList {
             return this.item.leadingTrivia();
         }
@@ -176,31 +270,52 @@ module TypeScript.Syntax {
             return this.item.isIncrementallyUnusable();
         }
 
-        public findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {
-            // Debug.assert(position >= 0 && position < this.item.fullWidth());
-            return (<any>this.item).findTokenInternal(
-                new PositionedList(parent, this, fullStart), position, fullStart);
-        }
-
         public insertChildrenInto(array: ISyntaxElement[], index: number): void {
             array.splice(index, 0, this.item);
         }
+
+        public firstOrDefault(func: (v: ISyntaxNodeOrToken, index: number) => boolean): T {
+            return func && func(this.item, 0) ? this.item : null;
+        }
+
+        public lastOrDefault(func: (v: ISyntaxNodeOrToken, index: number) => boolean): T {
+            return func && func(this.item, 0) ? this.item : null;
+        }
     }
 
-    class NormalSyntaxList implements ISyntaxList {
-        private nodeOrTokens: ISyntaxNodeOrToken[];
+    class NormalSyntaxList<T extends ISyntaxNodeOrToken> implements ISyntaxList<T> {
+        public parent: ISyntaxElement = null;
         private _data: number = 0;
+        private _syntaxID: number = 0;
 
-        constructor(nodeOrTokens: ISyntaxNodeOrToken[]) {
-            this.nodeOrTokens = nodeOrTokens;
+        constructor(private nodeOrTokens: T[]) {
+            Syntax.setParentForChildren(this);
+        }
+
+        public syntaxTree(): SyntaxTree {
+            return this.parent.syntaxTree();
+        }
+
+        public fileName(): string {
+            return this.parent.fileName();
+        }
+
+        public syntaxID(): number {
+            if (this._syntaxID === 0) {
+                this._syntaxID = _nextSyntaxID++;
+            }
+
+            return this._syntaxID;
         }
 
         public kind(): SyntaxKind { return SyntaxKind.List; }
 
         public isNode(): boolean { return false; }
         public isToken(): boolean { return false; }
+        public isTrivia(): boolean { return false; }
         public isList(): boolean { return true; }
         public isSeparatedList(): boolean { return false; }
+        public isTriviaList(): boolean { return false; }
 
         public toJSON(key: any) {
             return this.nodeOrTokens;
@@ -210,7 +325,7 @@ module TypeScript.Syntax {
             return this.nodeOrTokens.length;
         }
 
-        public childAt(index: number): ISyntaxNodeOrToken {
+        public childAt(index: number): T {
             if (index < 0 || index >= this.nodeOrTokens.length) {
                 throw Errors.argumentOutOfRange("index");
             }
@@ -218,7 +333,11 @@ module TypeScript.Syntax {
             return this.nodeOrTokens[index];
         }
 
-        public toArray(): ISyntaxNodeOrToken[] {
+        public isShared(): boolean {
+            return false;
+        }
+
+        public toArray(): T[] {
             return this.nodeOrTokens.slice(0);
         }
 
@@ -232,7 +351,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken {
             for (var i = 0, n = this.nodeOrTokens.length; i < n; i++) {
                 var token = this.nodeOrTokens[i].firstToken();
-                if (token !== null) {
+                if (token && token.fullWidth() > 0) {
                     return token;
                 }
             }
@@ -243,7 +362,7 @@ module TypeScript.Syntax {
         public lastToken(): ISyntaxToken {
             for (var i = this.nodeOrTokens.length - 1; i >= 0; i--) {
                 var token = this.nodeOrTokens[i].lastToken();
-                if (token !== null) {
+                if (token && token.fullWidth() > 0) {
                     return token;
                 }
             }
@@ -278,6 +397,22 @@ module TypeScript.Syntax {
         public width(): number {
             var fullWidth = this.fullWidth();
             return fullWidth - this.leadingTriviaWidth() - this.trailingTriviaWidth();
+        }
+
+        public fullStart(): number {
+            return this.firstToken().fullStart();
+        }
+
+        public fullEnd(): number {
+            return this.lastToken().fullEnd();
+        }
+
+        public start(): number {
+            return this.firstToken().start();
+        }
+
+        public end(): number {
+            return this.lastToken().end();
         }
 
         public leadingTrivia(): ISyntaxTriviaList {
@@ -319,25 +454,6 @@ module TypeScript.Syntax {
             return this._data;
         }
 
-        public findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {
-            // Debug.assert(position >= 0 && position < this.fullWidth());
-            
-            parent = new PositionedList(parent, this, fullStart);
-            for (var i = 0, n = this.nodeOrTokens.length; i < n; i++) {
-                var nodeOrToken = this.nodeOrTokens[i];
-
-                var childWidth = nodeOrToken.fullWidth();
-                if (position < childWidth) {
-                    return (<any>nodeOrToken).findTokenInternal(parent, position, fullStart);
-                }
-
-                position -= childWidth;
-                fullStart += childWidth;
-            }
-
-            throw Errors.invalidOperation();
-        }
-
         public insertChildrenInto(array: ISyntaxElement[], index: number): void {
             if (index === 0) {
                 array.unshift.apply(array, this.nodeOrTokens);
@@ -347,16 +463,28 @@ module TypeScript.Syntax {
                 array.splice.apply(array, [index, <any>0].concat(this.nodeOrTokens));
             }
         }
+
+        public any(func: (v: ISyntaxNodeOrToken) => boolean): boolean {
+            return ArrayUtilities.any(this.nodeOrTokens, func);
+        }
+
+        public firstOrDefault(func: (v: T, index: number) => boolean): T {
+            return ArrayUtilities.firstOrDefault(this.nodeOrTokens, func);
+        }
+
+        public lastOrDefault(func: (v: T, index: number) => boolean): T {
+            return ArrayUtilities.lastOrDefault(this.nodeOrTokens, func);
+        }
     }
 
-    export function list(nodes: ISyntaxNodeOrToken[]): ISyntaxList {
+    export function list<T extends ISyntaxNodeOrToken>(nodes: T[]): ISyntaxList<T> {
         if (nodes === undefined || nodes === null || nodes.length === 0) {
-            return emptyList;
+            return emptyList<T>();
         }
 
         if (nodes.length === 1) {
             var item = nodes[0];
-            return new SingletonSyntaxList(item);
+            return new SingletonSyntaxList<T>(item);
         }
 
         return new NormalSyntaxList(nodes);

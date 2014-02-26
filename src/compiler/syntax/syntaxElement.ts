@@ -2,15 +2,29 @@
 
 module TypeScript {
     export interface ISyntaxElement {
+        syntaxID(): number;
+        syntaxTree(): SyntaxTree;
+        fileName(): string;
+
         kind(): SyntaxKind;
+        parent: ISyntaxElement;
 
         isNode(): boolean;
         isToken(): boolean;
+        isTrivia(): boolean;
         isList(): boolean;
         isSeparatedList(): boolean;
+        isTriviaList(): boolean;
 
         childCount(): number;
         childAt(index: number): ISyntaxElement;
+
+        // True if there is only a single instance of this element (and thus can be reused in many 
+        // places in a syntax tree).  Examples of this include our empty lists.  Because empty 
+        // lists can be found all over the tree, we want to save on memory by using this single
+        // instance instead of creating new objects for each case.  Note: because of this, shared
+        // nodes don't have positions or parents.
+        isShared(): boolean;
 
         // True if this element is typescript specific and would not be legal in pure javascript.
         isTypeScriptSpecific(): boolean;
@@ -45,6 +59,18 @@ module TypeScript {
 
         // Width of this element, not including leading and trailing trivia.
         width(): number;
+
+        // The absolute start of this element, including the leading trivia.
+        fullStart(): number;
+
+        // The absolute end of this element, including the trailing trivia.
+        fullEnd(): number;
+
+        // The absolute start of this element, not including the leading trivia.
+        start(): number;
+
+        // The absolute start of this element, not including the trailing trivia.
+        end(): number;
 
         // Text for this element, including leading and trailing trivia.
         fullText(): string;
@@ -93,7 +119,7 @@ module TypeScript {
 
     export interface ISwitchClauseSyntax extends ISyntaxNode {
         isSwitchClause(): boolean;
-        statements: ISyntaxList;
+        statements: ISyntaxList<IStatementSyntax>;
     }
 
     export interface IExpressionSyntax extends ISyntaxNodeOrToken {
@@ -111,6 +137,11 @@ module TypeScript {
         equalsGreaterThanToken: ISyntaxToken;
         block: BlockSyntax;
         expression: IExpressionSyntax;
+    }
+
+    export interface ICallExpressionSyntax extends IExpressionSyntax {
+        expression: IExpressionSyntax;
+        argumentList: ArgumentListSyntax;
     }
 
     export interface IPostfixExpressionSyntax extends IUnaryExpressionSyntax {

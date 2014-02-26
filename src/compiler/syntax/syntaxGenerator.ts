@@ -985,10 +985,10 @@ function getType(child: IMemberDefinition): string {
         return "ISyntaxToken";
     }
     else if (child.isSeparatedList) {
-        return "ISeparatedSyntaxList";
+        return "ISeparatedSyntaxList<" + child.elementType + ">";
     }
     else if (child.isList) {
-        return "ISyntaxList";
+        return "ISyntaxList<" + child.elementType + ">";
     }
     else {
         return child.type;
@@ -1024,11 +1024,17 @@ function getPropertyAccess(child: IMemberDefinition): string {
 function generateProperties(definition: ITypeDefinition): string {
     var result = "";
 
+    if (definition.name === "SourceUnitSyntax") {
+        result += "        public _syntaxTree: SyntaxTree = null;\r\n";
+    }
+
+    var newLine = false;
     for (var i = 0; i < definition.children.length; i++) {
         var child = definition.children[i];
 
         if (getType(child) === "SyntaxKind") {
             result += "    private _" + child.name + ": " + getType(child) + ";\r\n";
+            newLine = true;
         }
         else if (child.name === "arguments") {
             result += "    public " + child.name + ": " + getType(child) + ";\r\n";
@@ -1037,7 +1043,7 @@ function generateProperties(definition: ITypeDefinition): string {
         hasKind = hasKind || (getType(child) === "SyntaxKind");
     }
 
-    if (definition.children.length > 0) {
+    if (newLine) {
         result += "\r\n";
     }
 
@@ -1251,6 +1257,7 @@ function generateConstructor(definition: ITypeDefinition): string {
         }
     }
 
+    result += "            Syntax.setParentForChildren(this);\r\n";
     result += "        }\r\n";
 
     return result;
@@ -1279,7 +1286,7 @@ function generateFactory1Method(definition: ITypeDefinition): string {
         return "";
     }
 
-    var result = "\r\n    public static create("
+    var result = "\r\n        public static create("
     var i: number;
     var child: IMemberDefinition;
 
@@ -1289,13 +1296,13 @@ function generateFactory1Method(definition: ITypeDefinition): string {
         result += child.name + ": " + getType(child);
 
         if (i < mandatoryChildren.length - 1) {
-            result += ",\r\n                         ";
+            result += ",\r\n                             ";
         }
     }
 
     result += "): " + definition.name + " {\r\n";
 
-    result += "        return new " + definition.name + "(";
+    result += "            return new " + definition.name + "(";
     
     for (i = 0; i < definition.children.length; i++) {
         child = definition.children[i];
@@ -1304,10 +1311,10 @@ function generateFactory1Method(definition: ITypeDefinition): string {
             result += child.name;
         }
         else if (child.isList) {
-            result += "Syntax.emptyList";
+            result += "Syntax.emptyList<" + child.elementType + ">()";
         }
         else if (child.isSeparatedList) {
-            result += "Syntax.emptySeparatedList";
+            result += "Syntax.emptySeparatedList<" + child.elementType + ">()";
         }
         else {
             result += "null";
@@ -1317,7 +1324,7 @@ function generateFactory1Method(definition: ITypeDefinition): string {
     }
 
     result += "/*parsedInStrictMode:*/ false);\r\n";
-    result += "    }\r\n";
+    result += "        }\r\n";
 
     return result;
 }
@@ -1384,7 +1391,7 @@ function generateFactory2Method(definition: ITypeDefinition): string {
 
     var i: number;
     var child: IMemberDefinition;
-    var result = "\r\n    public static create1("
+    var result = "\r\n        public static create1("
 
     for (i = 0; i < mandatoryChildren.length; i++) {
         child = mandatoryChildren[i];
@@ -1392,12 +1399,12 @@ function generateFactory2Method(definition: ITypeDefinition): string {
         result += child.name + ": " + getType(child);
 
         if (i < mandatoryChildren.length - 1) {
-            result += ",\r\n                          ";
+            result += ",\r\n                              ";
         }
     }
 
     result += "): " + definition.name + " {\r\n";
-    result += "        return new " + definition.name + "(";
+    result += "            return new " + definition.name + "(";
 
     for (i = 0; i < definition.children.length; i++) {
         child = definition.children[i];
@@ -1406,10 +1413,10 @@ function generateFactory2Method(definition: ITypeDefinition): string {
             result += child.name;
         }
         else if (child.isList) {
-            result += "Syntax.emptyList";
+            result += "Syntax.emptyList<" + child.elementType + ">()";
         }
         else if (child.isSeparatedList) {
-            result += "Syntax.emptySeparatedList";
+            result += "Syntax.emptySeparatedList<" + child.elementType + ">()";
         }
         else if (isOptional(child)) {
             result += "null";
@@ -1425,7 +1432,7 @@ function generateFactory2Method(definition: ITypeDefinition): string {
     }
 
     result += "/*parsedInStrictMode:*/ false);\r\n";
-    result += "    }\r\n";
+    result += "        }\r\n";
 
     return result;
 }
@@ -1438,9 +1445,9 @@ function generateAcceptMethods(definition: ITypeDefinition): string {
     var result = "";
 
     result += "\r\n";
-    result += "    public accept(visitor: ISyntaxVisitor): any {\r\n";
-    result += "        return visitor.visit" + getNameWithoutSuffix(definition) + "(this);\r\n";
-    result += "    }\r\n";
+    result += "        public accept(visitor: ISyntaxVisitor): any {\r\n";
+    result += "            return visitor.visit" + getNameWithoutSuffix(definition) + "(this);\r\n";
+    result += "        }\r\n";
 
     return result;
 }
@@ -1471,9 +1478,9 @@ function generateIsMethod(definition: ITypeDefinition): string {
             }
 
             result += "\r\n";
-            result += "    public is" + type + "(): boolean {\r\n";
-            result += "        return true;\r\n";
-            result += "    }\r\n";
+            result += "        public is" + type + "(): boolean {\r\n";
+            result += "            return true;\r\n";
+            result += "        }\r\n";
         }
     }
 
@@ -1485,9 +1492,9 @@ function generateKindMethod(definition: ITypeDefinition): string {
 
     if (!hasKind) {
         result += "\r\n";
-        result += "    public kind(): SyntaxKind {\r\n";
-        result += "        return SyntaxKind." + getNameWithoutSuffix(definition) + ";\r\n";
-        result += "    }\r\n";
+        result += "        public kind(): SyntaxKind {\r\n";
+        result += "            return SyntaxKind." + getNameWithoutSuffix(definition) + ";\r\n";
+        result += "        }\r\n";
     }
 
     return result;
@@ -1497,19 +1504,19 @@ function generateSlotMethods(definition: ITypeDefinition): string {
     var result = "";
 
     result += "\r\n";
-    result += "    public childCount(): number {\r\n";
+    result += "        public childCount(): number {\r\n";
     var slotCount = hasKind ? (definition.children.length - 1) : definition.children.length;
 
-    result += "        return " + slotCount + ";\r\n";
-    result += "    }\r\n\r\n";
+    result += "            return " + slotCount + ";\r\n";
+    result += "        }\r\n\r\n";
 
-    result += "    public childAt(slot: number): ISyntaxElement {\r\n";
+    result += "        public childAt(slot: number): ISyntaxElement {\r\n";
 
     if (slotCount === 0) {
-        result += "        throw Errors.invalidOperation();\r\n";
+        result += "            throw Errors.invalidOperation();\r\n";
     }
     else {
-        result += "        switch (slot) {\r\n";
+        result += "            switch (slot) {\r\n";
 
         var index = 0;
         for (var i = 0; i < definition.children.length; i++) {
@@ -1518,15 +1525,15 @@ function generateSlotMethods(definition: ITypeDefinition): string {
                 continue;
             }
 
-            result += "            case " + index + ": return this." + child.name + ";\r\n";
+            result += "                case " + index + ": return this." + child.name + ";\r\n";
             index++;
         }
 
-        result += "            default: throw Errors.invalidOperation();\r\n";
-        result += "        }\r\n";
+        result += "                default: throw Errors.invalidOperation();\r\n";
+        result += "            }\r\n";
     }
 
-    result += "    }\r\n";
+    result += "        }\r\n";
 
     return result;
 }
@@ -1571,6 +1578,8 @@ function generateFirstTokenMethod(definition: ITypeDefinition): string {
     else {
         result += "        return null;\r\n";
     }
+
+    result += "    }\r\n";
 
     result += "    }\r\n";
 
@@ -1688,14 +1697,21 @@ function contains(definition: ITypeDefinition, child: IMemberDefinition) {
 function generateAccessors(definition: ITypeDefinition): string {
     var result = "";
 
+    if (definition.name === "SourceUnitSyntax") {
+        result += "\r\n";
+        result += "        public syntaxTree(): SyntaxTree {\r\n";
+        result += "            return this._syntaxTree;\r\n";
+        result += "        }\r\n";
+    }
+
     for (var i = 0; i < definition.children.length; i++) {
         var child = definition.children[i];
         
         if (child.type === "SyntaxKind") {
             result += "\r\n";
-            result += "    public " + child.name + "(): " + getType(child) + " {\r\n";
-            result += "        return " + getPropertyAccess(child) + ";\r\n";
-            result += "    }\r\n";
+            result += "        public " + child.name + "(): " + getType(child) + " {\r\n";
+            result += "            return " + getPropertyAccess(child) + ";\r\n";
+            result += "        }\r\n";
         }
     }
 
@@ -1705,8 +1721,8 @@ function generateAccessors(definition: ITypeDefinition): string {
 function generateWithMethod(definition: ITypeDefinition, child: IMemberDefinition): string {
     var result = "";
     result += "\r\n";
-    result += "    public with" + pascalCase(child.name) + "(" + getSafeName(child) + ": " + getType(child) + "): " + definition.name + " {\r\n";
-    result += "        return this.update("
+    result += "        public with" + pascalCase(child.name) + "(" + getSafeName(child) + ": " + getType(child) + "): " + definition.name + " {\r\n";
+    result += "            return this.update("
 
     for (var i = 0; i < definition.children.length; i++) {
         if (i > 0) {
@@ -1722,7 +1738,7 @@ function generateWithMethod(definition: ITypeDefinition, child: IMemberDefinitio
     }
 
     result += ");\r\n";
-    result += "    }\r\n";
+    result += "        }\r\n";
 
     if (child.isList || child.isSeparatedList) {
         if (TypeScript.StringUtilities.endsWith(child.name, "s")) {
@@ -1733,18 +1749,18 @@ function generateWithMethod(definition: ITypeDefinition, child: IMemberDefinitio
             argName = argName.substring(0, argName.length - 1)
 
             result += "\r\n";
-            result += "    public with" + pascalName + "(" + argName + ": " + child.elementType + "): " + definition.name + " {\r\n";
-            result += "        return this.with" + pascalCase(child.name) + "("
+            result += "        public with" + pascalName + "(" + argName + ": " + child.elementType + "): " + definition.name + " {\r\n";
+            result += "            return this.with" + pascalCase(child.name) + "("
 
             if (child.isList) {
-                result += "Syntax.list([" + argName + "])";
+                result += "Syntax.list<" + child.elementType + ">([" + argName + "])";
             }
             else {
-                result += "Syntax.separatedList([" + argName + "])";
+                result += "Syntax.separatedList<" + child.elementType + ">([" + argName + "])";
             }
 
             result += ");\r\n";
-            result += "    }\r\n";
+            result += "        }\r\n";
         }
     }
 
@@ -1764,12 +1780,12 @@ function generateWithMethods(definition: ITypeDefinition): string {
 
 function generateTriviaMethods(definition: ITypeDefinition): string {
     var result = "\r\n";
-    result += "    public withLeadingTrivia(trivia: ISyntaxTriviaList): " + definition.name + " {\r\n";
-    result += "        return <" + definition.name + ">super.withLeadingTrivia(trivia);\r\n";
-    result += "    }\r\n\r\n";
-    result += "    public withTrailingTrivia(trivia: ISyntaxTriviaList): " + definition.name + " {\r\n";
-    result += "        return <" + definition.name + ">super.withTrailingTrivia(trivia);\r\n";
-    result += "    }\r\n";
+    result += "        public withLeadingTrivia(trivia: ISyntaxTriviaList): " + definition.name + " {\r\n";
+    result += "            return <" + definition.name + ">super.withLeadingTrivia(trivia);\r\n";
+    result += "        }\r\n\r\n";
+    result += "        public withTrailingTrivia(trivia: ISyntaxTriviaList): " + definition.name + " {\r\n";
+    result += "            return <" + definition.name + ">super.withTrailingTrivia(trivia);\r\n";
+    result += "        }\r\n";
 
     return result;
 }
@@ -1778,7 +1794,7 @@ function generateUpdateMethod(definition: ITypeDefinition): string {
     var result = "";
 
     result += "\r\n";
-    result += "    public update(";
+    result += "        public update(";
 
     var i: number;
     var child: IMemberDefinition;
@@ -1789,17 +1805,17 @@ function generateUpdateMethod(definition: ITypeDefinition): string {
         result += getSafeName(child) + ": " + getType(child);
 
         if (i < definition.children.length - 1) {
-            result += ",\r\n                  ";
+            result += ",\r\n                      ";
         }
     }
 
     result += "): " + definition.name + " {\r\n";
 
     if (definition.children.length === 0) {
-        result += "        return this;\r\n";
+        result += "            return this;\r\n";
     }
     else {
-        result += "        if (";
+        result += "            if (";
 
         for (i = 0; i < definition.children.length; i++) {
             child = definition.children[i];
@@ -1812,10 +1828,10 @@ function generateUpdateMethod(definition: ITypeDefinition): string {
         }
 
         result += ") {\r\n";
-        result += "            return this;\r\n";
-        result += "        }\r\n\r\n";
+        result += "                return this;\r\n";
+        result += "            }\r\n\r\n";
 
-        result += "        return new " + definition.name + "(";
+        result += "            return new " + definition.name + "(";
 
         for (i = 0; i < definition.children.length; i++) {
             child = definition.children[i];
@@ -1827,16 +1843,16 @@ function generateUpdateMethod(definition: ITypeDefinition): string {
         result += "/*parsedInStrictMode:*/ this.parsedInStrictMode());\r\n";
     }
 
-    result += "    }\r\n";
+    result += "        }\r\n";
 
     return result;
 }
 
 function generateIsTypeScriptSpecificMethod(definition: ITypeDefinition): string {
-    var result = "\r\n    public isTypeScriptSpecific(): boolean {\r\n";
+    var result = "\r\n        public isTypeScriptSpecific(): boolean {\r\n";
 
     if (definition.isTypeScriptSpecific) {
-        result += "        return true;\r\n";
+        result += "            return true;\r\n";
     }
     else {
         for (var i = 0; i < definition.children.length; i++) {
@@ -1848,10 +1864,10 @@ function generateIsTypeScriptSpecificMethod(definition: ITypeDefinition): string
 
             if (child.isTypeScriptSpecific) {
                 if (child.isList) {
-                    result += "        if (" + getPropertyAccess(child) + ".childCount() > 0) { return true; }\r\n";
+                    result += "            if (" + getPropertyAccess(child) + ".childCount() > 0) { return true; }\r\n";
                 }
                 else {
-                    result += "        if (" + getPropertyAccess(child) + " !== null) { return true; }\r\n";
+                    result += "            if (" + getPropertyAccess(child) + " !== null) { return true; }\r\n";
                 }
                 continue;
             }
@@ -1861,17 +1877,17 @@ function generateIsTypeScriptSpecificMethod(definition: ITypeDefinition): string
             }
 
             if (child.isOptional) {
-                result += "        if (" + getPropertyAccess(child) + " !== null && " + getPropertyAccess(child) + ".isTypeScriptSpecific()) { return true; }\r\n";
+                result += "            if (" + getPropertyAccess(child) + " !== null && " + getPropertyAccess(child) + ".isTypeScriptSpecific()) { return true; }\r\n";
             }
             else {
-                result += "        if (" + getPropertyAccess(child) + ".isTypeScriptSpecific()) { return true; }\r\n";
+                result += "            if (" + getPropertyAccess(child) + ".isTypeScriptSpecific()) { return true; }\r\n";
             }
         }
 
-        result += "        return false;\r\n";
+        result += "            return false;\r\n";
     }
 
-    result += "    }\r\n";
+    result += "        }\r\n";
 
     return result;
 }
@@ -2002,12 +2018,12 @@ function generateRewriter(): string {
 "            return node.isToken() ? <ISyntaxNodeOrToken>this.visitToken(<ISyntaxToken>node) : this.visitNode(<SyntaxNode>node);\r\n" +
 "        }\r\n" +
 "\r\n" +
-"        public visitList(list: ISyntaxList): ISyntaxList {\r\n" +
-"            var newItems: ISyntaxNodeOrToken[] = null;\r\n" +
+"        public visitList<T extends ISyntaxNodeOrToken>(list: ISyntaxList<T>): ISyntaxList<T> {\r\n" +
+"            var newItems: T[] = null;\r\n" +
 "\r\n" +
 "            for (var i = 0, n = list.childCount(); i < n; i++) {\r\n" +
 "                var item = list.childAt(i);\r\n" +
-"                var newItem = this.visitNodeOrToken(item);\r\n" +
+"                var newItem = <T>this.visitNodeOrToken(item);\r\n" +
 "\r\n" +
 "                if (item !== newItem && newItems === null) {\r\n" +
 "                    newItems = [];\r\n" +
@@ -2022,10 +2038,10 @@ function generateRewriter(): string {
 "            }\r\n" +
 "\r\n" +
 "            // Debug.assert(newItems === null || newItems.length === list.childCount());\r\n" +
-"            return newItems === null ? list : Syntax.list(newItems);\r\n" +
+"            return newItems === null ? list : Syntax.list<T>(newItems);\r\n" +
 "        }\r\n" +
 "\r\n" +
-"        public visitSeparatedList(list: ISeparatedSyntaxList): ISeparatedSyntaxList {\r\n" +
+"        public visitSeparatedList<T extends ISyntaxNodeOrToken>(list: ISeparatedSyntaxList<T>): ISeparatedSyntaxList<T> {\r\n" +
 "            var newItems: ISyntaxNodeOrToken[] = null;\r\n" +
 "\r\n" +
 "            for (var i = 0, n = list.childCount(); i < n; i++) {\r\n" +
@@ -2045,7 +2061,7 @@ function generateRewriter(): string {
 "            }\r\n" +
 "\r\n" +
 "            // Debug.assert(newItems === null || newItems.length === list.childCount());\r\n" +
-"            return newItems === null ? list : Syntax.separatedList(newItems);\r\n" +
+"            return newItems === null ? list : Syntax.separatedList<T>(newItems);\r\n" +
 "        }\r\n";
 
     for (var i = 0; i < definitions.length; i++) {
@@ -2127,6 +2143,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
         result += "        private _fullText: string;\r\n";
     }
 
+    result += "        private _fullStart: number;\r\n";
     result += "        public tokenKind: SyntaxKind;\r\n";
     // result += "        public tokenKeywordKind: SyntaxKind;\r\n";
 
@@ -2138,15 +2155,17 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
         result += "        private _trailingTriviaInfo: number;\r\n";
     }
 
+    result += "        public parent: ISyntaxElement = null;\r\n";
+    result += "        private _syntaxID: number = 0;\r\n";
     result += "\r\n";
 
+    result += "        constructor(";
+
     if (needsText) {
-        result += "        constructor(fullText: string, ";
-    }
-    else {
-        result += "        constructor(";
+        result += "fullText: string, ";
     }
 
+    result += "fullStart: number, ";
     result += "kind: SyntaxKind";
 
     if (leading) {
@@ -2163,6 +2182,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
         result += "            this._fullText = fullText;\r\n";
     }
 
+    result += "            this._fullStart = fullStart;\r\n";
     result += "            this.tokenKind = kind;\r\n";
 
     if (leading) {
@@ -2175,6 +2195,13 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 
     result += "        }\r\n\r\n";
 
+    result += "        public syntaxID(): number {\r\n";
+    result += "            if (this._syntaxID === 0) {\r\n";
+    result += "                this._syntaxID = _nextSyntaxID++;\r\n";
+    result += "            }\r\n\r\n";
+    result += "            return this._syntaxID;\r\n";
+    result += "        }\r\n\r\n";
+
     result += "        public clone(): ISyntaxToken {\r\n";
     result += "            return new " + className + "(\r\n";
 
@@ -2182,6 +2209,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
         result += "                this._fullText,\r\n";
     }
 
+    result += "                this._fullStart,\r\n";
     result += "                this.tokenKind";
 
     if (leading) {
@@ -2195,11 +2223,35 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += ");\r\n";
     result += "        }\r\n\r\n";
 
+    //if (needsSourcetext) {
+    //    result += "        public setFullStartAndText(fullStart: number, sourceText: ISimpleText): void {\r\n";
+    //    result += "            this._fullStart = fullStart;\r\n";
+    //    result += "            this._sourceText = sourceText;\r\n";
+    //    result += "        }\r\n\r\n";
+    //}
+    //else {
+        result += "        public setFullStart(fullStart: number): void {\r\n";
+        result += "            this._fullStart = fullStart;\r\n";
+        result += "        }\r\n\r\n";
+    //}
+
+    result += "        public syntaxTree(): SyntaxTree {\r\n";
+    result += "            return this.parent.syntaxTree();\r\n";
+    result += "        }\r\n\r\n";
+
+    result += "        public fileName(): string {\r\n";
+    result += "            return this.parent.fileName();\r\n";
+    result += "        }\r\n\r\n";
+
+
     result +=
+"        public isShared(): boolean { return false; }\r\n" +
 "        public isNode(): boolean { return false; }\r\n" +
 "        public isToken(): boolean { return true; }\r\n" +
+"        public isTrivia(): boolean { return true; }\r\n" +
 "        public isList(): boolean { return false; }\r\n" +
-"        public isSeparatedList(): boolean { return false; }\r\n\r\n";
+"        public isSeparatedList(): boolean { return false; }\r\n"+
+"        public isTriviaList(): boolean { return false; }\r\n\r\n";
 
     result += "        public kind(): SyntaxKind { return this.tokenKind; }\r\n\r\n";
 
@@ -2226,18 +2278,14 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     }
     */
 
-    /*
-    if (needsText) {
-        if (leading) {
-            result += "        private start(): number { return this._fullStart + " + leadingTriviaWidth + "; }\r\n";
-        }
-        else {
-            result += "        private start(): number { return this._fullStart; }\r\n";
-        }
+    result += "        public fullStart(): number { return this._fullStart; }\r\n";
 
-        result += "        private end(): number { return this.start() + this.width(); }\r\n\r\n";
+    if (leading) {
+        result += "        public start(): number { return this._fullStart + " + leadingTriviaWidth + "; }\r\n";
     }
-    */
+    else {
+        result += "        public start(): number { return this._fullStart; }\r\n";
+    }
 
     if (isFixedWidth) {
         result += "        public width(): number { return this.text().length; }\r\n\r\n";
@@ -2245,6 +2293,9 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     else {
         result += "        public width(): number { return this.fullWidth() - this.leadingTriviaWidth() - this.trailingTriviaWidth(); }\r\n\r\n";
     }
+
+    result += "        public end(): number { return this.start() + this.width(); }\r\n";
+    result += "        public fullEnd(): number { return this._fullStart + this.fullWidth(); } \r\n\r\n";
 
     if (isFixedWidth) {
         result += "        public text(): string { return SyntaxFacts.getText(this.tokenKind); }\r\n";
@@ -2287,7 +2338,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += "        public hasLeadingSkippedText(): boolean { return false; }\r\n";
     result += "        public leadingTriviaWidth(): number { return " + (leading ? "getTriviaWidth(this._leadingTriviaInfo)" : "0") + "; }\r\n";
     result += "        public leadingTrivia(): ISyntaxTriviaList { return " + (leading
-        ? "Scanner.scanTrivia(SimpleText.fromString(this._fullText), 0, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false)"
+        ? "Scanner.scanTrivia(this, this._fullText, this._fullStart, 0, this.leadingTriviaWidth(), /*isTrailing:*/ false)"
         : "Syntax.emptyTriviaList") + "; }\r\n\r\n";
 
     result += "        public hasTrailingTrivia(): boolean { return " + (trailing ? "true" : "false") + "; }\r\n";
@@ -2296,7 +2347,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += "        public hasTrailingSkippedText(): boolean { return false; }\r\n";
     result += "        public trailingTriviaWidth(): number { return " + (trailing ? "getTriviaWidth(this._trailingTriviaInfo)" : "0") + "; }\r\n";
     result += "        public trailingTrivia(): ISyntaxTriviaList { return " + (trailing
-        ? "Scanner.scanTrivia(SimpleText.fromString(this._fullText), this.leadingTriviaWidth() + this.width(), getTriviaWidth(this._trailingTriviaInfo), /*isTrailing:*/ true)"
+        ? "Scanner.scanTrivia(this, this._fullText, this._fullStart, this.leadingTriviaWidth() + this.width(), this.trailingTriviaWidth(), /*isTrailing:*/ true)"
         : "Syntax.emptyTriviaList") + "; }\r\n\r\n";
     result += "        public hasSkippedToken(): boolean { return false; }\r\n";
 
@@ -2308,12 +2359,9 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 "        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }\r\n" +
 "        public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }\r\n" +
 "        private realize(): ISyntaxToken { return realizeToken(this); }\r\n" +
+"        public previousToken(includeSkippedTokens: boolean = false): ISyntaxToken { return Syntax.previousToken(this, includeSkippedTokens); }\r\n" +
+"        public nextToken(includeSkippedTokens: boolean = false): ISyntaxToken { return Syntax.nextToken(this, includeSkippedTokens); }\r\n" +
 "        public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }\r\n\r\n";
-
-    result +=
-"        private findTokenInternal(parent: PositionedElement, position: number, fullStart: number): PositionedToken {\r\n" +
-"            return new PositionedToken(parent, this, fullStart);\r\n" +
-"        }\r\n\r\n";
 
     result +=
 "        public withLeadingTrivia(leadingTrivia: ISyntaxTriviaList): ISyntaxToken {\r\n" +
@@ -2380,62 +2428,7 @@ function generateTokens(): string {
     "        elements.push(token.text());\r\n" +
     "        token.trailingTrivia().collectTextElements(elements);\r\n" +
     "    }\r\n" +
-    "\r\n";// +
-//"    export function fixedWidthToken(sourceText: ISimpleText, fullStart: number,\r\n" +
-//"        kind: SyntaxKind,\r\n" +
-//"        leadingTriviaInfo: number,\r\n" +
-//"        trailingTriviaInfo: number): ISyntaxToken {\r\n" +
-//"\r\n" +
-//"        if (leadingTriviaInfo === 0) {\r\n" +
-//"            if (trailingTriviaInfo === 0) {\r\n" +
-//"                return new FixedWidthTokenWithNoTrivia(kind);\r\n" +
-//"            }\r\n" +
-//"            else {\r\n" +
-//"                return new FixedWidthTokenWithTrailingTrivia(sourceText, fullStart, kind, trailingTriviaInfo);\r\n" +
-//"            }\r\n" +
-//"        }\r\n" +
-//"        else if (trailingTriviaInfo === 0) {\r\n" +
-//"            return new FixedWidthTokenWithLeadingTrivia(sourceText, fullStart, kind, leadingTriviaInfo);\r\n" +
-//"        }\r\n" +
-//"        else {\r\n" +
-//"            return new FixedWidthTokenWithLeadingAndTrailingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, trailingTriviaInfo);\r\n" +
-//"        }\r\n" +
-//"    }\r\n" +
-//"\r\n" +
-//"    export function variableWidthToken(sourceText: ISimpleText, fullStart: number,\r\n" +
-//"        kind: SyntaxKind,\r\n" +
-//"        leadingTriviaInfo: number,\r\n" +
-//"        width: number,\r\n" +
-//"        trailingTriviaInfo: number): ISyntaxToken {\r\n" +
-//"\r\n" +
-//"        if (leadingTriviaInfo === 0) {\r\n" +
-//"            if (trailingTriviaInfo === 0) {\r\n" +
-//"                return new VariableWidthTokenWithNoTrivia(sourceText, fullStart, kind, width);\r\n" +
-//"            }\r\n" +
-//"            else {\r\n" +
-//"                return new VariableWidthTokenWithTrailingTrivia(sourceText, fullStart, kind, width, trailingTriviaInfo);\r\n" +
-//"            }\r\n" +
-//"        }\r\n" +
-//"        else if (trailingTriviaInfo === 0) {\r\n" +
-//"            return new VariableWidthTokenWithLeadingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, width);\r\n" +
-//"        }\r\n" +
-//"        else {\r\n" +
-//"            return new VariableWidthTokenWithLeadingAndTrailingTrivia(sourceText, fullStart, kind, leadingTriviaInfo, width, trailingTriviaInfo);\r\n" +
-//"        }\r\n" +
-//"    }\r\n" +
-//"\r\n" +
-//"    export function tokenFromText(text: IText, fullStart: number,\r\n" +
-//"        kind: SyntaxKind,\r\n" +
-//"        leadingTriviaInfo: number,\r\n" +
-//"        width: number,\r\n" +
-//"        trailingTriviaInfo: number): ISyntaxToken {\r\n" +
-//"        if (kind >= SyntaxKind.FirstFixedWidth) {\r\n" +
-//"            return fixedWidthToken(text, fullStart, kind, leadingTriviaInfo, trailingTriviaInfo);\r\n" +
-//"        }\r\n" +
-//"        else {\r\n" +
-//"            return variableWidthToken(text, fullStart, kind, leadingTriviaInfo, width, trailingTriviaInfo);\r\n" +
-//"        }\r\n" +
-//"    }\r\n\r\n"
+    "\r\n";
 
     result += 
 "    function getTriviaWidth(value: number): number {\r\n" +
@@ -2503,13 +2496,13 @@ function generateWalker(): string {
 "            this.visitNodeOrToken(nodeOrToken);\r\n" +
 "        }\r\n" +
 "\r\n" +
-"        public visitList(list: ISyntaxList): void {\r\n" +
+"        public visitList(list: ISyntaxList<ISyntaxNodeOrToken>): void {\r\n" +
 "            for (var i = 0, n = list.childCount(); i < n; i++) {\r\n" +
 "               this.visitNodeOrToken(list.childAt(i));\r\n" +
 "            }\r\n" +
 "        }\r\n" +
 "\r\n" +
-"        public visitSeparatedList(list: ISeparatedSyntaxList): void {\r\n" +
+"        public visitSeparatedList(list: ISeparatedSyntaxList<ISyntaxNodeOrToken>): void {\r\n" +
 "            for (var i = 0, n = list.childCount(); i < n; i++) {\r\n" +
 "                var item = list.childAt(i);\r\n" +
 "                this.visitNodeOrToken(item);\r\n" + 

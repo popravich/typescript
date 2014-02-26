@@ -136,7 +136,7 @@ module FourSlash {
         private languageService: TypeScript.Services.ILanguageService = null;
 
         // A reference to the language service's compiler state's compiler instance
-        private compiler: () => { getSyntaxTree(fileName: string): TypeScript.SyntaxTree; getSourceUnit(fileName: string): TypeScript.SourceUnit; };
+        private compiler: () => { getSyntaxTree(fileName: string): TypeScript.SyntaxTree; getSourceUnit(fileName: string): TypeScript.SourceUnitSyntax; };
 
         // The current caret position in the active file
         public currentCaretPosition = 0;
@@ -183,20 +183,23 @@ module FourSlash {
             }
 
             harnessCompiler.addInputFiles(inputFiles);
-            var resolvedFiles = harnessCompiler.resolve();
+            try {
+                var resolvedFiles = harnessCompiler.resolve();
 
-            resolvedFiles.forEach(file => {
-                if (file.path.indexOf('lib.d.ts') === -1) {
-                    var fixedPath = file.path.substr(file.path.indexOf('tests/'));
-                    var content = harnessCompiler.getContentForFile(fixedPath);
-                    this.languageServiceShimHost.addScript(fixedPath, content);
-                }
-            });
+                resolvedFiles.forEach(file => {
+                    if (file.path.indexOf('lib.d.ts') === -1) {
+                        var fixedPath = file.path.substr(file.path.indexOf('tests/'));
+                        var content = harnessCompiler.getContentForFile(fixedPath);
+                        this.languageServiceShimHost.addScript(fixedPath, content);
+                    }
+                });
 
-            this.languageServiceShimHost.addScript('lib.d.ts', Harness.Compiler.libTextMinimal);
-
-            // harness no longer needs the results of the above work, make sure the next test operations are in a clean state
-            harnessCompiler.reset();
+                this.languageServiceShimHost.addScript('lib.d.ts', Harness.Compiler.libTextMinimal);
+            }
+            finally {
+                // harness no longer needs the results of the above work, make sure the next test operations are in a clean state
+                harnessCompiler.reset();
+            }
 
             // Sneak into the language service and get its compiler so we can examine the syntax trees
             this.languageService = this.languageServiceShimHost.getLanguageService().languageService;
@@ -1065,14 +1068,9 @@ module FourSlash {
             var content = snapshot.getText(0, snapshot.getLength());
             var refSyntaxTree = TypeScript.Parser.parse(this.activeFile.fileName, TypeScript.SimpleText.fromString(content), TypeScript.isDTSFile(this.activeFile.fileName), parseOptions);
             var fullSyntaxErrs = JSON.stringify(refSyntaxTree.diagnostics());
-            var refAST = TypeScript.SyntaxTreeToAstVisitor.visit(refSyntaxTree, this.activeFile.fileName, immutableSettings, /*incrementalAST:*/ true);
 
             if (!refSyntaxTree.structuralEquals(this.compiler().getSyntaxTree(this.activeFile.fileName))) {
                 throw new Error('Incrementally-parsed and full-parsed syntax trees were not equal');
-            }
-
-            if (!TypeScript.structuralEqualsIncludingPosition(refAST, this.compiler().getSourceUnit(this.activeFile.fileName))) {
-                throw new Error('Incrementally-parsed and full-parsed ASTs were not equal');
             }
 
             if (incrSyntaxErrs !== fullSyntaxErrs) {
@@ -1484,7 +1482,13 @@ module FourSlash {
             Verify that returned navigationItems from getNavigateToItems have matched searchValue, matchKind, and kind.
             Report an error if getNavigateToItems does not find any matched searchValue.
         */
-        public verifyNavigationItemsListContains(name: string, kind: string, searchValue: string, matchKind: string, fileName?: string, parentName?: string) {
+        public verifyNavigationItemsListContains(
+            name: string,
+            kind: string,
+            searchValue: string,
+            matchKind: string,
+            fileName?: string,
+            parentName?: string) {
             this.taoInvalidReason = 'verifyNavigationItemsListContains NYI';
 
             var items = this.languageService.getNavigateToItems(searchValue);
@@ -1495,11 +1499,18 @@ module FourSlash {
 
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
-                if (item && item.name === name && item.kind === kind && item.matchKind === matchKind &&
+                if (item && item.name === name && item.kind === kind &&
+                    (matchKind === undefined || item.matchKind === matchKind) &&
                     (fileName === undefined || item.fileName === fileName) &&
                     (parentName === undefined || item.containerName === parentName)) {
                     return;
                 }
+            }
+
+            // if there was an explicit match kind specified, then it should be validated.
+            if (matchKind !== undefined) {
+                var missingItem = { name: name, kind: kind, searchValue: searchValue, matchKind: matchKind, fileName: fileName, parentName: parentName };
+                throw new Error('verifyNavigationItemsListContains failed - could not find the item: ' + JSON.stringify(missingItem) + ' in the returned list: (' + JSON.stringify(items) + ')');
             }
         }
 
@@ -1513,7 +1524,13 @@ module FourSlash {
             }
         }
 
-        public verifGetScriptLexicalStructureListContains(name: string, kind: string, fileName?: string, parentName?: string) {
+        public verifGetScriptLexicalStructureListContains(
+            name: string,
+            kind: string,
+            fileName?: string,
+            parentName?: string,
+            isAdditionalSpan?: boolean,
+            markerPosition?: number) {
             this.taoInvalidReason = 'verifGetScriptLexicalStructureListContains impossible';
 
             var items = this.languageService.getScriptLexicalStructure(this.activeFile.fileName);
@@ -1527,7 +1544,38 @@ module FourSlash {
                 if (item && item.name === name && item.kind === kind &&
                     (fileName === undefined || item.fileName === fileName) &&
                     (parentName === undefined || item.containerName === parentName)) {
-                    return;
+                    if (markerPosition !== undefined || isAdditionalSpan !== undefined) {
+                        if (isAdditionalSpan) {
+                            if (item.additionalSpans &&
+                                item.additionalSpans.some(span => span.minChar <= markerPosition && markerPosition <= span.limChar)) {
+                                // marker is in an additional span for this item.
+                                return;
+                            }
+                            else {
+                                throw new Error(
+                                    'verifGetScriptLexicalStructureListContains failed - ' +
+                                    'no additional span was found that contained the position: ' + JSON.stringify(markerPosition) +
+                                    ' in the item: ' + JSON.stringify(item));
+                            }
+                        }
+                        else if (!isAdditionalSpan)
+                        {
+                            if (item.minChar <= markerPosition &&
+                                markerPosition <= item.minChar) {
+                                // marker is in span normal item's span
+                                return;
+                            }
+                            else {
+                                throw new Error(
+                                    'verifGetScriptLexicalStructureListContains failed - ' +
+                                    'marker was positioned: ' + JSON.stringify(markerPosition) +
+                                    ' which is not in the item: ' + JSON.stringify(item));
+                            }
+                        }
+                    }
+                    else {
+                        return;
+                    }
                 }
             }
 
