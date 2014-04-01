@@ -64,7 +64,7 @@ module TypeScript.Services {
         getImplementorsAtPosition(fileName: string, position: number): ReferenceEntry[];
 
         getNavigateToItems(searchValue: string): NavigateToItem[];
-        getScriptLexicalStructure(fileName: string): NavigateToItem[];
+        getNavigationBarItems(fileName: string): NavigationBarItem[];
 
         getOutliningRegions(fileName: string): TypeScript.TextSpan[];
         getBraceMatchingAtPosition(fileName: string, position: number): TypeScript.TextSpan[];
@@ -94,6 +94,18 @@ module TypeScript.Services {
             this.minChar = minChar;
             this.limChar = limChar;
             this.isWriteAccess = isWriteAccess;
+        }
+    }
+
+    export class NavigationBarItem {
+        constructor(public text: string, 
+            public kind: string, 
+            public kindModifiers: string,
+            public spans: SpanInfo[], 
+            public childItems: NavigationBarItem[] = null,
+            public indent = 0,
+            public bolded = false,
+            public grayed = false) {
         }
     }
 

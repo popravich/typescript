@@ -4,6 +4,7 @@
 
 ///<reference path='typescriptServices.ts' />
 
+
 module TypeScript.Services {
     export class LanguageService implements ILanguageService {
         private logger: TypeScript.ILogger;
@@ -1804,14 +1805,11 @@ module TypeScript.Services {
             return BraceMatcher.getMatchSpans(syntaxTree, position);
         }
 
-        public getScriptLexicalStructure(fileName: string): NavigateToItem[] {
+        public getNavigationBarItems(fileName: string): NavigationBarItem[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
-            var items: NavigateToItem[] = [];
-            GetScriptLexicalStructureWalker.getListsOfAllScriptLexicalStructure(items, fileName, syntaxTree.sourceUnit());
-
-            return items;
+            return new NavigationBarItemGetter().do(syntaxTree.sourceUnit());
         }
 
         public getSyntaxTree(fileName: string): TypeScript.SyntaxTree {
