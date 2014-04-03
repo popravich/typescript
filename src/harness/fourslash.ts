@@ -1517,7 +1517,7 @@ module FourSlash {
         public verifyGetScriptLexicalStructureListCount(expected: number) {
             this.taoInvalidReason = 'verifyNavigationItemsListContains impossible';
 
-            var items = this.languageService.getScriptLexicalStructure(this.activeFile.fileName);
+            var items = this.languageService.getNavigationBarItems(this.activeFile.fileName);
             var actual = (items && items.length) || 0;
             if (expected != actual) {
                 throw new Error('verifyGetScriptLexicalStructureListCount failed - found: ' + actual + ' navigation items, expected: ' + expected + '.');
@@ -1527,13 +1527,10 @@ module FourSlash {
         public verifGetScriptLexicalStructureListContains(
             name: string,
             kind: string,
-            fileName?: string,
-            parentName?: string,
-            isAdditionalSpan?: boolean,
             markerPosition?: number) {
             this.taoInvalidReason = 'verifGetScriptLexicalStructureListContains impossible';
 
-            var items = this.languageService.getScriptLexicalStructure(this.activeFile.fileName);
+            var items = this.languageService.getNavigationBarItems(this.activeFile.fileName);
 
             if (!items || items.length === 0) {
                 throw new Error('verifyGetScriptLexicalStructureListContains failed - found 0 navigation items, expected at least one.');
@@ -1541,46 +1538,13 @@ module FourSlash {
 
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
-                if (item && item.name === name && item.kind === kind &&
-                    (fileName === undefined || item.fileName === fileName) &&
-                    (parentName === undefined || item.containerName === parentName)) {
-                    if (markerPosition !== undefined || isAdditionalSpan !== undefined) {
-                        if (isAdditionalSpan) {
-                            if (item.additionalSpans &&
-                                item.additionalSpans.some(span => span.minChar <= markerPosition && markerPosition <= span.limChar)) {
-                                // marker is in an additional span for this item.
-                                return;
-                            }
-                            else {
-                                throw new Error(
-                                    'verifGetScriptLexicalStructureListContains failed - ' +
-                                    'no additional span was found that contained the position: ' + JSON.stringify(markerPosition) +
-                                    ' in the item: ' + JSON.stringify(item));
-                            }
-                        }
-                        else if (!isAdditionalSpan)
-                        {
-                            if (item.minChar <= markerPosition &&
-                                markerPosition <= item.minChar) {
-                                // marker is in span normal item's span
-                                return;
-                            }
-                            else {
-                                throw new Error(
-                                    'verifGetScriptLexicalStructureListContains failed - ' +
-                                    'marker was positioned: ' + JSON.stringify(markerPosition) +
-                                    ' which is not in the item: ' + JSON.stringify(item));
-                            }
-                        }
-                    }
-                    else {
-                        return;
-                    }
+                if (item && item.text === name && item.kind === kind) {
+                    return;
                 }
             }
 
 
-            var missingItem = { name: name, kind: kind, fileName: fileName, parentName: parentName };
+            var missingItem = { name: name, kind: kind };
             throw new Error('verifyGetScriptLexicalStructureListContains failed - could not find the item: ' + JSON.stringify(missingItem) + ' in the returned list: (' + JSON.stringify(items) + ')');
         }
 
@@ -1597,14 +1561,14 @@ module FourSlash {
         }
 
         public printScriptLexicalStructureItems() {
-            var items = this.languageService.getScriptLexicalStructure(this.activeFile.fileName);
+            var items = this.languageService.getNavigationBarItems(this.activeFile.fileName);
             var length = items && items.length;
 
             TypeScript.IO.printLine('NavigationItems list (' + length + ' items)');
 
             for (var i = 0; i < length; i++) {
                 var item = items[i];
-                TypeScript.IO.printLine('name: ' + item.name + ', kind: ' + item.kind + ', parentName: ' + item.containerName + ', fileName: ' + item.fileName);
+                TypeScript.IO.printLine('name: ' + item.text + ', kind: ' + item.kind);
             }
         }
 
