@@ -39,5 +39,5 @@
 
 test.ranges().forEach((range) => {
         verify.matchingBracePositionInCurrentFile(range.start, range.end - 1);
-        verify.matchingBracePositionInCurrentFile(range.end, range.start);
+        verify.matchingBracePositionInCurrentFile(range.end - 1, range.start);
     });
