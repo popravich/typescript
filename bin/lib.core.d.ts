@@ -1,4 +1,4 @@
-/* *****************************************************************************
+/*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved. 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 this file except in compliance with the License. You may obtain a copy of the
@@ -70,7 +70,7 @@ declare function decodeURIComponent(encodedURIComponent: string): string;
 /** 
   * Encodes a text string as a valid Uniform Resource Identifier (URI)
   * @param uri A value representing an encoded URI.
-  */ 
+  */
 declare function encodeURI(uri: string): string;
 
 /**
@@ -84,8 +84,8 @@ interface PropertyDescriptor {
     enumerable?: boolean;
     value?: any;
     writable?: boolean;
-    get?(): any;
-    set?(v: any): void;
+    get? (): any;
+    set? (v: any): void;
 }
 
 interface PropertyDescriptorMap {
@@ -94,7 +94,7 @@ interface PropertyDescriptorMap {
 
 interface Object {
     /** The initial value of Object.prototype.constructor is the standard built-in Object constructor. */
-    constructor: Function; 
+    constructor: Function;
 
     /** Returns a string representation of an object. */
     toString(): string;
@@ -246,7 +246,7 @@ interface Function {
       * @param argArray A list of arguments to be passed to the new function.
       */
     bind(thisArg: any, ...argArray: any[]): any;
-    
+
     prototype: any;
     length: number;
 
@@ -318,6 +318,7 @@ interface String {
       * @param regexp A variable name or string literal containing the regular expression pattern and flags.
       */
     match(regexp: string): string[];
+
     /** 
       * Matches a string with a regular expression, and returns an array containing the results of that search.
       * @param regexp A regular expression object that contains the regular expression pattern and applicable flags. 
@@ -330,18 +331,21 @@ interface String {
       * @param replaceValue A String object or string literal containing the text to replace for every successful match of rgExp in stringObj.
       */
     replace(searchValue: string, replaceValue: string): string;
+
     /**
       * Replaces text in a string, using a regular expression or search string.
       * @param searchValue A String object or string literal that represents the regular expression
       * @param replaceValue A function that returns the replacement text.
       */
     replace(searchValue: string, replaceValue: (substring: string, ...args: any[]) => string): string;
+
     /**
       * Replaces text in a string, using a regular expression or search string.
       * @param searchValue A Regular Expression object containing the regular expression pattern and applicable flags
       * @param replaceValue A String object or string literal containing the text to replace for every successful match of rgExp in stringObj.
       */
     replace(searchValue: RegExp, replaceValue: string): string;
+
     /**
       * Replaces text in a string, using a regular expression or search string.
       * @param searchValue A Regular Expression object containing the regular expression pattern and applicable flags
@@ -354,6 +358,7 @@ interface String {
       * @param regexp The regular expression pattern and applicable flags. 
       */
     search(regexp: string): number;
+
     /**
       * Finds the first substring match in a regular expression search.
       * @param regexp The regular expression pattern and applicable flags. 
@@ -374,6 +379,7 @@ interface String {
       * @param limit A value used to limit the number of elements returned in the array.
       */
     split(separator: string, limit?: number): string[];
+
     /**
       * Split a string into substrings using the specified separator and return them as an array.
       * @param separator A Regular Express that identifies character or characters to use in separating the string. If omitted, a single-element array containing the entire string is returned. 
@@ -383,8 +389,8 @@ interface String {
 
     /**
       * Returns the substring at the specified location within a String object. 
-      * @param start The zero-based index integer indicating the beginning of the substring.
-      * @param end Zero-based index integer indicating the end of the substring. The substring includes the characters up to, but not including, the character indicated by end.
+      * @param start The zero-based index number indicating the beginning of the substring.
+      * @param end Zero-based index number indicating the end of the substring. The substring includes the characters up to, but not including, the character indicated by end.
       * If end is omitted, the characters from start through the end of the original string are returned.
       */
     substring(start: number, end?: number): string;
@@ -437,30 +443,55 @@ declare var Boolean: {
 }
 
 interface Number {
+    /**
+      * Returns a string representation of an object.
+      * @param radix Specifies a radix for converting numeric values to strings. This value is only used for numbers.
+      */
     toString(radix?: number): string;
+
+    /** 
+      * Returns a string representing a number in fixed-point notation.
+      * @param fractionDigits Number of digits after the decimal point. Must be in the range 0 - 20, inclusive.
+      */
     toFixed(fractionDigits?: number): string;
+
+    /**
+      * Returns a string containing a number represented in exponential notation.
+      * @param fractionDigits Number of digits after the decimal point. Must be in the range 0 - 20, inclusive.
+      */
     toExponential(fractionDigits?: number): string;
+
+    /**
+      * Returns a string containing a number represented either in exponential or fixed-point notation with a specified number of digits.
+      * @param precision Number of significant digits. Must be in the range 1 - 21, inclusive.
+      */
     toPrecision(precision?: number): string;
 }
+
 /** An object that represents a number of any kind. All JavaScript numbers are 64-bit floating-point numbers. */
 declare var Number: {
     new (value?: any): Number;
     (value?: any): number;
     prototype: Number;
+
     /** The largest number that can be represented in JavaScript. Equal to approximately 1.79E+308. */
     MAX_VALUE: number;
+
     /** The closest number to zero that can be represented in JavaScript. Equal to approximately 5.00E-324. */
     MIN_VALUE: number;
+
     /** 
       * A value that is not a number.
       * In equality comparisons, NaN does not equal any value, including itself. To test whether a value is equivalent to NaN, use the isNaN function.
       */
     NaN: number;
+
     /** 
       * A value that is less than the largest negative number that can be represented in JavaScript.
       * JavaScript displays NEGATIVE_INFINITY values as -infinity. 
       */
     NEGATIVE_INFINITY: number;
+
     /**
       * A value greater than the largest number that can be represented in JavaScript. 
       * JavaScript displays POSITIVE_INFINITY values as infinity. 
@@ -494,7 +525,7 @@ interface Math {
     /**
       * Returns the arc cosine (or inverse cosine) of a number. 
       * @param x A numeric expression.
-      */ 
+      */
     acos(x: number): number;
     /** 
       * Returns the arcsine of a number. 
@@ -513,14 +544,14 @@ interface Math {
       */
     atan2(y: number, x: number): number;
     /**
-      * Returns the smallest integer greater than or equal to its numeric argument. 
+      * Returns the smallest number greater than or equal to its numeric argument. 
       * @param x A numeric expression.
       */
     ceil(x: number): number;
     /**
       * Returns the cosine of a number. 
       * @param x A numeric expression that contains an angle measured in radians.
-      */ 
+      */
     cos(x: number): number;
     /**
       * Returns e (the base of natural logarithms) raised to a power. 
@@ -528,7 +559,7 @@ interface Math {
       */
     exp(x: number): number;
     /**
-      * Returns the greatest integer less than or equal to its numeric argument. 
+      * Returns the greatest number less than or equal to its numeric argument. 
       * @param x A numeric expression.
       */
     floor(x: number): number;
@@ -553,11 +584,11 @@ interface Math {
       * @param y The exponent value of the expression.
       */
     pow(x: number, y: number): number;
-    /** Returns a pseudorandom number between 0 and 1. */ 
+    /** Returns a pseudorandom number between 0 and 1. */
     random(): number;
     /** 
-      * Returns a supplied numeric expression rounded to the nearest integer.
-      * @param x The value to be rounded to the nearest integer.
+      * Returns a supplied numeric expression rounded to the nearest number.
+      * @param x The value to be rounded to the nearest number.
       */
     round(x: number): number;
     /**
@@ -732,9 +763,7 @@ interface Date {
     /** Used by the JSON.stringify method to enable the transformation of an object's data for JavaScript Object Notation (JSON) serialization. */
     toJSON(key?: any): string;
 }
-/**
-  * Enables basic storage and retrieval of dates and times.
-  */
+
 declare var Date: {
     new (): Date;
     new (value: number): Date;
@@ -750,12 +779,12 @@ declare var Date: {
     /**
       * Returns the number of milliseconds between midnight, January 1, 1970 Universal Coordinated Time (UTC) (or GMT) and the specified date. 
       * @param year The full year designation is required for cross-century date accuracy. If year is between 0 and 99 is used, then year is assumed to be 1900 + year.
-      * @param month The month as an integer between 0 and 11 (January to December).
-      * @param date The date as an integer between 1 and 31.
-      * @param hours Must be supplied if minutes is supplied. An integer from 0 to 23 (midnight to 11pm) that specifies the hour.
-      * @param minutes Must be supplied if seconds is supplied. An integer from 0 to 59 that specifies the minutes.
-      * @param seconds Must be supplied if milliseconds is supplied. An integer from 0 to 59 that specifies the seconds.
-      * @param ms An integer from 0 to 999 that specifies the milliseconds.
+      * @param month The month as an number between 0 and 11 (January to December).
+      * @param date The date as an number between 1 and 31.
+      * @param hours Must be supplied if minutes is supplied. An number from 0 to 23 (midnight to 11pm) that specifies the hour.
+      * @param minutes Must be supplied if seconds is supplied. An number from 0 to 59 that specifies the minutes.
+      * @param seconds Must be supplied if milliseconds is supplied. An number from 0 to 59 that specifies the seconds.
+      * @param ms An number from 0 to 999 that specifies the milliseconds.
       */
     UTC(year: number, month: number, date?: number, hours?: number, minutes?: number, seconds?: number, ms?: number): number;
     now(): number;
@@ -786,7 +815,7 @@ interface RegExpExecArray {
     lastIndexOf(searchElement: string, fromIndex?: number): number;
     every(callbackfn: (value: string, index: number, array: string[]) => boolean, thisArg?: any): boolean;
     some(callbackfn: (value: string, index: number, array: string[]) => boolean, thisArg?: any): boolean;
-    forEach(callbackfn: (value: string, index: number, array: string[]) => void , thisArg?: any): void;
+    forEach(callbackfn: (value: string, index: number, array: string[]) => void, thisArg?: any): void;
     map(callbackfn: (value: string, index: number, array: string[]) => any, thisArg?: any): any[];
     filter(callbackfn: (value: string, index: number, array: string[]) => boolean, thisArg?: any): string[];
     reduce(callbackfn: (previousValue: any, currentValue: any, currentIndex: number, array: string[]) => any, initialValue?: any): any;
@@ -800,17 +829,22 @@ interface RegExp {
       * @param string The String object or string literal on which to perform the search.
       */
     exec(string: string): RegExpExecArray;
+
     /** 
       * Returns a Boolean value that indicates whether or not a pattern exists in a searched string.
       * @param string String on which to perform the search.
       */
     test(string: string): boolean;
+
     /** Returns a copy of the text of the regular expression pattern. Read-only. The rgExp argument is a Regular expression object. It can be a variable name or a literal. */
     source: string;
+
     /** Returns a Boolean value indicating the state of the global flag (g) used with a regular expression. Default is false. Read-only. */
     global: boolean;
+
     /** Returns a Boolean value indicating the state of the ignoreCase flag (i) used with a regular expression. Default is false. Read-only. */
     ignoreCase: boolean;
+
     /** Returns a Boolean value indicating the state of the multiline flag (m) used with a regular expression. Default is false. Read-only. */
     multiline: boolean;
 
@@ -939,44 +973,166 @@ interface JSON {
   */
 declare var JSON: JSON;
 
+
 /////////////////////////////
 /// ECMAScript Array API (specially handled by compiler)
 /////////////////////////////
 
 interface Array<T> {
+    /**
+      * Returns a string representation of an array.
+      */
     toString(): string;
     toLocaleString(): string;
+    /**
+      * Combines two or more arrays.
+      * @param items Additional items to add to the end of array1.
+      */
     concat<U extends T[]>(...items: U[]): T[];
+    /**
+      * Combines two or more arrays.
+      * @param items Additional items to add to the end of array1.
+      */
     concat(...items: T[]): T[];
+    /**
+      * Adds all the elements of an array separated by the specified separator string.
+      * @param separator A string used to separate one element of an array from the next in the resulting String. If omitted, the array elements are separated with a comma.
+      */
     join(separator?: string): string;
+    /**
+      * Removes the last element from an array and returns it.
+      */
     pop(): T;
+    /**
+      * Appends new elements to an array, and returns the new length of the array.
+      * @param items New elements of the Array.
+      */
     push(...items: T[]): number;
+    /**
+      * Reverses the elements in an Array. 
+      */
     reverse(): T[];
+    /**
+      * Removes the first element from an array and returns it.
+      */
     shift(): T;
+    /** 
+      * Returns a section of an array.
+      * @param start The beginning of the specified portion of the array.
+      * @param end The end of the specified portion of the array.
+      */
     slice(start?: number, end?: number): T[];
+
+    /**
+      * Sorts an array.
+      * @param compareFn The name of the function used to determine the order of the elements. If omitted, the elements are sorted in ascending, ASCII character order.
+      */
     sort(compareFn?: (a: T, b: T) => number): T[];
+
+    /**
+      * Removes elements from an array and, if necessary, inserts new elements in their place, returning the deleted elements.
+      * @param start The zero-based location in the array from which to start removing elements.
+      */
     splice(start: number): T[];
+
+    /**
+      * Removes elements from an array and, if necessary, inserts new elements in their place, returning the deleted elements.
+      * @param start The zero-based location in the array from which to start removing elements.
+      * @param deleteCount The number of elements to remove.
+      * @param items Elements to insert into the array in place of the deleted elements.
+      */
     splice(start: number, deleteCount: number, ...items: T[]): T[];
+
+    /**
+      * Inserts new elements at the start of an array.
+      * @param items  Elements to insert at the start of the Array.
+      */
     unshift(...items: T[]): number;
 
+    /**
+      * Returns the index of the first occurrence of a value in an array.
+      * @param searchElement The value to locate in the array.
+      * @param fromIndex The array index at which to begin the search. If fromIndex is omitted, the search starts at index 0.
+      */
     indexOf(searchElement: T, fromIndex?: number): number;
+
+    /**
+      * Returns the index of the last occurrence of a specified value in an array.
+      * @param searchElement The value to locate in the array.
+      * @param fromIndex The array index at which to begin the search. If fromIndex is omitted, the search starts at the last index in the array.
+      */
     lastIndexOf(searchElement: T, fromIndex?: number): number;
+
+    /**
+      * Determines whether all the members of an array satisfy the specified test.
+      * @param callbackfn A function that accepts up to three arguments. The every method calls the callbackfn function for each element in array1 until the callbackfn returns false, or until the end of the array.
+      * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+      */
     every(callbackfn: (value: T, index: number, array: T[]) => boolean, thisArg?: any): boolean;
+
+    /**
+      * Determines whether the specified callback function returns true for any element of an array.
+      * @param callbackfn A function that accepts up to three arguments. The some method calls the callbackfn function for each element in array1 until the callbackfn returns true, or until the end of the array.
+      * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+      */
     some(callbackfn: (value: T, index: number, array: T[]) => boolean, thisArg?: any): boolean;
-    forEach(callbackfn: (value: T, index: number, array: T[]) => void , thisArg?: any): void;
+
+    /**
+      * Performs the specified action for each element in an array.
+      * @param callbackfn  A function that accepts up to three arguments. forEach calls the callbackfn function one time for each element in the array. 
+      * @param thisArg  An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+      */
+    forEach(callbackfn: (value: T, index: number, array: T[]) => void, thisArg?: any): void;
+
+    /**
+      * Calls a defined callback function on each element of an array, and returns an array that contains the results.
+      * @param callbackfn A function that accepts up to three arguments. The map method calls the callbackfn function one time for each element in the array. 
+      * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+      */
     map<U>(callbackfn: (value: T, index: number, array: T[]) => U, thisArg?: any): U[];
+
+    /**
+      * Returns the elements of an array that meet the condition specified in a callback function. 
+      * @param callbackfn A function that accepts up to three arguments. The filter method calls the callbackfn function one time for each element in the array. 
+      * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+      */
     filter(callbackfn: (value: T, index: number, array: T[]) => boolean, thisArg?: any): T[];
+
+    /**
+      * Calls the specified callback function for all the elements in an array. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+      * @param callbackfn A function that accepts up to four arguments. The reduce method calls the callbackfn function one time for each element in the array.
+      * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+      */
     reduce(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue?: T): T;
+    /**
+      * Calls the specified callback function for all the elements in an array. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+      * @param callbackfn A function that accepts up to four arguments. The reduce method calls the callbackfn function one time for each element in the array.
+      * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+      */
     reduce<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
+
+    /** 
+      * Calls the specified callback function for all the elements in an array, in descending order. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+      * @param callbackfn A function that accepts up to four arguments. The reduceRight method calls the callbackfn function one time for each element in the array. 
+      * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+      */
     reduceRight(callbackfn: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue?: T): T;
+    /** 
+      * Calls the specified callback function for all the elements in an array, in descending order. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
+      * @param callbackfn A function that accepts up to four arguments. The reduceRight method calls the callbackfn function one time for each element in the array. 
+      * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
+      */
     reduceRight<U>(callbackfn: (previousValue: U, currentValue: T, currentIndex: number, array: T[]) => U, initialValue: U): U;
 
+    /**
+      * Gets or sets the length of the array. This is a number one higher than the highest element defined in an array.
+      */
     length: number;
 
     [n: number]: T;
 }
 declare var Array: {
-    new(arrayLength?: number): any[];
+    new (arrayLength?: number): any[];
     new <T>(arrayLength: number): T[];
     new <T>(...items: T[]): T[];
     (arrayLength?: number): any[];
@@ -984,134 +1140,4 @@ declare var Array: {
     <T>(...items: T[]): T[];
     isArray(arg: any): boolean;
     prototype: Array<any>;
-}
-
-declare module Intl {
-
-    interface CollatorOptions {
-        usage?: string;
-        localeMatcher?: string;
-        numeric?: boolean;
-        caseFirst?: string;
-        sensitivity?: string;
-        ignorePunctuation?: boolean;
-    }
-
-    interface ResolvedCollatorOptions {
-        locale: string;
-        usage: string;
-        sensitivity: string;
-        ignorePunctuation: boolean;
-        collation: string;
-        caseFirst: string;
-        numeric: boolean;
-    }
-
-    interface Collator {
-        compare(x: string, y: string): number;
-        resolvedOptions(): ResolvedCollatorOptions;
-    }
-    var Collator: {
-        new (locales?: string[], options?: CollatorOptions): Collator;
-        new (locale?: string, options?: CollatorOptions): Collator;
-        (locales?: string[], options?: CollatorOptions): Collator;
-        (locale?: string, options?: CollatorOptions): Collator;
-        supportedLocalesOf(locales: string[], options?: CollatorOptions): string[];
-        supportedLocalesOf(locale: string, options?: CollatorOptions): string[];
-    }
-
-    interface NumberFormatOptions {
-        localeMatcher?: string;
-        style?: string;
-        currency?: string;
-        currencyDisplay?: string;
-        useGrouping?: boolean;
-    }
-
-    interface ResolvedNumberFormatOptions {
-        locale: string;
-        numberingSystem: string;
-        style: string;
-        currency?: string;
-        currencyDisplay?: string;
-        minimumintegerDigits: number;
-        minimumFractionDigits: number;
-        maximumFractionDigits: number;
-        minimumSignificantDigits?: number;
-        maximumSignificantDigits?: number;
-        useGrouping: boolean;
-    }
-
-    interface NumberFormat {
-        format(value: number): string;
-        resolvedOptions(): ResolvedNumberFormatOptions;
-    }
-    var NumberFormat: {
-        new (locales?: string[], options?: NumberFormatOptions): Collator;
-        new (locale?: string, options?: NumberFormatOptions): Collator;
-        (locales?: string[], options?: NumberFormatOptions): Collator;
-        (locale?: string, options?: NumberFormatOptions): Collator;
-        supportedLocalesOf(locales: string[], options?: NumberFormatOptions): string[];
-        supportedLocalesOf(locale: string, options?: NumberFormatOptions): string[];
-    }
-
-    interface DateTimeFormatOptions {
-        localeMatcher?: string;
-        weekday?: string;
-        era?: string;
-        year?: string;
-        month?: string;
-        day?: string;
-        hour?: string;
-        minute?: string;
-        second?: string;
-        timeZoneName?: string;
-        formatMatcher?: string;
-        hour12: boolean;
-    }
-
-    interface ResolvedDateTimeFormatOptions {
-        locale: string;
-        calendar: string;
-        numberingSystem: string;
-        timeZone: string;
-        hour12?: boolean;
-        weekday?: string;
-        era?: string;
-        year?: string;
-        month?: string;
-        day?: string;
-        hour?: string;
-        minute?: string;
-        second?: string;
-        timeZoneName?: string;
-    }
-
-    interface DateTimeFormat {
-        format(date: number): string;
-        resolvedOptions(): ResolvedDateTimeFormatOptions;
-    }
-    var DateTimeFormat: {
-        new (locales?: string[], options?: DateTimeFormatOptions): Collator;
-        new (locale?: string, options?: DateTimeFormatOptions): Collator;
-        (locales?: string[], options?: DateTimeFormatOptions): Collator;
-        (locale?: string, options?: DateTimeFormatOptions): Collator;
-        supportedLocalesOf(locales: string[], options?: DateTimeFormatOptions): string[];
-        supportedLocalesOf(locale: string, options?: DateTimeFormatOptions): string[];
-    }
-}
-
-interface String {
-    localeCompare(that: string, locales: string[], options?: Intl.CollatorOptions): number;
-    localeCompare(that: string, locale: string, options?: Intl.CollatorOptions): number;
-}
-
-interface Number {
-    toLocaleString(locales?: string[], options?: Intl.NumberFormatOptions): string;
-    toLocaleString(locale?: string, options?: Intl.NumberFormatOptions): string;
-}
-
-interface Date {
-    toLocaleString(locales?: string[], options?: Intl.DateTimeFormatOptions): string;
-    toLocaleString(locale?: string, options?: Intl.DateTimeFormatOptions): string;
 }

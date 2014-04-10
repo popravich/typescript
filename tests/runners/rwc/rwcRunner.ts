@@ -49,13 +49,15 @@ class RWCRunner extends RunnerBase {
     private htmlBaselineReport = new Diff.HtmlBaselineReport('rwc-report.html');
 
     public _getDiagnosticText(diagnostic: TypeScript.Diagnostic): string {
-        return this.removeRootPath(TypeScript.TypeScriptCompiler.getFullDiagnosticText(diagnostic));
+        return this.removeRootPath(TypeScript.TypeScriptCompiler.getFullDiagnosticText(diagnostic, path => TypeScript.switchToForwardSlashes(path)));
     }
 
     private removeRootPath(path: string): string {
-        
-        var idx = path.indexOf(this.sourcePath) + this.sourcePath.length;
-        return path.substr(idx);
+
+        // some error message contain the path, we should use a regex to normalize all instances 
+        var fullpath = TypeScript.switchToForwardSlashes(TypeScript.IO.resolvePath(this.sourcePath));
+
+        return path.replace(new RegExp(fullpath, "gi"), "")
     }
 
     /** Setup the runner's tests so that they are ready to be executed by the harness

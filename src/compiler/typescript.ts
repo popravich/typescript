@@ -576,8 +576,8 @@ module TypeScript {
             return errors;
         }
 
-        public getCompilerOptionsDiagnostics(): Diagnostic[] {
-            var emitOptions = new EmitOptions(this, /*resolvePath*/ null);
+        public getCompilerOptionsDiagnostics(resolvePath: (path: string) => string): Diagnostic[] {
+            var emitOptions = new EmitOptions(this, resolvePath);
             var emitDiagnostic = emitOptions.diagnostic();
             if (emitDiagnostic) {
                 return [emitDiagnostic];
@@ -665,7 +665,7 @@ module TypeScript {
                     case SyntaxKind.ObjectCreationExpression:
                         if (propagateContextualTypes) {
                             var isNew = current.kind() === SyntaxKind.ObjectCreationExpression;
-                            var callExpression = <ICallExpressionSyntax>current;
+                            var callExpression = <IExpressionWithArgumentListSyntax>current;
                             var contextualType: PullTypeSymbol = null;
 
                             // Check if we are in an argumnt for a call, propagate the contextual typing
@@ -1079,14 +1079,14 @@ module TypeScript {
             return this.semanticInfoChain.topLevelDecl(fileName);
         }
 
-        private static getLocationText(location: Location): string {
-            return location.fileName() + "(" + (location.line() + 1) + "," + (location.character() + 1) + ")";
+        private static getLocationText(location: Location, resolvePath: (path: string) => string): string {
+            return resolvePath(location.fileName()) + "(" + (location.line() + 1) + "," + (location.character() + 1) + ")";
         }
 
-        public static getFullDiagnosticText(diagnostic: Diagnostic): string {
+        public static getFullDiagnosticText(diagnostic: Diagnostic, resolvePath: (path: string) => string): string {
             var result = "";
             if (diagnostic.fileName()) {
-                result += this.getLocationText(diagnostic) + ": ";
+                result += this.getLocationText(diagnostic, resolvePath) + ": ";
             }
 
             result += diagnostic.message();
@@ -1096,7 +1096,7 @@ module TypeScript {
                 result += " " + getLocalizedText(DiagnosticCode.Additional_locations, null) + Environment.newLine;
 
                 for (var i = 0, n = additionalLocations.length; i < n; i++) {
-                    result += "\t" + this.getLocationText(additionalLocations[i]) + Environment.newLine;
+                    result += "\t" + this.getLocationText(additionalLocations[i], resolvePath) + Environment.newLine;
                 }
             }
             else {
