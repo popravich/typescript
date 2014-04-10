@@ -1,6 +1,6 @@
 ///<reference path="../../../src/harness/harness.ts" />
 ///<reference path="../../../src/harness/exec.ts" />
-///<reference path="../runnerBase.ts" />
+///<reference path="../runnerbase.ts" />
 
 class SourceFile {
     constructor(public scriptSnapshot: TypeScript.IScriptSnapshot, public byteOrderMark: TypeScript.ByteOrderMark) {
@@ -114,16 +114,6 @@ class HarnessBatch implements TypeScript.IReferenceResolverHost {
         }
     }
 
-    // Execute the provided inputs
-    private run() {
-        for (var i = 0; i < this.resolvedFiles.length; i++) {
-            var unit = this.resolvedFiles[i];
-            var outputFileName = unit.path.replace(/\.ts$/, ".js");
-            var unitRes = this.host.readFile(outputFileName, /*codepage:*/ null).contents;
-            this.host.run(unitRes, outputFileName);
-        }
-    }
-
     /// Begin batch compilation
     public harnessCompile(
         files: string[],
@@ -220,7 +210,6 @@ interface ProjectRunnerTestCase {
     baselineFiles?: string[];
     path?: string;
     skipRun?: boolean;
-    skipNodeRun?: boolean;
     negative?: boolean;
     bug?: string;
     outputOption?: string;
@@ -503,7 +492,7 @@ class ProjectRunner extends RunnerBase {
                         });
                     }
 
-                    if (testExec && !spec.skipRun && !spec.skipNodeRun) {
+                    if (testExec && !spec.skipRun) {
                         it("runs without error", function (done: any) {
                             Exec.exec("node.exe", ['"' + outputFiles[0] + '"'], function (res) {
                                 Harness.Assert.equal(res.stdout, "");

@@ -273,6 +273,10 @@ module TypeScript {
         }
         public setRootSymbol(symbol: PullSymbol) { this.rootSymbol = symbol; }
 
+        public isRootSymbol(): boolean {
+            return !this.rootSymbol;
+        }
+
         public setIsSynthesized(value = true) {
             Debug.assert(this.rootSymbol == null);
             this.isSynthesized = value;
@@ -1149,7 +1153,7 @@ module TypeScript {
         getAllowedToReferenceTypeParameters(): PullTypeParameterSymbol[];
 
         // Type parameter argument map for this symbol
-        getTypeParameterArgumentMap(): TypeArgumentMap;
+        getTypeParameterSubstitutionMap(): TypeSubstitutionMap;
     }
 
     export class PullSignatureSymbol extends PullSymbol implements InstantiableSymbol {
@@ -1250,7 +1254,7 @@ module TypeScript {
             return memberSymbol;
         }
 
-        public getTypeParameterArgumentMap(): TypeArgumentMap { return null; }
+        public getTypeParameterSubstitutionMap(): TypeSubstitutionMap { return null; }
 
         public getAllowedToReferenceTypeParameters(): PullTypeParameterSymbol[] {
             Debug.assert(this.getRootSymbol() == this);
@@ -1263,7 +1267,11 @@ module TypeScript {
             return this._allowedToReferenceTypeParameters;
         }
 
-        public addSpecialization(specializedVersionOfThisSignature: PullSignatureSymbol, typeArgumentMap: TypeArgumentMap): void {
+        public getIsInstantiated() {
+            return false;
+        }
+
+        public addSpecialization(specializedVersionOfThisSignature: PullSignatureSymbol, typeArgumentMap: TypeSubstitutionMap): void {
             Debug.assert(this.getRootSymbol() == this);
             if (!this._instantiationCache) {
                 this._instantiationCache = createIntrinsicsObject<PullSignatureSymbol>();
@@ -1272,7 +1280,7 @@ module TypeScript {
             this._instantiationCache[getIDForTypeSubstitutions(this, typeArgumentMap)] = specializedVersionOfThisSignature;
         }
 
-        public getSpecialization(typeArgumentMap: TypeArgumentMap): PullSignatureSymbol {
+        public getSpecialization(typeArgumentMap: TypeSubstitutionMap): PullSignatureSymbol {
             Debug.assert(this.getRootSymbol() == this);
             if (!this._instantiationCache) {
                 return null;
@@ -1499,12 +1507,18 @@ module TypeScript {
             return true;
         }
 
-        public wrapsSomeTypeParameter(typeParameterArgumentMap: TypeArgumentMap): boolean {
+        public wrapsSomeTypeParameter(typeParameterArgumentMap: TypeSubstitutionMap): boolean {
             return this.getWrappingTypeParameterID(typeParameterArgumentMap) !== 0;
         }
 
-        public getWrappingTypeParameterID(typeParameterArgumentMap: TypeArgumentMap): number {            var signature = this;
-            if (signature.inWrapCheck) {
+        // 0 means there was no type parameter ID wrapping
+        // otherwise typeParameterID that was wrapped
+        // 
+        // While it would be intuitive to return a boolean, this actually doesn't work
+        // for the WrapsTypeParameterCache. See the comment at the top of the WrapsTypeParameterCache
+        // class for an explanation.
+        public getWrappingTypeParameterID(typeParameterArgumentMap: TypeSubstitutionMap): number {
+            if (this.inWrapCheck) {
                 return 0;
             }
 
@@ -1513,27 +1527,53 @@ module TypeScript {
         
             var wrappingTypeParameterID = this._wrapsTypeParameterCache.getWrapsTypeParameter(typeParameterArgumentMap);
             if (wrappingTypeParameterID === undefined) {
+                this.inWrapCheck = true;
                 wrappingTypeParameterID = this.getWrappingTypeParameterIDWorker(typeParameterArgumentMap);
+                this.inWrapCheck = false;
                 this._wrapsTypeParameterCache.setWrapsTypeParameter(typeParameterArgumentMap, wrappingTypeParameterID);
             }
-            return wrappingTypeParameterID;        }
 
-        public getWrappingTypeParameterIDWorker(typeParameterArgumentMap: TypeArgumentMap): number {            var signature = this;
-            signature.inWrapCheck = true;
-            PullHelpers.resolveDeclaredSymbolToUseType(signature);
-            var wrappingTypeParameterID = signature.returnType ? signature.returnType.getWrappingTypeParameterID(typeParameterArgumentMap) : 0;
+            return wrappingTypeParameterID;
+        }
+
+        // A signature wraps a type parameter if any of the following are true:
+        // 1. Return type wraps the type parameter
+        // 2. Some parameter type wraps the type parameter
+        // 3. Some constraint wraps the type parameter
+        public getWrappingTypeParameterIDWorker(typeParameterArgumentMap: TypeSubstitutionMap): number {
+            PullHelpers.resolveDeclaredSymbolToUseType(this);
+            var wrappingTypeParameterID = 0;
+            if (this.returnType) {
+                wrappingTypeParameterID = this.returnType.getWrappingTypeParameterID(typeParameterArgumentMap);
+                if (wrappingTypeParameterID !== 0) {
+                    return wrappingTypeParameterID;
+                }
+            }
 
             // Continue iterating over parameter types to find if they wrap type parameter,
             // only until we find the first wrapping Type parameter
-            var parameters = signature.parameters;
-            for (var i = 0; !wrappingTypeParameterID && i < parameters.length; i++) {
+            var parameters = this.parameters;
+            for (var i = 0; i < parameters.length; i++) {
                 PullHelpers.resolveDeclaredSymbolToUseType(parameters[i]);
                 wrappingTypeParameterID = parameters[i].type.getWrappingTypeParameterID(typeParameterArgumentMap);
+                if (wrappingTypeParameterID !== 0) {
+                    return wrappingTypeParameterID;
+                }
             }
 
-            signature.inWrapCheck = false;
+            var typeParameters = this.getTypeParameters();
+            for (var i = 0; i < typeParameters.length; i++) {
+                PullHelpers.resolveDeclaredSymbolToUseType(typeParameters[i]);
+                var constraint = typeParameters[i].getConstraint();
+                if (constraint) {
+                    wrappingTypeParameterID = constraint.getWrappingTypeParameterID(typeParameterArgumentMap);
+                    if (wrappingTypeParameterID !== 0) {
+                        return wrappingTypeParameterID;
+                    }
+                }
+            }
 
-            return wrappingTypeParameterID;
+            return 0;
         }
 
         public _wrapsSomeTypeParameterIntoInfinitelyExpandingTypeReference(enclosingType: PullTypeSymbol, knownWrapMap: IBitMatrix) {
@@ -1636,7 +1676,7 @@ module TypeScript {
         public inWrapCheck = false;
         public inWrapInfiniteExpandingReferenceCheck = false;
 
-        public typeReference: PullTypeReferenceSymbol = null;
+        public typeReference: TypeReferenceSymbol = null;
 
         private _widenedType: PullTypeSymbol = null;
 
@@ -1692,7 +1732,7 @@ module TypeScript {
         public isError() { return false; }
         public isEnum() { return this.kind === PullElementKind.Enum; }
 
-        public getTypeParameterArgumentMap(): TypeArgumentMap {
+        public getTypeParameterSubstitutionMap(): TypeSubstitutionMap {
             return null;
         }
 
@@ -1983,7 +2023,7 @@ module TypeScript {
                 this.isArrayNamedTypeReference();
         }
 
-        private canUseSimpleInstantiationCache(typeArgumentMap: TypeArgumentMap): boolean {
+        private canUseSimpleInstantiationCache(typeArgumentMap: TypeSubstitutionMap): boolean {
             if (this.isTypeParameter()) {
                 return true;
             }
@@ -1992,15 +2032,11 @@ module TypeScript {
             return typeArgumentMap && this.isNamedTypeSymbol() && typeParameters.length === 1 && typeArgumentMap[typeParameters[0].pullSymbolID].kind !== PullElementKind.ObjectType;
         }
 
-        private getSimpleInstantiationCacheId(typeArgumentMap: TypeArgumentMap) {
-            if (this.isTypeParameter()) {
-                return typeArgumentMap[0].pullSymbolID;
-            }
-
+        private getSimpleInstantiationCacheId(typeArgumentMap: TypeSubstitutionMap) {
             return typeArgumentMap[this.getTypeParameters()[0].pullSymbolID].pullSymbolID;
         }
 
-        public addSpecialization(specializedVersionOfThisType: PullTypeSymbol, typeArgumentMap: TypeArgumentMap): void {
+        public addSpecialization(specializedVersionOfThisType: PullTypeSymbol, typeArgumentMap: TypeSubstitutionMap): void {
             if (this.canUseSimpleInstantiationCache(typeArgumentMap)) {
                 if (!this._simpleInstantiationCache) {
                     this._simpleInstantiationCache = [];
@@ -2023,7 +2059,7 @@ module TypeScript {
             this._specializedVersionsOfThisType.push(specializedVersionOfThisType);
         }
 
-        public getSpecialization(typeArgumentMap: TypeArgumentMap): PullTypeSymbol {
+        public getSpecialization(typeArgumentMap: TypeSubstitutionMap): PullTypeSymbol {
             if (this.canUseSimpleInstantiationCache(typeArgumentMap)) {
                 if (!this._simpleInstantiationCache) {
                     return null;
@@ -2325,6 +2361,9 @@ module TypeScript {
             var signatures: PullSignatureSymbol[] = [];
             for (var i = 0; i < baseConstructSignatures.length; i++) {
                 var baseSignature = baseConstructSignatures[i];
+                // Make sure the base signature is resolved, so that the parameter symbols from the new 
+                // siganture are used, they will have the type associated with them. 
+                baseSignature._resolveDeclaredSymbol();
                 var currentSignature = new PullSignatureSymbol(PullElementKind.ConstructSignature, baseSignature.isDefinition());
                 currentSignature.returnType = instanceTypeSymbol;
                 currentSignature.addTypeParametersFromReturnType();
@@ -2818,28 +2857,43 @@ module TypeScript {
         // The argument map prevents us from accidentally flagging method type parameters, or (if we
         // ever decide to go that route) allows for partial specialization
         public wrapsSomeTypeParameter(typeParameterArgumentMap: CandidateInferenceInfo[]): boolean;
-        public wrapsSomeTypeParameter(typeParameterArgumentMap: TypeArgumentMap, skipTypeArgumentCheck?: boolean): boolean;
+        public wrapsSomeTypeParameter(typeParameterArgumentMap: TypeSubstitutionMap, skipTypeArgumentCheck?: boolean): boolean;
         public wrapsSomeTypeParameter(typeParameterArgumentMap: any[], skipTypeArgumentCheck?: boolean): boolean {
             return this.getWrappingTypeParameterID(typeParameterArgumentMap, skipTypeArgumentCheck) != 0;
         }
 
         // 0 means there was no type parameter ID wrapping
         // otherwise typeParameterID that was wrapped
-        public getWrappingTypeParameterID(typeParameterArgumentMap: TypeArgumentMap, skipTypeArgumentCheck?: boolean): number {
-            var type = this;
-
-            // if we encounter a type paramter, we're obviously wrapping
-            if (type.isTypeParameter()) {
-                if (typeParameterArgumentMap[type.pullSymbolID] || typeParameterArgumentMap[type.getRootSymbol().pullSymbolID]) {
-                    return type.pullSymbolID;
+        // 
+        // While it would be intuitive to return a boolean, this actually doesn't work
+        // for the WrapsTypeParameterCache. See the comment at the top of the WrapsTypeParameterCache
+        // class for an explanation.
+        public getWrappingTypeParameterID(typeParameterArgumentMap: TypeSubstitutionMap, skipTypeArgumentCheck?: boolean): number {
+            // if we encounter a type parameter, we're obviously wrapping
+            if (this.isTypeParameter()) {
+                if (typeParameterArgumentMap[this.pullSymbolID] || typeParameterArgumentMap[this.getRootSymbol().pullSymbolID]) {
+                    return this.pullSymbolID;
                 }
-
-                var constraint = (<PullTypeParameterSymbol>type).getConstraint();
-                var wrappingTypeParameterID = constraint ? constraint.getWrappingTypeParameterID(typeParameterArgumentMap) : 0;
-                return wrappingTypeParameterID;
             }
 
-            if (type.inWrapCheck) {
+            // Note here that we do NOT check the type parameter's constraint. If we did, we would
+            // think that any reference to the type parameter wraps something if its constraint does.
+            // Instead, the containing signature is responsible for checking if the constraint wraps.
+            // For example, consider the following type:
+            //
+            // interface A<S> {
+            //     foo: S;
+            // }
+            //
+            // interface B<T> {
+            //     <U extends T>(x: A<U>);
+            // }
+            //
+            // The type reference A<U> does not wrap T. If we checked the constraint here, we would
+            // return true for that. However, the signature <U extends T>(x: A<U>); does indeed wrap
+            // T.
+
+            if (this.inWrapCheck) {
                 return 0;
             }
 
@@ -2847,14 +2901,61 @@ module TypeScript {
             this._wrapsTypeParameterCache = this._wrapsTypeParameterCache || new WrapsTypeParameterCache();
             var wrappingTypeParameterID = this._wrapsTypeParameterCache.getWrapsTypeParameter(typeParameterArgumentMap);
             if (wrappingTypeParameterID === undefined) {
+                this.inWrapCheck = true;
                 wrappingTypeParameterID = this.getWrappingTypeParameterIDWorker(typeParameterArgumentMap, skipTypeArgumentCheck);
+                this.inWrapCheck = false;
                 // Update the cache
                 this._wrapsTypeParameterCache.setWrapsTypeParameter(typeParameterArgumentMap, wrappingTypeParameterID);
             }
             return wrappingTypeParameterID;
         }
 
-        private getWrappingTypeParameterIDFromSignatures(signatures: PullSignatureSymbol[], typeParameterArgumentMap: TypeArgumentMap): number {
+        private getWrappingTypeParameterIDWorker(typeParameterArgumentMap: TypeSubstitutionMap, skipTypeArgumentCheck: boolean): number {
+            var wrappingTypeParameterID = 0;
+
+            if (!skipTypeArgumentCheck) {
+                var typeArguments = this.getTypeArguments();
+
+                // If there are no type arguments, we could be instantiating the 'root' type
+                // declaration
+                if (this.isGeneric() && !typeArguments) {
+                    typeArguments = this.getTypeParameters();
+                }
+
+                // if it's a generic type, scan the type arguments to see which may wrap type parameters
+                if (typeArguments) {
+                    for (var i = 0; !wrappingTypeParameterID && i < typeArguments.length; i++) {
+                        wrappingTypeParameterID = typeArguments[i].getWrappingTypeParameterID(typeParameterArgumentMap);
+                        if (wrappingTypeParameterID !== 0) {
+                            return wrappingTypeParameterID;
+                        }
+                    }
+                }
+            }
+
+            // if it's not a named type, we'll need to introspect its member list
+            if (skipTypeArgumentCheck || !(this.kind & PullElementKind.SomeInstantiatableType) || !this.name) {
+                // otherwise, walk the member list and signatures, checking for wraps
+                var members = this.getAllMembers(PullElementKind.SomeValue, GetAllMembersVisiblity.all);
+                for (var i = 0; i < members.length; i++) {
+                    PullHelpers.resolveDeclaredSymbolToUseType(members[i]);
+                    wrappingTypeParameterID = members[i].type.getWrappingTypeParameterID(typeParameterArgumentMap);
+                    if (wrappingTypeParameterID !== 0) {
+                        return wrappingTypeParameterID;
+                    }
+                }
+
+                // We are ORing numbers here, which means that if any invocation returns 0, we will proceed to the next
+                // signature group.
+                return this.getWrappingTypeParameterIDFromSignatures(this.getCallSignatures(), typeParameterArgumentMap)
+                    || this.getWrappingTypeParameterIDFromSignatures(this.getConstructSignatures(), typeParameterArgumentMap)
+                    || this.getWrappingTypeParameterIDFromSignatures(this.getIndexSignatures(), typeParameterArgumentMap);
+            }
+
+            return 0;
+        }
+
+        private getWrappingTypeParameterIDFromSignatures(signatures: PullSignatureSymbol[], typeParameterArgumentMap: TypeSubstitutionMap): number {
             for (var i = 0; i < signatures.length; i++) {
                 var wrappingTypeParameterID = signatures[i].getWrappingTypeParameterID(typeParameterArgumentMap);
                 if (wrappingTypeParameterID !== 0) {
@@ -2863,51 +2964,6 @@ module TypeScript {
             }
 
             return 0;
-        }
-
-        private getWrappingTypeParameterIDWorker(typeParameterArgumentMap: TypeArgumentMap, skipTypeArgumentCheck: boolean): number {
-            var type = this;
-            var wrappingTypeParameterID = 0;
-
-            if (!skipTypeArgumentCheck) {
-                type.inWrapCheck = true;
-
-                var typeArguments = type.getTypeArguments();
-
-                // If there are no type arguments, we could be instantiating the 'root' type
-                // declaration
-                if (type.isGeneric() && !typeArguments) {
-                    typeArguments = type.getTypeParameters();
-                }
-
-                // if it's a generic type, scan the type arguments to see which may wrap type parameters
-                if (typeArguments) {
-                    for (var i = 0; !wrappingTypeParameterID && i < typeArguments.length; i++) {
-                        wrappingTypeParameterID = typeArguments[i].getWrappingTypeParameterID(typeParameterArgumentMap);
-                    }
-                }
-            }
-
-            // if it's not a named type, we'll need to introspect its member list
-            if (skipTypeArgumentCheck || !(type.kind & PullElementKind.SomeInstantiatableType) || !type.name) {
-                // otherwise, walk the member list and signatures, checking for wraps
-                var members = type.getAllMembers(PullElementKind.SomeValue, GetAllMembersVisiblity.all);
-                for (var i = 0; !wrappingTypeParameterID && i < members.length; i++) {
-                    PullHelpers.resolveDeclaredSymbolToUseType(members[i]);
-                    wrappingTypeParameterID = members[i].type.getWrappingTypeParameterID(typeParameterArgumentMap);
-                }
-
-                wrappingTypeParameterID = wrappingTypeParameterID
-                || this.getWrappingTypeParameterIDFromSignatures(type.getCallSignatures(), typeParameterArgumentMap)
-                || this.getWrappingTypeParameterIDFromSignatures(type.getConstructSignatures(), typeParameterArgumentMap)
-                || this.getWrappingTypeParameterIDFromSignatures(type.getIndexSignatures(), typeParameterArgumentMap);
-            }
-
-            if (!skipTypeArgumentCheck) {
-                type.inWrapCheck = false;
-            }
-
-            return wrappingTypeParameterID;
         }
 
 
@@ -2922,7 +2978,10 @@ module TypeScript {
             Debug.assert(this.isNamedTypeSymbol());
             Debug.assert(PullHelpers.getRootType(enclosingType) == enclosingType); // Enclosing type passed has to be the root symbol
             var knownWrapMap = BitMatrix.getBitMatrix(/*allowUndefinedValues:*/ true);
-            var wrapsIntoInfinitelyExpandingTypeReference =                this._wrapsSomeTypeParameterIntoInfinitelyExpandingTypeReferenceRecurse(enclosingType, knownWrapMap);            knownWrapMap.release();            return wrapsIntoInfinitelyExpandingTypeReference;
+            var wrapsIntoInfinitelyExpandingTypeReference =
+                this._wrapsSomeTypeParameterIntoInfinitelyExpandingTypeReferenceRecurse(enclosingType, knownWrapMap);
+            knownWrapMap.release();
+            return wrapsIntoInfinitelyExpandingTypeReference;
         }
 
         public _wrapsSomeTypeParameterIntoInfinitelyExpandingTypeReferenceRecurse(enclosingType: PullTypeSymbol, knownWrapMap: IBitMatrix): boolean {
@@ -2986,7 +3045,7 @@ module TypeScript {
                 }
 
                 // Type arguments wraps type parameter
-                if (typeArguments[i].wrapsSomeTypeParameter((<PullInstantiatedTypeReferenceSymbol>this).getTypeParameterArgumentMap())) {
+                if (typeArguments[i].wrapsSomeTypeParameter((<InstantiatedTypeReferenceSymbol>this).getTypeParameterSubstitutionMap())) {
                     return true;
                 }
             }
@@ -3594,9 +3653,9 @@ module TypeScript {
         }
     }
 
-    export function getIDForTypeSubstitutions(instantiatingType: PullTypeSymbol, typeArgumentMap: TypeArgumentMap): string;
-    export function getIDForTypeSubstitutions(instantiatingSignature: PullSignatureSymbol, typeArgumentMap: TypeArgumentMap): string;
-    export function getIDForTypeSubstitutions(instantiatingTypeOrSignature: PullSymbol, typeArgumentMap: TypeArgumentMap): string {
+    export function getIDForTypeSubstitutions(instantiatingType: PullTypeSymbol, typeArgumentMap: TypeSubstitutionMap): string;
+    export function getIDForTypeSubstitutions(instantiatingSignature: PullSignatureSymbol, typeArgumentMap: TypeSubstitutionMap): string;
+    export function getIDForTypeSubstitutions(instantiatingTypeOrSignature: PullSymbol, typeArgumentMap: TypeSubstitutionMap): string {
         var substitution = "";
         var members: PullSymbol[] = null;
 
