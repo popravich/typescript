@@ -1810,7 +1810,7 @@ module TypeScript.Services {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
-            return new NavigationBarItemGetter().do(syntaxTree.sourceUnit());
+            return new NavigationBarItemGetter().getItems(syntaxTree.sourceUnit());
         }
 
         public getSyntaxTree(fileName: string): TypeScript.SyntaxTree {

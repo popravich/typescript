@@ -28,8 +28,8 @@ module TypeScript.Services {
             return result.length > 0 ? result.join(',') : ScriptElementKindModifier.none;
         }
 
-        public do(node: TypeScript.SourceUnitSyntax): NavigationBarItem[] {
-            return this.getItems(() => this.getTopLevelNodes(node), n => this.createTopLevelItem(n));
+        public getItems(node: TypeScript.SourceUnitSyntax): NavigationBarItem[] {
+            return this.getItemsWorker(() => this.getTopLevelNodes(node), n => this.createTopLevelItem(n));
         }
 
         private getChildNodes(nodes: ISyntaxList<IModuleElementSyntax>): SyntaxNode[] {
@@ -76,7 +76,7 @@ module TypeScript.Services {
             }
         }
 
-        private getItems(getNodes: () => SyntaxNode[], createItem: (n: SyntaxNode) => NavigationBarItem): NavigationBarItem[] {
+        private getItemsWorker(getNodes: () => SyntaxNode[], createItem: (n: SyntaxNode) => NavigationBarItem): NavigationBarItem[] {
             var items: NavigationBarItem[] = [];
 
             var keyToItem = createIntrinsicsObject<NavigationBarItem>();
@@ -218,7 +218,7 @@ module TypeScript.Services {
         private createModuleItem(node: ModuleDeclarationSyntax): NavigationBarItem {
             var moduleNames = this.getModuleNames(node);
 
-            var childItems = this.getItems(() => this.getChildNodes(node.moduleElements), n => this.createChildItem(n));
+            var childItems = this.getItemsWorker(() => this.getChildNodes(node.moduleElements), n => this.createChildItem(n));
 
             return new NavigationBarItem(moduleNames.join("."),
                 ScriptElementKind.moduleElement,
@@ -229,7 +229,7 @@ module TypeScript.Services {
         }
 
         private createSourceUnitItem(node: SourceUnitSyntax): NavigationBarItem {
-            var childItems = this.getItems(() => this.getChildNodes(node.moduleElements), n => this.createChildItem(n));
+            var childItems = this.getItemsWorker(() => this.getChildNodes(node.moduleElements), n => this.createChildItem(n));
 
             if (childItems === null || childItems.length === 0) {
                 return null;
@@ -252,7 +252,7 @@ module TypeScript.Services {
                 nodes.push.apply(nodes, constructor.callSignature.parameterList.parameters.toNonSeparatorArray());
             }
 
-            var childItems = this.getItems(() => nodes, n => this.createChildItem(n));
+            var childItems = this.getItemsWorker(() => nodes, n => this.createChildItem(n));
             return new NavigationBarItem(
                 node.identifier.text(),
                 ScriptElementKind.classElement,
@@ -263,7 +263,7 @@ module TypeScript.Services {
         }
 
         private createEnumItem(node: TypeScript.EnumDeclarationSyntax): NavigationBarItem {
-            var childItems = this.getItems(() => <SyntaxNode[]>node.enumElements.toArray(), n => this.createChildItem(n));
+            var childItems = this.getItemsWorker(() => <SyntaxNode[]>node.enumElements.toArray(), n => this.createChildItem(n));
             return new NavigationBarItem(
                 node.identifier.text(),
                 ScriptElementKind.enumElement,
@@ -274,7 +274,7 @@ module TypeScript.Services {
         }
 
         private createIterfaceItem(node: TypeScript.InterfaceDeclarationSyntax): NavigationBarItem {
-            var childItems = this.getItems(() => <SyntaxNode[]>node.body.typeMembers.toArray(), n => this.createChildItem(n));
+            var childItems = this.getItemsWorker(() => <SyntaxNode[]>node.body.typeMembers.toArray(), n => this.createChildItem(n));
             return new NavigationBarItem(
                 node.identifier.text(),
                 ScriptElementKind.interfaceElement,
