@@ -66,7 +66,7 @@ module TypeScript.Services {
         getNavigateToItems(searchValue: string): NavigateToItem[];
         getNavigationBarItems(fileName: string): NavigationBarItem[];
 
-        getOutliningRegions(fileName: string): TypeScript.TextSpan[];
+        getOutliningSpans(fileName: string): OutliningSpan[];
         getBraceMatchingAtPosition(fileName: string, position: number): TypeScript.TextSpan[];
         getIndentationAtPosition(fileName: string, position: number, options: TypeScript.Services.EditorOptions): number;
 
@@ -94,6 +94,22 @@ module TypeScript.Services {
             this.minChar = minChar;
             this.limChar = limChar;
             this.isWriteAccess = isWriteAccess;
+        }
+    }
+
+    export class OutliningSpan {
+        /** 
+         * @param textSpan The span of the document to actually collapse.
+         * @param hintSpan The span of the document to display when the user hovers over the 
+         *       collapsed span.
+         * @param bannerText The text to display in the editor for the collapsed region.
+         * @param autoCollapse Whether or not this region should be automatically collapsed when 
+         *        the 'Collapse to Definitions' command is invoked.
+         */
+        constructor(public textSpan: TextSpan,
+                    public hintSpan: TextSpan,
+                    public bannerText: string,
+                    public autoCollapse: boolean) {
         }
     }
 

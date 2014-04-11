@@ -1,62 +1,62 @@
 /// <reference path="fourslash.ts"/>
 
 ////// interface 
-////interface IFoo [|{
+////interface IFoo[| {
 ////    getDist(): number;
 ////}|]
 ////
 ////// class members
-////class Foo [|{
-////    constructor() [|{
+////class Foo[| {
+////    constructor()[| {
 ////    }|]
 ////
-////    public foo(): number [|{
+////    public foo(): number[| {
 ////        return 0;
 ////    }|]
 ////
-////    public get X() [|{
+////    public get X()[| {
 ////        return 1;
 ////    }|]
 ////
-////    public set X(v: number) [|{
+////    public set X(v: number)[| {
 ////    }|]
 ////
-////    public member = function f() [|{
+////    public member = function f()[| {
 ////
 ////    }|]
 ////}|]
 ////
 ////// modules
-////module m1 [|{
-////    module m2 [|{ }|]
-////    module m3 [|{
-////        function foo() [|{
+////module m1[| {
+////    module m2[| { }|]
+////    module m3[| {
+////        function foo()[| {
 ////
 ////        }|]
 ////
-////        interface IFoo2 [|{
+////        interface IFoo2[| {
 ////
 ////        }|]
 ////
-////        class foo2 implements IFoo2 [|{
+////        class foo2 implements IFoo2[| {
 ////
 ////        }|]
 ////    }|]
 ////}|]
 ////
 ////// function declaration
-////function foo(): number [|{
+////function foo(): number[| {
 ////    return 0;
 ////}|]
 ////
 ////// function expressions
-////(function f() [|{
+////(function f()[| {
 ////
 ////}|])
 ////
 ////// trivia handeling
-////class ClassFooWithTrivia /*  some comments */ 
-////   /* more trivia */ [|{
+////class ClassFooWithTrivia[| /*  some comments */ 
+////   /* more trivia */ {
 ////    
 ////
 ////    /*some trailing trivia */
@@ -64,15 +64,15 @@
 ////
 //////outline with deep nesting
 ////module m1[|{
-////    module m2 [|{
-////        module m3 [|{
-////            module m4 [|{
-////                module m5 [|{
-////                    module m6 [|{
-////                        module m7 [|{
-////                            module m8 [|{
-////                                module m9 [|{
-////                                    module m10 [|{
+////    module m2[| {
+////        module m3[| {
+////            module m4[| {
+////                module m5[| {
+////                    module m6[| {
+////                        module m7[| {
+////                            module m8[| {
+////                                module m9[| {
+////                                    module m10[| {
 ////                                        module m11 {
 ////                                            module m12 {
 ////                                                export interface IFoo {
@@ -91,7 +91,7 @@
 ////}|]
 ////
 //////outline after a deeply nested node
-////class AfterNestedNodes [|{
+////class AfterNestedNodes[| {
 ////}|]
 
 verify.outliningSpansInCurrentFile(test.ranges());

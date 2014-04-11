@@ -125,8 +125,8 @@ module TypeScript.Services {
         getNavigationBarItems(fileName: string): string;
 
         // Returns a JSON encoded value of the type:
-        // { name: string; kind: string; kindModifiers: string; containerName: string; containerKind: string; matchKind: string; fileName: string; minChar: number; limChar: number; } [] = [];
-        getOutliningRegions(fileName: string): string;
+        // { textSpan: { _start: number, _length: number }; hintSpan: { _start: number, _length: number }; bannerText: string; autoCollapse: boolean } [] = [];
+        getOutliningSpans(fileName: string): string;
 
         getBraceMatchingAtPosition(fileName: string, position: number): string;
         getIndentationAtPosition(fileName: string, position: number, options: string/*Services.EditorOptions*/): string;
@@ -598,11 +598,11 @@ module TypeScript.Services {
 
         // GET OUTLINING REGIONS
         //
-        public getOutliningRegions(fileName: string): string {
+        public getOutliningSpans(fileName: string): string {
             return this.forwardJSONCall(
-                "getOutliningRegions(\"" + fileName + "\")",
+                "getOutliningSpans(\"" + fileName + "\")",
                 () => {
-                    var items = this.languageService.getOutliningRegions(fileName);
+                    var items = this.languageService.getOutliningSpans(fileName);
                     return items;
                 });
         }

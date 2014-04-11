@@ -22,7 +22,7 @@ module TypeScript.Services {
         private static MaximumDepth: number = 10;
         private inObjectLiteralExpression: boolean = false;
 
-        private elements: TypeScript.TextSpan[] = [];
+        private elements: OutliningSpan[] = [];
 
         constructor() {
             super(OutliningElementsCollector.MaximumDepth);
@@ -92,15 +92,19 @@ module TypeScript.Services {
         private addOutlineRange(node: TypeScript.SyntaxNode, startElement: TypeScript.ISyntaxNodeOrToken, endElement: TypeScript.ISyntaxNodeOrToken) {
             if (startElement && endElement && !startElement.isShared() && !endElement.isShared()) {
                 // Compute the position
-                var start = startElement.start();
-                var end = endElement.end();
-
+                var startElementFirstToken = startElement.firstToken();
+                var startElementPreviousToken = startElementFirstToken.previousToken();
+                
                 // Push the new range
-                this.elements.push(TypeScript.TextSpan.fromBounds(start, end));
+                this.elements.push(new OutliningSpan(
+                    /*textSpan:*/ TextSpan.fromBounds(startElementPreviousToken.end(), endElement.end()),
+                    /*hintSpan:*/ TextSpan.fromBounds(node.start(), node.end()),
+                    /*bannerText:*/ "...",
+                    /*autoCollapse:*/ false));
             }
         }
 
-        public static collectElements(node: TypeScript.SourceUnitSyntax): TypeScript.TextSpan[] {
+        public static collectElements(node: TypeScript.SourceUnitSyntax): OutliningSpan[] {
             var collector = new OutliningElementsCollector();
             node.accept(collector);
             return collector.elements;

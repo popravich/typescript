@@ -1772,7 +1772,7 @@ module TypeScript.Services {
             return manager;
         }
 
-        public getOutliningRegions(fileName: string): TypeScript.TextSpan[] {
+        public getOutliningSpans(fileName: string): OutliningSpan[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
