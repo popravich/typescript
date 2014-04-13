@@ -52,9 +52,9 @@ module TypeScript.Services {
 
         getTypeAtPosition(fileName: string, position: number): TypeInfo;
 
-        getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo;
+        getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): TextSpan;
 
-        getBreakpointStatementAtPosition(fileName: string, position: number): SpanInfo;
+        getBreakpointStatementAtPosition(fileName: string, position: number): TextSpan;
 
         getSignatureAtPosition(fileName: string, position: number): SignatureInfo;
 
@@ -118,7 +118,7 @@ module TypeScript.Services {
         constructor(public text: string, 
             public kind: string, 
             public kindModifiers: string,
-            public spans: SpanInfo[], 
+            public spans: TextSpan[], 
             public childItems: NavigationBarItem[] = null,
             public indent = 0,
             public bolded = false,
@@ -134,7 +134,6 @@ module TypeScript.Services {
         public fileName: string = "";
         public minChar: number = -1;
         public limChar: number = -1;
-        public additionalSpans: SpanInfo[] = null;
         public containerName: string = "";
         public containerKind: string = "";  // see ScriptElementKind
     }
@@ -237,11 +236,6 @@ module TypeScript.Services {
             public kind: string,
             public minChar: number,
             public limChar: number) {
-        }
-    }
-
-    export class SpanInfo {
-        constructor(public minChar: number, public limChar: number, public text: string = null) {
         }
     }
 

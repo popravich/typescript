@@ -112,59 +112,59 @@ module TypeScript.Services {
                     if (parameter.modifiers.childCount() === 0) {
                         return null;
                     }
-                    return new NavigationBarItem(parameter.identifier.text(), ScriptElementKind.memberVariableElement, this.getKindModifiers(parameter.modifiers), [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(parameter.identifier.text(), ScriptElementKind.memberVariableElement, this.getKindModifiers(parameter.modifiers), [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.MemberFunctionDeclaration:
                     var memberFunction = <MemberFunctionDeclarationSyntax>node;
-                    return new NavigationBarItem(memberFunction.propertyName.text(), ScriptElementKind.memberFunctionElement, this.getKindModifiers(memberFunction.modifiers), [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(memberFunction.propertyName.text(), ScriptElementKind.memberFunctionElement, this.getKindModifiers(memberFunction.modifiers), [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.GetAccessor:
                     var getAccessor = <GetAccessorSyntax>node;
-                    return new NavigationBarItem(getAccessor.propertyName.text(), ScriptElementKind.memberGetAccessorElement, this.getKindModifiers(getAccessor.modifiers), [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(getAccessor.propertyName.text(), ScriptElementKind.memberGetAccessorElement, this.getKindModifiers(getAccessor.modifiers), [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.SetAccessor:
                     var setAccessor = <SetAccessorSyntax>node;
-                    return new NavigationBarItem(setAccessor.propertyName.text(), ScriptElementKind.memberSetAccessorElement, this.getKindModifiers(setAccessor.modifiers), [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(setAccessor.propertyName.text(), ScriptElementKind.memberSetAccessorElement, this.getKindModifiers(setAccessor.modifiers), [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.IndexSignature:
                     var indexSignature = <IndexSignatureSyntax>node;
-                    return new NavigationBarItem("[]", ScriptElementKind.indexSignatureElement, ScriptElementKindModifier.none, [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem("[]", ScriptElementKind.indexSignatureElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.EnumElement:
                     var enumElement = <EnumElementSyntax>node;
-                    return new NavigationBarItem(enumElement.propertyName.text(), ScriptElementKind.memberVariableElement, ScriptElementKindModifier.none, [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(enumElement.propertyName.text(), ScriptElementKind.memberVariableElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.CallSignature:
                     var callSignature = <CallSignatureSyntax>node;
-                    return new NavigationBarItem("()", ScriptElementKind.callSignatureElement, ScriptElementKindModifier.none, [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem("()", ScriptElementKind.callSignatureElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.ConstructSignature:
                     var constructSignature = <ConstructSignatureSyntax>node;
-                    return new NavigationBarItem("new()", ScriptElementKind.constructSignatureElement, ScriptElementKindModifier.none, [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem("new()", ScriptElementKind.constructSignatureElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.MethodSignature:
                     var methodSignature = <MethodSignatureSyntax>node;
-                    return new NavigationBarItem(methodSignature.propertyName.text(), ScriptElementKind.memberFunctionElement, ScriptElementKindModifier.none, [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(methodSignature.propertyName.text(), ScriptElementKind.memberFunctionElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.PropertySignature:
                     var propertySignature = <PropertySignatureSyntax>node;
-                    return new NavigationBarItem(propertySignature.propertyName.text(), ScriptElementKind.memberVariableElement, ScriptElementKindModifier.none, [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(propertySignature.propertyName.text(), ScriptElementKind.memberVariableElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.FunctionDeclaration:
                     var functionDeclaration = <FunctionDeclarationSyntax>node;
-                    return new NavigationBarItem(functionDeclaration.identifier.text(), ScriptElementKind.functionElement, this.getKindModifiers(functionDeclaration.modifiers), [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem(functionDeclaration.identifier.text(), ScriptElementKind.functionElement, this.getKindModifiers(functionDeclaration.modifiers), [TextSpan.fromBounds(node.start(), node.end())]);
 
                 case SyntaxKind.MemberVariableDeclaration:
                     var memberVariableDeclaration = <MemberVariableDeclarationSyntax>node;
-                    return new NavigationBarItem(memberVariableDeclaration.variableDeclarator.propertyName.text(), ScriptElementKind.memberVariableElement, this.getKindModifiers(memberVariableDeclaration.modifiers), [new SpanInfo(memberVariableDeclaration.variableDeclarator.start(), memberVariableDeclaration.variableDeclarator.end())]);
+                    return new NavigationBarItem(memberVariableDeclaration.variableDeclarator.propertyName.text(), ScriptElementKind.memberVariableElement, this.getKindModifiers(memberVariableDeclaration.modifiers), [TextSpan.fromBounds(memberVariableDeclaration.variableDeclarator.start(), memberVariableDeclaration.variableDeclarator.end())]);
 
                 case SyntaxKind.VariableDeclarator:
                     var variableDeclarator = <VariableDeclaratorSyntax>node;
-                    return new NavigationBarItem(variableDeclarator.propertyName.text(), ScriptElementKind.variableElement, ScriptElementKindModifier.none, [new SpanInfo(variableDeclarator.start(), variableDeclarator.end())]);
+                    return new NavigationBarItem(variableDeclarator.propertyName.text(), ScriptElementKind.variableElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(variableDeclarator.start(), variableDeclarator.end())]);
 
                 case SyntaxKind.ConstructorDeclaration:
                     var constructorDeclaration = <ConstructorDeclarationSyntax>node;
-                    return new NavigationBarItem("constructor", ScriptElementKind.constructorImplementationElement, ScriptElementKindModifier.none, [new SpanInfo(node.start(), node.end())]);
+                    return new NavigationBarItem("constructor", ScriptElementKind.constructorImplementationElement, ScriptElementKindModifier.none, [TextSpan.fromBounds(node.start(), node.end())]);
             }
 
             return null;
@@ -223,7 +223,7 @@ module TypeScript.Services {
             return new NavigationBarItem(moduleNames.join("."),
                 ScriptElementKind.moduleElement,
                 this.getKindModifiers(node.modifiers),
-                [new SpanInfo(node.start(), node.end())],
+                [TextSpan.fromBounds(node.start(), node.end())],
                 childItems,
                 this.getIndent(node));
         }
@@ -239,7 +239,7 @@ module TypeScript.Services {
             return new NavigationBarItem("<global>",
                 ScriptElementKind.moduleElement,
                 ScriptElementKindModifier.none,
-                [new SpanInfo(node.start(), node.end())],
+                [TextSpan.fromBounds(node.start(), node.end())],
                 childItems);
         }
 
@@ -257,7 +257,7 @@ module TypeScript.Services {
                 node.identifier.text(),
                 ScriptElementKind.classElement,
                 this.getKindModifiers(node.modifiers),
-                [new SpanInfo(node.start(), node.end())],
+                [TextSpan.fromBounds(node.start(), node.end())],
                 childItems,
                 this.getIndent(node));
         }
@@ -268,7 +268,7 @@ module TypeScript.Services {
                 node.identifier.text(),
                 ScriptElementKind.enumElement,
                 this.getKindModifiers(node.modifiers),
-                [new SpanInfo(node.start(), node.end())],
+                [TextSpan.fromBounds(node.start(), node.end())],
                 childItems,
                 this.getIndent(node));
         }
@@ -279,7 +279,7 @@ module TypeScript.Services {
                 node.identifier.text(),
                 ScriptElementKind.interfaceElement,
                 this.getKindModifiers(node.modifiers),
-                [new SpanInfo(node.start(), node.end())],
+                [TextSpan.fromBounds(node.start(), node.end())],
                 childItems,
                 this.getIndent(node));
         }

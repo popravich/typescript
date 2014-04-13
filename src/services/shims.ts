@@ -125,7 +125,7 @@ module TypeScript.Services {
         getNavigateToItems(searchValue: string): string;
 
         // Returns a JSON encoded value of the type:
-        // { text: string; kind: string; kindModifiers: string; bolded: boolean; grayed: boolean; indent: number; spans: { minChar: number; limChar: number; }; childItems: <recursive use of this type>[] } [] = [];
+        // { text: string; kind: string; kindModifiers: string; bolded: boolean; grayed: boolean; indent: number; spans: { _start: number; _length: number; }[]; childItems: <recursive use of this type>[] } [] = [];
         getNavigationBarItems(fileName: string): string;
 
         // Returns a JSON encoded value of the type:
@@ -655,8 +655,7 @@ module TypeScript.Services {
                     matchKind: item.matchKind,
                     fileName: item.fileName,
                     minChar: item.minChar,
-                    limChar: item.limChar,
-                    additionalSpans: item.additionalSpans ? item.additionalSpans.map(i => { return { start: i.minChar, end: i.limChar }; }) : undefined
+                    limChar: item.limChar
                 });
             }
 

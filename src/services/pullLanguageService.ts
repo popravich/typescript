@@ -1721,7 +1721,7 @@ module TypeScript.Services {
         // Syntactic Single-File features
         //
 
-        public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo {
+        public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): TextSpan {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var node = this.getTypeInfoEligiblePath(fileName, startPos, false);
@@ -1740,11 +1740,11 @@ module TypeScript.Services {
                 }
             }
 
-            var spanInfo = new SpanInfo(node.start(), node.end());
+            var spanInfo = TextSpan.fromBounds(node.start(), node.end());
             return spanInfo;
         }
 
-        public getBreakpointStatementAtPosition(fileName: string, pos: number): SpanInfo {
+        public getBreakpointStatementAtPosition(fileName: string, pos: number): TextSpan {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxtree = this.getSyntaxTree(fileName);
