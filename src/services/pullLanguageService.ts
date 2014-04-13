@@ -163,7 +163,7 @@ module TypeScript.Services {
             }
 
             var isWriteAccess = this.isWriteAccess(node);
-            return [new ReferenceEntry(this._getHostFileName(fileName), node.start(), node.end(), isWriteAccess)];
+            return [new ReferenceEntry(this._getHostFileName(fileName), TextSpan.fromBounds(node.start(), node.end()), isWriteAccess)];
         }
 
         public getImplementorsAtPosition(fileName: string, pos: number): ReferenceEntry[] {
@@ -303,7 +303,7 @@ module TypeScript.Services {
                             var isWriteAccess = this.isWriteAccess(nameAST);
 
                             result.push(new ReferenceEntry(this._getHostFileName(fileName),
-                                nameAST.start(), nameAST.end(), isWriteAccess));
+                                TextSpan.fromBounds(nameAST.start(), nameAST.end()), isWriteAccess));
                         }
                     }
                 });
@@ -343,7 +343,7 @@ module TypeScript.Services {
 
                         if (FindReferenceHelpers.compareSymbolsForLexicalIdentity(searchSymbol, symbol)) {
                             var isWriteAccess = this.isWriteAccess(nameAST);
-                            result.push(new ReferenceEntry(this._getHostFileName(fileName), nameAST.start(), nameAST.end(), isWriteAccess));
+                            result.push(new ReferenceEntry(this._getHostFileName(fileName), TextSpan.fromBounds(nameAST.start(), nameAST.end()), isWriteAccess));
                         }
                     }
                 });
@@ -683,7 +683,7 @@ module TypeScript.Services {
             var ast = declaration.ast();
             result.push(new DefinitionInfo(
                 this._getHostFileName(declaration.fileName()),
-                ast.start(), ast.end(), symbolKind, symbolName, containerKind, containerName));
+                TextSpan.fromBounds(ast.start(), ast.end()), symbolKind, symbolName, containerKind, containerName));
         }
 
         private tryAddDefinition(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], result: DefinitionInfo[]): boolean {
@@ -817,8 +817,7 @@ module TypeScript.Services {
                         item.kind = this.mapPullElementKind(declaration.kind);
                         item.kindModifiers = this.getScriptElementKindModifiersFromDecl(declaration);
                         item.fileName = this._getHostFileName(fileName);
-                        item.minChar = ast.start();
-                        item.limChar = ast.end();
+                        item.textSpan = TextSpan.fromBounds(ast.start(), ast.end());
                         item.containerName = parentName || "";
                         item.containerKind = parentkindName || "";
                         results.push(item);
@@ -1193,7 +1192,7 @@ module TypeScript.Services {
             var minChar = ast ? ast.start() : -1;
             var limChar = ast ? ast.end() : -1;
 
-            return new TypeInfo(memberName, docComment, symbolName, kind, minChar, limChar);
+            return new TypeInfo(memberName, docComment, symbolName, kind, TextSpan.fromBounds(minChar, limChar));
         }
 
         public getCompletionsAtPosition(fileName: string, position: number, isMemberCompletion: boolean): CompletionInfo {
@@ -1751,21 +1750,21 @@ module TypeScript.Services {
             return TypeScript.Services.Breakpoints.getBreakpointLocation(syntaxtree, pos);
         }
 
-        public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsForRange(fileName: string, start: number, end: number, options: FormatCodeOptions): TextChange[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
-            return manager.formatSelection(minChar, limChar);
+            return manager.formatSelection(start, end);
         }
 
-        public getFormattingEditsForDocument(fileName: string, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsForDocument(fileName: string, options: FormatCodeOptions): TextChange[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
             return manager.formatDocument();
         }
 
-        public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextChange[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);

@@ -103,25 +103,25 @@ module TypeScript.Services {
         getRenameInfo(fileName: string, position: number): string;
 
         // Returns a JSON encoded value of the type:
-        // { fileName: string; minChar: number; limChar: number; kind: string; name: string; containerKind: string; containerName: string }
+        // { fileName: string; textSpan: { _start: number; _length: number}; kind: string; name: string; containerKind: string; containerName: string }
         //
         // Or null value if no definition can be found.
         getDefinitionAtPosition(fileName: string, position: number): string;
 
         // Returns a JSON encoded value of the type:
-        // { fileName: string; minChar: number; limChar: number; isWriteAccess: boolean }[]
+        // { fileName: string; textSpan: { _start: number; _length: number}; isWriteAccess: boolean }[]
         getReferencesAtPosition(fileName: string, position: number): string;
 
         // Returns a JSON encoded value of the type:
-        // { fileName: string; minChar: number; limChar: number; isWriteAccess: boolean }[]
+        // { fileName: string; textSpan: { _start: number; _length: number}; isWriteAccess: boolean }[]
         getOccurrencesAtPosition(fileName: string, position: number): string;
 
         // Returns a JSON encoded value of the type:
-        // { fileName: string; minChar: number; limChar: number; isWriteAccess: boolean }[]
+        // { fileName: string; textSpan: { _start: number; _length: number}; isWriteAccess: boolean }[]
         getImplementorsAtPosition(fileName: string, position: number): string;
 
         // Returns a JSON encoded value of the type:
-        // { name: string; kind: string; kindModifiers: string; containerName: string; containerKind: string; matchKind: string; fileName: string; minChar: number; limChar: number; } [] = [];
+        // { name: string; kind: string; kindModifiers: string; containerName: string; containerKind: string; matchKind: string; fileName: string; textSpan: { _start: number; _length: number}; } [] = [];
         getNavigateToItems(searchValue: string): string;
 
         // Returns a JSON encoded value of the type:
@@ -135,7 +135,7 @@ module TypeScript.Services {
         getBraceMatchingAtPosition(fileName: string, position: number): string;
         getIndentationAtPosition(fileName: string, position: number, options: string/*Services.EditorOptions*/): string;
 
-        getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: string/*Services.FormatCodeOptions*/): string;
+        getFormattingEditsForRange(fileName: string, start: number, end: number, options: string/*Services.FormatCodeOptions*/): string;
         getFormattingEditsForDocument(fileName: string, options: string/*Services.FormatCodeOptions*/): string;
         getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: string/*Services.FormatCodeOptions*/): string;
 
@@ -553,12 +553,12 @@ module TypeScript.Services {
         }
 
         /// FORMAT SELECTION
-        public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: string/*Services.FormatCodeOptions*/): string {
+        public getFormattingEditsForRange(fileName: string, start: number, end: number, options: string/*Services.FormatCodeOptions*/): string {
             return this.forwardJSONCall(
-                "getFormattingEditsForRange(\"" + fileName + "\", " + minChar + ", " + limChar + ")",
+                "getFormattingEditsForRange(\"" + fileName + "\", " + start + ", " + end + ")",
                 () => {
                     var localOptions: TypeScript.Services.FormatCodeOptions = JSON.parse(options);
-                    var edits = this.languageService.getFormattingEditsForRange(fileName, minChar, limChar, localOptions);
+                    var edits = this.languageService.getFormattingEditsForRange(fileName, start, end, localOptions);
                     return edits;
                 });
         }
@@ -638,8 +638,7 @@ module TypeScript.Services {
                 containerKind: string;
                 matchKind: string;
                 fileName: string;
-                minChar: number;
-                limChar: number;
+                textSpan: TextSpan;
                 additionalSpans?: { start: number; end: number; }[];
             }[] = [];
 
@@ -654,8 +653,7 @@ module TypeScript.Services {
                     containerKind: item.containerKind,
                     matchKind: item.matchKind,
                     fileName: item.fileName,
-                    minChar: item.minChar,
-                    limChar: item.limChar
+                    textSpan: item.textSpan
                 });
             }
 

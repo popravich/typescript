@@ -71,9 +71,9 @@ module TypeScript.Services {
         getBraceMatchingAtPosition(fileName: string, position: number): TypeScript.TextSpan[];
         getIndentationAtPosition(fileName: string, position: number, options: TypeScript.Services.EditorOptions): number;
 
-        getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[];
-        getFormattingEditsForDocument(fileName: string, options: FormatCodeOptions): TextEdit[];
-        getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[];
+        getFormattingEditsForRange(fileName: string, start: number, end: number, options: FormatCodeOptions): TextChange[];
+        getFormattingEditsForDocument(fileName: string, options: FormatCodeOptions): TextChange[];
+        getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextChange[];
 
         getEmitOutput(fileName: string): TypeScript.EmitOutput;
 
@@ -86,14 +86,12 @@ module TypeScript.Services {
 
     export class ReferenceEntry {
         public fileName: string = ""
-        public minChar: number = -1;
-        public limChar: number = -1;
+        public textSpan: TextSpan;
         public isWriteAccess: boolean = false;
 
-        constructor(fileName: string, minChar: number, limChar: number, isWriteAccess: boolean) {
+        constructor(fileName: string, textSpan: TextSpan, isWriteAccess: boolean) {
             this.fileName = fileName;
-            this.minChar = minChar;
-            this.limChar = limChar;
+            this.textSpan = textSpan;
             this.isWriteAccess = isWriteAccess;
         }
     }
@@ -132,24 +130,23 @@ module TypeScript.Services {
         public kindModifiers: string = "";   // see ScriptElementKindModifier, comma separated
         public matchKind: string = "";
         public fileName: string = "";
-        public minChar: number = -1;
-        public limChar: number = -1;
+        public textSpan: TextSpan;
         public containerName: string = "";
         public containerKind: string = "";  // see ScriptElementKind
     }
 
-    export class TextEdit {
-        constructor(public minChar: number, public limChar: number, public text: string) {
+    export class TextChange {
+        constructor(public span: TextSpan, public newText: string) {
         }
 
-        static createInsert(pos: number, text: string): TextEdit {
-            return new TextEdit(pos, pos, text);
+        static createInsert(pos: number, newText: string): TextChange {
+            return new TextChange(new TextSpan(pos, 0), newText);
         }
-        static createDelete(minChar: number, limChar: number): TextEdit {
-            return new TextEdit(minChar, limChar, "");
+        static createDelete(minChar: number, limChar: number): TextChange {
+            return new TextChange(TextSpan.fromBounds(minChar, limChar), "");
         }
-        static createReplace(minChar: number, limChar: number, text: string): TextEdit {
-            return new TextEdit(minChar, limChar, text);
+        static createReplace(minChar: number, limChar: number, newText: string): TextChange {
+            return new TextChange(TextSpan.fromBounds(minChar, limChar), newText);
         }
     }
 
@@ -219,8 +216,7 @@ module TypeScript.Services {
     export class DefinitionInfo {
         constructor(
             public fileName: string,
-            public minChar: number,
-            public limChar: number,
+            public textSpan: TextSpan,
             public kind: string,
             public name: string,
             public containerKind: string,
@@ -234,8 +230,7 @@ module TypeScript.Services {
             public docComment: string,
             public fullSymbolName: string,
             public kind: string,
-            public minChar: number,
-            public limChar: number) {
+            public textSpan: TextSpan) {
         }
     }
 

@@ -28,17 +28,17 @@ module TypeScript.Services.Formatting {
             this.options = new FormattingOptions(!editorOptions.ConvertTabsToSpaces, editorOptions.TabSize, editorOptions.IndentSize, editorOptions.NewLineCharacter)
         }
 
-        public formatSelection(minChar: number, limChar: number): TypeScript.Services.TextEdit[] {
+        public formatSelection(minChar: number, limChar: number): TypeScript.Services.TextChange[] {
             var span = TextSpan.fromBounds(minChar, limChar);
             return this.formatSpan(span, FormattingRequestKind.FormatSelection);
         }
 
-        public formatDocument(): TypeScript.Services.TextEdit[] {
+        public formatDocument(): TypeScript.Services.TextChange[] {
             var span = TextSpan.fromBounds(0, this.snapshot.getLength());
             return this.formatSpan(span, FormattingRequestKind.FormatDocument);
         }
 
-        public formatOnSemicolon(caretPosition: number): TypeScript.Services.TextEdit[] {
+        public formatOnSemicolon(caretPosition: number): TypeScript.Services.TextChange[] {
             var sourceUnit = this.syntaxTree.sourceUnit();
             var semicolonPositionedToken = sourceUnit.findToken(caretPosition - 1);
 
@@ -61,7 +61,7 @@ module TypeScript.Services.Formatting {
             return [];
         }
 
-        public formatOnClosingCurlyBrace(caretPosition: number): TypeScript.Services.TextEdit[] {
+        public formatOnClosingCurlyBrace(caretPosition: number): TypeScript.Services.TextChange[] {
             var sourceUnit = this.syntaxTree.sourceUnit();
             var closeBracePositionedToken = sourceUnit.findToken(caretPosition - 1);
 
@@ -84,7 +84,7 @@ module TypeScript.Services.Formatting {
             return [];
         }
 
-        public formatOnEnter(caretPosition: number): TypeScript.Services.TextEdit[] {
+        public formatOnEnter(caretPosition: number): TypeScript.Services.TextChange[] {
             var lineNumber = this.snapshot.getLineNumberFromPosition(caretPosition);
 
             if (lineNumber > 0) {
@@ -101,19 +101,19 @@ module TypeScript.Services.Formatting {
             return [];
         }
 
-        private formatSpan(span: TextSpan, formattingRequestKind: FormattingRequestKind): TypeScript.Services.TextEdit[] {
+        private formatSpan(span: TextSpan, formattingRequestKind: FormattingRequestKind): TypeScript.Services.TextChange[] {
             // Always format from the beginning of the line
             var startLine = this.snapshot.getLineFromPosition(span.start());
             span = TextSpan.fromBounds(startLine.startPosition(), span.end());
 
-            var result: TypeScript.Services.TextEdit[] = [];
+            var result: TypeScript.Services.TextChange[] = [];
 
             var formattingEdits = Formatter.getEdits(span, this.syntaxTree.sourceUnit(), this.options, true, this.snapshot, this.rulesProvider, formattingRequestKind);
 
             //
             // TODO: Change the ILanguageService interface to return TextEditInfo (with start, and length) instead of TextEdit (with minChar and limChar)
             formattingEdits.forEach((item) => {
-                var edit = new TypeScript.Services.TextEdit(item.position, item.position + item.length, item.replaceWith);
+                var edit = new TypeScript.Services.TextChange(new TextSpan(item.position, item.length), item.replaceWith);
                 result.push(edit);
             });
 
