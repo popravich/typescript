@@ -601,6 +601,38 @@ module TypeScript.Services {
             return null;
         }
 
+        public getRenameInfo(fileName: string, position: number): RenameInfo {
+            fileName = TypeScript.switchToForwardSlashes(fileName);
+
+            var symbolInfo = this.getSymbolInfoAtPosition(fileName, position, /*requireName:*/ true);
+            if (symbolInfo === null) {
+                return RenameInfo.CreateError(TypeScript.getDiagnosticMessage(DiagnosticCode.You_must_rename_an_identifier, null));
+            }
+
+            if (symbolInfo.symbol === null) {
+                return RenameInfo.CreateError(TypeScript.getDiagnosticMessage(DiagnosticCode.You_cannot_rename_this_element, null));
+            }
+
+            var document = this.compiler.getDocument(fileName);
+            var sourceUnit = document.sourceUnit();
+
+            var topNode = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, position);
+
+            var definitions = this.getDefinitionAtPosition(fileName, position);
+            if (definitions === null || definitions.length === 0) {
+                return RenameInfo.CreateError(TypeScript.getDiagnosticMessage(DiagnosticCode.You_cannot_rename_this_element, null));
+            }
+
+            var definition = definitions[0];
+            var symbol = symbolInfo.symbol;
+            return RenameInfo.Create(
+                symbol.name,
+                symbol.name,
+                this.mapPullElementKind(symbol.kind, symbol),
+                this.getScriptElementKindModifiers(symbol),
+                TextSpan.fromBounds(topNode.start(), topNode.end()));
+        }
+
         public getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 

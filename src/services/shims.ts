@@ -99,6 +99,10 @@ module TypeScript.Services {
         getSignatureAtPosition(fileName: string, position: number): string;
 
         // Returns a JSON encoded value of the type:
+        // { canRename: boolean, localizedErrorMessage: string, displayName: string, fullDisplayName: string, kind: string, kindModifiers: string, triggerSpan: { _start; _length } }
+        getRenameInfo(fileName: string, position: number): string;
+
+        // Returns a JSON encoded value of the type:
         // { fileName: string; minChar: number; limChar: number; kind: string; name: string; containerKind: string; containerName: string }
         //
         // Or null value if no definition can be found.
@@ -463,6 +467,14 @@ module TypeScript.Services {
                 "getDefinitionAtPosition(\"" + fileName + "\", " + position + ")",
                 () => {
                     return this.languageService.getDefinitionAtPosition(fileName, position);
+                });
+        }
+
+        public getRenameInfo(fileName: string, position: number): string {
+            return this.forwardJSONCall(
+                "getRenameInfo(\"" + fileName + "\", " + position + ")",
+                () => {
+                    return this.languageService.getRenameInfo(fileName, position);
                 });
         }
 

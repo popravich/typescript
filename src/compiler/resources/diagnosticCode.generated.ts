@@ -431,5 +431,7 @@ module TypeScript {
         _0_which_lacks_get_accessor_and_parameter_type_annotation_on_set_accessor_implicitly_has_an_any_type: "'{0}', which lacks 'get' accessor and parameter type annotation on 'set' accessor, implicitly has an 'any' type.",
         Index_signature_of_object_type_implicitly_has_an_any_type: "Index signature of object type implicitly has an 'any' type.",
         Object_literal_s_property_0_implicitly_has_an_any_type_from_widening: "Object literal's property '{0}' implicitly has an 'any' type from widening.",
+        You_must_rename_an_identifier: "You must rename an identifier.",
+        You_cannot_rename_this_element: "You cannot rename this element.",
     };
 }

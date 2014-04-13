@@ -58,6 +58,7 @@ module TypeScript.Services {
 
         getSignatureAtPosition(fileName: string, position: number): SignatureInfo;
 
+        getRenameInfo(fileName: string, position: number): RenameInfo;
         getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
         getReferencesAtPosition(fileName: string, position: number): ReferenceEntry[];
         getOccurrencesAtPosition(fileName: string, position: number): ReferenceEntry[];
@@ -190,6 +191,29 @@ module TypeScript.Services {
             formatCodeOptions.PlaceOpenBraceOnNewLineForFunctions = objectToClone.PlaceOpenBraceOnNewLineForFunctions;
             formatCodeOptions.PlaceOpenBraceOnNewLineForControlBlocks = objectToClone.PlaceOpenBraceOnNewLineForControlBlocks;
             return formatCodeOptions;
+        }
+    }
+
+    export class RenameInfo {
+        constructor(public canRename: boolean,
+                    public localizedErrorMessage: string,
+                    public displayName: string,
+                    public fullDisplayName: string,
+                    public kind: string,
+                    public kindModifiers: string,
+                    public triggerSpan: TextSpan) {
+        }
+
+        public static CreateError(localizedErrorMessage: string) {
+            return new RenameInfo(false, localizedErrorMessage, null, null, null, null, null);
+        }
+
+        public static Create(displayName: string,
+                             fullDisplayName: string,
+                             kind: string,
+                             kindModifiers: string,
+                             triggerSpan: TextSpan) {
+            return new RenameInfo(true, null, displayName, fullDisplayName, kind, kindModifiers, triggerSpan);
         }
     }
 

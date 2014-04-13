@@ -1721,6 +1721,14 @@ module TypeScript {
   "Object literal's property '{0}' implicitly has an 'any' type from widening.": {
     "code": 7018,
     "category": DiagnosticCategory.Error
+  },
+  "You must rename an identifier.": {
+    "code": 8000,
+    "category": DiagnosticCategory.Error
+  },
+  "You cannot rename this element.": {
+    "code": 8001,
+    "category": DiagnosticCategory.Error
   }
 };
 }
