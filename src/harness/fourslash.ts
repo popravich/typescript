@@ -784,7 +784,7 @@ module FourSlash {
             var spanInfo = this.languageService.getBreakpointStatementAtPosition(this.activeFile.fileName, pos);
             var resultString = "\n**Pos: " + pos + " SpanInfo: " + JSON.stringify(spanInfo) + "\n** Statement: ";
             if (spanInfo !== null) {
-                resultString = resultString + this.activeFile.content.substr(spanInfo.minChar, spanInfo.limChar - spanInfo.minChar);
+                resultString = resultString + this.activeFile.content.substr(spanInfo.start(), spanInfo.length());
             }
             return resultString;
         }
@@ -1108,18 +1108,18 @@ module FourSlash {
             };
         }
 
-        private applyEdits(fileName: string, edits: TypeScript.Services.TextEdit[], isFormattingEdit = false): number {
+        private applyEdits(fileName: string, edits: TypeScript.Services.TextChange[], isFormattingEdit = false): number {
             // We get back a set of edits, but langSvc.editScript only accepts one at a time. Use this to keep track
             // of the incremental offest from each edit to the next. Assumption is that these edit ranges don't overlap
             var runningOffset = 0;
-            edits = edits.sort((a, b) => a.minChar - b.minChar);
+            edits = edits.sort((a, b) => a.span.start() - b.span.start());
             // Get a snapshot of the content of the file so we can make sure any formatting edits didn't destroy non-whitespace characters
             var snapshot = this.languageServiceShimHost.getScriptSnapshot(fileName);
             var oldContent = snapshot.getText(0, snapshot.getLength());
             for (var j = 0; j < edits.length; j++) {
-                this.languageServiceShimHost.editScript(fileName, edits[j].minChar + runningOffset, edits[j].limChar + runningOffset, edits[j].text);
-                this.updateMarkersForEdit(fileName, edits[j].minChar + runningOffset, edits[j].limChar + runningOffset, edits[j].text);
-                var change = (edits[j].minChar - edits[j].limChar) + edits[j].text.length;
+                this.languageServiceShimHost.editScript(fileName, edits[j].span.start() + runningOffset, edits[j].span.end() + runningOffset, edits[j].newText);
+                this.updateMarkersForEdit(fileName, edits[j].span.start() + runningOffset, edits[j].span.end() + runningOffset, edits[j].newText);
+                var change = (edits[j].span.start() - edits[j].span.end()) + edits[j].newText.length;
                 runningOffset += change;
                 // TODO: Consider doing this at least some of the time for higher fidelity. Currently causes a failure (bug 707150)
                 // this.languageService.getScriptLexicalStructure(fileName);
@@ -1196,7 +1196,7 @@ module FourSlash {
 
             var definition = definitions[definitionIndex];
             this.openFile(definition.fileName);
-            this.currentCaretPosition = definition.minChar;
+            this.currentCaretPosition = definition.textSpan.start();
         }
 
         public verifyDefinitionLocationExists(negative: boolean) {
@@ -1302,7 +1302,7 @@ module FourSlash {
                     '\t  Actual: null');
             }
 
-            var actual = this.languageServiceShimHost.getScriptSnapshot(this.activeFile.fileName).getText(span.minChar, span.limChar);
+            var actual = this.languageServiceShimHost.getScriptSnapshot(this.activeFile.fileName).getText(span.start(), span.end());
             if (actual !== text) {
                 throw new Error('verifyCurrentNameOrDottedNameSpanText\n' +
                     '\tExpected: "' + text + '"\n' +
@@ -1314,7 +1314,7 @@ module FourSlash {
             var spanInfo = this.languageService.getNameOrDottedNameSpan(this.activeFile.fileName, pos, pos);
             var resultString = "\n**Pos: " + pos + " SpanInfo: " + JSON.stringify(spanInfo) + "\n** Statement: ";
             if (spanInfo !== null) {
-                resultString = resultString + this.languageServiceShimHost.getScriptSnapshot(this.activeFile.fileName).getText(spanInfo.minChar, spanInfo.limChar);
+                resultString = resultString + this.languageServiceShimHost.getScriptSnapshot(this.activeFile.fileName).getText(spanInfo.start(), spanInfo.end());
             }
             return resultString;
         }
@@ -1587,7 +1587,7 @@ module FourSlash {
 
             for (var i = 0; i < occurances.length; i++) {
                 var occurance = occurances[i];
-                if (occurance && occurance.fileName === fileName && occurance.minChar === start && occurance.limChar === end) {
+                if (occurance && occurance.fileName === fileName && occurance.textSpan.start() === start && occurance.textSpan.end() === end) {
                     if (typeof isWriteAccess !== "undefined" && occurance.isWriteAccess !== isWriteAccess) {
                         throw new Error('verifyOccurancesAtPositionListContains failed - item isWriteAccess value doe not match, actual: ' + occurance.isWriteAccess + ', expected: ' + isWriteAccess + '.');
                     }
