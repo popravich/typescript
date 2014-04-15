@@ -56,7 +56,10 @@ module TypeScript.Services {
 
         getBreakpointStatementAtPosition(fileName: string, position: number): TextSpan;
 
-        getSignatureAtPosition(fileName: string, position: number): SignatureInfo;
+        getSignatureHelpItems(fileName: string, position: number): SignatureHelpItems;
+        getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): number;
+        getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): number;
+        getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): TextSpan;
 
         getRenameInfo(fileName: string, position: number): RenameInfo;
         getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
@@ -121,6 +124,41 @@ module TypeScript.Services {
             public indent = 0,
             public bolded = false,
             public grayed = false) {
+        }
+    }
+
+    export class SignatureHelpParameter {
+        constructor(public name: string,
+                    public documentation: string,
+                    public display: string,
+                    public isOptional: boolean) {
+        }
+    }
+    
+    /**
+     * Represents a single signature to show in signature help.
+     * The id is used for subsequent calls into the language service to ask questions about the
+     * signature help item in the context of any documents that have been updated.  i.e. after
+     * an edit has happened, while signature help is still active, the host can ask important 
+     * questions like 'what parameter is the user currently contained within?'.
+     */
+    export class SignatureHelpItem {
+        constructor(public isVariadic: boolean,
+                    public prefix: string,
+                    public suffix: string,
+                    public separator: string,
+                    public parameters: SignatureHelpParameter[],
+                    public documentation: string,
+                    public id: any) {
+        }
+    }
+
+    /**
+     * Represents a set of signature help items, and the preferred item that should be selected.
+     */
+    export class SignatureHelpItems {
+        constructor(public items: SignatureHelpItem[],
+                    public selectedItemIndex: number) {
         }
     }
 
@@ -232,41 +270,6 @@ module TypeScript.Services {
             public kind: string,
             public textSpan: TextSpan) {
         }
-    }
-
-    export class SignatureInfo {
-        public actual: ActualSignatureInfo;
-        public formal: FormalSignatureItemInfo[] = []; // Formal signatures
-        public activeFormal: number; // Index of the "best match" formal signature
-    }
-
-    export class FormalSignatureItemInfo {
-        public signatureInfo: string;
-        public typeParameters: FormalTypeParameterInfo[] = [];
-        public parameters: FormalParameterInfo[] = [];   // Array of parameters
-        public docComment: string; // Help for the signature
-    }
-
-    export class FormalTypeParameterInfo {
-        public name: string;        // Type parameter name
-        public docComment: string;  // Comments that contain help for the parameter
-        public minChar: number;     // minChar for parameter info in the formal signature info string
-        public limChar: number;     // lim char for parameter info in the formal signature info string
-    }
-
-    export class FormalParameterInfo {
-        public name: string;        // Parameter name
-        public isVariable: boolean; // true if parameter is var args
-        public docComment: string;  // Comments that contain help for the parameter
-        public minChar: number;     // minChar for parameter info in the formal signature info string
-        public limChar: number;     // lim char for parameter info in the formal signature info string
-    }
-
-    export class ActualSignatureInfo {
-        public parameterMinChar: number;
-        public parameterLimChar: number;
-        public currentParameterIsTypeParameter: boolean; // current parameter is a type argument or a normal argument
-        public currentParameter: number;        // Index of active parameter in "parameters" or "typeParamters" array
     }
 
     export class CompletionInfo {

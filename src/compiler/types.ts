@@ -28,7 +28,7 @@ module TypeScript {
             return MemberName.memberNameToString(this);
         }
 
-        static memberNameToString(memberName: MemberName, markerInfo?: number[], markerBaseLength: number = 0): string {
+        static memberNameToString(memberName: MemberName): string {
             var result = memberName.prefix;
 
             if (memberName.isString()) {
@@ -38,13 +38,10 @@ module TypeScript {
                 var ar = <MemberNameArray>memberName;
                 for (var index = 0; index < ar.entries.length; index++) {
                     if (ar.entries[index].isMarker()) {
-                        if (markerInfo) {
-                            markerInfo.push(markerBaseLength + result.length);
-                        }
                         continue;
                     }
 
-                    result += MemberName.memberNameToString(ar.entries[index], markerInfo, markerBaseLength + result.length);
+                    result += MemberName.memberNameToString(ar.entries[index]);
                     result += ar.delim;
                 }
             }

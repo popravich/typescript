@@ -450,16 +450,130 @@ module TypeScript.Services {
             return positions;
         }
 
-        public getSignatureAtPosition(fileName: string, position: number): SignatureInfo {
+        private charAtIndex(document: Document, index: number): number {
+            var scriptSnapshot = document.scriptSnapshot;
+
+            if (index < 0 || index >= scriptSnapshot.getLength()) {
+                return null;
+            }
+
+            return scriptSnapshot.getText(index, index + 1).charCodeAt(0);
+        }
+
+        private recoverExpressionWithArgumentList(document: Document, openParenIndex: number): IExpressionWithArgumentListSyntax {
+            var sourceUnit = document.sourceUnit();
+
+            var token = sourceUnit.findToken(openParenIndex);
+            if (token && token.start() === openParenIndex && token.tokenKind === SyntaxKind.OpenParenToken &&
+                token.parent && token.parent.parent &&
+                token.parent.kind() === SyntaxKind.ArgumentList) {
+
+                if (token.parent.parent.kind() === SyntaxKind.InvocationExpression ||
+                    token.parent.parent.kind() === SyntaxKind.ObjectCreationExpression) {
+
+                    return <IExpressionWithArgumentListSyntax>token.parent.parent;
+                }
+            }
+
+            return null;
+        }
+
+        public getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): number {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var document = this.compiler.getDocument(fileName);
+            var openCharIndex: number = signatureHelpItemId;
 
-            // First check whether we are in a comment where signature help should not be displayed
-            //if (!SignatureInfoHelpers.isSignatureHelpTriggerPosition(document.syntaxTree().sourceUnit(), position)) {
-            //    this.logger.log("position is not a valid singature help location");
-            //    return null;
-            //}
+            var char = this.charAtIndex(document, openCharIndex);
+            if (char === CharacterCodes.lessThan) {
+                // TODO: handle generics.
+                return null;
+            }
+            else if (char === CharacterCodes.openParen) {
+                var expressionWithArgumentList = this.recoverExpressionWithArgumentList(document, openCharIndex);
+                return expressionWithArgumentList.argumentList.arguments.separatorCount();
+            }
+
+            return 0;
+        }
+
+        public getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): number {
+            fileName = TypeScript.switchToForwardSlashes(fileName);
+
+            var document = this.compiler.getDocument(fileName);
+            var openCharIndex: number = signatureHelpItemId;
+
+            var char = this.charAtIndex(document, openCharIndex);
+            if (char === CharacterCodes.lessThan) {
+                // TODO: handle generics.
+                return null;
+            }
+            else if (char === CharacterCodes.openParen) {
+                var expressionWithArgumentList = this.recoverExpressionWithArgumentList(document, openCharIndex);
+                var argumentList = expressionWithArgumentList.argumentList;
+
+                if (position < argumentList.openParenToken.end()) {
+                    return null;
+                }
+
+                var closeToken = argumentList.closeParenToken;
+                if (closeToken.fullWidth() > 0 &&
+                    position > closeToken.start()) {
+                    return null;
+                }
+
+                var argumentsWithSeparators = argumentList.arguments.toArray();
+                var index = 0;
+                for (var i = 1, n = argumentsWithSeparators.length; i < n; i += 2) {
+                    var element = argumentsWithSeparators[i];
+
+                    if (position >= element.end()) {
+                        index++;
+                    }
+                }
+
+                return index;
+            }
+
+            return null;
+        }
+
+        public getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): TextSpan {
+            fileName = TypeScript.switchToForwardSlashes(fileName);
+
+            var document = this.compiler.getDocument(fileName);
+            var scriptSnapshot = document.scriptSnapshot;
+            var openCharIndex: number = signatureHelpItemId;
+
+            var char = this.charAtIndex(document, openCharIndex);
+            if (char === CharacterCodes.lessThan) {
+                // TODO: handle generics.
+                return null;
+            }
+            else if (char === CharacterCodes.openParen) {
+                var expressionWithArgumentList = this.recoverExpressionWithArgumentList(document, openCharIndex);
+                var lastToken = expressionWithArgumentList.argumentList.closeParenToken;
+                if (lastToken.fullWidth() !== 0) {
+                    // invocation has a close paren.  The span that we want to pass back is from 
+                    // the start of the invocation itself, to the start of the close paren token.
+                    return TextSpan.fromBounds(expressionWithArgumentList.start(), lastToken.start());
+                }
+
+                // we're missing the close paren.  The span should be up to the start of the next 
+                // token (or the end of the document if there is no next token).
+                var nextToken = expressionWithArgumentList.lastToken().nextToken();
+                var end = nextToken === null ? scriptSnapshot.getLength() : nextToken.start();
+
+                return TextSpan.fromBounds(expressionWithArgumentList.start(), end);
+            }
+
+            return null;
+        }
+
+        public getSignatureHelpItems(fileName: string, position: number): SignatureHelpItems {
+            fileName = TypeScript.switchToForwardSlashes(fileName);
+
+            var document = this.compiler.getDocument(fileName);
 
             if (SignatureInfoHelpers.isSignatureHelpBlocker(document.syntaxTree().sourceUnit(), position)) {
                 this.logger.log("position is not a valid singature help location");
@@ -471,7 +585,9 @@ module TypeScript.Services {
             if (genericTypeArgumentListInfo) {
                 // The expression could be messed up because we are parsing a partial generic expression, so set the search path to a place where we know it
                 // can find a call expression
-                return this.getTypeParameterSignatureFromPartiallyWrittenExpression(document, position, genericTypeArgumentListInfo);
+
+                return null;
+                // return this.getSignatureHelpItemsFromPartiallyWrittenTypeArgumentList(document, position, genericTypeArgumentListInfo);
             }
 
             // Third set the path to find ask the type system about the call expression
@@ -502,8 +618,8 @@ module TypeScript.Services {
                 return null;
             }
 
-            var callExpression = <TypeScript.InvocationExpressionSyntax>node;
-            var isNew = (callExpression.kind() === TypeScript.SyntaxKind.ObjectCreationExpression);
+            var callExpression = <TypeScript.IExpressionWithArgumentListSyntax>node;
+            var isNew = callExpression.kind() === TypeScript.SyntaxKind.ObjectCreationExpression;
 
             if (isNew && callExpression.argumentList === null) {
                 this.logger.log("No signature help for a object creation expression without arguments");
@@ -516,7 +632,7 @@ module TypeScript.Services {
             var argumentsEnd = callExpression.argumentList.closeParenToken.fullWidth() > 0
                 ? callExpression.argumentList.closeParenToken.start()
                 : callExpression.argumentList.fullEnd();
-            
+
             if (position < argumentsStart || position > argumentsEnd) {
                 this.logger.log("Outside argument list");
                 return null;
@@ -529,77 +645,80 @@ module TypeScript.Services {
                 return null;
             }
 
+            // We use the start of the argument list as the 'id' for this signature help item so 
+            // that we can try to recover it later on when we get subsequent sig help questions.
+            var id = callExpression.argumentList.openParenToken.start();
+
             // Build the result
-            var result = new SignatureInfo();
+            var items = SignatureInfoHelpers.getSignatureInfoFromSignatureSymbol(
+                callSymbolInfo.targetSymbol, callSymbolInfo.resolvedSignatures, callSymbolInfo.enclosingScopeSymbol, this.compiler, id);
 
-            result.formal = SignatureInfoHelpers.getSignatureInfoFromSignatureSymbol(callSymbolInfo.targetSymbol, callSymbolInfo.resolvedSignatures, callSymbolInfo.enclosingScopeSymbol, this.compiler);
-            result.actual = SignatureInfoHelpers.getActualSignatureInfoFromCallExpression(callExpression, position, genericTypeArgumentListInfo);
-            result.activeFormal = (callSymbolInfo.resolvedSignatures && callSymbolInfo.candidateSignature) ? callSymbolInfo.resolvedSignatures.indexOf(callSymbolInfo.candidateSignature) : -1;
+            var selectedItemIndex = callSymbolInfo.resolvedSignatures && callSymbolInfo.candidateSignature
+                ? callSymbolInfo.resolvedSignatures.indexOf(callSymbolInfo.candidateSignature) 
+                : 0;
 
-            if (result.actual === null || result.formal === null || result.activeFormal === null) {
+            if (items === null || items.length === 0) {
                 this.logger.log("Can't compute actual and/or formal signature of the call expression");
                 return null;
             }
 
-            return result;
+            return new SignatureHelpItems(items, selectedItemIndex);
         }
 
-        private getTypeParameterSignatureFromPartiallyWrittenExpression(document: TypeScript.Document, position: number, genericTypeArgumentListInfo: IPartiallyWrittenTypeArgumentListInformation): SignatureInfo {
-            var sourceUnit = document.sourceUnit();
+        //private getSignatureHelpItemsFromPartiallyWrittenTypeArgumentList(document: TypeScript.Document, position: number, genericTypeArgumentListInfo: IPartiallyWrittenTypeArgumentListInformation): SignatureHelpItems {
+        //    var sourceUnit = document.sourceUnit();
 
-            // Get the identifier information
-            var ast = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, genericTypeArgumentListInfo.genericIdentifer.start());
-            if (ast === null || ast.kind() !== TypeScript.SyntaxKind.IdentifierName) {
-                this.logger.log(["getTypeParameterSignatureAtPosition: Unexpected ast found at position:", position, ast === null ? "ast was null" : "ast kind: " + SyntaxKind[ast.kind()]].join(' '));
-                return null;
-            }
+        //    // Get the identifier information
+        //    var ast = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, genericTypeArgumentListInfo.genericIdentifer.start());
+        //    if (ast === null || ast.kind() !== TypeScript.SyntaxKind.IdentifierName) {
+        //        this.logger.log(["getTypeParameterSignatureAtPosition: Unexpected ast found at position:", position, ast === null ? "ast was null" : "ast kind: " + SyntaxKind[ast.kind()]].join(' '));
+        //        return null;
+        //    }
 
-            var symbolInformation = this.compiler.getSymbolInformationFromAST(ast, document);
+        //    var symbolInformation = this.compiler.getSymbolInformationFromAST(ast, document);
 
-            if (!symbolInformation.symbol) {
-                return null;
-            }
+        //    if (!symbolInformation.symbol) {
+        //        return null;
+        //    }
 
-            // TODO: are we in an new expression?
-            var isNew = SignatureInfoHelpers.isTargetOfObjectCreationExpression(genericTypeArgumentListInfo.genericIdentifer);
+        //    // TODO: are we in an new expression?
+        //    var isNew = SignatureInfoHelpers.isTargetOfObjectCreationExpression(genericTypeArgumentListInfo.genericIdentifer);
 
-            var typeSymbol = symbolInformation.symbol.type;
+        //    var typeSymbol = symbolInformation.symbol.type;
 
-            if (typeSymbol.kind === TypeScript.PullElementKind.FunctionType ||
-                (isNew && typeSymbol.kind === TypeScript.PullElementKind.ConstructorType)) {
+        //    if (typeSymbol.kind === TypeScript.PullElementKind.FunctionType ||
+        //        (isNew && typeSymbol.kind === TypeScript.PullElementKind.ConstructorType)) {
 
-                var signatures = isNew ? typeSymbol.getConstructSignatures() : typeSymbol.getCallSignatures();
+        //        var signatures = isNew ? typeSymbol.getConstructSignatures() : typeSymbol.getCallSignatures();
 
-                // Build the result
-                var result = new SignatureInfo();
+        //        // Build the result
+        //        var items = SignatureInfoHelpers.getSignatureInfoFromSignatureSymbol(symbolInformation.symbol, signatures, symbolInformation.enclosingScopeSymbol, this.compiler);
+        //        if (items === null || items.length === 0) {
+        //            return null;
+        //        }
 
-                result.formal = SignatureInfoHelpers.getSignatureInfoFromSignatureSymbol(symbolInformation.symbol, signatures, symbolInformation.enclosingScopeSymbol, this.compiler);
-                result.actual = SignatureInfoHelpers.getActualSignatureInfoFromPartiallyWritenGenericExpression(position, genericTypeArgumentListInfo);
-                result.activeFormal = 0;
+        //        return new SignatureHelpItems(items, 0);
+        //    }
+        //    else if (typeSymbol.isGeneric()) {
+        //        // The symbol is a generic type
 
-                return result;
-            }
-            else if (typeSymbol.isGeneric()) {
-                // The symbol is a generic type
+        //        // Get the class symbol for constuctor symbol
+        //        if (typeSymbol.kind === TypeScript.PullElementKind.ConstructorType) {
+        //            typeSymbol = typeSymbol.getAssociatedContainerType();
+        //        }
 
-                // Get the class symbol for constuctor symbol
-                if (typeSymbol.kind === TypeScript.PullElementKind.ConstructorType) {
-                    typeSymbol = typeSymbol.getAssociatedContainerType();
-                }
+        //        // Build the result
+        //        var items = SignatureInfoHelpers.getSignatureInfoFromGenericSymbol(typeSymbol, symbolInformation.enclosingScopeSymbol, this.compiler);
+        //        if (items === null || items.length === 0) {
+        //            return null;
+        //        }
 
-                // Build the result
-                var result = new SignatureInfo();
+        //        return new SignatureHelpItems(items, 0);
+        //    }
 
-                result.formal = SignatureInfoHelpers.getSignatureInfoFromGenericSymbol(typeSymbol, symbolInformation.enclosingScopeSymbol, this.compiler);
-                result.actual = SignatureInfoHelpers.getActualSignatureInfoFromPartiallyWritenGenericExpression(position, genericTypeArgumentListInfo);
-                result.activeFormal = 0;
-
-                return result;
-            }
-
-            // Nothing to handle
-            return null;
-        }
+        //    // Nothing to handle
+        //    return null;
+        //}
 
         public getRenameInfo(fileName: string, position: number): RenameInfo {
             fileName = TypeScript.switchToForwardSlashes(fileName);

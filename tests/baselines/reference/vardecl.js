@@ -241,10 +241,7 @@ declare var n4: {
     (): void;
 }[];
 declare var d4: {
-    foo(n: string, x: {
-        x: number;
-        y: number;
-    }): {
+    foo(n: string, x: { x: number; y: number; }): {
         x: number;
         y: number;
     };

@@ -598,7 +598,7 @@ module TypeScript {
             return fullName;
         }
 
-        public getScopedNameEx(scopeSymbol?: PullSymbol, skipTypeParametersInName?: boolean, useConstraintInName?: boolean, getPrettyTypeName?: boolean, getTypeParamMarkerInfo?: boolean, skipInternalAliasName?: boolean) {
+        public getScopedNameEx(scopeSymbol?: PullSymbol, skipTypeParametersInName?: boolean, useConstraintInName?: boolean, getPrettyTypeName?: boolean, skipInternalAliasName?: boolean) {
             var name = this.getScopedName(scopeSymbol, skipTypeParametersInName, useConstraintInName, skipInternalAliasName);
             return MemberName.create(name);
         }
@@ -657,10 +657,10 @@ module TypeScript {
         }
 
         static getTypeParameterString(typars: PullTypeSymbol[], scopeSymbol?: PullSymbol, useContraintInName?: boolean) {
-            return PullSymbol.getTypeParameterStringEx(typars, scopeSymbol, /*getTypeParamMarkerInfo:*/ undefined, useContraintInName).toString();
+            return PullSymbol.getTypeParameterStringEx(typars, scopeSymbol, useContraintInName).toString();
         }
 
-        static getTypeParameterStringEx(typeParameters: PullTypeSymbol[], scopeSymbol?: PullSymbol, getTypeParamMarkerInfo?: boolean, useContraintInName?: boolean) {
+        static getTypeParameterStringEx(typeParameters: PullTypeSymbol[], scopeSymbol?: PullSymbol, useContraintInName?: boolean) {
             var builder = new MemberNameArray();
             builder.prefix = "";
 
@@ -672,15 +672,7 @@ module TypeScript {
                         builder.add(MemberName.create(", "));
                     }
 
-                    if (getTypeParamMarkerInfo) {
-                        builder.add(new MemberName());
-                    }
-
                     builder.add(typeParameters[i].getScopedNameEx(scopeSymbol, /*skipTypeParametersInName*/ false, useContraintInName));
-
-                    if (getTypeParamMarkerInfo) {
-                        builder.add(new MemberName());
-                    }
                 }
 
                 builder.add(MemberName.create(">"));
@@ -1386,52 +1378,32 @@ module TypeScript {
         }
 
         public toString(scopeSymbol?: PullSymbol, useConstraintInName?: boolean) {
-            var s = this.getSignatureTypeNameEx(this.getScopedNameEx().toString(), /*shortform*/ false, /*brackets*/ false, scopeSymbol, /*getParamMarkerInfo*/ undefined, useConstraintInName).toString();
+            var s = this.getSignatureTypeNameEx(this.getScopedNameEx().toString(), /*shortform*/ false, /*brackets*/ false, scopeSymbol).toString();
             return s;
         }
 
-        public getSignatureTypeNameEx(prefix: string, shortform: boolean, brackets: boolean, scopeSymbol?: PullSymbol, getParamMarkerInfo?: boolean, getTypeParamMarkerInfo?: boolean) {
-            var typeParamterBuilder = new MemberNameArray();
+        public getSignatureTypeNameEx(prefix: string, shortform: boolean, brackets: boolean, scopeSymbol?: PullSymbol) {
+            var typeParameterBuilder = new MemberNameArray();
 
-            typeParamterBuilder.add(PullSymbol.getTypeParameterStringEx(
-                this.getTypeParameters(), scopeSymbol, getTypeParamMarkerInfo, /*useConstraintInName*/true));
+            typeParameterBuilder.add(PullSymbol.getTypeParameterStringEx(
+                this.getTypeParameters(), scopeSymbol, /*useConstraintInName*/true));
 
             if (brackets) {
-                typeParamterBuilder.add(MemberName.create("["));
+                typeParameterBuilder.add(MemberName.create("["));
             }
             else {
-                typeParamterBuilder.add(MemberName.create("("));
+                typeParameterBuilder.add(MemberName.create("("));
             }
 
             var builder = new MemberNameArray();
             builder.prefix = prefix;
-
-            if (getTypeParamMarkerInfo) {
-                builder.prefix = prefix;
-                builder.addAll(typeParamterBuilder.entries);
-            }
-            else {
-                builder.prefix = prefix + typeParamterBuilder.toString();
-            }
+            builder.prefix = prefix + typeParameterBuilder.toString();
 
             var params = this.parameters;
             var paramLen = params.length;
             for (var i = 0; i < paramLen; i++) {
-                var paramType = params[i].type;
-                var typeString = paramType ? ": " : "";
-                var paramIsVarArg = params[i].isVarArg;
-                var varArgPrefix = paramIsVarArg ? "..." : "";
-                var optionalString = (!paramIsVarArg && params[i].isOptional) ? "?" : "";
-                if (getParamMarkerInfo) {
-                    builder.add(new MemberName());
-                }
-                builder.add(MemberName.create(varArgPrefix + params[i].getScopedNameEx(scopeSymbol).toString() + optionalString + typeString));
-                if (paramType) {
-                    builder.add(paramType.getScopedNameEx(scopeSymbol));
-                }
-                if (getParamMarkerInfo) {
-                    builder.add(new MemberName());
-                }
+                builder.add(new MemberNameString(PullSignatureSymbol.getParameterString(params[i], scopeSymbol)));
+
                 if (i < paramLen - 1) {
                     builder.add(MemberName.create(", "));
                 }
@@ -1462,6 +1434,23 @@ module TypeScript {
             }
 
             return builder;
+        }
+
+        public static getParameterString(param: PullSymbol, scopeSymbol: PullSymbol): string {
+            var builder = new MemberNameArray();
+
+            var paramType = param.type;
+            var typeString = paramType ? ": " : "";
+            var paramIsVarArg = param.isVarArg;
+            var varArgPrefix = paramIsVarArg ? "..." : "";
+            var optionalString = (!paramIsVarArg && param.isOptional) ? "?" : "";
+
+            builder.add(MemberName.create(varArgPrefix + param.getScopedNameEx(scopeSymbol).toString() + optionalString + typeString));
+            if (paramType) {
+                builder.add(paramType.getScopedNameEx(scopeSymbol));
+            }
+
+            return MemberNameArray.memberNameToString(builder);
         }
 
         public forAllParameterTypes(length: number, predicate: (parameterType: PullTypeSymbol, iterationIndex: number) => boolean): boolean {
@@ -2671,7 +2660,7 @@ module TypeScript {
         }
 
         public getScopedName(scopeSymbol?: PullSymbol, skipTypeParametersInName?: boolean, useConstraintInName?: boolean, skipInternalAliasName?: boolean): string {
-            return this.getScopedNameEx(scopeSymbol, skipTypeParametersInName, useConstraintInName, /*getPrettyTypeName*/ false, /*getTypeParamMarkerInfskipInternalAliasName*/ false, skipInternalAliasName).toString();
+            return this.getScopedNameEx(scopeSymbol, skipTypeParametersInName, useConstraintInName, /*getPrettyTypeName*/ false, skipInternalAliasName).toString();
         }
 
         public isNamedTypeSymbol(): boolean {
@@ -2700,7 +2689,6 @@ module TypeScript {
             skipTypeParametersInName?: boolean,
             useConstraintInName?: boolean,
             getPrettyTypeName?: boolean,
-            getTypeParamMarkerInfo?: boolean,
             skipInternalAliasName?: boolean,
             shouldAllowArrayType: boolean = true): MemberName {
 
@@ -2713,7 +2701,6 @@ module TypeScript {
                         /*skipTypeParametersInName*/ false,
                         /*useConstraintInName*/ false,
                         getPrettyTypeName,
-                        getTypeParamMarkerInfo,
                         skipInternalAliasName) :
                     elementType.getMemberTypeNameEx(/*topLevel*/ false, scopeSymbol, getPrettyTypeName)) :
                     MemberName.create("any");
@@ -2732,7 +2719,7 @@ module TypeScript {
                 builder.prefix = super.getScopedName(scopeSymbol, skipTypeParametersInName, useConstraintInName, skipInternalAliasName);
 
                 var typars = this.getTypeArgumentsOrTypeParameters();
-                builder.add(PullSymbol.getTypeParameterStringEx(typars, scopeSymbol, getTypeParamMarkerInfo, useConstraintInName));
+                builder.add(PullSymbol.getTypeParameterStringEx(typars, scopeSymbol, useConstraintInName));
 
                 return builder;
             }

@@ -657,22 +657,22 @@ module FourSlash {
             this.taoInvalidReason = 'verifyCurrentSignatureHelpIs NYI';
 
             var help = this.getActiveSignatureHelp();
-            assert.equal(help.signatureInfo, expected);
+            assert.equal(help.prefix + help.parameters.map(p => p.display).join(help.separator) + help.suffix, expected);
         }
 
         public verifyCurrentParameterIsVariable(isVariable: boolean) {
             this.taoInvalidReason = 'verifyCurrentParameterIsVariable NYI';
 
-            var activeParameter = this.getActiveParameter();
-            assert.notNull(activeParameter.parameter);
-            assert.equal(isVariable, activeParameter.parameter.isVariable);
+            var signature = this.getActiveSignatureHelp();
+            assert.notNull(signature);
+            assert.equal(isVariable, signature.isVariadic);
         }
 
         public verifyCurrentParameterHelpName(name: string) {
             this.taoInvalidReason = 'verifyCurrentParameterHelpName NYI';
 
             var activeParameter = this.getActiveParameter();
-            var activeParameterName = activeParameter.parameter ? activeParameter.parameter.name : activeParameter.typeParameter.name;
+            var activeParameterName = activeParameter.name;
             assert.equal(activeParameterName, name);
         }
 
@@ -681,16 +681,14 @@ module FourSlash {
 
             var activeSignature = this.getActiveSignatureHelp();
             var activeParameter = this.getActiveParameter();
-            var activeParameterMinChar = activeParameter.parameter ? activeParameter.parameter.minChar : activeParameter.typeParameter.minChar;
-            var activeParameterLimChar = activeParameter.parameter ? activeParameter.parameter.limChar : activeParameter.typeParameter.limChar;
-            assert.equal(activeSignature.signatureInfo.substring(activeParameterMinChar, activeParameterLimChar), parameter);
+            assert.equal(activeParameter.display, parameter);
         }
 
         public verifyCurrentParameterHelpDocComment(docComment: string) {
             this.taoInvalidReason = 'verifyCurrentParameterHelpDocComment NYI';
 
             var activeParameter = this.getActiveParameter();
-            var activeParameterDocComment = activeParameter.parameter ? activeParameter.parameter.docComment : activeParameter.typeParameter.docComment;
+            var activeParameterDocComment = activeParameter.documentation;
             assert.equal(activeParameterDocComment, docComment);
         }
 
@@ -703,13 +701,13 @@ module FourSlash {
         public verifyCurrentSignatureHelpTypeParameterCount(expectedCount: number) {
             this.taoInvalidReason = 'verifyCurrentSignatureHelpTypeParameterCount NYI';
 
-            assert.equal(this.getActiveSignatureHelp().typeParameters.length, expectedCount);
+            // assert.equal(this.getActiveSignatureHelp().typeParameters.length, expectedCount);
         }
 
         public verifyCurrentSignatureHelpDocComment(docComment: string) {
             this.taoInvalidReason = 'verifyCurrentSignatureHelpDocComment NYI';
 
-            var actualDocComment = this.getActiveSignatureHelp().docComment;
+            var actualDocComment = this.getActiveSignatureHelp().documentation;
             assert.equal(actualDocComment, docComment);
         }
 
@@ -717,15 +715,15 @@ module FourSlash {
             this.scenarioActions.push('<InvokeSignatureHelp />');
             this.scenarioActions.push('<VerifySignatureHelpOverloadCountEquals Count="' + expected + '" />');
 
-            var help = this.languageService.getSignatureAtPosition(this.activeFile.fileName, this.currentCaretPosition);
-            var actual = help && help.formal ? help.formal.length : 0;
+            var help = this.languageService.getSignatureHelpItems(this.activeFile.fileName, this.currentCaretPosition);
+            var actual = help && help.items ? help.items.length : 0;
             assert.equal(actual, expected);
         }
 
         public verifySignatureHelpPresent(shouldBePresent = true) {
             this.taoInvalidReason = 'verifySignatureHelpPresent NYI';
 
-            var actual = this.languageService.getSignatureAtPosition(this.activeFile.fileName, this.currentCaretPosition);
+            var actual = this.languageService.getSignatureHelpItems(this.activeFile.fileName, this.currentCaretPosition);
             if (shouldBePresent) {
                 if (!actual) {
                     throw new Error("Expected signature help to be present, but it wasn't");
@@ -737,45 +735,32 @@ module FourSlash {
             }
         }
 
-        private getFormalParameter() {
-            var help = this.languageService.getSignatureAtPosition(this.activeFile.fileName, this.currentCaretPosition);
-            return help.formal;
-        }
+        //private getFormalParameter() {
+        //    var help = this.languageService.getSignatureHelpItems(this.activeFile.fileName, this.currentCaretPosition);
+        //    return help.formal;
+        //}
 
         private getActiveSignatureHelp() {
-            var help = this.languageService.getSignatureAtPosition(this.activeFile.fileName, this.currentCaretPosition);
-            var activeFormal = help.activeFormal;
+            var help = this.languageService.getSignatureHelpItems(this.activeFile.fileName, this.currentCaretPosition);
 
             // If the signature hasn't been narrowed down yet (e.g. no parameters have yet been entered),
             // 'activeFormal' will be -1 (even if there is only 1 signature). Signature help will show the
             // first signature in the signature group, so go with that
-            if (activeFormal === -1) {
-                activeFormal = 0;
-            }
+            var index = help.selectedItemIndex < 0 ? 0 : help.selectedItemIndex;
 
-            return help.formal[activeFormal];
+            return help.items[index];
         }
 
-        private getActiveParameter(): { parameter: TypeScript.Services.FormalParameterInfo; typeParameter: TypeScript.Services.FormalTypeParameterInfo; } {
+        private getActiveParameter(): TypeScript.Services.SignatureHelpParameter {
             var currentSig = this.getActiveSignatureHelp();
-            var help = this.languageService.getSignatureAtPosition(this.activeFile.fileName, this.currentCaretPosition);
+            var help = this.languageService.getSignatureHelpItems(this.activeFile.fileName, this.currentCaretPosition);
+
+            var item = help.items[help.selectedItemIndex];
+            var index = this.languageService.getSignatureHelpCurrentParameterIndex(this.activeFile.fileName, this.currentCaretPosition, item.id);
 
             // Same logic as in getActiveSignatureHelp - this value might be -1 until a parameter value actually gets typed
-            var currentParam = help.actual.currentParameter;
-            if (currentParam === -1) currentParam = 0;
-
-            if (help.actual.currentParameterIsTypeParameter) {
-                return {
-                    parameter: null,
-                    typeParameter: currentSig.typeParameters[currentParam]
-                };
-            }
-            else {
-                return {
-                    parameter: currentSig.parameters[currentParam],
-                    typeParameter: null
-                };
-            }
+            var currentParam = index === null ? 0 : index;
+            return item.parameters[currentParam];
         }
 
         public getBreakpointStatementLocation(pos: number) {
@@ -815,7 +800,7 @@ module FourSlash {
         }
 
         public printCurrentParameterHelp() {
-            var help = this.languageService.getSignatureAtPosition(this.activeFile.fileName, this.currentCaretPosition);
+            var help = this.languageService.getSignatureHelpItems(this.activeFile.fileName, this.currentCaretPosition);
             TypeScript.IO.printLine(JSON.stringify(help));
         }
 
@@ -998,7 +983,7 @@ module FourSlash {
 
                 if (ch === '(' || ch === ',') {
                     /* Signature help*/
-                    this.languageService.getSignatureAtPosition(this.activeFile.fileName, offset);
+                    this.languageService.getSignatureHelpItems(this.activeFile.fileName, offset);
                 } else if (prevChar === ' ' && /A-Za-z_/.test(ch)) {
                     /* Completions */
                     this.languageService.getCompletionsAtPosition(this.activeFile.fileName, offset, false);

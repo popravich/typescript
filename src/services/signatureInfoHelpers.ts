@@ -138,8 +138,13 @@ module TypeScript.Services {
             return null;
         }
 
-        public static getSignatureInfoFromSignatureSymbol(symbol: TypeScript.PullSymbol, signatures: TypeScript.PullSignatureSymbol[], enclosingScopeSymbol: TypeScript.PullSymbol, compilerState: LanguageServiceCompiler) {
-            var signatureGroup: FormalSignatureItemInfo[] = [];
+        public static getSignatureInfoFromSignatureSymbol(
+                symbol: TypeScript.PullSymbol,
+                signatures: TypeScript.PullSignatureSymbol[],
+                enclosingScopeSymbol: TypeScript.PullSymbol,
+                compilerState: LanguageServiceCompiler,
+                id: any): SignatureHelpItem[] {
+            var signatureGroup: SignatureHelpItem[] = [];
 
             var hasOverloads = signatures.length > 1;
 
@@ -151,79 +156,71 @@ module TypeScript.Services {
                     continue;
                 }
 
-                var signatureGroupInfo = new FormalSignatureItemInfo();
-                var paramIndexInfo: number[] = [];
+                // var signatureGroupInfo = new FormalSignatureItemInfo();
                 var functionName = signature.getScopedNameEx(enclosingScopeSymbol).toString();
                 if (!functionName && (!symbol.isType() || (<TypeScript.PullTypeSymbol>symbol).isNamedTypeSymbol())) {
                     functionName = symbol.getScopedNameEx(enclosingScopeSymbol).toString();
                 }
 
-                var signatureMemberName = signature.getSignatureTypeNameEx(functionName, /*shortform*/ false, /*brackets*/ false, enclosingScopeSymbol, /*getParamMarkerInfo*/ true, /*getTypeParameterMarkerInfo*/ true);
-                signatureGroupInfo.signatureInfo = TypeScript.MemberName.memberNameToString(signatureMemberName, paramIndexInfo);
-                signatureGroupInfo.docComment = signature.docComments();
+                var signatureMemberName = PullSymbol.getTypeParameterStringEx(
+                    signature.getTypeParameters(), enclosingScopeSymbol, /*useConstraintInName:*/false);
 
-                var parameterMarkerIndex = 0;
+                var prefix = functionName + TypeScript.MemberName.memberNameToString(signatureMemberName) + "(";
 
-                if (signature.isGeneric()) {
-                    var typeParameters = signature.getTypeParameters();
-                    for (var j = 0, m = typeParameters.length; j < m; j++) {
-                        var typeParameter = typeParameters[j];
-                        var signatureTypeParameterInfo = new FormalTypeParameterInfo();
-                        signatureTypeParameterInfo.name = typeParameter.getDisplayName();
-                        signatureTypeParameterInfo.docComment = typeParameter.docComments();
-                        signatureTypeParameterInfo.minChar = paramIndexInfo[2 * parameterMarkerIndex];
-                        signatureTypeParameterInfo.limChar = paramIndexInfo[2 * parameterMarkerIndex + 1];
-                        parameterMarkerIndex++;
-                        signatureGroupInfo.typeParameters.push(signatureTypeParameterInfo);
-                    }
+                var parameters: SignatureHelpParameter[] = [];
+
+                for (var j = 0, m = signature.parameters.length; j < m; j++) {
+                    var parameter = signature.parameters[j];
+
+                    var display = PullSignatureSymbol.getParameterString(parameter, enclosingScopeSymbol);
+                    parameters.push(new SignatureHelpParameter(
+                        parameter.name, parameter.docComments(), display, parameter.isOptional));
                 }
 
-                var parameters = signature.parameters;
-                for (var j = 0, m = parameters.length; j < m; j++) {
-                    var parameter = parameters[j];
-                    var signatureParameterInfo = new FormalParameterInfo();
-                    signatureParameterInfo.isVariable = signature.hasVarArgs && (j === parameters.length - 1);
-                    signatureParameterInfo.name = parameter.getDisplayName();
-                    signatureParameterInfo.docComment = parameter.docComments();
-                    signatureParameterInfo.minChar = paramIndexInfo[2 * parameterMarkerIndex];
-                    signatureParameterInfo.limChar = paramIndexInfo[2 * parameterMarkerIndex + 1];
-                    parameterMarkerIndex++;
-                    signatureGroupInfo.parameters.push(signatureParameterInfo);
+                var suffix = ")";
+                if (signature.returnType !== null) {
+                    suffix += ": " + signature.returnType.getScopedNameEx(enclosingScopeSymbol);
                 }
 
-                signatureGroup.push(signatureGroupInfo);
+                var item = new SignatureHelpItem(signature.isVarArg, prefix, suffix, ", ", parameters, signature.docComments(), id);
+
+                signatureGroup.push(item);
             }
 
             return signatureGroup;
         }
 
-        public static getSignatureInfoFromGenericSymbol(symbol: TypeScript.PullSymbol, enclosingScopeSymbol: TypeScript.PullSymbol, compilerState: LanguageServiceCompiler) {
-            var signatureGroupInfo = new FormalSignatureItemInfo();
+        //public static getSignatureInfoFromGenericSymbol(
+        //        symbol: TypeScript.PullSymbol,
+        //        enclosingScopeSymbol: TypeScript.PullSymbol,
+        //        compilerState: LanguageServiceCompiler): SignatureHelpItem[] {
+        //    var signatureGroupInfo = new FormalSignatureItemInfo();
 
-            var paramIndexInfo: number[] = [];
-            var symbolName = symbol.getScopedNameEx(enclosingScopeSymbol, /*skipTypeParametersInName*/ false, /*useConstaintInName*/ true, /*getPrettyTypeName*/ false, /*getTypeParamMarkerInfo*/ true);
+        //    var paramIndexInfo: number[] = [];
+        //    var symbolName = symbol.getScopedNameEx(enclosingScopeSymbol, /*skipTypeParametersInName*/ false, /*useConstaintInName*/ true, /*getPrettyTypeName*/ false, /*getTypeParamMarkerInfo*/ true);
 
-            signatureGroupInfo.signatureInfo = TypeScript.MemberName.memberNameToString(symbolName, paramIndexInfo);
-            signatureGroupInfo.docComment = symbol.docComments();
+        //    signatureGroupInfo.signatureInfo = TypeScript.MemberName.memberNameToString(symbolName, paramIndexInfo);
+        //    signatureGroupInfo.docComment = symbol.docComments();
 
-            var parameterMarkerIndex = 0;
+        //    var parameterMarkerIndex = 0;
 
-            var typeSymbol = symbol.type;
+        //    var typeSymbol = symbol.type;
 
-            var typeParameters = typeSymbol.getTypeParameters();
-            for (var i = 0, n = typeParameters.length; i < n; i++) {
-                var typeParameter = typeParameters[i];
-                var signatureTypeParameterInfo = new FormalTypeParameterInfo();
-                signatureTypeParameterInfo.name = typeParameter.getDisplayName();
-                signatureTypeParameterInfo.docComment = typeParameter.docComments();
-                signatureTypeParameterInfo.minChar = paramIndexInfo[2 * i];
-                signatureTypeParameterInfo.limChar = paramIndexInfo[2 * i + 1];
-                signatureGroupInfo.typeParameters.push(signatureTypeParameterInfo);
-            }
+        //    var typeParameters = typeSymbol.getTypeParameters();
+        //    for (var i = 0, n = typeParameters.length; i < n; i++) {
+        //        var typeParameter = typeParameters[i];
+        //        var signatureTypeParameterInfo = new FormalTypeParameterInfo();
+        //        signatureTypeParameterInfo.name = typeParameter.getDisplayName();
+        //        signatureTypeParameterInfo.docComment = typeParameter.docComments();
+        //        signatureTypeParameterInfo.minChar = paramIndexInfo[2 * i];
+        //        signatureTypeParameterInfo.limChar = paramIndexInfo[2 * i + 1];
+        //        signatureGroupInfo.typeParameters.push(signatureTypeParameterInfo);
+        //    }
 
-            return [signatureGroupInfo];
-        }
+        //    return [signatureGroupInfo];
+        //}
 
+        /*
         public static getActualSignatureInfoFromCallExpression(ast: TypeScript.IExpressionWithArgumentListSyntax, caretPosition: number, typeParameterInformation: IPartiallyWrittenTypeArgumentListInformation): ActualSignatureInfo {
             if (!ast) {
                 return null;
@@ -278,6 +275,7 @@ module TypeScript.Services {
 
             return result;
         }
+    */
 
         public static isSignatureHelpBlocker(sourceUnit: TypeScript.SourceUnitSyntax, position: number): boolean {
             // We shouldn't be getting a possition that is outside the file because

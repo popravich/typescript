@@ -109,7 +109,7 @@ function getIntellisenseCompletionListRegions(scriptText: string): spanInformati
 }
 
 function getIntellisenseSignatureRegions(scriptText: string): spanInformation[] {
-    return getIntellisenseRegions(scriptText, function(ls, filename, i) { return ls.getSignatureAtPosition(filename, i); });
+    return getIntellisenseRegions(scriptText, function(ls, filename, i) { return ls.getSignatureHelpItems(filename, i); });
 }
 
 function getIntellisenseRegions(scriptText: string, getDataAtPoint: (ls: TypeScript.Services.ILanguageServiceShim, fileName: string, index: number) => any): spanInformation[] {

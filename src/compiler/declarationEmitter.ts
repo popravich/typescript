@@ -257,8 +257,7 @@ module TypeScript {
                 declarationPullSymbol, 
                 /*skipTypeParametersInName?*/ false, 
                 /*useConstraintInName?*/ false, 
-                /*getPrettyTypeName?*/ false, 
-                /*getTypeParamMarkerInfo?*/ false, 
+                /*getPrettyTypeName?*/ false,
                 /*skipInternalAliasName?*/ false,
                 /*shouldAllowArrayType:*/ isNotAGenericType);
             this.emitTypeNamesMember(typeNameMembers);

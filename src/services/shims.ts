@@ -96,7 +96,11 @@ module TypeScript.Services {
         getTypeAtPosition(fileName: string, position: number): string;
         getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): string;
         getBreakpointStatementAtPosition(fileName: string, position: number): string;
-        getSignatureAtPosition(fileName: string, position: number): string;
+
+        getSignatureHelpItems(fileName: string, position: number): string;
+        getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): string;
+        getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): string;
+        getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): string;
 
         // Returns a JSON encoded value of the type:
         // { canRename: boolean, localizedErrorMessage: string, displayName: string, fullDisplayName: string, kind: string, kindModifiers: string, triggerSpan: { start; length } }
@@ -450,11 +454,38 @@ module TypeScript.Services {
         /// SIGNATUREHELP
         /// Computes a string representation of the signatures at the requested position
         /// in the active file.
-        public getSignatureAtPosition(fileName: string, position: number): string {
+        public getSignatureHelpItems(fileName: string, position: number): string {
             return this.forwardJSONCall(
-                "getSignatureAtPosition(\"" + fileName + "\", " + position + ")",
+                "getSignatureHelpItems(\"" + fileName + "\", " + position + ")",
                 () => {
-                    var signatureInfo = this.languageService.getSignatureAtPosition(fileName, position);
+                    var signatureInfo = this.languageService.getSignatureHelpItems(fileName, position);
+                    return signatureInfo;
+                });
+        }
+
+        public getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): string {
+            return this.forwardJSONCall(
+                "getSignatureHelpCurrentArgumentCount(\"" + fileName + "\", " + signatureHelpItemId + ")",
+                () => {
+                    var signatureInfo = this.languageService.getSignatureHelpCurrentArgumentCount(fileName, signatureHelpItemId);
+                    return signatureInfo;
+                });
+        }
+
+        public getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): string {
+            return this.forwardJSONCall(
+                "getSignatureHelpCurrentParameterIndex(\"" + fileName + "\", " + signatureHelpItemId + ")",
+                () => {
+                    var signatureInfo = this.languageService.getSignatureHelpCurrentParameterIndex(fileName, position, signatureHelpItemId);
+                    return signatureInfo;
+                });
+        }
+
+        public getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): string {
+            return this.forwardJSONCall(
+                "getSignatureHelpCurrentTextSpan(\"" + fileName + "\", " + signatureHelpItemId + ")",
+                () => {
+                    var signatureInfo = this.languageService.getSignatureHelpCurrentTextSpan(fileName, signatureHelpItemId);
                     return signatureInfo;
                 });
         }
@@ -494,8 +525,7 @@ module TypeScript.Services {
                 "getIndentationAtPosition(\"" + fileName + "\", " + position + ")",
                 () => {
                     var localOptions: TypeScript.Services.EditorOptions = JSON.parse(options);
-                    var columnOffset = this.languageService.getIndentationAtPosition(fileName, position, localOptions);
-                    return { value: columnOffset };
+                    return this.languageService.getIndentationAtPosition(fileName, position, localOptions);
                 });
         }
 
