@@ -69221,15 +69221,17 @@ var TypeScript;
                 } else {
                     var modifiers = nameIndex === 0 ? node.modifiers : TypeScript.Syntax.list([TypeScript.Syntax.token(47 /* ExportKeyword */)]);
                     var name = names[nameIndex];
-                    var kind = Services.ScriptElementKind.moduleElement;
+                    if (name) {
+                        var kind = Services.ScriptElementKind.moduleElement;
 
-                    this.createItem(node, node.modifiers, kind, name);
+                        this.createItem(node, node.modifiers, kind, name);
 
-                    this.pushNewContainerScope(name, kind);
+                        this.pushNewContainerScope(name, kind);
 
-                    this.visitModuleDeclarationWorker(node, names, nameIndex + 1);
+                        this.visitModuleDeclarationWorker(node, names, nameIndex + 1);
 
-                    this.popScope();
+                        this.popScope();
+                    }
                 }
             };
 
@@ -69257,30 +69259,34 @@ var TypeScript;
 
             GetScriptLexicalStructureWalker.prototype.visitClassDeclaration = function (node) {
                 var name = node.identifier.text();
-                var kind = Services.ScriptElementKind.classElement;
+                if (name) {
+                    var kind = Services.ScriptElementKind.classElement;
 
-                this.createItem(node, node.modifiers, kind, name);
+                    this.createItem(node, node.modifiers, kind, name);
 
-                this.pushNewContainerScope(name, kind);
+                    this.pushNewContainerScope(name, kind);
 
-                _super.prototype.visitClassDeclaration.call(this, node);
+                    _super.prototype.visitClassDeclaration.call(this, node);
 
-                this.popScope();
+                    this.popScope();
+                }
             };
 
             GetScriptLexicalStructureWalker.prototype.visitInterfaceDeclaration = function (node) {
                 var name = node.identifier.text();
-                var kind = Services.ScriptElementKind.interfaceElement;
+                if (name) {
+                    var kind = Services.ScriptElementKind.interfaceElement;
 
-                this.createItem(node, node.modifiers, kind, name);
+                    this.createItem(node, node.modifiers, kind, name);
 
-                this.pushNewContainerScope(name, kind);
+                    this.pushNewContainerScope(name, kind);
 
-                this.currentInterfaceDeclaration = node;
-                _super.prototype.visitInterfaceDeclaration.call(this, node);
-                this.currentInterfaceDeclaration = null;
+                    this.currentInterfaceDeclaration = node;
+                    _super.prototype.visitInterfaceDeclaration.call(this, node);
+                    this.currentInterfaceDeclaration = null;
 
-                this.popScope();
+                    this.popScope();
+                }
             };
 
             GetScriptLexicalStructureWalker.prototype.visitObjectType = function (node) {
@@ -69293,15 +69299,17 @@ var TypeScript;
 
             GetScriptLexicalStructureWalker.prototype.visitEnumDeclaration = function (node) {
                 var name = node.identifier.text();
-                var kind = Services.ScriptElementKind.enumElement;
+                if (name) {
+                    var kind = Services.ScriptElementKind.enumElement;
 
-                this.createItem(node, node.modifiers, kind, name);
+                    this.createItem(node, node.modifiers, kind, name);
 
-                this.pushNewContainerScope(name, kind);
+                    this.pushNewContainerScope(name, kind);
 
-                _super.prototype.visitEnumDeclaration.call(this, node);
+                    _super.prototype.visitEnumDeclaration.call(this, node);
 
-                this.popScope();
+                    this.popScope();
+                }
             };
 
             GetScriptLexicalStructureWalker.prototype.visitConstructorDeclaration = function (node) {
