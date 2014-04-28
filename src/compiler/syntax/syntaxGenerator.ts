@@ -1298,6 +1298,8 @@ function isOptional(child: IMemberDefinition) {
 }
 
 function generateFactory1Method(definition: ITypeDefinition): string {
+    return "";
+
     var mandatoryChildren = TypeScript.ArrayUtilities.where(
         definition.children, c => !isOptional(c));
     if (mandatoryChildren.length === definition.children.length) {
@@ -1402,6 +1404,8 @@ function isMandatory(child: IMemberDefinition): boolean {
 }
 
 function generateFactory2Method(definition: ITypeDefinition): string {
+    return "";
+
     var mandatoryChildren: IMemberDefinition[] = TypeScript.ArrayUtilities.where(definition.children, isMandatory);
     if (mandatoryChildren.length === definition.children.length) {
         return "";
@@ -1737,6 +1741,8 @@ function generateAccessors(definition: ITypeDefinition): string {
 }
 
 function generateWithMethod(definition: ITypeDefinition, child: IMemberDefinition): string {
+    return "";
+
     var result = "";
     result += "\r\n";
     result += "        public with" + pascalCase(child.name) + "(" + getSafeName(child) + ": " + getType(child) + "): " + definition.name + " {\r\n";
@@ -1787,6 +1793,7 @@ function generateWithMethod(definition: ITypeDefinition, child: IMemberDefinitio
 
 function generateWithMethods(definition: ITypeDefinition): string {
     var result = "";
+    return "";
 
     for (var i = 0; i < definition.children.length; i++) {
         var child = definition.children[i];
@@ -1797,6 +1804,8 @@ function generateWithMethods(definition: ITypeDefinition): string {
 }
 
 function generateTriviaMethods(definition: ITypeDefinition): string {
+    return "";
+
     var result = "\r\n";
     result += "        public withLeadingTrivia(trivia: ISyntaxTriviaList): " + definition.name + " {\r\n";
     result += "            return <" + definition.name + ">super.withLeadingTrivia(trivia);\r\n";
@@ -1809,6 +1818,8 @@ function generateTriviaMethods(definition: ITypeDefinition): string {
 }
 
 function generateUpdateMethod(definition: ITypeDefinition): string {
+    // return "";
+
     var result = "";
 
     result += "\r\n";
