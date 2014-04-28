@@ -8,7 +8,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !moduleElements.isShared() && (moduleElements.parent = this);
+            endOfFileToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -86,7 +87,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            requireKeyword.parent = this;
+            openParenToken.parent = this;
+            stringLiteral.parent = this;
+            closeParenToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -164,7 +168,7 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            moduleName.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -225,7 +229,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            importKeyword.parent = this;
+            identifier.parent = this;
+            equalsToken.parent = this;
+            moduleReference.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -330,7 +339,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            exportKeyword.parent = this;
+            equalsToken.parent = this;
+            identifier.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -421,7 +433,14 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            classKeyword.parent = this;
+            identifier.parent = this;
+            typeParameterList && (typeParameterList.parent = this);
+            !heritageClauses.isShared() && (heritageClauses.parent = this);
+            openBraceToken.parent = this;
+            !classElements.isShared() && (classElements.parent = this);
+            closeBraceToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -547,7 +566,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            interfaceKeyword.parent = this;
+            identifier.parent = this;
+            typeParameterList && (typeParameterList.parent = this);
+            !heritageClauses.isShared() && (heritageClauses.parent = this);
+            body.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -656,7 +680,8 @@ module TypeScript {
             super(data); 
 
             this._kind = kind;
-            Syntax.setParentForChildren(this);
+            extendsOrImplementsKeyword.parent = this;
+            !typeNames.isShared() && (typeNames.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -729,7 +754,13 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            moduleKeyword.parent = this;
+            name && (name.parent = this);
+            stringLiteral && (stringLiteral.parent = this);
+            openBraceToken.parent = this;
+            !moduleElements.isShared() && (moduleElements.parent = this);
+            closeBraceToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -844,7 +875,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            functionKeyword.parent = this;
+            identifier.parent = this;
+            callSignature.parent = this;
+            block && (block.parent = this);
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -953,7 +989,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            variableDeclaration.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1040,7 +1078,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            varKeyword.parent = this;
+            !variableDeclarators.isShared() && (variableDeclarators.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1109,7 +1148,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            propertyName.parent = this;
+            typeAnnotation && (typeAnnotation.parent = this);
+            equalsValueClause && (equalsValueClause.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1184,7 +1225,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            equalsToken.parent = this;
+            value.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1252,7 +1294,8 @@ module TypeScript {
             super(data); 
 
             this._kind = kind;
-            Syntax.setParentForChildren(this);
+            operatorToken.parent = this;
+            operand.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1326,7 +1369,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            openBracketToken.parent = this;
+            !expressions.isShared() && (expressions.parent = this);
+            closeBracketToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1426,7 +1471,6 @@ module TypeScript {
     export class OmittedExpressionSyntax extends SyntaxNode implements IExpressionSyntax {
         constructor(data: number) {
             super(data); 
-            Syntax.setParentForChildren(this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1473,7 +1517,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            openParenToken.parent = this;
+            expression.parent = this;
+            closeParenToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1569,7 +1615,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            identifier.parent = this;
+            equalsGreaterThanToken.parent = this;
+            block && (block.parent = this);
+            expression && (expression.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1663,7 +1712,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            callSignature.parent = this;
+            equalsGreaterThanToken.parent = this;
+            block && (block.parent = this);
+            expression && (expression.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1756,7 +1808,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            left.parent = this;
+            dotToken.parent = this;
+            right.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1835,7 +1889,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            lessThanToken.parent = this;
+            !typeArguments.isShared() && (typeArguments.parent = this);
+            greaterThanToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -1916,7 +1972,11 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            newKeyword.parent = this;
+            typeParameterList && (typeParameterList.parent = this);
+            parameterList.parent = this;
+            equalsGreaterThanToken.parent = this;
+            type.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2010,7 +2070,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            typeParameterList && (typeParameterList.parent = this);
+            parameterList.parent = this;
+            equalsGreaterThanToken.parent = this;
+            type.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2096,7 +2159,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            openBraceToken.parent = this;
+            !typeMembers.isShared() && (typeMembers.parent = this);
+            closeBraceToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2179,7 +2244,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            type.parent = this;
+            openBracketToken.parent = this;
+            closeBracketToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2252,7 +2319,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            name.parent = this;
+            typeArgumentList.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2319,7 +2387,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            typeOfKeyword.parent = this;
+            name.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2386,7 +2455,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            colonToken.parent = this;
+            type.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2450,7 +2520,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            openBraceToken.parent = this;
+            !statements.isShared() && (statements.parent = this);
+            closeBraceToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2541,7 +2613,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            dotDotDotToken && (dotDotDotToken.parent = this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            identifier.parent = this;
+            questionToken && (questionToken.parent = this);
+            typeAnnotation && (typeAnnotation.parent = this);
+            equalsValueClause && (equalsValueClause.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2642,7 +2719,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            expression.parent = this;
+            dotToken.parent = this;
+            name.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2741,7 +2820,8 @@ module TypeScript {
             super(data); 
 
             this._kind = kind;
-            Syntax.setParentForChildren(this);
+            operand.parent = this;
+            operatorToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2820,7 +2900,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            expression.parent = this;
+            openBracketToken.parent = this;
+            argumentExpression.parent = this;
+            closeBracketToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -2922,7 +3005,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            expression.parent = this;
+            argumentList.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3015,7 +3099,10 @@ module TypeScript {
             super(data); 
 
             this.arguments = _arguments;
-            Syntax.setParentForChildren(this);
+            typeArgumentList && (typeArgumentList.parent = this);
+            openParenToken.parent = this;
+            !_arguments.isShared() && (_arguments.parent = this);
+            closeParenToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3106,7 +3193,9 @@ module TypeScript {
             super(data); 
 
             this._kind = kind;
-            Syntax.setParentForChildren(this);
+            left.parent = this;
+            operatorToken.parent = this;
+            right.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3185,7 +3274,11 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            condition.parent = this;
+            questionToken.parent = this;
+            whenTrue.parent = this;
+            colonToken.parent = this;
+            whenFalse.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3275,7 +3368,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            newKeyword.parent = this;
+            callSignature.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3343,7 +3437,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            propertyName.parent = this;
+            questionToken && (questionToken.parent = this);
+            callSignature.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3424,7 +3520,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            openBracketToken.parent = this;
+            parameter.parent = this;
+            closeBracketToken.parent = this;
+            typeAnnotation && (typeAnnotation.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3510,7 +3609,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            propertyName.parent = this;
+            questionToken && (questionToken.parent = this);
+            typeAnnotation && (typeAnnotation.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3588,7 +3689,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            typeParameterList && (typeParameterList.parent = this);
+            parameterList.parent = this;
+            typeAnnotation && (typeAnnotation.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3669,7 +3772,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            openParenToken.parent = this;
+            !parameters.isShared() && (parameters.parent = this);
+            closeParenToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3749,7 +3854,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            lessThanToken.parent = this;
+            !typeParameters.isShared() && (typeParameters.parent = this);
+            greaterThanToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3827,7 +3934,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            identifier.parent = this;
+            constraint && (constraint.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3894,7 +4002,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            extendsKeyword.parent = this;
+            type.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -3957,7 +4066,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            elseKeyword.parent = this;
+            statement.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4025,7 +4135,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            ifKeyword.parent = this;
+            openParenToken.parent = this;
+            condition.parent = this;
+            closeParenToken.parent = this;
+            statement.parent = this;
+            elseClause && (elseClause.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4132,7 +4247,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            expression.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4211,7 +4327,11 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            constructorKeyword.parent = this;
+            callSignature.parent = this;
+            block && (block.parent = this);
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4308,7 +4428,11 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            propertyName.parent = this;
+            callSignature.parent = this;
+            block && (block.parent = this);
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4410,7 +4534,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            getKeyword.parent = this;
+            propertyName.parent = this;
+            parameterList.parent = this;
+            typeAnnotation && (typeAnnotation.parent = this);
+            block.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4527,7 +4656,11 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            setKeyword.parent = this;
+            propertyName.parent = this;
+            parameterList.parent = this;
+            block.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4632,7 +4765,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            variableDeclarator.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4718,7 +4853,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            indexSignature.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4800,7 +4937,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            throwKeyword.parent = this;
+            expression.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4884,7 +5023,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            returnKeyword.parent = this;
+            expression && (expression.parent = this);
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -4967,7 +5108,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            newKeyword.parent = this;
+            expression.parent = this;
+            argumentList && (argumentList.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5072,7 +5215,13 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            switchKeyword.parent = this;
+            openParenToken.parent = this;
+            expression.parent = this;
+            closeParenToken.parent = this;
+            openBraceToken.parent = this;
+            !switchClauses.isShared() && (switchClauses.parent = this);
+            closeBraceToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5190,7 +5339,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            caseKeyword.parent = this;
+            expression.parent = this;
+            colonToken.parent = this;
+            !statements.isShared() && (statements.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5282,7 +5434,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            defaultKeyword.parent = this;
+            colonToken.parent = this;
+            !statements.isShared() && (statements.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5366,7 +5520,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            breakKeyword.parent = this;
+            identifier && (identifier.parent = this);
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5448,7 +5604,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            continueKeyword.parent = this;
+            identifier && (identifier.parent = this);
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5537,7 +5695,16 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            forKeyword.parent = this;
+            openParenToken.parent = this;
+            variableDeclaration && (variableDeclaration.parent = this);
+            initializer && (initializer.parent = this);
+            firstSemicolonToken.parent = this;
+            condition && (condition.parent = this);
+            secondSemicolonToken.parent = this;
+            incrementor && (incrementor.parent = this);
+            closeParenToken.parent = this;
+            statement.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5680,7 +5847,14 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            forKeyword.parent = this;
+            openParenToken.parent = this;
+            variableDeclaration && (variableDeclaration.parent = this);
+            left && (left.parent = this);
+            inKeyword.parent = this;
+            expression.parent = this;
+            closeParenToken.parent = this;
+            statement.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5808,7 +5982,11 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            whileKeyword.parent = this;
+            openParenToken.parent = this;
+            condition.parent = this;
+            closeParenToken.parent = this;
+            statement.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -5907,7 +6085,11 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            withKeyword.parent = this;
+            openParenToken.parent = this;
+            condition.parent = this;
+            closeParenToken.parent = this;
+            statement.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6003,7 +6185,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            !modifiers.isShared() && (modifiers.parent = this);
+            enumKeyword.parent = this;
+            identifier.parent = this;
+            openBraceToken.parent = this;
+            !enumElements.isShared() && (enumElements.parent = this);
+            closeBraceToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6109,7 +6296,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            propertyName.parent = this;
+            equalsValueClause && (equalsValueClause.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6179,7 +6367,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            lessThanToken.parent = this;
+            type.parent = this;
+            greaterThanToken.parent = this;
+            expression.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6264,7 +6455,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            openBraceToken.parent = this;
+            !propertyAssignments.isShared() && (propertyAssignments.parent = this);
+            closeBraceToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6368,7 +6561,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            propertyName.parent = this;
+            colonToken.parent = this;
+            expression.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6444,7 +6639,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            propertyName.parent = this;
+            callSignature.parent = this;
+            block.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6521,7 +6718,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            functionKeyword.parent = this;
+            identifier && (identifier.parent = this);
+            callSignature.parent = this;
+            block.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6627,7 +6827,7 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            semicolonToken.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6694,7 +6894,10 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            tryKeyword.parent = this;
+            block.parent = this;
+            catchClause && (catchClause.parent = this);
+            finallyClause && (finallyClause.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6789,7 +6992,12 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            catchKeyword.parent = this;
+            openParenToken.parent = this;
+            identifier.parent = this;
+            typeAnnotation && (typeAnnotation.parent = this);
+            closeParenToken.parent = this;
+            block.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6886,7 +7094,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            finallyKeyword.parent = this;
+            block.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -6951,7 +7160,9 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            identifier.parent = this;
+            colonToken.parent = this;
+            statement.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -7035,7 +7246,13 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            doKeyword.parent = this;
+            statement.parent = this;
+            whileKeyword.parent = this;
+            openParenToken.parent = this;
+            condition.parent = this;
+            closeParenToken.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -7152,7 +7369,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            typeOfKeyword.parent = this;
+            expression.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -7224,7 +7442,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            deleteKeyword.parent = this;
+            expression.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -7296,7 +7515,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            voidKeyword.parent = this;
+            expression.parent = this;
         }
 
         public accept(visitor: ISyntaxVisitor): any {
@@ -7368,7 +7588,8 @@ module TypeScript {
                     data: number) {
             super(data); 
 
-            Syntax.setParentForChildren(this);
+            debuggerKeyword.parent = this;
+            semicolonToken && (semicolonToken.parent = this);
         }
 
         public accept(visitor: ISyntaxVisitor): any {
