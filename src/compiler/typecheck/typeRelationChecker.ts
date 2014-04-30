@@ -2,7 +2,21 @@
 
 module TypeScript {
     class TypeRelationChecker {
-       
+        private semanticInfoChain: SemanticInfoChain;
+        private identicalCache: IBitMatrix;
+        private subtypeCache: IBitMatrix;
+        private assignableCache: IBitMatrix;
+        private getNamedPropertySymbol: any;
+        private _getNamedPropertySymbolOfAugmentedType: any;
+        private getApparentType: any;
+        private isAnyOrEquivalent: any;
+        private instantiateSignatureToAny: any;
+        private cachedFunctionInterfaceType: any;
+        private resolveDeclaredSymbol: any;
+        private getEnclosingSymbolForAST: any;
+        private getBothKindsOfIndexSignaturesIncludingAugmentedType: any;
+        private getBothKindsOfIndexSignaturesExcludingAugmentedType: any;
+        private resolver: PullTypeResolver;
         // Type Identity
 
         private typesAreIdenticalInEnclosingTypes(t1: PullTypeSymbol, t2: PullTypeSymbol, context: PullTypeResolutionContext) {
@@ -843,8 +857,8 @@ module TypeScript {
             //  -	the relationship in question must be true for each corresponding pair of type arguments in
             //      the type argument lists of S and T.
 
-            var widenedTargetType = targetType.widenedType(this, /*ast*/ null, context);
-            var widenedSourceType = sourceType.widenedType(this, /*ast*/ null, context);
+            var widenedTargetType = targetType.widenedType(this.resolver, /*ast*/ null, context);
+            var widenedSourceType = sourceType.widenedType(this.resolver, /*ast*/ null, context);
 
             // Check if the type is not any/null or undefined
             if ((widenedSourceType !== this.semanticInfoChain.anyTypeSymbol) &&
@@ -935,8 +949,8 @@ module TypeScript {
             //  -	the relationship in question must be true for each corresponding pair of type arguments in
             //      the type argument lists of S and T.
 
-            var widenedTargetType = targetType.widenedType(this, /*ast*/ null, /*context*/ null);
-            var widenedSourceType = sourceType.widenedType(this, /*ast*/ null, /*context*/ null);
+            var widenedTargetType = targetType.widenedType(this.resolver, /*ast*/ null, /*context*/ null);
+            var widenedSourceType = sourceType.widenedType(this.resolver, /*ast*/ null, /*context*/ null);
 
             // Check if the type is not any/null or undefined
             if ((widenedSourceType !== this.semanticInfoChain.anyTypeSymbol) &&
