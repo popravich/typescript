@@ -319,8 +319,8 @@ module TypeScript {
         // gives the apparent type. However, this would require synthesizing a new type because
         // almost every type in the system should inherit the properties from Object. It would essentially
         // double the number of type symbols, which would significantly increase memory usage.
-        public _getNamedPropertySymbolOfAugmentedType(symbolName: string, parent: PullTypeSymbol): PullSymbol {
-            var memberSymbol = this.getNamedPropertySymbol(symbolName, PullElementKind.SomeValue, parent);
+        public getNamedPropertySymbolOfAugmentedType(symbolName: string, parent: PullTypeSymbol): PullSymbol {
+            var memberSymbol = parent.getNamedPropertySymbol(symbolName, PullElementKind.SomeValue, this);
             if (memberSymbol) {
                 return memberSymbol;
             }
@@ -339,116 +339,6 @@ module TypeScript {
             }
 
             return null;
-        }
-
-        private getNamedPropertySymbol(symbolName: string, declSearchKind: PullElementKind, parent: PullTypeSymbol) {
-            var member: PullSymbol = null;
-            function getExportedMemberSymbol(symbol: PullSymbol, parent: PullTypeSymbol): PullSymbol {
-                if (!(symbol.kind & (PullElementKind.Method | PullElementKind.Property))) {
-                    var isContainer = (parent.kind & (PullElementKind.Container | PullElementKind.DynamicModule)) !== 0;
-                    var containerType = !isContainer ? parent.getAssociatedContainerType() : parent;
-
-                    if (isContainer && containerType) {
-                        if (symbol.anyDeclHasFlag(PullElementFlags.Exported)) {
-                            return symbol;
-                        }
-
-                        return null;
-                    }
-                }
-
-                return symbol;
-            }
-
-            if (declSearchKind & PullElementKind.SomeValue) {
-                member = parent.findMember(symbolName, /*lookInParent*/ true);
-            }
-            else if (declSearchKind & PullElementKind.SomeType) {
-                member = parent.findNestedType(symbolName);
-            }
-            else if (declSearchKind & PullElementKind.SomeContainer) {
-                member = parent.findNestedContainer(symbolName);
-            }
-
-            if (member) {
-                return getExportedMemberSymbol(member, parent);
-            }
-
-            var containerType = parent.getAssociatedContainerType();
-
-            if (containerType) {
-
-                // If we were searching over the constructor type, we don't want to also search
-                // over the class instance type (we only want to consider static fields)
-                if (containerType.isClass()) {
-                    return null;
-                }
-
-                parent = containerType;
-
-                if (declSearchKind & PullElementKind.SomeValue) {
-                    member = parent.findMember(symbolName, /*lookInParent*/ true);
-                }
-                else if (declSearchKind & PullElementKind.SomeType) {
-                    member = parent.findNestedType(symbolName);
-                }
-                else if (declSearchKind & PullElementKind.SomeContainer) {
-                    member = parent.findNestedContainer(symbolName);
-                }
-
-                if (member) {
-                    return getExportedMemberSymbol(member, parent);
-                }
-            }
-
-            if (parent.kind & PullElementKind.SomeContainer) {
-                var typeDeclarations = parent.getDeclarations();
-                var childDecls: PullDecl[] = null;
-
-                for (var j = 0; j < typeDeclarations.length; j++) {
-                    childDecls = typeDeclarations[j].searchChildDecls(symbolName, declSearchKind);
-
-                    if (childDecls.length) {
-                        member = childDecls[0].getSymbol(this.semanticInfoChain);
-
-                        if (!member) {
-                            member = childDecls[0].getSignatureSymbol(this.semanticInfoChain);
-                        }
-                        return getExportedMemberSymbol(member, parent);
-                    }
-
-                    // If we were looking  for some type or value, we need to look for alias so we can see if it has associated value or type symbol with it
-                    if ((declSearchKind & PullElementKind.SomeType) !== 0 || (declSearchKind & PullElementKind.SomeValue) !== 0) {
-                        childDecls = typeDeclarations[j].searchChildDecls(symbolName, PullElementKind.TypeAlias);
-                        if (childDecls.length && childDecls[0].kind === PullElementKind.TypeAlias) { // this can return container or dynamic module
-                            var aliasSymbol = <PullTypeAliasSymbol>getExportedMemberSymbol(childDecls[0].getSymbol(this.semanticInfoChain), parent);
-                            if (aliasSymbol) {
-                                if (!aliasSymbol.isResolved) {
-                                    this.resolveDeclaredSymbol(aliasSymbol);
-                                }
-
-                                if ((declSearchKind & PullElementKind.SomeType) !== 0) {
-                                    // Some type
-                                    var typeSymbol = aliasSymbol.getExportAssignedTypeSymbol();
-                                    if (typeSymbol) {
-                                        return typeSymbol;
-                                    }
-                                }
-                                else {
-                                    // Some value
-                                    var valueSymbol = aliasSymbol.getExportAssignedValueSymbol();
-                                    if (valueSymbol) {
-                                        aliasSymbol.setIsUsedAsValue();
-                                        return valueSymbol;
-                                    }
-                                }
-
-                                return aliasSymbol;
-                            }
-                        }
-                    }
-                }
-            }
         }
         
         // search for an unqualified symbol name within a given decl path
@@ -569,7 +459,7 @@ module TypeScript {
                         if (instanceSymbol) {
                             instanceType = instanceSymbol.type;
 
-                            childSymbol = this.getNamedPropertySymbol(symbolName, declSearchKind, instanceType);
+                            childSymbol = instanceType.getNamedPropertySymbol(symbolName, declSearchKind, this);
 
                             // Make sure we are not picking up a static from a class (it is never in scope)
                             if (childSymbol && (childSymbol.kind & declSearchKind) && !childSymbol.anyDeclHasFlag(PullElementFlags.Static)) {
@@ -587,7 +477,7 @@ module TypeScript {
                     // otherwise, check the members
                     declSymbol = decl.getSymbol(this.semanticInfoChain).type;
 
-                    var childSymbol = this.getNamedPropertySymbol(symbolName, declSearchKind, declSymbol);
+                    var childSymbol = declSymbol.getNamedPropertySymbol(symbolName, declSearchKind, this);
 
                     if (childSymbol && (childSymbol.kind & declSearchKind) && !childSymbol.anyDeclHasFlag(PullElementFlags.Static)) {
                         return childSymbol;
@@ -1837,7 +1727,7 @@ module TypeScript {
         }
 
         private getMemberSymbolOfKind(symbolName: string, kind: PullElementKind, pullTypeSymbol: PullTypeSymbol, enclosingDecl: PullDecl, context: PullTypeResolutionContext) {
-            var memberSymbol = this.getNamedPropertySymbol(symbolName, kind, pullTypeSymbol);
+            var memberSymbol = pullTypeSymbol.getNamedPropertySymbol(symbolName, kind, this);
             // Verify that the symbol is actually of the given kind
             return {
                 symbol: this.filterSymbol(memberSymbol, kind, enclosingDecl, context),
@@ -6695,7 +6585,7 @@ module TypeScript {
             // is of the type of that property.
             // Note that here we are assuming the apparent type is already accounted for up to
             // augmentation. So we just check the augmented type.
-            var nameSymbol = this._getNamedPropertySymbolOfAugmentedType(rhsName, lhsType);
+            var nameSymbol = this.getNamedPropertySymbolOfAugmentedType(rhsName, lhsType);
 
             if (!nameSymbol) {
                 // could be a function symbol
@@ -6706,7 +6596,7 @@ module TypeScript {
                     if (associatedInstance) {
                         var instanceType = associatedInstance.type;
 
-                        nameSymbol = this.getNamedPropertySymbol(rhsName, PullElementKind.SomeValue, instanceType);
+                        nameSymbol = instanceType.getNamedPropertySymbol(rhsName, PullElementKind.SomeValue, this);
                     }
                 }
                 // could be a module instance
@@ -6714,7 +6604,7 @@ module TypeScript {
                     var associatedType = lhsType.getAssociatedContainerType();
 
                     if (associatedType && !associatedType.isClass()) {
-                        nameSymbol = this.getNamedPropertySymbol(rhsName, PullElementKind.SomeValue, associatedType);
+                        nameSymbol = associatedType.getNamedPropertySymbol(rhsName, PullElementKind.SomeValue, this);
                     }
                 }
 
@@ -7032,7 +6922,7 @@ module TypeScript {
 
             var memberKind = (onLeftOfDot || isNameOfModule) ? PullElementKind.SomeContainer : PullElementKind.SomeType;
 
-            var childTypeSymbol = <PullTypeSymbol>this.getNamedPropertySymbol(rhsName, memberKind, lhsType);
+            var childTypeSymbol = <PullTypeSymbol>lhsType.getNamedPropertySymbol(rhsName, memberKind, this);
 
             // SPEC: November 18, 2013 section 10.3 -
             //  - An EntityName consisting of more than one identifier is resolved as 
@@ -7041,7 +6931,7 @@ module TypeScript {
             //     (As many as three distinct meanings are possible for an entity name — namespace, type, and member.)
             if (!childTypeSymbol && !isNameOfModule && this.isLastNameOfQualifiedModuleNameModuleReference(dottedNameAST.right))
             {
-                childTypeSymbol = <PullTypeSymbol>this.getNamedPropertySymbol(rhsName, PullElementKind.SomeValue, lhsType);
+                childTypeSymbol = <PullTypeSymbol>lhsType.getNamedPropertySymbol(rhsName, PullElementKind.SomeValue, this);
             }
 
             // if the lhs exports a container type, but not a type, we should check the container type
@@ -7049,7 +6939,7 @@ module TypeScript {
                 var exportedContainer = (<PullContainerSymbol>lhsType).getExportAssignedContainerSymbol();
 
                 if (exportedContainer) {
-                    childTypeSymbol = <PullTypeSymbol>this.getNamedPropertySymbol(rhsName, memberKind, exportedContainer);
+                    childTypeSymbol = <PullTypeSymbol>exportedContainer.getNamedPropertySymbol(rhsName, memberKind, this);
                 }
             }
 
@@ -7071,7 +6961,7 @@ module TypeScript {
                     var enclosingSymbolType = parentDecl.getSymbol(this.semanticInfoChain).type;
 
                     if (enclosingSymbolType === lhsType) {
-                        childTypeSymbol = <PullTypeSymbol>this.getNamedPropertySymbol(rhsName, memberKind, lhsType);//lhsType.findContainedMember(rhsName);
+                        childTypeSymbol = <PullTypeSymbol>lhsType.getNamedPropertySymbol(rhsName, memberKind, this);//lhsType.findContainedMember(rhsName);
                     }
                 }
             }
@@ -7845,7 +7735,7 @@ module TypeScript {
                 var contextualMemberType: PullTypeSymbol = null;
 
                 if (objectLiteralContextualType) {
-                    assigningSymbol = this.getNamedPropertySymbol(memberSymbol.name, PullElementKind.SomeValue, objectLiteralContextualType);
+                    assigningSymbol = objectLiteralContextualType.getNamedPropertySymbol(memberSymbol.name, PullElementKind.SomeValue, this);
 
                     // Consider index signatures as potential contextual types
                     if (!assigningSymbol) {
@@ -8174,7 +8064,7 @@ module TypeScript {
                 // in the case of a numeric literal), the property access is of the type of that property.
                 // Note that here we are assuming the apparent type is already accounted for up to
                 // augmentation. So we just check the augmented type.
-                var member = this._getNamedPropertySymbolOfAugmentedType(memberName, targetTypeSymbol);
+                var member = this.getNamedPropertySymbolOfAugmentedType(memberName, targetTypeSymbol);
 
                 if (member) {
                     this.resolveDeclaredSymbol(member, context);
@@ -9724,7 +9614,7 @@ module TypeScript {
                     // they are public properties with identical names, optionality, and types,
                     // they are private properties originating in the same declaration and having identical types
                     t1MemberSymbol = t1Members[iMember];
-                    t2MemberSymbol = this.getNamedPropertySymbol(t1MemberSymbol.name, PullElementKind.SomeValue, t2);
+                    t2MemberSymbol = t2.getNamedPropertySymbol(t1MemberSymbol.name, PullElementKind.SomeValue, this);
                     
                     if (!this.propertiesAreIdentical(t1MemberSymbol, t2MemberSymbol, context)) {
                         return false;
@@ -10375,7 +10265,7 @@ module TypeScript {
                 // Note that by this point, we should already have the apparent type of 'source',
                 // not including augmentation, so the only thing left to do is augment the type as
                 // we look for the property.
-                var sourceProp = this._getNamedPropertySymbolOfAugmentedType(targetProp.name, source);
+                var sourceProp = this.getNamedPropertySymbolOfAugmentedType(targetProp.name, source);
 
                 this.resolveDeclaredSymbol(targetProp, context);
 
@@ -11514,7 +11404,7 @@ module TypeScript {
 
             // - If M is a property and S contains a property N with the same name as M, inferences are made from the type of N to the type of M.
             for (var i = 0; i < parameterTypeMembers.length; i++) {
-                objectMember = this.getNamedPropertySymbol(parameterTypeMembers[i].name, PullElementKind.SomeValue, objectType);
+                objectMember = objectType.getNamedPropertySymbol(parameterTypeMembers[i].name, PullElementKind.SomeValue, this);
                 if (objectMember) {
                     // TODO: resolveDeclaredSymbol shouldn't be necessary here, but full fix requires changing underlying
                     // symbols to resolve themselves, which should be done at a later time.

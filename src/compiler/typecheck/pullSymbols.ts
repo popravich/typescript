@@ -3094,6 +3094,119 @@ module TypeScript {
             }
             return this._widenedType;
         }
+
+        // TODO: This method should not need a resolver. The only reason it does is because
+        // it contains one call to resolveDeclaredSymbol, which should be removed.
+        public getNamedPropertySymbol(symbolName: string, declSearchKind: PullElementKind, resolver: PullTypeResolver) {
+            var member: PullSymbol = null;
+
+            function getExportedMemberSymbol(symbol: PullSymbol, parent: PullTypeSymbol): PullSymbol {
+                if (!(symbol.kind & (PullElementKind.Method | PullElementKind.Property))) {
+                    var isContainer = (parent.kind & (PullElementKind.Container | PullElementKind.DynamicModule)) !== 0;
+                    var containerType = !isContainer ? parent.getAssociatedContainerType() : parent;
+
+                    if (isContainer && containerType) {
+                        if (symbol.anyDeclHasFlag(PullElementFlags.Exported)) {
+                            return symbol;
+                        }
+
+                        return null;
+                    }
+                }
+
+                return symbol;
+            }
+
+            if (declSearchKind & PullElementKind.SomeValue) {
+                member = this.findMember(symbolName, /*lookInParent*/ true);
+            }
+            else if (declSearchKind & PullElementKind.SomeType) {
+                member = this.findNestedType(symbolName);
+            }
+            else if (declSearchKind & PullElementKind.SomeContainer) {
+                member = this.findNestedContainer(symbolName);
+            }
+
+            if (member) {
+                return getExportedMemberSymbol(member, this);
+            }
+
+            var containerType = this.getAssociatedContainerType();
+
+            if (containerType) {
+
+                // If we were searching over the constructor type, we don't want to also search
+                // over the class instance type (we only want to consider static fields)
+                if (containerType.isClass()) {
+                    return null;
+                }
+
+                if (declSearchKind & PullElementKind.SomeValue) {
+                    member = containerType.findMember(symbolName, /*lookInParent*/ true);
+                }
+                else if (declSearchKind & PullElementKind.SomeType) {
+                    member = containerType.findNestedType(symbolName);
+                }
+                else if (declSearchKind & PullElementKind.SomeContainer) {
+                    member = containerType.findNestedContainer(symbolName);
+                }
+
+                if (member) {
+                    return getExportedMemberSymbol(member, containerType);
+                }
+            }
+
+            var parent = containerType || this;
+
+            if (parent.kind & PullElementKind.SomeContainer) {
+                var typeDeclarations = parent.getDeclarations();
+                var childDecls: PullDecl[] = null;
+
+                for (var j = 0; j < typeDeclarations.length; j++) {
+                    childDecls = typeDeclarations[j].searchChildDecls(symbolName, declSearchKind);
+
+                    if (childDecls.length) {
+                        member = childDecls[0].getSymbol(this.semanticInfoChain);
+
+                        if (!member) {
+                            member = childDecls[0].getSignatureSymbol(this.semanticInfoChain);
+                        }
+                        return getExportedMemberSymbol(member, parent);
+                    }
+
+                    // If we were looking  for some type or value, we need to look for alias so we can see if it has associated value or type symbol with it
+                    if ((declSearchKind & PullElementKind.SomeType) !== 0 || (declSearchKind & PullElementKind.SomeValue) !== 0) {
+                        childDecls = typeDeclarations[j].searchChildDecls(symbolName, PullElementKind.TypeAlias);
+                        if (childDecls.length && childDecls[0].kind === PullElementKind.TypeAlias) { // this can return container or dynamic module
+                            var aliasSymbol = <PullTypeAliasSymbol>getExportedMemberSymbol(childDecls[0].getSymbol(this.semanticInfoChain), parent);
+                            if (aliasSymbol) {
+                                if (!aliasSymbol.isResolved) {
+                                    resolver.resolveDeclaredSymbol(aliasSymbol);
+                                }
+
+                                if ((declSearchKind & PullElementKind.SomeType) !== 0) {
+                                    // Some type
+                                    var typeSymbol = aliasSymbol.getExportAssignedTypeSymbol();
+                                    if (typeSymbol) {
+                                        return typeSymbol;
+                                    }
+                                }
+                                else {
+                                    // Some value
+                                    var valueSymbol = aliasSymbol.getExportAssignedValueSymbol();
+                                    if (valueSymbol) {
+                                        aliasSymbol.setIsUsedAsValue();
+                                        return valueSymbol;
+                                    }
+                                }
+
+                                return aliasSymbol;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     export class PullPrimitiveTypeSymbol extends PullTypeSymbol {

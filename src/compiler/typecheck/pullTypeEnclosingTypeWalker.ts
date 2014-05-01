@@ -259,7 +259,7 @@ module TypeScript {
         public walkMemberType(memberName: string, resolver: PullTypeResolver) {
             if (this._canWalkStructure()) {
                 var currentType = <PullTypeSymbol>this._getCurrentSymbol();
-                var memberSymbol = currentType ? resolver._getNamedPropertySymbolOfAugmentedType(memberName, currentType) : null;
+                var memberSymbol = currentType ? resolver.getNamedPropertySymbolOfAugmentedType(memberName, currentType) : null;
                 this._pushSymbol(memberSymbol ? memberSymbol.type : null);
             }
         }

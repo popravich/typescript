@@ -6,8 +6,7 @@ module TypeScript {
         private subtypeCache = BitMatrix.getBitMatrix(/*allowUndefined*/ true);
         private assignableCache = BitMatrix.getBitMatrix(/*allowUndefined*/ true);
 
-        private getNamedPropertySymbol: any;
-        private _getNamedPropertySymbolOfAugmentedType: any;
+        private getNamedPropertySymbolOfAugmentedType: any;
         private getApparentType: any;
         private isAnyOrEquivalent: any;
         private instantiateSignatureToAny: any;
@@ -160,7 +159,7 @@ module TypeScript {
                     // they are public properties with identical names, optionality, and types,
                     // they are private properties originating in the same declaration and having identical types
                     t1MemberSymbol = t1Members[iMember];
-                    t2MemberSymbol = this.getNamedPropertySymbol(t1MemberSymbol.name, PullElementKind.SomeValue, t2);
+                    t2MemberSymbol = t2.getNamedPropertySymbol(t1MemberSymbol.name, PullElementKind.SomeValue, this.resolver);
 
                     if (!this.propertiesAreIdentical(t1MemberSymbol, t2MemberSymbol, context)) {
                         return false;
