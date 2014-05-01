@@ -309,24 +309,6 @@ module TypeScript {
             }
         }
 
-        private getExportedMemberSymbol(symbol: PullSymbol, parent: PullTypeSymbol): PullSymbol {
-
-            if (!(symbol.kind & (PullElementKind.Method | PullElementKind.Property))) {
-                var isContainer = (parent.kind & (PullElementKind.Container | PullElementKind.DynamicModule)) !== 0;
-                var containerType = !isContainer ? parent.getAssociatedContainerType() : parent;
-
-                if (isContainer && containerType) {
-                    if (symbol.anyDeclHasFlag(PullElementFlags.Exported)) {
-                        return symbol;
-                    }
-
-                    return null;
-                }
-            }
-
-            return symbol;
-        }
-
         // This is a modification of getMemberSymbol to fall back to Object or Function as necessary
         // November 18th, 2013, Section 3.8.1:
         // The augmented form of an object type T adds to T those members of the global interface type
@@ -361,6 +343,22 @@ module TypeScript {
 
         private getNamedPropertySymbol(symbolName: string, declSearchKind: PullElementKind, parent: PullTypeSymbol) {
             var member: PullSymbol = null;
+            function getExportedMemberSymbol(symbol: PullSymbol, parent: PullTypeSymbol): PullSymbol {
+                if (!(symbol.kind & (PullElementKind.Method | PullElementKind.Property))) {
+                    var isContainer = (parent.kind & (PullElementKind.Container | PullElementKind.DynamicModule)) !== 0;
+                    var containerType = !isContainer ? parent.getAssociatedContainerType() : parent;
+
+                    if (isContainer && containerType) {
+                        if (symbol.anyDeclHasFlag(PullElementFlags.Exported)) {
+                            return symbol;
+                        }
+
+                        return null;
+                    }
+                }
+
+                return symbol;
+            }
 
             if (declSearchKind & PullElementKind.SomeValue) {
                 member = parent.findMember(symbolName, /*lookInParent*/ true);
@@ -373,7 +371,7 @@ module TypeScript {
             }
 
             if (member) {
-                return this.getExportedMemberSymbol(member, parent);
+                return getExportedMemberSymbol(member, parent);
             }
 
             var containerType = parent.getAssociatedContainerType();
@@ -399,7 +397,7 @@ module TypeScript {
                 }
 
                 if (member) {
-                    return this.getExportedMemberSymbol(member, parent);
+                    return getExportedMemberSymbol(member, parent);
                 }
             }
 
@@ -416,14 +414,14 @@ module TypeScript {
                         if (!member) {
                             member = childDecls[0].getSignatureSymbol(this.semanticInfoChain);
                         }
-                        return this.getExportedMemberSymbol(member, parent);
+                        return getExportedMemberSymbol(member, parent);
                     }
 
                     // If we were looking  for some type or value, we need to look for alias so we can see if it has associated value or type symbol with it
                     if ((declSearchKind & PullElementKind.SomeType) !== 0 || (declSearchKind & PullElementKind.SomeValue) !== 0) {
                         childDecls = typeDeclarations[j].searchChildDecls(symbolName, PullElementKind.TypeAlias);
                         if (childDecls.length && childDecls[0].kind === PullElementKind.TypeAlias) { // this can return container or dynamic module
-                            var aliasSymbol = <PullTypeAliasSymbol>this.getExportedMemberSymbol(childDecls[0].getSymbol(this.semanticInfoChain), parent);
+                            var aliasSymbol = <PullTypeAliasSymbol>getExportedMemberSymbol(childDecls[0].getSymbol(this.semanticInfoChain), parent);
                             if (aliasSymbol) {
                                 if (!aliasSymbol.isResolved) {
                                     this.resolveDeclaredSymbol(aliasSymbol);

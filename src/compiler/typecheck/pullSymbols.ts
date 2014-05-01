@@ -2215,7 +2215,7 @@ module TypeScript {
             return this._constructSignatures || sentinelEmptyArray;
         }
 
-        public getConstructSignatures(): PullSignatureSymbol[]{
+        public getConstructSignatures(): PullSignatureSymbol[] {
             if (this._allConstructSignatures) {
                 return this._allConstructSignatures;
             }
@@ -2709,8 +2709,8 @@ module TypeScript {
                     (elementType.isArrayNamedTypeReference() || elementType.isNamedTypeSymbol() ?
                     elementType.getScopedNameEx(
                         scopeSymbol,
-                        /*skipTypeParametersInName*/ false,
-                        /*useConstraintInName*/ false,
+                    /*skipTypeParametersInName*/ false,
+                    /*useConstraintInName*/ false,
                         getPrettyTypeName,
                         getTypeParamMarkerInfo,
                         skipInternalAliasName) :
@@ -2995,7 +2995,7 @@ module TypeScript {
 
             this.inWrapInfiniteExpandingReferenceCheck = true;
             wrapsIntoInfinitelyExpandingTypeReference =
-                this._wrapsSomeTypeParameterIntoInfinitelyExpandingTypeReferenceWorker(enclosingType, knownWrapMap);
+            this._wrapsSomeTypeParameterIntoInfinitelyExpandingTypeReferenceWorker(enclosingType, knownWrapMap);
             knownWrapMap.setValueAt(this.pullSymbolID, enclosingType.pullSymbolID, wrapsIntoInfinitelyExpandingTypeReference);
             this.inWrapInfiniteExpandingReferenceCheck = false;
 

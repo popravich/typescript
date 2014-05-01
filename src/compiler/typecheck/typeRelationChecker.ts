@@ -2,10 +2,10 @@
 
 module TypeScript {
     class TypeRelationChecker {
-        private semanticInfoChain: SemanticInfoChain;
-        private identicalCache: IBitMatrix;
-        private subtypeCache: IBitMatrix;
-        private assignableCache: IBitMatrix;
+        private identicalCache = BitMatrix.getBitMatrix(/*allowUndefined*/ true);
+        private subtypeCache = BitMatrix.getBitMatrix(/*allowUndefined*/ true);
+        private assignableCache = BitMatrix.getBitMatrix(/*allowUndefined*/ true);
+
         private getNamedPropertySymbol: any;
         private _getNamedPropertySymbolOfAugmentedType: any;
         private getApparentType: any;
@@ -16,8 +16,8 @@ module TypeScript {
         private getEnclosingSymbolForAST: any;
         private getBothKindsOfIndexSignaturesIncludingAugmentedType: any;
         private getBothKindsOfIndexSignaturesExcludingAugmentedType: any;
-        private resolver: PullTypeResolver;
-        // Type Identity
+        
+        constructor(private resolver: PullTypeResolver, private semanticInfoChain: SemanticInfoChain) { }
 
         private typesAreIdenticalInEnclosingTypes(t1: PullTypeSymbol, t2: PullTypeSymbol, context: PullTypeResolutionContext) {
             t1 = this.getSymbolForRelationshipCheck(t1);
