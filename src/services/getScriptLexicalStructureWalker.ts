@@ -72,12 +72,7 @@ module TypeScript.Services {
             visitor.collectItems(items);
         }
 
-        private createItem(
-                node: TypeScript.SyntaxNode,
-                modifiers: TypeScript.ISyntaxList < ISyntaxToken>,
-                kind: string,
-                name: string): void {
-
+        private createItem(node: TypeScript.ISyntaxNode, modifiers: ISyntaxToken[], kind: string, name: string): void {
             var key = kind + "+" + name;
 
             if (this.currentScope.items[key] !== undefined) {
@@ -91,8 +86,8 @@ module TypeScript.Services {
             item.matchKind = MatchKind.exact;
             item.fileName = this.fileName;
             item.kindModifiers = this.getKindModifiers(modifiers);
-            item.minChar = node.start();
-            item.limChar = node.end();
+            item.minChar = start(node);
+            item.limChar = end(node);
             item.containerName = this.nameStack.join(".");
             item.containerKind = this.kindStack.length === 0 ? "" : TypeScript.ArrayUtilities.last(this.kindStack);
 
@@ -101,14 +96,14 @@ module TypeScript.Services {
         }
 
         private addAdditionalSpan(
-            node: TypeScript.SyntaxNode,
+            node: TypeScript.ISyntaxNode,
             key: string) {
 
             var item = this.currentScope.items[key]
             Debug.assert(item !== undefined);
 
-            var start = node.start();
-            var span = new SpanInfo(start, start + node.width());
+            var start = TypeScript.start(node);
+            var span = new SpanInfo(start, start + width(node));
 
 
             if (item.additionalSpans) {
@@ -119,11 +114,11 @@ module TypeScript.Services {
             }
         }
 
-        private getKindModifiers(modifiers: TypeScript.ISyntaxList<ISyntaxToken>): string {
+        private getKindModifiers(modifiers: TypeScript.ISyntaxToken[]): string {
             var result: string[] = [];
 
-            for (var i = 0, n = modifiers.childCount(); i < n; i++) {
-                result.push(modifiers.childAt(i).text());
+            for (var i = 0, n = modifiers.length; i < n; i++) {
+                result.push(modifiers[i].text());
             }
 
             return result.length > 0 ? result.join(',') : ScriptElementKindModifier.none;
@@ -173,7 +168,7 @@ module TypeScript.Services {
         }
 
         private getModuleNamesHelper(name: TypeScript.INameSyntax, result: string[]): void {
-            if (name.kind() === TypeScript.SyntaxKind.QualifiedName) {
+            if (name.kind === TypeScript.SyntaxKind.QualifiedName) {
                 var qualifiedName = <TypeScript.QualifiedNameSyntax>name;
                 this.getModuleNamesHelper(qualifiedName.left, result);
                 result.push(qualifiedName.right.text());
@@ -212,7 +207,7 @@ module TypeScript.Services {
         public visitObjectType(node: TypeScript.ObjectTypeSyntax): void {
             // Ignore an object type if we aren't inside an interface declaration.  We don't want
             // to add some random object type's members to the nav bar.
-            if (node.parent.kind() === SyntaxKind.InterfaceDeclaration) {
+            if (node.parent.kind === SyntaxKind.InterfaceDeclaration) {
                 super.visitObjectType(node);
             }
         }
@@ -236,10 +231,10 @@ module TypeScript.Services {
             // Search the parameter list of class properties
             var parameters = node.callSignature.parameterList.parameters;
             if (parameters) {
-                for (var i = 0, n = parameters.nonSeparatorCount(); i < n; i++) {
-                    var parameter = <ParameterSyntax>parameters.nonSeparatorAt(i);
+                for (var i = 0, n = parameters.length; i < n; i++) {
+                    var parameter = <ParameterSyntax>parameters[i];
 
-                    Debug.assert(parameter.kind() === SyntaxKind.Parameter);
+                    Debug.assert(parameter.kind === SyntaxKind.Parameter);
 
                     if (SyntaxUtilities.containsToken(parameter.modifiers, SyntaxKind.PublicKeyword) ||
                         SyntaxUtilities.containsToken(parameter.modifiers, SyntaxKind.PrivateKeyword)) {
@@ -270,10 +265,10 @@ module TypeScript.Services {
         }
 
         public visitVariableDeclarator(node: TypeScript.VariableDeclaratorSyntax): void {
-            var modifiers = node.parent.kind() === SyntaxKind.MemberVariableDeclaration
+            var modifiers = node.parent.kind === SyntaxKind.MemberVariableDeclaration
                 ? (<MemberVariableDeclarationSyntax>node.parent).modifiers
                 : TypeScript.Syntax.emptyList<ISyntaxToken>();
-            var kind = node.parent.kind() === SyntaxKind.MemberVariableDeclaration
+            var kind = node.parent.kind === SyntaxKind.MemberVariableDeclaration
                 ? ScriptElementKind.memberVariableElement
                 : ScriptElementKind.variableElement;
             this.createItem(node, modifiers, kind, node.propertyName.text());
@@ -322,7 +317,7 @@ module TypeScript.Services {
             //    declare function
             // the parser will synthesize an identifier.
             // we shouldn't add an unnamed function declaration
-            if (node.identifier.width() > 0) {
+            if (width(node.identifier) > 0) {
                 this.createItem(node, node.modifiers, ScriptElementKind.functionElement, node.identifier.text());
             }
 

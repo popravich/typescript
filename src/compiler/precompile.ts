@@ -83,38 +83,36 @@ module TypeScript {
     var reportDiagnostic = () => { };
 
     function processImports(lineMap: LineMap, scanner: Scanner, token: ISyntaxToken, importedFiles: IFileReference[]): void {
-        var position = 0;
         var lineChar = { line: -1, character: -1 };
 
         var start = new Date().getTime();
         // Look for: 
         // import foo = module("foo")
-        while (token.kind() !== SyntaxKind.EndOfFileToken) {
-            if (token.kind() === SyntaxKind.ImportKeyword) {
-                var importStart = position + token.leadingTriviaWidth();
-                token = scanner.scan(/*allowRegularExpression:*/ false, reportDiagnostic);
+        while (token.kind !== SyntaxKind.EndOfFileToken) {
+            if (token.kind === SyntaxKind.ImportKeyword) {
+                var importToken = token;
+                token = scanner.scan(/*allowRegularExpression:*/ false);
 
                 if (SyntaxFacts.isIdentifierNameOrAnyKeyword(token)) {
-                    token = scanner.scan(/*allowRegularExpression:*/ false, reportDiagnostic);
+                    token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                    if (token.kind() === SyntaxKind.EqualsToken) {
-                        token = scanner.scan(/*allowRegularExpression:*/ false, reportDiagnostic);
+                    if (token.kind === SyntaxKind.EqualsToken) {
+                        token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                        if (token.kind() === SyntaxKind.ModuleKeyword || token.kind() === SyntaxKind.RequireKeyword) {
-                            token = scanner.scan(/*allowRegularExpression:*/ false, reportDiagnostic);
+                        if (token.kind === SyntaxKind.ModuleKeyword || token.kind === SyntaxKind.RequireKeyword) {
+                            token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                            if (token.kind() === SyntaxKind.OpenParenToken) {
-                                var afterOpenParenPosition = scanner.absoluteIndex();
-                                token = scanner.scan(/*allowRegularExpression:*/ false, reportDiagnostic);
+                            if (token.kind === SyntaxKind.OpenParenToken) {
+                                token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                                lineMap.fillLineAndCharacterFromPosition(importStart, lineChar);
+                                lineMap.fillLineAndCharacterFromPosition(TypeScript.start(importToken), lineChar);
 
-                                if (token.kind() === SyntaxKind.StringLiteral) {
+                                if (token.kind === SyntaxKind.StringLiteral) {
                                     var ref = {
                                         line: lineChar.line,
                                         character: lineChar.character,
-                                        position: afterOpenParenPosition + token.leadingTriviaWidth(),
-                                        length: token.width(),
+                                        position: TypeScript.start(token),
+                                        length: width(token),
                                         path: stripStartAndEndQuotes(switchToForwardSlashes(token.text())),
                                         isResident: false
                                     };
@@ -126,8 +124,7 @@ module TypeScript {
                 }
             }
 
-            position = scanner.absoluteIndex();
-            token = scanner.scan(/*allowRegularExpression:*/ false, reportDiagnostic);
+            token = scanner.scan(/*allowRegularExpression:*/ false);
         }
 
         var totalTime = new Date().getTime() - start;
@@ -146,7 +143,7 @@ module TypeScript {
         for (var i = 0, n = leadingTrivia.count(); i < n; i++) {
             var trivia = leadingTrivia.syntaxTriviaAt(i);
 
-            if (trivia.kind() === SyntaxKind.SingleLineCommentTrivia) {
+            if (trivia.kind === SyntaxKind.SingleLineCommentTrivia) {
                 var triviaText = trivia.fullText();
                 var referencedCode = getFileReferenceFromReferencePath(fileName, lineMap, position, triviaText, diagnostics);
 
@@ -175,9 +172,9 @@ module TypeScript {
 
     export function preProcessFile(fileName: string, sourceText: IScriptSnapshot, readImportFiles = true): IPreProcessedFileInfo {
         var text = SimpleText.fromScriptSnapshot(sourceText);
-        var scanner = new Scanner(LanguageVersion.EcmaScript5, text);
+        var scanner = createScanner(LanguageVersion.EcmaScript5, text, reportDiagnostic);
 
-        var firstToken = scanner.scan(/*allowRegularExpression:*/ false, reportDiagnostic);
+        var firstToken = scanner.scan(/*allowRegularExpression:*/ false);
 
         // only search out dynamic mods
         // if you find a dynamic mod, ignore every other mod inside, until you balance rcurlies

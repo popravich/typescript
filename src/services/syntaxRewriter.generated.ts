@@ -6,25 +6,25 @@ module TypeScript {
             return token;
         }
 
-        public visitNode(node: SyntaxNode): SyntaxNode {
+        public visitNode(node: ISyntaxNode): ISyntaxNode {
             return visitNodeOrToken(this, node);
         }
 
         public visitNodeOrToken(node: ISyntaxNodeOrToken): ISyntaxNodeOrToken {
-            return isToken(node) ? <ISyntaxNodeOrToken>this.visitToken(<ISyntaxToken>node) : this.visitNode(<SyntaxNode>node);
+            return isToken(node) ? <ISyntaxNodeOrToken>this.visitToken(<ISyntaxToken>node) : this.visitNode(<ISyntaxNode>node);
         }
 
-        public visitList<T extends ISyntaxNodeOrToken>(list: ISyntaxList<T>): ISyntaxList<T> {
+        public visitList<T extends ISyntaxNodeOrToken>(list: T[]): T[] {
             var newItems: T[] = null;
 
-            for (var i = 0, n = list.childCount(); i < n; i++) {
-                var item = list.childAt(i);
+            for (var i = 0, n = list.length; i < n; i++) {
+                var item = list[i];
                 var newItem = <T>this.visitNodeOrToken(item);
 
                 if (item !== newItem && newItems === null) {
                     newItems = [];
                     for (var j = 0; j < i; j++) {
-                        newItems.push(list.childAt(j));
+                        newItems.push(list[j]);
                     }
                 }
 
@@ -33,21 +33,21 @@ module TypeScript {
                 }
             }
 
-            // Debug.assert(newItems === null || newItems.length === list.childCount());
+            // Debug.assert(newItems === null || newItems.length === childCount(list));
             return newItems === null ? list : Syntax.list<T>(newItems);
         }
 
-        public visitSeparatedList<T extends ISyntaxNodeOrToken>(list: ISeparatedSyntaxList<T>): ISeparatedSyntaxList<T> {
+        public visitSeparatedList<T extends ISyntaxNodeOrToken>(list: T[]): T[] {
             var newItems: ISyntaxNodeOrToken[] = null;
 
-            for (var i = 0, n = list.childCount(); i < n; i++) {
-                var item = list.childAt(i);
-                var newItem = isToken(item) ? <ISyntaxNodeOrToken>this.visitToken(<ISyntaxToken>item) : this.visitNode(<SyntaxNode>item);
+            for (var i = 0, n = childCount(list); i < n; i++) {
+                var item = childAt(list, i);
+                var newItem = isToken(item) ? <ISyntaxNodeOrToken>this.visitToken(<ISyntaxToken>item) : this.visitNode(<ISyntaxNode>item);
 
                 if (item !== newItem && newItems === null) {
                     newItems = [];
                     for (var j = 0; j < i; j++) {
-                        newItems.push(list.childAt(j));
+                        newItems.push(childAt(list, j));
                     }
                 }
 
@@ -56,7 +56,7 @@ module TypeScript {
                 }
             }
 
-            // Debug.assert(newItems === null || newItems.length === list.childCount());
+            // Debug.assert(newItems === null || newItems.length === childCount(list));
             return newItems === null ? list : Syntax.separatedList<T>(newItems);
         }
 
@@ -121,7 +121,7 @@ module TypeScript {
 
         public visitHeritageClause(node: HeritageClauseSyntax): any {
             return node.update(
-                node.kind(),
+                node.kind,
                 this.visitToken(node.extendsOrImplementsKeyword),
                 this.visitSeparatedList(node.typeNames));
         }
@@ -175,7 +175,7 @@ module TypeScript {
 
         public visitPrefixUnaryExpression(node: PrefixUnaryExpressionSyntax): any {
             return node.update(
-                node.kind(),
+                node.kind,
                 this.visitToken(node.operatorToken),
                 <IUnaryExpressionSyntax>this.visitNodeOrToken(node.operand));
         }
@@ -303,7 +303,7 @@ module TypeScript {
 
         public visitPostfixUnaryExpression(node: PostfixUnaryExpressionSyntax): any {
             return node.update(
-                node.kind(),
+                node.kind,
                 <ILeftHandSideExpressionSyntax>this.visitNodeOrToken(node.operand),
                 this.visitToken(node.operatorToken));
         }
@@ -332,7 +332,7 @@ module TypeScript {
 
         public visitBinaryExpression(node: BinaryExpressionSyntax): any {
             return node.update(
-                node.kind(),
+                node.kind,
                 <IExpressionSyntax>this.visitNodeOrToken(node.left),
                 this.visitToken(node.operatorToken),
                 <IExpressionSyntax>this.visitNodeOrToken(node.right));

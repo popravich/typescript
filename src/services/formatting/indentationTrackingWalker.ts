@@ -91,15 +91,15 @@ module TypeScript.Services.Formatting {
 
                 // Only track new lines on tokens within the range. Make sure to check that the last trivia is a newline, and not just one of the trivia
                 var trivia = token.trailingTrivia();
-                this._lastTriviaWasNewLine = token.hasTrailingNewLine() && trivia.syntaxTriviaAt(trivia.count() - 1).kind() == SyntaxKind.NewLineTrivia;
+                this._lastTriviaWasNewLine = token.hasTrailingNewLine() && trivia.syntaxTriviaAt(trivia.count() - 1).kind == SyntaxKind.NewLineTrivia;
             }
 
             // Update the position
             this._position += token.fullWidth();
         }
 
-        public visitNode(node: SyntaxNode): void {
-            var nodeSpan = new TextSpan(this._position, node.fullWidth());
+        public visitNode(node: ISyntaxNode): void {
+            var nodeSpan = new TextSpan(this._position, fullWidth(node));
 
             if (nodeSpan.intersectsWithTextSpan(this._textSpan)) {
                 // Update indentation level
@@ -118,7 +118,7 @@ module TypeScript.Services.Formatting {
             }
             else {
                 // We're skipping the node, so update our position accordingly.
-                this._position += node.fullWidth();
+                this._position += fullWidth(node);
             }
         }
 
@@ -129,10 +129,10 @@ module TypeScript.Services.Formatting {
             // class {
             // }
             // Also in a do-while statement, the while should be indented like the parent.
-            if (this._parent.node().firstToken() === token ||
-                token.kind() === SyntaxKind.OpenBraceToken || token.kind() === SyntaxKind.CloseBraceToken ||
-                token.kind() === SyntaxKind.OpenBracketToken || token.kind() === SyntaxKind.CloseBracketToken ||
-                (token.kind() === SyntaxKind.WhileKeyword && this._parent.node().kind() == SyntaxKind.DoStatement)) {
+            if (firstToken(this._parent.node()) === token ||
+                token.kind === SyntaxKind.OpenBraceToken || token.kind === SyntaxKind.CloseBraceToken ||
+                token.kind === SyntaxKind.OpenBracketToken || token.kind === SyntaxKind.CloseBracketToken ||
+                (token.kind === SyntaxKind.WhileKeyword && this._parent.node().kind == SyntaxKind.DoStatement)) {
                 return this._parent.indentationAmount();
             }
 
@@ -143,13 +143,13 @@ module TypeScript.Services.Formatting {
             // If this is token terminating an indentation scope, leading comments should be indented to follow the children 
             // indentation level and not the node
 
-            if (token.kind() === SyntaxKind.CloseBraceToken || token.kind() === SyntaxKind.CloseBracketToken) {
+            if (token.kind === SyntaxKind.CloseBraceToken || token.kind === SyntaxKind.CloseBracketToken) {
                 return (this._parent.indentationAmount() + this._parent.childIndentationAmountDelta());
             }
             return this._parent.indentationAmount();
         }
 
-        private getNodeIndentation(node: SyntaxNode, newLineInsertedByFormatting?: boolean): { indentationAmount: number; indentationAmountDelta: number; } {
+        private getNodeIndentation(node: ISyntaxNode, newLineInsertedByFormatting?: boolean): { indentationAmount: number; indentationAmountDelta: number; } {
             var parent = this._parent;
 
             // We need to get the parent's indentation, which could be one of 2 things. If first token of the parent is in the span, use the parent's computed indentation.
@@ -195,7 +195,7 @@ module TypeScript.Services.Formatting {
             var indentationAmountDelta: number;
             var parentNode = parent.node();
 
-            switch (node.kind()) {
+            switch (node.kind) {
                 default:
                     // General case
                     // This node should follow the child indentation set by its parent
@@ -306,7 +306,7 @@ module TypeScript.Services.Formatting {
             if (parentNode) {
                 if (!newLineInsertedByFormatting /*This could be false or undefined here*/) {
                     var parentStartLine = this._snapshot.getLineNumberFromPosition(parent.start());
-                    var currentNodeStartLine = this._snapshot.getLineNumberFromPosition(this._position + node.leadingTriviaWidth());
+                    var currentNodeStartLine = this._snapshot.getLineNumberFromPosition(this._position + leadingTriviaWidth(node));
                     if (parentStartLine === currentNodeStartLine || newLineInsertedByFormatting === false /*meaning a new line was removed and we are force recomputing*/) {
                         indentationAmount = parentIndentationAmount;
                         indentationAmountDelta = Math.min(this.options.indentSpaces, parentIndentationAmountDelta + indentationAmountDelta);

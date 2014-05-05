@@ -3,15 +3,7 @@
 module TypeScript {
     export interface ISyntaxTrivia {
         parent: ISyntaxTriviaList;
-        syntaxTree(): SyntaxTree;
-        kind(): SyntaxKind;
-
-        isNode(): boolean;
-        isToken(): boolean;
-        isTrivia(): boolean;
-        isList(): boolean;
-        isSeparatedList(): boolean;
-        isTriviaList(): boolean;
+        kind: SyntaxKind;
 
         isWhitespace(): boolean;
         isComment(): boolean;
@@ -19,9 +11,6 @@ module TypeScript {
         isSkippedToken(): boolean;
 
         fullStart(): number;
-        fullEnd(): number;
-
-        // With of this trivia.
         fullWidth(): number;
 
         // Text for this trivia.
@@ -38,18 +27,7 @@ module TypeScript.Syntax {
     class AbstractTrivia implements ISyntaxTrivia {
         public parent: ISyntaxTriviaList = null;
 
-        constructor(private _kind: SyntaxKind) {
-        }
-
-        public isNode(): boolean { return false; }
-        public isToken(): boolean { return false; }
-        public isTrivia(): boolean { return true; }
-        public isList(): boolean { return false; }
-        public isSeparatedList(): boolean { return false; }
-        public isTriviaList(): boolean { return false; }
-
-        public syntaxTree(): SyntaxTree {
-            return this.parent.syntaxTree();
+        constructor(public kind: SyntaxKind) {
         }
 
         public clone(): ISyntaxTrivia {
@@ -57,10 +35,6 @@ module TypeScript.Syntax {
         }
 
         public fullStart(): number {
-            throw Errors.abstract();
-        }
-
-        public fullEnd(): number {
             throw Errors.abstract();
         }
 
@@ -76,50 +50,20 @@ module TypeScript.Syntax {
             throw Errors.abstract();
         }
 
-        public toJSON(key: any): any {
-            var result: any = {};
-
-            for (var name in SyntaxKind) {
-                if (<any>SyntaxKind[name] === this._kind) {
-                    result.kind = name;
-                    break;
-                }
-            }
-
-            if (this.isSkippedToken()) {
-                result.skippedToken = this.skippedToken();
-            }
-            else {
-                result.fullStart = this.fullStart();
-                result.fullEnd = this.fullEnd();
-                result.text = this.fullText();
-            }
-
-            return result;
-        }
-
-        public kind(): SyntaxKind {
-            return this._kind;
-        }
-
         public isWhitespace(): boolean {
-            return this.kind() === SyntaxKind.WhitespaceTrivia;
+            return this.kind === SyntaxKind.WhitespaceTrivia;
         }
 
         public isComment(): boolean {
-            return this.kind() === SyntaxKind.SingleLineCommentTrivia || this.kind() === SyntaxKind.MultiLineCommentTrivia;
+            return this.kind === SyntaxKind.SingleLineCommentTrivia || this.kind === SyntaxKind.MultiLineCommentTrivia;
         }
 
         public isNewLine(): boolean {
-            return this.kind() === SyntaxKind.NewLineTrivia;
+            return this.kind === SyntaxKind.NewLineTrivia;
         }
 
         public isSkippedToken(): boolean {
-            return this.kind() === SyntaxKind.SkippedTokenTrivia;
-        }
-
-        public collectTextElements(elements: string[]): void {
-            elements.push(this.fullText());
+            return this.kind === SyntaxKind.SkippedTokenTrivia;
         }
     }
 
@@ -129,15 +73,11 @@ module TypeScript.Syntax {
         }
 
         public clone(): ISyntaxTrivia {
-            return new NormalTrivia(this.kind(), this._text, this._fullStart);
+            return new NormalTrivia(this.kind, this._text, this._fullStart);
         }
 
         public fullStart(): number {
             return this._fullStart;
-        }
-
-        public fullEnd(): number {
-            return this._fullStart + this.fullWidth();
         }
 
         public fullWidth(): number {
@@ -168,10 +108,6 @@ module TypeScript.Syntax {
             return this._skippedToken.fullStart();
         }
 
-        public fullEnd(): number {
-            return this._skippedToken.fullEnd();
-        }
-
         public fullWidth(): number {
             return this.fullText().length;
         }
@@ -191,15 +127,11 @@ module TypeScript.Syntax {
         }
 
         public clone(): ISyntaxTrivia {
-            return new DeferredTrivia(this.kind(), this._text, this._fullStart, this._fullWidth);
+            return new DeferredTrivia(this.kind, this._text, this._fullStart, this._fullWidth);
         }
 
         public fullStart(): number {
             return this._fullStart;
-        }
-
-        public fullEnd(): number {
-            return this._fullStart + this.fullWidth();
         }
 
         public fullWidth(): number {
@@ -258,7 +190,7 @@ module TypeScript.Syntax {
     // Otherwise, there will be one entry in the array for each line spanned by the trivia.  Each
     // entry will contain the line separator at the end of the string.
     export function splitMultiLineCommentTriviaIntoMultipleLines(trivia: ISyntaxTrivia): string[] {
-        // Debug.assert(trivia.kind() === SyntaxKind.MultiLineCommentTrivia);
+        // Debug.assert(trivia.kind === SyntaxKind.MultiLineCommentTrivia);
         var result: string[] = [];
 
         var triviaText = trivia.fullText();

@@ -2,12 +2,12 @@
 
 module TypeScript.Indentation {
     export function columnForEndOfTokenAtPosition(syntaxTree: SyntaxTree, position: number, options: FormattingOptions): number {
-        var token = syntaxTree.sourceUnit().findToken(position);
-        return columnForStartOfTokenAtPosition(syntaxTree, position, options) + token.width();
+        var token = findToken(syntaxTree.sourceUnit(), position);
+        return columnForStartOfTokenAtPosition(syntaxTree, position, options) + width(token);
     }
 
     export function columnForStartOfTokenAtPosition(syntaxTree: SyntaxTree, position: number, options: FormattingOptions): number {
-        var token = syntaxTree.sourceUnit().findToken(position);
+        var token = findToken(syntaxTree.sourceUnit(), position);
 
         // Walk backward from this token until we find the first token in the line.  For each token 
         // we see (that is not the first tokem in line), push the entirety of the text into the text 
@@ -30,7 +30,7 @@ module TypeScript.Indentation {
 
         var current = token;
         while (current !== firstTokenInLine) {
-            current = current.previousToken();
+            current = previousToken(current);
 
             if (current === firstTokenInLine) {
                 // We're at the first token in teh line.
@@ -72,11 +72,11 @@ module TypeScript.Indentation {
 
         for (var i = leadingTrivia.count() - 1; i >= 0; i--) {
             var trivia = leadingTrivia.syntaxTriviaAt(i);
-            if (trivia.kind() === SyntaxKind.NewLineTrivia) {
+            if (trivia.kind === SyntaxKind.NewLineTrivia) {
                 break;
             }
 
-            if (trivia.kind() === SyntaxKind.MultiLineCommentTrivia) {
+            if (trivia.kind === SyntaxKind.MultiLineCommentTrivia) {
                 var lineSegments = Syntax.splitMultiLineCommentTriviaIntoMultipleLines(trivia);
                 leadingTextInReverse.push(ArrayUtilities.last(lineSegments));
 

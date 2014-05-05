@@ -89,11 +89,11 @@ module TypeScript.Services {
             this.inObjectLiteralExpression = savedInObjectLiteralExpression;
         }
 
-        private addOutlineRange(node: TypeScript.SyntaxNode, startElement: TypeScript.ISyntaxNodeOrToken, endElement: TypeScript.ISyntaxNodeOrToken) {
-            if (startElement && endElement && !startElement.isShared() && !endElement.isShared()) {
+        private addOutlineRange(node: TypeScript.ISyntaxNode, startElement: TypeScript.ISyntaxNodeOrToken, endElement: TypeScript.ISyntaxNodeOrToken) {
+            if (startElement && endElement && !isShared(startElement) && !isShared(endElement)) {
                 // Compute the position
-                var start = startElement.start();
-                var end = endElement.end();
+                var start = TypeScript.start(startElement);
+                var end = TypeScript.end(endElement);
 
                 // Push the new range
                 this.elements.push(TypeScript.TextSpan.fromBounds(start, end));

@@ -16,9 +16,9 @@
 ///<reference path='references.ts' />
 
 module TypeScript {
-    function walkListChildren(preAst: ISyntaxList<ISyntaxNodeOrToken>, walker: AstWalker): void {
-        for (var i = 0, n = preAst.childCount(); i < n; i++) {
-            walker.walk(preAst.childAt(i));
+    function walkListChildren(preAst: ISyntaxNodeOrToken[], walker: AstWalker): void {
+        for (var i = 0, n = preAst.length; i < n; i++) {
+            walker.walk(preAst[i]);
         }
     }
 
@@ -77,9 +77,9 @@ module TypeScript {
         walker.walk(preAst.block);
     }
 
-    function walkSeparatedListChildren(preAst: ISeparatedSyntaxList<ISyntaxNodeOrToken>, walker: AstWalker): void {
-        for (var i = 0, n = preAst.nonSeparatorCount(); i < n; i++) {
-            walker.walk(preAst.nonSeparatorAt(i));
+    function walkSeparatedListChildren(preAst: ISyntaxNodeOrToken[], walker: AstWalker): void {
+        for (var i = 0, n = preAst.length; i < n; i++) {
+            walker.walk(preAst[i]);
         }
     }
 
@@ -618,7 +618,7 @@ module TypeScript {
 
             this.pre(ast, this.state);
 
-            var walker = childrenWalkers[ast.kind()];
+            var walker = childrenWalkers[ast.kind];
             if (walker) {
                 walker(ast, this);
             }
@@ -641,7 +641,7 @@ module TypeScript {
 
             this.pre(ast, this.state);
 
-            var walker = childrenWalkers[ast.kind()];
+            var walker = childrenWalkers[ast.kind];
             if (walker) {
                 walker(ast, this);
             }
@@ -678,7 +678,7 @@ module TypeScript {
 
             if (this.options.goChildren) {
                 // Call the "walkChildren" function corresponding to "nodeType".
-                var walker = childrenWalkers[ast.kind()];
+                var walker = childrenWalkers[ast.kind];
                 if (walker) {
                     walker(ast, this);
                 }

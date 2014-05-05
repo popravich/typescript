@@ -3,7 +3,7 @@
 module TypeScript {
     //export function visitSyntaxElement(visitor: ISyntaxVisitor, element: ISyntaxElement): any {
     //    if (element === null) { return null; }
-    //    switch (element.kind()) {
+    //    switch (element.kind) {
 
     //    }
     //}
@@ -11,7 +11,7 @@ module TypeScript {
     export class SyntaxUtilities {
         public static isLeftHandSizeExpression(element: ISyntaxElement) {
             if (element) {
-                switch (element.kind()) {
+                switch (element.kind) {
                     case SyntaxKind.MemberAccessExpression:
                     case SyntaxKind.ElementAccessExpression:
                     case SyntaxKind.ObjectCreationExpression:
@@ -38,7 +38,7 @@ module TypeScript {
 
         public static isExpression(element: ISyntaxElement) {
             if (element) {
-                switch (element.kind()) {
+                switch (element.kind) {
                     case SyntaxKind.IdentifierName:
                     case SyntaxKind.RegularExpressionLiteral:
                     case SyntaxKind.NumericLiteral:
@@ -118,7 +118,7 @@ module TypeScript {
 
         public static isSwitchClause(element: ISyntaxElement) {
             if (element) {
-                switch (element.kind()) {
+                switch (element.kind) {
                     case SyntaxKind.CaseSwitchClause:
                     case SyntaxKind.DefaultSwitchClause:
                         return true;
@@ -130,7 +130,7 @@ module TypeScript {
 
         public static isTypeMember(element: ISyntaxElement) {
             if (element) {
-                switch (element.kind()) {
+                switch (element.kind) {
                     case SyntaxKind.ConstructSignature:
                     case SyntaxKind.MethodSignature:
                     case SyntaxKind.IndexSignature:
@@ -145,7 +145,7 @@ module TypeScript {
 
         public static isClassElement(element: ISyntaxElement) {
             if (element) {
-                switch (element.kind()) {
+                switch (element.kind) {
                     case SyntaxKind.ConstructorDeclaration:
                     case SyntaxKind.IndexMemberDeclaration:
                     case SyntaxKind.MemberFunctionDeclaration:
@@ -162,7 +162,7 @@ module TypeScript {
 
         public static isModuleElement(element: ISyntaxElement) {
             if (element) {
-                switch (element.kind()) {
+                switch (element.kind) {
                     case SyntaxKind.ImportDeclaration:
                     case SyntaxKind.ExportAssignment:
                     case SyntaxKind.ClassDeclaration:
@@ -199,7 +199,7 @@ module TypeScript {
 
         public static isStatement(element: ISyntaxElement) {
             if (element) {
-                switch (element.kind()) {
+                switch (element.kind) {
                     case SyntaxKind.FunctionDeclaration:
                     case SyntaxKind.VariableStatement:
                     case SyntaxKind.Block:
@@ -229,8 +229,8 @@ module TypeScript {
         public static isAngleBracket(positionedElement: ISyntaxElement): boolean {
             var element = positionedElement;
             var parent = positionedElement.parent;
-            if (parent !== null && (element.kind() === SyntaxKind.LessThanToken || element.kind() === SyntaxKind.GreaterThanToken)) {
-                switch (parent.kind()) {
+            if (parent !== null && (element.kind === SyntaxKind.LessThanToken || element.kind === SyntaxKind.GreaterThanToken)) {
+                switch (parent.kind) {
                     case SyntaxKind.TypeArgumentList:
                     case SyntaxKind.TypeParameterList:
                     case SyntaxKind.CastExpression:
@@ -241,10 +241,10 @@ module TypeScript {
             return false;
         }
 
-        public static getToken(list: ISyntaxList<ISyntaxToken>, kind: SyntaxKind): ISyntaxToken {
-            for (var i = 0, n = list.childCount(); i < n; i++) {
-                var token = list.childAt(i);
-                if (token.kind() === kind) {
+        public static getToken(list: ISyntaxToken[], kind: SyntaxKind): ISyntaxToken {
+            for (var i = 0, n = list.length; i < n; i++) {
+                var token = list[i];
+                if (token.kind === kind) {
                     return token;
                 }
             }
@@ -252,7 +252,7 @@ module TypeScript {
             return null;
         }
 
-        public static containsToken(list: ISyntaxList<ISyntaxToken>, kind: SyntaxKind): boolean {
+        public static containsToken(list: ISyntaxToken[], kind: SyntaxKind): boolean {
             return SyntaxUtilities.getToken(list, kind) !== null;
         }
 
@@ -261,7 +261,7 @@ module TypeScript {
         }
 
         public static getExportKeyword(moduleElement: IModuleElementSyntax): ISyntaxToken {
-            switch (moduleElement.kind()) {
+            switch (moduleElement.kind) {
                 case SyntaxKind.ModuleDeclaration:
                 case SyntaxKind.ClassDeclaration:
                 case SyntaxKind.FunctionDeclaration:
@@ -281,13 +281,13 @@ module TypeScript {
             }
 
             var node = positionNode;
-            switch (node.kind()) {
+            switch (node.kind) {
                 case SyntaxKind.ModuleDeclaration:
                 case SyntaxKind.ClassDeclaration:
                 case SyntaxKind.FunctionDeclaration:
                 case SyntaxKind.VariableStatement:
                 case SyntaxKind.EnumDeclaration:
-                    if (SyntaxUtilities.containsToken(<ISyntaxList<ISyntaxToken>>(<any>node).modifiers, SyntaxKind.DeclareKeyword)) {
+                    if (SyntaxUtilities.containsToken(<ISyntaxToken[]>(<any>node).modifiers, SyntaxKind.DeclareKeyword)) {
                         return true;
                     }
                     // Fall through to check if syntax container is ambient

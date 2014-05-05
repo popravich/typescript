@@ -30,26 +30,26 @@ module TypeScript {
 
 module TypeScript.ASTHelpers {
     export function scriptIsElided(sourceUnit: SourceUnitSyntax): boolean {
-        return isDTSFile(sourceUnit.syntaxTree().fileName()) || moduleMembersAreElided(sourceUnit.moduleElements);
+        return isDTSFile(sourceUnit.syntaxTree.fileName()) || moduleMembersAreElided(sourceUnit.moduleElements);
     }
 
     export function moduleIsElided(declaration: ModuleDeclarationSyntax): boolean {
         return hasModifier(declaration.modifiers, PullElementFlags.Ambient) || moduleMembersAreElided(declaration.moduleElements);
     }
 
-    function moduleMembersAreElided(members: ISyntaxList<IModuleElementSyntax>): boolean {
-        for (var i = 0, n = members.childCount(); i < n; i++) {
-            var member = members.childAt(i);
+    function moduleMembersAreElided(members: IModuleElementSyntax[]): boolean {
+        for (var i = 0, n = members.length; i < n; i++) {
+            var member = members[i];
 
             // We should emit *this* module if it contains any non-interface types. 
             // Caveat: if we have contain a module, then we should be emitted *if we want to
             // emit that inner module as well.
-            if (member.kind() === SyntaxKind.ModuleDeclaration) {
+            if (member.kind === SyntaxKind.ModuleDeclaration) {
                 if (!moduleIsElided(<ModuleDeclarationSyntax>member)) {
                     return false;
                 }
             }
-            else if (member.kind() !== SyntaxKind.InterfaceDeclaration) {
+            else if (member.kind !== SyntaxKind.InterfaceDeclaration) {
                 return false;
             }
         }
@@ -66,7 +66,7 @@ module TypeScript.ASTHelpers {
     }
 
      export function isValidAstNode(ast: ISyntaxElement): boolean {
-         return ast && !ast.isShared() && isValidSpan(ast);
+         return ast && !isShared(ast) && start(ast) !== -1 && end(ast) !== -1;
      }
 
      export function isValidSpan(ast: ISpan): boolean {
@@ -86,8 +86,8 @@ module TypeScript.ASTHelpers {
         var top: ISyntaxElement = null;
 
         var pre = function (cur: ISyntaxElement, walker: IAstWalker) {
-            if (!cur.isShared() && isValidAstNode(cur)) {
-                var isInvalid1 = cur.kind() === SyntaxKind.ExpressionStatement && cur.width() === 0;
+            if (!isShared(cur) && isValidAstNode(cur)) {
+                var isInvalid1 = cur.kind === SyntaxKind.ExpressionStatement && width(cur) === 0;
 
                 if (isInvalid1) {
                     walker.options.goChildren = false;
@@ -102,28 +102,28 @@ module TypeScript.ASTHelpers {
                     // If "position === 3", the caret is at the "right" of the "r" character, which should be considered valid
                     var inclusive =
                         forceInclusive ||
-                        cur.kind() === SyntaxKind.IdentifierName ||
-                        cur.kind() === SyntaxKind.MemberAccessExpression ||
-                        cur.kind() === SyntaxKind.QualifiedName ||
-                        //cur.kind() === SyntaxKind.TypeRef ||
-                        cur.kind() === SyntaxKind.VariableDeclaration ||
-                        cur.kind() === SyntaxKind.VariableDeclarator ||
-                        cur.kind() === SyntaxKind.InvocationExpression ||
-                        pos === script.end() + script.trailingTriviaWidth(); // Special "EOF" case
+                        cur.kind === SyntaxKind.IdentifierName ||
+                        cur.kind === SyntaxKind.MemberAccessExpression ||
+                        cur.kind === SyntaxKind.QualifiedName ||
+                        //cur.kind === SyntaxKind.TypeRef ||
+                        cur.kind === SyntaxKind.VariableDeclaration ||
+                        cur.kind === SyntaxKind.VariableDeclarator ||
+                        cur.kind === SyntaxKind.InvocationExpression ||
+                        pos === end(script) + lastToken(script).trailingTriviaWidth(); // Special "EOF" case
 
-                    var minChar = cur.start();
-                    var limChar = cur.end() + (useTrailingTriviaAsLimChar ? cur.trailingTriviaWidth() : 0) + (inclusive ? 1 : 0);
+                    var minChar = start(cur);
+                    var limChar = end(cur) + (useTrailingTriviaAsLimChar ? trailingTriviaWidth(cur) : 0) + (inclusive ? 1 : 0);
                     if (pos >= minChar && pos < limChar) {
 
                         // Ignore empty lists
-                        if ((cur.kind() !== SyntaxKind.List && cur.kind() !== SyntaxKind.SeparatedList) || cur.end() > cur.start()) {
+                        if ((cur.kind !== SyntaxKind.List && cur.kind !== SyntaxKind.SeparatedList) || end(cur) > start(cur)) {
                             // TODO: Since ISyntaxElement is sometimes not correct wrt to position, only add "cur" if it's better
                             //       than top of the stack.
                             if (top === null) {
                                 top = cur;
                             }
-                            else if (cur.start() >= top.start() &&
-                                (cur.end() + (useTrailingTriviaAsLimChar ? cur.trailingTriviaWidth() : 0)) <= (top.end() + (useTrailingTriviaAsLimChar ? top.trailingTriviaWidth() : 0))) {
+                            else if (start(cur) >= start(top) &&
+                                (end(cur) + (useTrailingTriviaAsLimChar ? trailingTriviaWidth(cur) : 0)) <= (end(top) + (useTrailingTriviaAsLimChar ? trailingTriviaWidth(top) : 0))) {
                                 // this new node appears to be better than the one we're 
                                 // storing.  Make this the new node.
 
@@ -131,7 +131,7 @@ module TypeScript.ASTHelpers {
                                 // don't want to replace it with another missing identifier.
                                 // We want to return the first missing identifier found in a
                                 // depth first walk of  the tree.
-                                if (top.width() !== 0 || cur.width() !== 0) {
+                                if (width(top) !== 0 || width(cur) !== 0) {
                                     top = cur;
                                 }
                             }
@@ -148,20 +148,20 @@ module TypeScript.ASTHelpers {
         return top;
     }
 
-    export function getExtendsHeritageClause(clauses: ISyntaxList<HeritageClauseSyntax>): HeritageClauseSyntax {
+    export function getExtendsHeritageClause(clauses: HeritageClauseSyntax[]): HeritageClauseSyntax {
         return getHeritageClause(clauses, SyntaxKind.ExtendsHeritageClause);
     }
 
-    export function getImplementsHeritageClause(clauses: ISyntaxList<HeritageClauseSyntax>): HeritageClauseSyntax {
+    export function getImplementsHeritageClause(clauses: HeritageClauseSyntax[]): HeritageClauseSyntax {
         return getHeritageClause(clauses, SyntaxKind.ImplementsHeritageClause);
     }
 
-    function getHeritageClause(clauses: ISyntaxList<HeritageClauseSyntax>, kind: SyntaxKind): HeritageClauseSyntax {
+    function getHeritageClause(clauses: HeritageClauseSyntax[], kind: SyntaxKind): HeritageClauseSyntax {
         if (clauses) {
-            for (var i = 0, n = clauses.childCount(); i < n; i++) {
-                var child = clauses.childAt(i);
+            for (var i = 0, n = clauses.length; i < n; i++) {
+                var child = clauses[i];
 
-                if (child.typeNames.nonSeparatorCount() > 0 && child.kind() === kind) {
+                if (child.typeNames.length > 0 && child.kind === kind) {
                     return child;
                 }
             }
@@ -171,8 +171,8 @@ module TypeScript.ASTHelpers {
     }
 
     export function isCallExpression(ast: ISyntaxElement): boolean {
-        return (ast && ast.kind() === SyntaxKind.InvocationExpression) ||
-            (ast && ast.kind() === SyntaxKind.ObjectCreationExpression);
+        return (ast && ast.kind === SyntaxKind.InvocationExpression) ||
+            (ast && ast.kind === SyntaxKind.ObjectCreationExpression);
     }
 
     export function isCallExpressionTarget(ast: ISyntaxElement): boolean {
@@ -183,7 +183,7 @@ module TypeScript.ASTHelpers {
         var current = ast;
 
         while (current && current.parent) {
-            if (current.parent.kind() === SyntaxKind.MemberAccessExpression &&
+            if (current.parent.kind === SyntaxKind.MemberAccessExpression &&
                 (<MemberAccessExpressionSyntax>current.parent).name === current) {
                 current = current.parent;
                 continue;
@@ -193,7 +193,7 @@ module TypeScript.ASTHelpers {
         }
 
         if (current && current.parent) {
-            if (current.parent.kind() === SyntaxKind.InvocationExpression || current.parent.kind() === SyntaxKind.ObjectCreationExpression) {
+            if (current.parent.kind === SyntaxKind.InvocationExpression || current.parent.kind === SyntaxKind.ObjectCreationExpression) {
                 return current === (<InvocationExpressionSyntax>current.parent).expression;
             }
         }
@@ -205,11 +205,11 @@ module TypeScript.ASTHelpers {
         if (ast === null || ast.parent === null) {
             return false;
         }
-        if (ast.kind() !== SyntaxKind.IdentifierName) {
+        if (ast.kind !== SyntaxKind.IdentifierName) {
             return false;
         }
 
-        switch (ast.parent.kind()) {
+        switch (ast.parent.kind) {
             case SyntaxKind.ClassDeclaration:
                 return (<ClassDeclarationSyntax>ast.parent).identifier === ast;
             case SyntaxKind.InterfaceDeclaration:
@@ -248,9 +248,9 @@ module TypeScript.ASTHelpers {
     export function getEnclosingParameterForInitializer(ast: ISyntaxElement): ParameterSyntax {
         var current = ast;
         while (current) {
-            switch (current.kind()) {
+            switch (current.kind) {
                 case SyntaxKind.EqualsValueClause:
-                    if (current.parent && current.parent.kind() === SyntaxKind.Parameter) {
+                    if (current.parent && current.parent.kind === SyntaxKind.Parameter) {
                         return <ParameterSyntax>current.parent;
                     }
                     break;
@@ -270,7 +270,7 @@ module TypeScript.ASTHelpers {
         var current = ast;
 
         while (current) {
-            switch (current.kind()) {
+            switch (current.kind) {
                 case SyntaxKind.MemberVariableDeclaration:
                     return <MemberVariableDeclarationSyntax>current;
                 case SyntaxKind.ClassDeclaration:
@@ -288,23 +288,23 @@ module TypeScript.ASTHelpers {
     export function isNameOfFunction(ast: ISyntaxElement) {
         return ast
             && ast.parent
-            && ast.kind() === SyntaxKind.IdentifierName
-            && ast.parent.kind() === SyntaxKind.FunctionDeclaration
+            && ast.kind === SyntaxKind.IdentifierName
+            && ast.parent.kind === SyntaxKind.FunctionDeclaration
             && (<FunctionDeclarationSyntax>ast.parent).identifier === ast;
     }
 
     export function isNameOfMemberFunction(ast: ISyntaxElement) {
         return ast
             && ast.parent
-            && ast.kind() === SyntaxKind.IdentifierName
-            && ast.parent.kind() === SyntaxKind.MemberFunctionDeclaration
+            && ast.kind === SyntaxKind.IdentifierName
+            && ast.parent.kind === SyntaxKind.MemberFunctionDeclaration
             && (<MemberFunctionDeclarationSyntax>ast.parent).propertyName === ast;
     }
 
     export function isNameOfMemberAccessExpression(ast: ISyntaxElement) {
         if (ast &&
             ast.parent &&
-            ast.parent.kind() === SyntaxKind.MemberAccessExpression &&
+            ast.parent.kind === SyntaxKind.MemberAccessExpression &&
             (<MemberAccessExpressionSyntax>ast.parent).name === ast) {
 
             return true;
@@ -316,7 +316,7 @@ module TypeScript.ASTHelpers {
     export function isRightSideOfQualifiedName(ast: ISyntaxElement) {
         if (ast &&
             ast.parent &&
-            ast.parent.kind() === SyntaxKind.QualifiedName &&
+            ast.parent.kind === SyntaxKind.QualifiedName &&
             (<QualifiedNameSyntax>ast.parent).right === ast) {
 
             return true;
@@ -326,7 +326,7 @@ module TypeScript.ASTHelpers {
     }
 
     export function parentIsModuleDeclaration(ast: ISyntaxElement) {
-        return ast.parent && ast.parent.kind() === SyntaxKind.ModuleDeclaration;
+        return ast.parent && ast.parent.kind === SyntaxKind.ModuleDeclaration;
     }
 
     export function parametersFromIdentifier(id: ISyntaxToken): IParameters {
@@ -361,19 +361,19 @@ module TypeScript.ASTHelpers {
 
     export function parametersFromParameterList(list: ParameterListSyntax): IParameters {
         return {
-            length: list.parameters.nonSeparatorCount(),
+            length: list.parameters.length,
             lastParameterIsRest: () => lastParameterIsRest(list),
             ast: list.parameters,
-            astAt: (index: number) => list.parameters.nonSeparatorAt(index),
-            identifierAt: (index: number) => list.parameters.nonSeparatorAt(index).identifier,
-            typeAt: (index: number) => getType(list.parameters.nonSeparatorAt(index)),
-            initializerAt: (index: number) => list.parameters.nonSeparatorAt(index).equalsValueClause,
-            isOptionalAt: (index: number) => parameterIsOptional(list.parameters.nonSeparatorAt(index)),
+            astAt: (index: number) => list.parameters[index],
+            identifierAt: (index: number) => list.parameters[index].identifier,
+            typeAt: (index: number) => getType(list.parameters[index]),
+            initializerAt: (index: number) => list.parameters[index].equalsValueClause,
+            isOptionalAt: (index: number) => parameterIsOptional(list.parameters[index]),
         };
     }
 
     export function isDeclarationAST(ast: ISyntaxElement): boolean {
-        switch (ast.kind()) {
+        switch (ast.kind) {
             case SyntaxKind.VariableDeclarator:
                 return getVariableStatement(<VariableDeclaratorSyntax>ast) !== null;
 
@@ -412,7 +412,7 @@ module TypeScript.ASTHelpers {
 
     export function preComments(element: ISyntaxElement): Comment[]{
         if (element) {
-            switch (element.kind()) {
+            switch (element.kind) {
                 case SyntaxKind.VariableStatement:
                 case SyntaxKind.ExpressionStatement:
                 case SyntaxKind.ClassDeclaration:
@@ -446,7 +446,7 @@ module TypeScript.ASTHelpers {
 
     export function postComments(element: ISyntaxElement): Comment[] {
         if (element) {
-            switch (element.kind()) {
+            switch (element.kind) {
                 case SyntaxKind.ExpressionStatement:
                     return convertNodeTrailingComments(element, /*allowWithNewLine:*/ true);
                 case SyntaxKind.VariableStatement:
@@ -481,21 +481,21 @@ module TypeScript.ASTHelpers {
 
     function convertNodeTrailingComments(node: ISyntaxElement, allowWithNewLine = false): Comment[]{
         // Bail out quickly before doing any expensive math computation.
-        var lastToken = node.lastToken();
-        if (lastToken === null || !lastToken.hasTrailingComment()) {
+        var _lastToken = lastToken(node);
+        if (_lastToken === null || !_lastToken.hasTrailingComment()) {
             return null;
         }
 
-        if (!allowWithNewLine && lastToken.hasTrailingNewLine()) {
+        if (!allowWithNewLine && _lastToken.hasTrailingNewLine()) {
             return null;
         }
 
-        return convertComments(lastToken.trailingTrivia(), node.fullStart() + node.fullWidth() - lastToken.trailingTriviaWidth());
+        return convertComments(_lastToken.trailingTrivia(), fullStart(node) + fullWidth(node) - _lastToken.trailingTriviaWidth());
     }
 
     function convertNodeLeadingComments(element: ISyntaxElement): Comment[]{
         if (element) {
-            return convertTokenLeadingComments(element.firstToken());
+            return convertTokenLeadingComments(firstToken(element));
         }
 
         return null;
@@ -517,7 +517,7 @@ module TypeScript.ASTHelpers {
         }
 
         return token.hasTrailingComment()
-            ? convertComments(token.trailingTrivia(), token.fullEnd() - token.trailingTriviaWidth())
+            ? convertComments(token.trailingTrivia(), fullEnd(token) - token.trailingTriviaWidth())
             : null;
     }
 
@@ -548,12 +548,12 @@ module TypeScript.ASTHelpers {
         if (isDeclarationAST(ast)) {
             var comments: Comment[] = null;
 
-            if (ast.kind() === SyntaxKind.VariableDeclarator) {
+            if (ast.kind === SyntaxKind.VariableDeclarator) {
                 // Get the doc comments for a variable off of the variable statement.  That's what
                 // they'll be attached to in the tree.
                 comments = TypeScript.ASTHelpers.preComments(getVariableStatement(<VariableDeclaratorSyntax>ast));
             }
-            else if (ast.kind() === SyntaxKind.Parameter) {
+            else if (ast.kind === SyntaxKind.Parameter) {
                 // First check if the parameter was written like so:
                 //      (
                 //          /** blah */ a,
@@ -563,8 +563,8 @@ module TypeScript.ASTHelpers {
                     // Now check if it was written like so:
                     //      (/** blah */ a, /** blah */ b);
                     // In this case, the comment will belong to the preceding token.
-                    var previousToken = ast.syntaxTree().sourceUnit().findToken(ast.firstToken().fullStart() - 1);
-                    if (previousToken && (previousToken.kind() === SyntaxKind.OpenParenToken || previousToken.kind() === SyntaxKind.CommaToken)) {
+                    var previousToken = findToken(syntaxTree(ast).sourceUnit(), firstToken(ast).fullStart() - 1);
+                    if (previousToken && (previousToken.kind === SyntaxKind.OpenParenToken || previousToken.kind === SyntaxKind.CommaToken)) {
                         comments = convertTokenTrailingComments(previousToken);
                     }
                 }
@@ -592,7 +592,7 @@ module TypeScript.ASTHelpers {
 
     export function getParameterList(ast: ISyntaxElement): ParameterListSyntax {
         if (ast) {
-            switch (ast.kind()) {
+            switch (ast.kind) {
                 case SyntaxKind.ConstructorDeclaration:
                     return getParameterList((<ConstructorDeclarationSyntax>ast).callSignature);
                 case SyntaxKind.FunctionDeclaration:
@@ -627,7 +627,7 @@ module TypeScript.ASTHelpers {
 
     export function getType(ast: ISyntaxElement): ISyntaxNodeOrToken {
         if (ast) {
-            switch (ast.kind()) {
+            switch (ast.kind) {
                 case SyntaxKind.FunctionDeclaration:
                     return getType((<FunctionDeclarationSyntax>ast).callSignature);
                 case SyntaxKind.ParenthesizedArrowFunctionExpression:
@@ -672,9 +672,9 @@ module TypeScript.ASTHelpers {
 
     function getVariableStatement(variableDeclarator: VariableDeclaratorSyntax): VariableStatementSyntax {
         if (variableDeclarator && variableDeclarator.parent && variableDeclarator.parent.parent && variableDeclarator.parent.parent.parent &&
-            variableDeclarator.parent.kind() === SyntaxKind.SeparatedList &&
-            variableDeclarator.parent.parent.kind() === SyntaxKind.VariableDeclaration &&
-            variableDeclarator.parent.parent.parent.kind() === SyntaxKind.VariableStatement) {
+            variableDeclarator.parent.kind === SyntaxKind.SeparatedList &&
+            variableDeclarator.parent.parent.kind === SyntaxKind.VariableDeclaration &&
+            variableDeclarator.parent.parent.parent.kind === SyntaxKind.VariableStatement) {
 
             return <VariableStatementSyntax>variableDeclarator.parent.parent.parent;
         }
@@ -682,21 +682,21 @@ module TypeScript.ASTHelpers {
         return null;
     }
 
-    export function getVariableDeclaratorModifiers(variableDeclarator: VariableDeclaratorSyntax): ISyntaxList<ISyntaxToken> {
+    export function getVariableDeclaratorModifiers(variableDeclarator: VariableDeclaratorSyntax): ISyntaxToken[] {
         var variableStatement = getVariableStatement(variableDeclarator);
         return variableStatement ? variableStatement.modifiers : Syntax.emptyList<ISyntaxToken>();
     }
 
     export function isIntegerLiteralAST(expression: ISyntaxElement): boolean {
         if (expression) {
-            switch (expression.kind()) {
+            switch (expression.kind) {
                 case SyntaxKind.PlusExpression:
                 case SyntaxKind.NegateExpression:
                     // Note: if there is a + or - sign, we can only allow a normal integer following
                     // (and not a hex integer).  i.e. -0xA is a legal expression, but it is not a 
                     // *literal*.
                     expression = (<PrefixUnaryExpressionSyntax>expression).operand;
-                    return expression.kind() === SyntaxKind.NumericLiteral && IntegerUtilities.isInteger((<ISyntaxToken>expression).text());
+                    return expression.kind === SyntaxKind.NumericLiteral && IntegerUtilities.isInteger((<ISyntaxToken>expression).text());
 
                 case SyntaxKind.NumericLiteral:
                     // If it doesn't have a + or -, then either an integer literal or a hex literal
@@ -711,7 +711,7 @@ module TypeScript.ASTHelpers {
 
     export function getEnclosingModuleDeclaration(ast: ISyntaxElement): ModuleDeclarationSyntax {
         while (ast) {
-            if (ast.kind() === SyntaxKind.ModuleDeclaration) {
+            if (ast.kind === SyntaxKind.ModuleDeclaration) {
                 return <ModuleDeclarationSyntax>ast;
             }
 
@@ -727,7 +727,7 @@ module TypeScript.ASTHelpers {
 
     export function getModuleDeclarationFromNameAST(ast: ISyntaxElement): ModuleDeclarationSyntax {
         if (ast) {
-            switch (ast.kind()) {
+            switch (ast.kind) {
                 case SyntaxKind.StringLiteral:
                     if (parentIsModuleDeclaration(ast) && (<ModuleDeclarationSyntax>ast.parent).stringLiteral === ast) {
                         return <ModuleDeclarationSyntax>ast.parent;
@@ -746,7 +746,7 @@ module TypeScript.ASTHelpers {
             }
 
             // Only qualified names can be name of module declaration if they didnt satisfy above conditions
-            for (ast = ast.parent; ast && ast.kind() === SyntaxKind.QualifiedName; ast = ast.parent) {
+            for (ast = ast.parent; ast && ast.kind === SyntaxKind.QualifiedName; ast = ast.parent) {
                 if (isEntireNameOfModuleDeclaration(ast)) {
                     return <ModuleDeclarationSyntax>ast.parent;
                 }
@@ -761,7 +761,7 @@ module TypeScript.ASTHelpers {
             if (ast.stringLiteral) {
                 return astName === ast.stringLiteral;
             }
-            else if (ast.name.kind() === SyntaxKind.QualifiedName) {
+            else if (ast.name.kind === SyntaxKind.QualifiedName) {
                 return astName === (<QualifiedNameSyntax>ast.name).right;
             }
             else {
@@ -773,11 +773,11 @@ module TypeScript.ASTHelpers {
     }
 
     export function getNameOfIdenfierOrQualifiedName(name: ISyntaxElement): string {
-        if (name.kind() === SyntaxKind.IdentifierName) {
+        if (name.kind === SyntaxKind.IdentifierName) {
             return (<ISyntaxToken>name).text();
         }
         else {
-            Debug.assert(name.kind() == SyntaxKind.QualifiedName);
+            Debug.assert(name.kind == SyntaxKind.QualifiedName);
             var dotExpr = <QualifiedNameSyntax>name;
             return getNameOfIdenfierOrQualifiedName(dotExpr.left) + "." + getNameOfIdenfierOrQualifiedName(dotExpr.right);
         }
@@ -786,7 +786,7 @@ module TypeScript.ASTHelpers {
     export function getModuleNames(name: ISyntaxElement, result?: ISyntaxToken[]): ISyntaxToken[] {
         result = result || [];
 
-        if (name.kind() === SyntaxKind.QualifiedName) {
+        if (name.kind === SyntaxKind.QualifiedName) {
             getModuleNames((<QualifiedNameSyntax>name).left, result);
             result.push((<QualifiedNameSyntax>name).right);
         }

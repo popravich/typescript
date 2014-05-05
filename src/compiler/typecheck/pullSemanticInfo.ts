@@ -236,7 +236,7 @@ module TypeScript {
             // past, then we have to stop searching at the position of that decl.  Otherwise, we
             // search the entire file.
             var doNotGoPastThisPosition = doNotGoPastThisDecl && doNotGoPastThisDecl.fileName() === topLevelDecl.fileName()
-                ? doNotGoPastThisDecl.ast().start()
+                ? start(doNotGoPastThisDecl.ast())
                 : -1
 
             var foundDecls = topLevelDecl.searchChildDecls(name, kind);
@@ -247,7 +247,7 @@ module TypeScript {
                 // This decl was at or past the stopping point.  Don't search any further.
                 if (doNotGoPastThisPosition !== -1 &&
                     foundDecl.ast() &&
-                    foundDecl.ast().start() > doNotGoPastThisPosition) {
+                    start(foundDecl.ast()) > doNotGoPastThisPosition) {
 
                     break;
                 }
@@ -505,7 +505,7 @@ module TypeScript {
         }
 
         public setSymbolForAST(ast: ISyntaxElement, symbol: PullSymbol): void {
-            Debug.assert(!ast.isShared());
+            Debug.assert(!isShared(ast));
             this.astSymbolMap[syntaxID(ast)] = symbol;
         }
 
@@ -514,20 +514,20 @@ module TypeScript {
         }
 
         public setAliasSymbolForAST(ast: ISyntaxElement, symbol: PullTypeAliasSymbol): void {
-            Debug.assert(!ast.isShared());
+            Debug.assert(!isShared(ast));
             this.astAliasSymbolMap[syntaxID(ast)] = symbol;
         }
 
         public getAliasSymbolForAST(ast: ISyntaxElement): PullTypeAliasSymbol {
-            return ast.isShared() ? null : this.astAliasSymbolMap[syntaxID(ast)];
+            return isShared(ast) ? null : this.astAliasSymbolMap[syntaxID(ast)];
         }
 
         public getCallResolutionDataForAST(ast: ISyntaxElement): PullAdditionalCallResolutionData {
-            return ast.isShared() ? null : this.astCallResolutionDataMap[syntaxID(ast)];
+            return isShared(ast) ? null : this.astCallResolutionDataMap[syntaxID(ast)];
         }
 
         public setCallResolutionDataForAST(ast: ISyntaxElement, callResolutionData: PullAdditionalCallResolutionData) {
-            Debug.assert(!ast.isShared());
+            Debug.assert(!isShared(ast));
             if (callResolutionData) {
                 this.astCallResolutionDataMap[syntaxID(ast)] = callResolutionData;
             }
@@ -603,7 +603,7 @@ module TypeScript {
         }
 
         public getDeclForAST(ast: ISyntaxElement): PullDecl {
-            var document = this.getDocument(ast.syntaxTree().fileName());
+            var document = this.getDocument(syntaxTree(ast).fileName());
 
             if (document) {
                 return document._getDeclForAST(ast);
@@ -613,7 +613,7 @@ module TypeScript {
         }
 
         public getEnclosingDecl(ast: ISyntaxElement): PullDecl {
-            return this.getDocument(ast.syntaxTree().fileName()).getEnclosingDecl(ast);
+            return this.getDocument(syntaxTree(ast).fileName()).getEnclosingDecl(ast);
         }
 
         public setDeclForAST(ast: ISyntaxElement, decl: PullDecl): void {
@@ -655,8 +655,8 @@ module TypeScript {
         }
 
         public diagnosticFromAST(ast: ISyntaxElement, diagnosticKey: string, _arguments: any[] = null, additionalLocations: Location[] = null): Diagnostic {
-            var syntaxTree = ast.syntaxTree();
-            return new Diagnostic(syntaxTree.fileName(), syntaxTree.lineMap(), ast.start(), ast.width(), diagnosticKey, _arguments, additionalLocations);
+            var syntaxTree = TypeScript.syntaxTree(ast);
+            return new Diagnostic(syntaxTree.fileName(), syntaxTree.lineMap(), start(ast), width(ast), diagnosticKey, _arguments, additionalLocations);
         }
 
         public diagnosticFromDecl(decl: PullDecl, diagnosticKey: string, _arguments: any[]= null, additionalLocations: Location[]= null): Diagnostic {
@@ -664,8 +664,8 @@ module TypeScript {
         }
 
         public locationFromAST(ast: ISyntaxElement): Location {
-            var syntaxTree = ast.syntaxTree();
-            return new Location(syntaxTree.fileName(), syntaxTree.lineMap(), ast.start(), ast.width());
+            var syntaxTree = TypeScript.syntaxTree(ast);
+            return new Location(syntaxTree.fileName(), syntaxTree.lineMap(), start(ast), width(ast));
         }
 
         public duplicateIdentifierDiagnosticFromAST(ast: ISyntaxElement, identifier: string, additionalLocationAST: ISyntaxElement): Diagnostic {

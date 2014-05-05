@@ -139,8 +139,8 @@ module TypeScript {
 
         public inferTypeArguments(): PullTypeSymbol[] {
             // Resolve all of the argument ASTs in the callback
-            this.signatureBeingInferred.forAllParameterTypes(/*length*/ this.argumentList.arguments.nonSeparatorCount(), (parameterType, argumentIndex) => {
-                var argumentAST = this.argumentList.arguments.nonSeparatorAt(argumentIndex);
+            this.signatureBeingInferred.forAllParameterTypes(/*length*/ this.argumentList.arguments.length, (parameterType, argumentIndex) => {
+                var argumentAST = this.argumentList.arguments[argumentIndex];
 
                 this.context.pushInferentialType(parameterType, this);
                 var argumentType = this.resolver.resolveAST(argumentAST, /*isContextuallyTyped*/ true, this.context).type;
@@ -214,12 +214,12 @@ module TypeScript {
         }
 
         public setSymbolForAST(ast: ISyntaxElement, symbol: PullSymbol): void {
-            Debug.assert(!ast.isShared());
+            Debug.assert(!isShared(ast));
             this.astSymbolMap[syntaxID(ast)] = symbol;
         }
 
         public getSymbolForAST(ast: ISyntaxElement): PullSymbol {
-            return ast.isShared() ? null : this.astSymbolMap[syntaxID(ast)];
+            return isShared(ast) ? null : this.astSymbolMap[syntaxID(ast)];
         }
     }
 
@@ -252,10 +252,10 @@ module TypeScript {
             // whatever host we're in will eventually get around to typechecking it.  This is 
             // also important as it's very possible to stack overflow when typechecking if we 
             // keep jumping around to ISyntaxElement nodes all around a large project.
-            return !ast.isShared() &&
+            return !isShared(ast) &&
                 this.typeCheck() &&
                 !this.typeCheckedNodes.valueAt(syntaxID(ast)) &&
-                this.fileName === ast.syntaxTree().fileName();
+                this.fileName === syntaxTree(ast).fileName();
         }
 
         private _pushAnyContextualType(type: PullTypeSymbol, provisional: boolean, isInferentiallyTyping: boolean, argContext: TypeArgumentInferenceContext) {

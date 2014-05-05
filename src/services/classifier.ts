@@ -82,18 +82,19 @@ module TypeScript.Services {
             }
 
             var result = new ClassificationResult();
-            this.scanner = new TypeScript.Scanner(TypeScript.LanguageVersion.EcmaScript5, TypeScript.SimpleText.fromString(text));
+            this.scanner = createScanner(TypeScript.LanguageVersion.EcmaScript5, TypeScript.SimpleText.fromString(text), this.reportDiagnostic);
 
             var lastTokenKind = TypeScript.SyntaxKind.None;
-
-            while (this.scanner.absoluteIndex() < text.length) {
+            var token: ISyntaxToken = null;
+            do {
                 this.lastDiagnosticKey = null;
 
-                var token = this.scanner.scan(!noRegexTable[lastTokenKind], this.reportDiagnostic);
-                lastTokenKind = token.kind();
+                token = this.scanner.scan(!noRegexTable[lastTokenKind]);
+                lastTokenKind = token.kind;
 
                 this.processToken(text, offset, token, result);
             }
+            while (token.kind !== SyntaxKind.EndOfFileToken);
 
             this.lastDiagnosticKey = null;
             return result;
@@ -101,17 +102,17 @@ module TypeScript.Services {
 
         private processToken(text: string, offset: number, token: TypeScript.ISyntaxToken, result: ClassificationResult): void {
             this.processTriviaList(text, offset, token.leadingTrivia(), result);
-            this.addResult(text, offset, result, token.width(), token.kind());
+            this.addResult(text, offset, result, width(token), token.kind);
             this.processTriviaList(text, offset, token.trailingTrivia(), result);
 
-            if (this.scanner.absoluteIndex() >= text.length) {
+            if (fullEnd(token) >= text.length) {
                 // We're at the end.
                 if (this.lastDiagnosticKey === TypeScript.DiagnosticCode.AsteriskSlash_expected) {
                     result.finalLexState = EndOfLineState.InMultiLineCommentTrivia;
                     return;
                 }
 
-                if (token.kind() === TypeScript.SyntaxKind.StringLiteral) {
+                if (token.kind === TypeScript.SyntaxKind.StringLiteral) {
                     var tokenText = token.text();
                     if (tokenText.length > 0 && tokenText.charCodeAt(tokenText.length - 1) === TypeScript.CharacterCodes.backslash) {
                         var quoteChar = tokenText.charCodeAt(0);
@@ -127,7 +128,7 @@ module TypeScript.Services {
         private processTriviaList(text: string, offset: number, triviaList: TypeScript.ISyntaxTriviaList, result: ClassificationResult): void {
             for (var i = 0, n = triviaList.count(); i < n; i++) {
                 var trivia = triviaList.syntaxTriviaAt(i);
-                this.addResult(text, offset, result, trivia.fullWidth(), trivia.kind());
+                this.addResult(text, offset, result, trivia.fullWidth(), trivia.kind);
             }
         }
 

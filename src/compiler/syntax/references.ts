@@ -13,11 +13,9 @@
 ///<reference path='scanner.ts' />
 
 ///<reference path='scannerUtilities.generated.ts' />
-///<reference path='separatedSyntaxList.ts' />
 ///<reference path='slidingWindow.ts' />
 ///<reference path='syntax.ts' />
 ///<reference path='syntaxElement.ts' />
-///<reference path='syntaxFactory.generated.ts' />
 ///<reference path='syntaxFacts2.ts' />
 ///<reference path='syntaxList.ts' />
 ///<reference path='syntaxNode.ts' />

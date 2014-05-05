@@ -619,7 +619,7 @@ module TypeScript {
             if (source === this.semanticInfoChain.stringTypeSymbol && target.isPrimitive() && (<PullPrimitiveTypeSymbol>target).isStringConstant()) {
                 return comparisonInfo &&
                     comparisonInfo.stringConstantVal &&
-                    (comparisonInfo.stringConstantVal.kind() === SyntaxKind.StringLiteral) &&
+                    (comparisonInfo.stringConstantVal.kind === SyntaxKind.StringLiteral) &&
                     (stripStartAndEndQuotes((<ISyntaxToken>comparisonInfo.stringConstantVal).text()) === stripStartAndEndQuotes(target.name));
             }
 

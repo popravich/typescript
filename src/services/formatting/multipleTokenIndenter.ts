@@ -36,7 +36,7 @@ module TypeScript.Services.Formatting {
 
             // Be strict, and only consider nodes that fall inside the span. This avoids indenting a multiline string
             // on enter at the end of, as the whole token was not included in the span
-            var tokenSpan = new TextSpan(this.position() + token.leadingTriviaWidth(), token.width());
+            var tokenSpan = new TextSpan(this.position() + token.leadingTriviaWidth(), width(token));
             if (!this.textSpan().containsTextSpan(tokenSpan)) {
                 return;
             }
@@ -73,7 +73,7 @@ module TypeScript.Services.Formatting {
                         continue;
                     }
 
-                    switch (trivia.kind()) {
+                    switch (trivia.kind) {
                         case SyntaxKind.MultiLineCommentTrivia:
                             // We will only indent the first line of the multiline comment if we were planning to indent the next trivia. However,
                             // subsequent lines will always be indented
@@ -119,7 +119,7 @@ module TypeScript.Services.Formatting {
 
             }
 
-            if (token.kind() !== SyntaxKind.EndOfFileToken && indentNextTokenOrTrivia) {
+            if (token.kind !== SyntaxKind.EndOfFileToken && indentNextTokenOrTrivia) {
                 // If the last trivia item was a new line, or no trivia items were encounterd record the 
                 // indentation edit at the token position
                 if (indentationString.length > 0) {

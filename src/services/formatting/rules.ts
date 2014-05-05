@@ -491,10 +491,10 @@ module TypeScript.Services.Formatting {
                 // equal in var a = 0;
                 case SyntaxKind.VariableDeclarator:
                 case SyntaxKind.EqualsValueClause:
-                    return context.currentTokenSpan.kind() === SyntaxKind.EqualsToken || context.nextTokenSpan.kind() === SyntaxKind.EqualsToken;
+                    return context.currentTokenSpan.kind === SyntaxKind.EqualsToken || context.nextTokenSpan.kind === SyntaxKind.EqualsToken;
                 // "in" keyword in for (var x in []) { }
                 case SyntaxKind.ForInStatement:
-                    return context.currentTokenSpan.kind() === SyntaxKind.InKeyword || context.nextTokenSpan.kind() === SyntaxKind.InKeyword;
+                    return context.currentTokenSpan.kind === SyntaxKind.InKeyword || context.nextTokenSpan.kind === SyntaxKind.InKeyword;
             }
             return false;
         }
@@ -667,12 +667,12 @@ module TypeScript.Services.Formatting {
         }
 
         static IsTypeArgumentOrParameterContext(context: FormattingContext): boolean {
-            return Rules.IsTypeArgumentOrParameter(context.currentTokenSpan.kind(), context.currentTokenParent.kind()) ||
-                Rules.IsTypeArgumentOrParameter(context.nextTokenSpan.kind(), context.nextTokenParent.kind());
+            return Rules.IsTypeArgumentOrParameter(context.currentTokenSpan.kind, context.currentTokenParent.kind()) ||
+                Rules.IsTypeArgumentOrParameter(context.nextTokenSpan.kind, context.nextTokenParent.kind());
         }
 
         static IsVoidOpContext(context: FormattingContext): boolean {
-            return context.currentTokenSpan.kind() === SyntaxKind.VoidKeyword && context.currentTokenParent.kind() === SyntaxKind.VoidExpression;
+            return context.currentTokenSpan.kind === SyntaxKind.VoidKeyword && context.currentTokenParent.kind() === SyntaxKind.VoidExpression;
         }
     }
 }

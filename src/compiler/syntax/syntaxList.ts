@@ -1,374 +1,94 @@
 ///<reference path='references.ts' />
 
-module TypeScript {
-    export interface ISyntaxList<T extends ISyntaxNodeOrToken> extends ISyntaxElement {
-        childAt(index: number): T;
-        setChildAt(index: number, value: T): void;
-    }
+interface Array<T> {
+    data: number;
+    separators?: TypeScript.ISyntaxToken[];
+
+    kind: TypeScript.SyntaxKind;
+    parent: TypeScript.ISyntaxElement;
+
+    separatorCount(): number;
+    separatorAt(index: number): TypeScript.ISyntaxToken;
 }
 
 module TypeScript.Syntax {
-    // TODO: stop exporting this once typecheck bug is fixed.
-    export class EmptySyntaxList<T extends ISyntaxNodeOrToken> implements ISyntaxList<T> {
-        public parent: ISyntaxElement = null;
+    var _emptyList: ISyntaxNodeOrToken[] = [];
+    _emptyList.kind = SyntaxKind.List;
 
-        public syntaxTree(): SyntaxTree {
-            throw Errors.invalidOperation("Shared lists do not belong to a single tree.");
-        }
+    var _emptySeparatedList: ISyntaxNodeOrToken[] = [];
+    var _emptySeparators: ISyntaxToken[] = [];
 
-        public fileName(): string {
-            throw Errors.invalidOperation("Shared lists do not belong to a single file.");
-        }
+    _emptySeparatedList.kind = SyntaxKind.SeparatedList;
+    _emptySeparatedList.separators = _emptySeparators;
 
-        public kind(): SyntaxKind { return SyntaxKind.List; }
-
-        public toJSON(key: any): any {
-            return [];
-        }
-
-        public childCount(): number {
-            return 0;
-        }
-
-        public childAt(index: number): T {
-            throw Errors.argumentOutOfRange("index");
-        }
-
-        public setChildAt(index: number, value: T): void {
-            throw Errors.argumentOutOfRange("index");
-        }
-
-        public isShared(): boolean {
-            return true;
-        }
-
-        public collectTextElements(elements: string[]): void {
-        }
-
-        public firstToken(): ISyntaxToken {
-            return null;
-        }
-
-        public lastToken(): ISyntaxToken {
-            return null;
-        }
-
-        public fullWidth(): number {
-            return 0;
-        }
-
-        public width(): number {
-            return 0;
-        }
-
-        public fullStart(): number {
-            throw Errors.invalidOperation("'fullStart' invalid on a singleton element.");
-        }
-
-        public fullEnd(): number {
-            throw Errors.invalidOperation("'fullEnd' invalid on a singleton element.");
-        }
-
-        public start(): number {
-            throw Errors.invalidOperation("'start' invalid on a singleton element.");
-        }
-
-        public end(): number {
-            throw Errors.invalidOperation("'end' invalid on a singleton element.");
-        }
-
-        public leadingTrivia(): ISyntaxTriviaList {
-            return Syntax.emptyTriviaList;
-        }
-
-        public trailingTrivia(): ISyntaxTriviaList {
-            return Syntax.emptyTriviaList;
-        }
-
-        public leadingTriviaWidth(): number {
-            return 0;
-        }
-
-        public trailingTriviaWidth(): number {
-            return 0;
-        }
-
-        public fullText(): string {
-            return "";
-        }
-
-        public isIncrementallyUnusable(): boolean {
-            return false;
-        }
+    function assertEmptyLists() {
+        // Debug.assert(_emptyList.length === 0);
+        // var separators = _emptySeparatedList.separators;
+        // Debug.assert(!separators || separators.length === 0);
     }
 
-    var _emptyList: ISyntaxList<ISyntaxNodeOrToken> = <any>new EmptySyntaxList<ISyntaxNodeOrToken>();
-
-    export function emptyList<T extends ISyntaxNodeOrToken>(): ISyntaxList<T> {
-        return <ISyntaxList<T>>_emptyList;
+    Array.prototype.separatorCount = function (): number {
+        assertEmptyLists();
+        // Debug.assert(this.kind === SyntaxKind.SeparatedList);
+        return this.separators.length;
     }
 
-    class SingletonSyntaxList<T extends ISyntaxNodeOrToken> implements ISyntaxList<T> {
-        public parent: ISyntaxElement = null;
-
-        constructor(private item: T) {
-            Syntax.setParentForChildren(this);
-        }
-
-        public syntaxTree(): SyntaxTree {
-            return this.parent.syntaxTree();
-        }
-
-        public kind(): SyntaxKind { return SyntaxKind.List; }
-
-        public toJSON(key: any) {
-            return [this.item];
-        }
-
-        public childCount() {
-            return 1;
-        }
-
-        public childAt(index: number): T {
-            if (index !== 0) {
-                throw Errors.argumentOutOfRange("index");
-            }
-
-            return this.item;
-        }
-
-        public setChildAt(index: number, value: T): void {
-            if (index !== 0) {
-                throw Errors.argumentOutOfRange("index");
-            }
-
-            this.item = value;
-            value.parent = this;
-        }
-
-        public isShared(): boolean {
-            return false;
-        }
-
-        public collectTextElements(elements: string[]): void {
-            this.item.collectTextElements(elements);
-        }
-
-        public firstToken(): ISyntaxToken {
-            return this.item.firstToken();
-        }
-
-        public lastToken(): ISyntaxToken {
-            return this.item.lastToken();
-        }
-
-        public fullWidth(): number {
-            return this.item.fullWidth();
-        }
-
-        public width(): number {
-            return this.item.width();
-        }
-
-        public fullStart(): number {
-            return this.item.fullStart();
-        }
-
-        public fullEnd(): number {
-            return this.item.fullEnd();
-        }
-
-        public start(): number {
-            return this.item.start();
-        }
-
-        public end(): number {
-            return this.item.end();
-        }
-
-        public leadingTrivia(): ISyntaxTriviaList {
-            return this.item.leadingTrivia();
-        }
-
-        public trailingTrivia(): ISyntaxTriviaList {
-            return this.item.trailingTrivia();
-        }
-
-        public leadingTriviaWidth(): number {
-            return this.item.leadingTriviaWidth();
-        }
-
-        public trailingTriviaWidth(): number {
-            return this.item.trailingTriviaWidth();
-        }
-
-        public fullText(): string {
-            return this.item.fullText();
-        }
-
-        public isIncrementallyUnusable(): boolean {
-            return this.item.isIncrementallyUnusable();
-        }
+    Array.prototype.separatorAt = function (index: number): ISyntaxToken {
+        assertEmptyLists();
+        // Debug.assert(this.kind === SyntaxKind.SeparatedList);
+        // Debug.assert(index >= 0 && index < this.separators.length);
+        return this.separators[index];
     }
 
-    class NormalSyntaxList<T extends ISyntaxNodeOrToken> implements ISyntaxList<T> {
-        public parent: ISyntaxElement = null;
-        private _data: number = 0;
-
-        constructor(private nodeOrTokens: T[]) {
-            Syntax.setParentForChildren(this);
-        }
-
-        public syntaxTree(): SyntaxTree {
-            return this.parent.syntaxTree();
-        }
-
-        public kind(): SyntaxKind { return SyntaxKind.List; }
-
-        public toJSON(key: any) {
-            return this.nodeOrTokens;
-        }
-
-        public childCount() {
-            return this.nodeOrTokens.length;
-        }
-
-        public childAt(index: number): T {
-            if (index < 0 || index >= this.nodeOrTokens.length) {
-                throw Errors.argumentOutOfRange("index");
-            }
-
-            return this.nodeOrTokens[index];
-        }
-
-        public setChildAt(index: number, value: T): void {
-            if (index < 0 || index >= this.nodeOrTokens.length) {
-                throw Errors.argumentOutOfRange("index");
-            }
-
-            this.nodeOrTokens[index] = value;
-            value.parent = this;
-            this._data = 0;
-        }
-
-        public isShared(): boolean {
-            return false;
-        }
-
-        public collectTextElements(elements: string[]): void {
-            for (var i = 0, n = this.nodeOrTokens.length; i < n; i++) {
-                var element = this.nodeOrTokens[i];
-                element.collectTextElements(elements);
-            }
-        }
-
-        public firstToken(): ISyntaxToken {
-            for (var i = 0, n = this.nodeOrTokens.length; i < n; i++) {
-                var token = this.nodeOrTokens[i].firstToken();
-                if (token && token.fullWidth() > 0) {
-                    return token;
-                }
-            }
-
-            return null;
-        }
-
-        public lastToken(): ISyntaxToken {
-            for (var i = this.nodeOrTokens.length - 1; i >= 0; i--) {
-                var token = this.nodeOrTokens[i].lastToken();
-                if (token && token.fullWidth() > 0) {
-                    return token;
-                }
-            }
-
-            return null;
-        }
-
-        public fullText(): string {
-            var elements = new Array<string>();
-            this.collectTextElements(elements);
-            return elements.join("");
-        }
-
-        public isIncrementallyUnusable(): boolean {
-            return (this.data() & SyntaxConstants.NodeIncrementallyUnusableMask) !== 0;
-        }
-
-        public fullWidth(): number {
-            return this.data() >>> SyntaxConstants.NodeFullWidthShift;
-        }
-
-        public width(): number {
-            var fullWidth = this.fullWidth();
-            return fullWidth - this.leadingTriviaWidth() - this.trailingTriviaWidth();
-        }
-
-        public fullStart(): number {
-            return this.firstToken().fullStart();
-        }
-
-        public fullEnd(): number {
-            return this.lastToken().fullEnd();
-        }
-
-        public start(): number {
-            return this.firstToken().start();
-        }
-
-        public end(): number {
-            return this.lastToken().end();
-        }
-
-        public leadingTrivia(): ISyntaxTriviaList {
-            return this.firstToken().leadingTrivia();
-        }
-
-        public trailingTrivia(): ISyntaxTriviaList {
-            return this.lastToken().trailingTrivia();
-        }
-
-        public leadingTriviaWidth(): number {
-            return this.firstToken().leadingTriviaWidth();
-        }
-
-        public trailingTriviaWidth(): number {
-            return this.lastToken().trailingTriviaWidth();
-        }
-
-        private computeData(): number {
-            var fullWidth = 0;
-            var isIncrementallyUnusable = false;
-
-            for (var i = 0, n = this.nodeOrTokens.length; i < n; i++) {
-                var node = this.nodeOrTokens[i];
-                fullWidth += node.fullWidth();
-                isIncrementallyUnusable = isIncrementallyUnusable || node.isIncrementallyUnusable();
-            }
-
-            return (fullWidth << SyntaxConstants.NodeFullWidthShift)
-                 | (isIncrementallyUnusable ? SyntaxConstants.NodeIncrementallyUnusableMask : 0)
-                 | SyntaxConstants.NodeDataComputed;
-        }
-
-        private data(): number {
-            if ((this._data & SyntaxConstants.NodeDataComputed) === 0) {
-                this._data = this.computeData();
-            }
-
-            return this._data;
-        }
+    export function emptyList<T extends ISyntaxNodeOrToken>(): T[] {
+        return <T[]><any>_emptyList;
     }
 
-    export function list<T extends ISyntaxNodeOrToken>(nodes: T[]): ISyntaxList<T> {
+    export function emptySeparatedList<T extends ISyntaxNodeOrToken>(): T[] {
+        return <T[]><any>_emptySeparatedList;
+    }
+
+    export function list<T extends ISyntaxNodeOrToken>(nodes: T[]): T[] {
         if (nodes === undefined || nodes === null || nodes.length === 0) {
             return emptyList<T>();
         }
 
-        if (nodes.length === 1) {
-            var item = nodes[0];
-            return new SingletonSyntaxList<T>(item);
+        for (var i = 0, n = nodes.length; i < n; i++) {
+            nodes[i].parent = nodes;
         }
 
-        return new NormalSyntaxList(nodes);
+        nodes.kind = SyntaxKind.List;
+        return nodes;
+    }
+
+    export function separatedList<T extends ISyntaxNodeOrToken>(nodes: T[], separators: ISyntaxToken[]): T[] {
+        if (nodes === undefined || nodes === null || nodes.length === 0) {
+            return emptySeparatedList<T>();
+        }
+
+        // Debug.assert(separators.length === nodes.length || separators.length == (nodes.length - 1));
+
+        for (var i = 0, n = nodes.length; i < n; i++) {
+            nodes[i].parent = nodes;
+        }
+
+        for (var i = 0, n = separators.length; i < n; i++) {
+            separators[i].parent = nodes;
+        }
+
+        nodes.kind = SyntaxKind.SeparatedList;
+        nodes.separators = separators.length === 0 ? _emptySeparators : separators;
+
+        return nodes;
+    }
+
+    export function nonSeparatorIndexOf<T extends ISyntaxNodeOrToken>(list: T[], ast: ISyntaxNodeOrToken): number {
+        for (var i = 0, n = list.length; i < n; i++) {
+            if (list[i] === ast) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

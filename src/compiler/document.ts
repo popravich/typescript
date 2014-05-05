@@ -49,7 +49,7 @@ module TypeScript {
             this._lineMap = syntaxTree.lineMap();
 
             var sourceUnit = syntaxTree.sourceUnit();
-            var leadingTrivia = sourceUnit.leadingTrivia();
+            var leadingTrivia = firstToken(sourceUnit).leadingTrivia();
 
             this._externalModuleIndicatorSpan = this.getImplicitImportSpan(leadingTrivia) || this.getTopLevelImportOrExportSpan(sourceUnit);
 
@@ -100,20 +100,18 @@ module TypeScript {
         }
 
         private getTopLevelImportOrExportSpan(node: SourceUnitSyntax): TextSpan {
-            var firstToken: ISyntaxToken;
+            for (var i = 0, n = node.moduleElements.length; i < n; i++) {
+                var moduleElement = node.moduleElements[i];
 
-            for (var i = 0, n = node.moduleElements.childCount(); i < n; i++) {
-                var moduleElement = node.moduleElements.childAt(i);
-
-                firstToken = moduleElement.firstToken();
-                if (firstToken !== null && firstToken.kind() === SyntaxKind.ExportKeyword) {
-                    return new TextSpan(firstToken.start(), firstToken.width());
+                var _firstToken = firstToken(moduleElement);
+                if (_firstToken !== null && _firstToken.kind === SyntaxKind.ExportKeyword) {
+                    return new TextSpan(start(_firstToken), width(_firstToken));
                 }
 
-                if (moduleElement.kind() === SyntaxKind.ImportDeclaration) {
+                if (moduleElement.kind === SyntaxKind.ImportDeclaration) {
                     var importDecl = <ImportDeclarationSyntax>moduleElement;
-                    if (importDecl.moduleReference.kind() === SyntaxKind.ExternalModuleReference) {
-                        return new TextSpan(importDecl.start(), importDecl.width());
+                    if (importDecl.moduleReference.kind === SyntaxKind.ExternalModuleReference) {
+                        return new TextSpan(start(importDecl), width(importDecl));
                     }
                 }
             }
@@ -204,8 +202,8 @@ module TypeScript {
                 var identifiers = createIntrinsicsObject<boolean>();
                 var pre = function (cur: TypeScript.ISyntaxElement) {
                     if (ASTHelpers.isValidAstNode(cur)) {
-                        if (cur.kind() === SyntaxKind.IdentifierName) {
-                            var nodeText = (<TypeScript.ISyntaxToken>cur).valueText();
+                        if (cur.kind === SyntaxKind.IdentifierName) {
+                            var nodeText = tokenValueText((<TypeScript.ISyntaxToken>cur));
 
                             identifiers[nodeText] = true;
                         }
@@ -292,7 +290,7 @@ module TypeScript {
         }
 
         public getEnclosingDecl(ast: ISyntaxElement): PullDecl {
-            if (ast.kind() === SyntaxKind.SourceUnit) {
+            if (ast.kind === SyntaxKind.SourceUnit) {
                 return this._getDeclForAST(ast);
             }
 
@@ -300,7 +298,7 @@ module TypeScript {
             ast = ast.parent;
             var decl: PullDecl = null;
             while (ast) {
-                //if (ast.kind() === SyntaxKind.ModuleDeclaration) {
+                //if (ast.kind === SyntaxKind.ModuleDeclaration) {
                 //    var moduleDecl = <ModuleDeclarationSyntax>ast;
                 //    decl = this._getDeclForAST(<ISyntaxElement>moduleDecl.stringLiteral || ArrayUtilities.last(getModuleNames(moduleDecl.name)));
                 //}

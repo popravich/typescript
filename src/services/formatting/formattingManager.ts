@@ -42,19 +42,19 @@ module TypeScript.Services.Formatting {
 
         public formatOnSemicolon(caretPosition: number): TypeScript.Services.TextEdit[] {
             var sourceUnit = this.syntaxTree.sourceUnit();
-            var semicolonPositionedToken = sourceUnit.findToken(caretPosition - 1);
+            var semicolonPositionedToken = findToken(sourceUnit, caretPosition - 1);
 
-            if (semicolonPositionedToken.kind() === SyntaxKind.SemicolonToken) {
+            if (semicolonPositionedToken.kind === SyntaxKind.SemicolonToken) {
                 // Find the outer most parent that this semicolon terminates
                 var current: ISyntaxElement = semicolonPositionedToken;
                 while (current.parent !== null &&
-                       current.parent.end() === semicolonPositionedToken.end() &&
-                       current.parent.kind() !== SyntaxKind.List) {
+                       end(current.parent) === end(semicolonPositionedToken) &&
+                       current.parent.kind !== SyntaxKind.List) {
                     current = current.parent;
                 }
 
                 // Compute the span
-                var span = new TextSpan(current.fullStart(), current.fullWidth());
+                var span = new TextSpan(fullStart(current), fullWidth(current));
 
                 // Format the span
                 return this.formatSpan(span, FormattingRequestKind.FormatOnSemicolon);
@@ -65,19 +65,19 @@ module TypeScript.Services.Formatting {
 
         public formatOnClosingCurlyBrace(caretPosition: number): TypeScript.Services.TextEdit[] {
             var sourceUnit = this.syntaxTree.sourceUnit();
-            var closeBracePositionedToken = sourceUnit.findToken(caretPosition - 1);
+            var closeBracePositionedToken = findToken(sourceUnit, caretPosition - 1);
 
-            if (closeBracePositionedToken.kind() === SyntaxKind.CloseBraceToken) {
+            if (closeBracePositionedToken.kind === SyntaxKind.CloseBraceToken) {
                 // Find the outer most parent that this closing brace terminates
                 var current: ISyntaxElement = closeBracePositionedToken;
                 while (current.parent !== null &&
-                       current.parent.end() === closeBracePositionedToken.end() &&
-                       current.parent.kind() !== SyntaxKind.List) {
+                       end(current.parent) === end(closeBracePositionedToken) &&
+                       current.parent.kind !== SyntaxKind.List) {
                     current = current.parent;
                 }
 
                 // Compute the span
-                var span = new TextSpan(current.fullStart(), current.fullWidth());
+                var span = new TextSpan(fullStart(current), fullWidth(current));
 
                 // Format the span
                 return this.formatSpan(span, FormattingRequestKind.FormatOnClosingCurlyBrace);

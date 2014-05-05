@@ -76,11 +76,9 @@ var compilerSources = [
 	"syntax/references.ts",
 	"syntax/scanner.ts",
 	"syntax/scannerUtilities.generated.ts",
-	"syntax/separatedSyntaxList.ts",
 	"syntax/slidingWindow.ts",
 	"syntax/syntax.ts",
 	"syntax/syntaxElement.ts",
-	"syntax/syntaxFactory.generated.ts",
 	"syntax/syntaxFacts.ts",
 	"syntax/syntaxFacts2.ts",
 	"syntax/syntaxKind.ts",
@@ -406,7 +404,7 @@ task("webhost", [webhostJsPath], function() {
 var fidelityTestsOutFile = "tests/Fidelity/program.js";
 var fidelityTestsInFile1 = "tests/Fidelity/Program.ts";
 var fidelityTestsInFile2 = "tests/Fidelity/incremental/IncrementalParserTests.ts";
-compileFile(fidelityTestsOutFile, [fidelityTestsInFile1], [tscFile, fidelityTestsInFile2].concat(compilerSources.concat(servicesSources)), [], true);
+compileFile(fidelityTestsOutFile, [fidelityTestsInFile1], [tscFile, fidelityTestsInFile1, fidelityTestsInFile2].concat(compilerSources.concat(servicesSources)), [], true);
 
 desc("Builds the web harness front end");
 task("test-harness", [perfCompilerPath]);

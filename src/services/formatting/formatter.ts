@@ -58,7 +58,7 @@ module TypeScript.Services.Formatting {
 
         public visitTokenInSpan(token: ISyntaxToken): void {
             if (token.fullWidth() !== 0) {
-                var tokenSpan = new TextSpan(this.position() + token.leadingTriviaWidth(), token.width());
+                var tokenSpan = new TextSpan(this.position() + token.leadingTriviaWidth(), width(token));
                 if (this.textSpan().containsTextSpan(tokenSpan)) {
                     this.processToken(token);
                 }
@@ -78,7 +78,7 @@ module TypeScript.Services.Formatting {
             }
 
             // Push the token
-            var currentTokenSpan = new TokenSpan(token.kind(), position, token.width());
+            var currentTokenSpan = new TokenSpan(token.kind, position, width(token));
             if (!this.parent().hasSkippedOrMissingTokenChild()) {
                 if (this.previousTokenSpan) {
                     // Note that formatPair calls TrimWhitespaceInLineRange in between the 2 tokens
@@ -95,7 +95,7 @@ module TypeScript.Services.Formatting {
                 this.indentationNodeContextPool().releaseNode(this.previousTokenParent, /* recursive */true);
             }
             this.previousTokenParent = this.parent().clone(this.indentationNodeContextPool());
-            position += token.width();
+            position += width(token);
 
             // Extract any trailing comments
             if (token.trailingTriviaWidth() !== 0) {
@@ -110,7 +110,7 @@ module TypeScript.Services.Formatting {
                 var trivia = triviaList.syntaxTriviaAt(i);
                 // For a comment, format it like it is a token. For skipped text, eat it up as a token, but skip the formatting
                 if (trivia.isComment() || trivia.isSkippedToken()) {
-                    var currentTokenSpan = new TokenSpan(trivia.kind(), position, trivia.fullWidth());
+                    var currentTokenSpan = new TokenSpan(trivia.kind, position, trivia.fullWidth());
                     if (this.textSpan().containsTextSpan(currentTokenSpan)) {
                         if (trivia.isComment() && this.previousTokenSpan) {
                             // Note that formatPair calls TrimWhitespaceInLineRange in between the 2 tokens
@@ -231,7 +231,7 @@ module TypeScript.Services.Formatting {
 
         private trimWhitespace(line: ITextSnapshotLine, token?: TokenSpan): void {
             // Don't remove the trailing spaces inside comments (this includes line comments and block comments)
-            if (token && (token.kind() == SyntaxKind.MultiLineCommentTrivia || token.kind() == SyntaxKind.SingleLineCommentTrivia) && token.start() <= line.endPosition() && token.end() >= line.endPosition())
+            if (token && (token.kind == SyntaxKind.MultiLineCommentTrivia || token.kind == SyntaxKind.SingleLineCommentTrivia) && token.start() <= line.endPosition() && token.end() >= line.endPosition())
                 return;
 
             var text = line.getText();

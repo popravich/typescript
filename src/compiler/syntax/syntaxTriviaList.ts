@@ -3,14 +3,6 @@
 module TypeScript {
     export interface ISyntaxTriviaList {
         parent: ISyntaxToken;
-        syntaxTree(): SyntaxTree;
-
-        isNode(): boolean;
-        isToken(): boolean;
-        isTrivia(): boolean;
-        isList(): boolean;
-        isSeparatedList(): boolean;
-        isTriviaList(): boolean;
 
         isShared(): boolean;
 
@@ -32,8 +24,6 @@ module TypeScript {
 
         concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList;
 
-        collectTextElements(elements: string[]): void;
-
         clone(): ISyntaxTriviaList;
     }
 }
@@ -42,23 +32,8 @@ module TypeScript.Syntax {
     class EmptyTriviaList implements ISyntaxTriviaList {
         public parent: ISyntaxToken = null;
 
-        public isNode(): boolean { return false; }
-        public isToken(): boolean { return false; }
-        public isTrivia(): boolean { return false; }
-        public isList(): boolean { return false; }
-        public isSeparatedList(): boolean { return false; }
-        public isTriviaList(): boolean { return true; }
-
         public isShared(): boolean {
             return true;
-        }
-
-        public syntaxTree(): SyntaxTree {
-            throw Errors.invalidOperation("Shared lists do not belong to a single tree.");
-        }
-
-        public kind() {
-            return SyntaxKind.TriviaList;
         }
 
         public count(): number {
@@ -93,13 +68,6 @@ module TypeScript.Syntax {
             return false;
         }
 
-        public toJSON(key: any): any {
-            return [];
-        }
-
-        public collectTextElements(elements: string[]): void {
-        }
-
         public toArray(): ISyntaxTrivia[] {
             return [];
         }
@@ -131,7 +99,7 @@ module TypeScript.Syntax {
     }
 
     function isComment(trivia: ISyntaxTrivia): boolean {
-        return trivia.kind() === SyntaxKind.MultiLineCommentTrivia || trivia.kind() === SyntaxKind.SingleLineCommentTrivia;
+        return trivia.kind === SyntaxKind.MultiLineCommentTrivia || trivia.kind === SyntaxKind.SingleLineCommentTrivia;
     }
 
     class SingletonSyntaxTriviaList implements ISyntaxTriviaList {
@@ -143,22 +111,9 @@ module TypeScript.Syntax {
             this.item.parent = this;
         }
 
-        public isNode(): boolean { return false; }
-        public isToken(): boolean { return false; }
-        public isTrivia(): boolean { return false; }
-        public isList(): boolean { return false; }
-        public isSeparatedList(): boolean { return false; }
-        public isTriviaList(): boolean { return true; }
-
-        public syntaxTree(): SyntaxTree {
-            return this.parent.syntaxTree();
-        }
-
         public isShared(): boolean {
             return false;
         }
-
-        public kind(): SyntaxKind { return SyntaxKind.TriviaList; }
 
         public count(): number {
             return 1;
@@ -189,19 +144,11 @@ module TypeScript.Syntax {
         }
 
         public hasNewLine(): boolean {
-            return this.item.kind() === SyntaxKind.NewLineTrivia;
+            return this.item.kind === SyntaxKind.NewLineTrivia;
         }
 
         public hasSkippedToken(): boolean {
-            return this.item.kind() === SyntaxKind.SkippedTokenTrivia;
-        }
-
-        public toJSON(key: any): ISyntaxTrivia[] {
-            return [this.item];
-        }
-
-        public collectTextElements(elements: string[]): void {
-            (<any>this.item).collectTextElements(elements);
+            return this.item.kind === SyntaxKind.SkippedTokenTrivia;
         }
 
         public toArray(): ISyntaxTrivia[] {
@@ -229,22 +176,9 @@ module TypeScript.Syntax {
             });
         }
 
-        public isNode(): boolean { return false; }
-        public isToken(): boolean { return false; }
-        public isTrivia(): boolean { return false; }
-        public isList(): boolean { return false; }
-        public isSeparatedList(): boolean { return false; }
-        public isTriviaList(): boolean { return true; }
-
         public isShared(): boolean {
             return false;
         }
-
-        public syntaxTree(): SyntaxTree {
-            return this.parent.syntaxTree();
-        }
-
-        public kind(): SyntaxKind { return SyntaxKind.TriviaList; }
 
         public count() {
             return this.trivia.length;
@@ -267,13 +201,13 @@ module TypeScript.Syntax {
         }
 
         public fullText(): string {
-            var result = "";
+            var result: string[] = [];
 
             for (var i = 0, n = this.trivia.length; i < n; i++) {
-                result += this.trivia[i].fullText();
+                result.push(this.trivia[i].fullText());
             }
 
-            return result;
+            return result.join("");
         }
 
         public hasComment(): boolean {
@@ -288,7 +222,7 @@ module TypeScript.Syntax {
 
         public hasNewLine(): boolean {
             for (var i = 0; i < this.trivia.length; i++) {
-                if (this.trivia[i].kind() === SyntaxKind.NewLineTrivia) {
+                if (this.trivia[i].kind === SyntaxKind.NewLineTrivia) {
                     return true;
                 }
             }
@@ -298,22 +232,12 @@ module TypeScript.Syntax {
 
         public hasSkippedToken(): boolean {
             for (var i = 0; i < this.trivia.length; i++) {
-                if (this.trivia[i].kind() === SyntaxKind.SkippedTokenTrivia) {
+                if (this.trivia[i].kind === SyntaxKind.SkippedTokenTrivia) {
                     return true;
                 }
             }
 
             return false;
-        }
-
-        public toJSON(key: any): ISyntaxTrivia[] {
-            return this.trivia;
-        }
-
-        public collectTextElements(elements: string[]): void {
-            for (var i = 0; i < this.trivia.length; i++) {
-                (<any>this.trivia[i]).collectTextElements(elements);
-            }
         }
 
         public toArray(): ISyntaxTrivia[] {

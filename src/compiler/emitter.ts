@@ -208,7 +208,7 @@ module TypeScript {
 
     export function lastParameterIsRest(parameterList: ParameterListSyntax): boolean {
         var parameters = parameterList.parameters;
-        return parameters.nonSeparatorCount() > 0 && (parameters.nonSeparatorAt(parameters.nonSeparatorCount() - 1)).dotDotDotToken !== null;
+        return parameters.length > 0 && (parameters[parameters.length - 1]).dotDotDotToken !== null;
     }
 
     export class Emitter {
@@ -270,7 +270,7 @@ module TypeScript {
         }
 
         public shouldEmitImportDeclaration(importDeclAST: ImportDeclarationSyntax) {
-            var isExternalModuleReference = importDeclAST.moduleReference.kind() === SyntaxKind.ExternalModuleReference;
+            var isExternalModuleReference = importDeclAST.moduleReference.kind === SyntaxKind.ExternalModuleReference;
             var importDecl = this.semanticInfoChain.getDeclForAST(importDeclAST);
             var isExported = hasFlag(importDecl.flags, PullElementFlags.Exported);
             var isAmdCodeGen = this.emitOptions.compilationSettings().moduleGenTarget() === ModuleGenTarget.Asynchronous;
@@ -287,7 +287,7 @@ module TypeScript {
                 return true;
             }
 
-            if (importDeclAST.moduleReference.kind() !== SyntaxKind.ExternalModuleReference) {
+            if (importDeclAST.moduleReference.kind !== SyntaxKind.ExternalModuleReference) {
                 var canBeUsedExternally = isExported || importSymbol.typeUsedExternally() || importSymbol.isUsedInExportedAlias();
                 if (!canBeUsedExternally && !this.document.isExternalModule()) {
                     // top level import in non-external module are visible across the whole global module
@@ -310,7 +310,7 @@ module TypeScript {
         }
 
         public emitImportDeclaration(importDeclAST: ImportDeclarationSyntax) {
-            var isExternalModuleReference = importDeclAST.moduleReference.kind() === SyntaxKind.ExternalModuleReference;
+            var isExternalModuleReference = importDeclAST.moduleReference.kind === SyntaxKind.ExternalModuleReference;
             var importDecl = this.semanticInfoChain.getDeclForAST(importDeclAST);
             var isExported = hasFlag(importDecl.flags, PullElementFlags.Exported);
             var isAmdCodeGen = this.emitOptions.compilationSettings().moduleGenTarget() === ModuleGenTarget.Asynchronous;
@@ -476,7 +476,7 @@ module TypeScript {
             }
 
             if (comment.kind() === SyntaxKind.MultiLineCommentTrivia) {
-                this.recordSourceMappingSpanStart(comment);
+                this.recordSourceMappingCommentStart(comment);
                 this.writeToOutput(text[0]);
 
                 if (text.length > 1 || comment.endsLine) {
@@ -485,20 +485,20 @@ module TypeScript {
                         this.emitIndent();
                         this.writeToOutput(text[i]);
                     }
-                    this.recordSourceMappingSpanEnd(comment);
+                    this.recordSourceMappingCommentEnd(comment);
                     this.writeLineToOutput("");
                     // Fall through
                 }
                 else {
-                    this.recordSourceMappingSpanEnd(comment);
+                    this.recordSourceMappingCommentEnd(comment);
                     this.writeToOutput(" ");
                     return;
                 }
             }
             else {
-                this.recordSourceMappingSpanStart(comment);
+                this.recordSourceMappingCommentStart(comment);
                 this.writeToOutput(text[0]);
-                this.recordSourceMappingSpanEnd(comment);
+                this.recordSourceMappingCommentEnd(comment);
                 this.writeLineToOutput("");
                 // Fall through
             }
@@ -512,8 +512,8 @@ module TypeScript {
         public emitComments(ast: ISyntaxElement, pre: boolean, onlyPinnedOrTripleSlashComments: boolean = false) {
             // Emitting the comments for the exprssion inside an arrow function is handled specially
             // in emitFunctionBodyStatements.  We don't want to emit those comments a second time.
-            if (ast && !ast.isShared() && ast.kind() !== SyntaxKind.Block) {
-                if (ast.parent.kind() === SyntaxKind.SimpleArrowFunctionExpression || ast.parent.kind() === SyntaxKind.ParenthesizedArrowFunctionExpression) {
+            if (ast && !isShared(ast) && ast.kind !== SyntaxKind.Block) {
+                if (ast.parent.kind === SyntaxKind.SimpleArrowFunctionExpression || ast.parent.kind === SyntaxKind.ParenthesizedArrowFunctionExpression) {
                     return;
                 }
             }
@@ -639,19 +639,19 @@ module TypeScript {
             var target = callNode.expression;
             var args = callNode.argumentList.arguments;
 
-            if (target.kind() === SyntaxKind.MemberAccessExpression && (<MemberAccessExpressionSyntax>target).expression.kind() === SyntaxKind.SuperKeyword) {
+            if (target.kind === SyntaxKind.MemberAccessExpression && (<MemberAccessExpressionSyntax>target).expression.kind === SyntaxKind.SuperKeyword) {
                 this.emit(target);
                 this.writeToOutput(".call");
                 this.recordSourceMappingStart(args);
                 this.writeToOutput("(");
                 this.emitThis();
-                if (args && args.nonSeparatorCount() > 0) {
+                if (args && args.length > 0) {
                     this.writeToOutput(", ");
                     this.emitCommaSeparatedList(callNode.argumentList, args, /*buffer:*/ "", /*preserveNewLines:*/ false);
                 }
             }
             else {
-                if (callNode.expression.kind() === SyntaxKind.SuperKeyword && this.emitState.container === EmitContainer.Constructor) {
+                if (callNode.expression.kind === SyntaxKind.SuperKeyword && this.emitState.container === EmitContainer.Constructor) {
                     this.writeToOutput("_super.call");
                 }
                 else {
@@ -659,9 +659,9 @@ module TypeScript {
                 }
                 this.recordSourceMappingStart(args);
                 this.writeToOutput("(");
-                if (callNode.expression.kind() === SyntaxKind.SuperKeyword && this.emitState.container === EmitContainer.Constructor) {
+                if (callNode.expression.kind === SyntaxKind.SuperKeyword && this.emitState.container === EmitContainer.Constructor) {
                     this.writeToOutput("this");
-                    if (args && args.nonSeparatorCount() > 0) {
+                    if (args && args.length > 0) {
                         this.writeToOutput(", ");
                     }
                 }
@@ -684,7 +684,7 @@ module TypeScript {
             var argsLen = 0;
 
             if (parameters) {
-                var parameterListAST = parameters.ast.kind() === SyntaxKind.SeparatedList ? <ISeparatedSyntaxList<ParameterSyntax>>parameters.ast : null;
+                var parameterListAST = parameters.ast.kind === SyntaxKind.SeparatedList ? <ParameterSyntax[]>parameters.ast : null;
                 this.emitComments(parameters.ast, true);
 
                 var tempContainer = this.setContainer(EmitContainer.Args);
@@ -847,7 +847,7 @@ module TypeScript {
 
                 if (decl.kind & PullElementKind.TypeAlias) {
                     var importStatementAST = <ImportDeclarationSyntax>this.semanticInfoChain.getASTForDecl(decl);
-                    if (importStatementAST.moduleReference.kind() === SyntaxKind.ExternalModuleReference) { // external module
+                    if (importStatementAST.moduleReference.kind === SyntaxKind.ExternalModuleReference) { // external module
                         var symbol = decl.getSymbol(this.semanticInfoChain);
                         var typeSymbol = symbol && symbol.type;
                         if (typeSymbol && typeSymbol !== this.semanticInfoChain.anyTypeSymbol && !typeSymbol.isError()) {
@@ -898,7 +898,7 @@ module TypeScript {
         }
 
         public shouldCaptureThis(ast: ISyntaxElement) {
-            if (ast.kind() === SyntaxKind.SourceUnit) {
+            if (ast.kind === SyntaxKind.SourceUnit) {
                 var scriptDecl = this.semanticInfoChain.topLevelDecl(this.document.fileName);
                 return hasFlag(scriptDecl.flags, PullElementFlags.MustCaptureThis);
             }
@@ -1094,7 +1094,7 @@ module TypeScript {
             var svModuleName = this.moduleName;
 
             if (moduleDecl.stringLiteral) {
-                this.moduleName = moduleDecl.stringLiteral.valueText();
+                this.moduleName = tokenValueText(moduleDecl.stringLiteral);
                 if (isTSFile(this.moduleName)) {
                     this.moduleName = this.moduleName.substring(0, this.moduleName.length - ".ts".length);
                 }
@@ -1225,9 +1225,9 @@ module TypeScript {
             this.emitComments(varDecl, true);
             this.recordSourceMappingStart(varDecl);
 
-            var representation = (varDecl.propertyName.kind() === SyntaxKind.StringLiteral)
+            var representation = (varDecl.propertyName.kind === SyntaxKind.StringLiteral)
                 ? varDecl.propertyName.text()
-                : ('"' + varDecl.propertyName.valueText() + '"');
+                : ('"' + tokenValueText(varDecl.propertyName) + '"');
 
             this.writeToOutput(this.moduleName);
             this.writeToOutput('[');
@@ -1289,7 +1289,7 @@ module TypeScript {
             this.writeToOutput("function ");
 
             var parameters: IParameters = null;
-            if (arrowFunction.kind() === SyntaxKind.ParenthesizedArrowFunctionExpression) {
+            if (arrowFunction.kind === SyntaxKind.ParenthesizedArrowFunctionExpression) {
                 var parenthesizedArrowFunction = <ParenthesizedArrowFunctionExpressionSyntax>arrowFunction;
 
                 parameters = ASTHelpers.parametersFromParameterList(parenthesizedArrowFunction.callSignature.parameterList);
@@ -1557,7 +1557,7 @@ module TypeScript {
         }
 
         public emitVariableDeclaration(declaration: VariableDeclarationSyntax) {
-            var varDecl = declaration.variableDeclarators.nonSeparatorAt(0);
+            var varDecl = declaration.variableDeclarators[0];
 
             var symbol = this.semanticInfoChain.getSymbolForAST(varDecl);
 
@@ -1572,8 +1572,8 @@ module TypeScript {
                 var prevVariableDeclaration = this.currentVariableDeclaration;
                 this.currentVariableDeclaration = declaration;
 
-                for (var i = 0, n = declaration.variableDeclarators.nonSeparatorCount(); i < n; i++) {
-                    var declarator = declaration.variableDeclarators.nonSeparatorAt(i);
+                for (var i = 0, n = declaration.variableDeclarators.length; i < n; i++) {
+                    var declarator = declaration.variableDeclarators[i];
 
                     if (i > 0) {
                         this.writeToOutput(", ");
@@ -1600,7 +1600,7 @@ module TypeScript {
             this.recordSourceMappingStart(varDecl);
 
             var varDeclName = varDecl.variableDeclarator.propertyName.text();
-            var quotedOrNumber = isQuoted(varDeclName) || varDecl.variableDeclarator.propertyName.kind() !== SyntaxKind.IdentifierName;
+            var quotedOrNumber = isQuoted(varDeclName) || varDecl.variableDeclarator.propertyName.kind !== SyntaxKind.IdentifierName;
 
             var symbol = this.semanticInfoChain.getSymbolForAST(varDecl);
             var parentSymbol = symbol ? symbol.getContainer() : null;
@@ -1888,22 +1888,26 @@ module TypeScript {
 
         private recordSourceMappingStart(ast: ISyntaxElement) {
             if (this.sourceMapper && ASTHelpers.isValidAstNode(ast)) {
-                this.recordSourceMappingSpanStart(ast);
+                this.recordSourceMappingSpanStart(ast, start(ast), end(ast));
             }
         }
 
-        private recordSourceMappingSpanStart(ast: ISpan) {
-            if (this.sourceMapper && ASTHelpers.isValidSpan(ast)) {
+        private recordSourceMappingCommentStart(comment: Comment) {
+            this.recordSourceMappingSpanStart(comment, comment.start(), comment.end());
+        }
+
+        private recordSourceMappingSpanStart(ast: any, start: number, end: number) {
+            if (this.sourceMapper && ast && start !== -1 && end !== -1) {
                 var lineCol = { line: -1, character: -1 };
                 var sourceMapping = new SourceMapping();
                 sourceMapping.start.emittedColumn = this.emitState.column;
                 sourceMapping.start.emittedLine = this.emitState.line;
                 // REVIEW: check time consumed by this binary search (about two per leaf statement)
                 var lineMap = this.document.lineMap();
-                lineMap.fillLineAndCharacterFromPosition(ast.start(), lineCol);
+                lineMap.fillLineAndCharacterFromPosition(start, lineCol);
                 sourceMapping.start.sourceColumn = lineCol.character;
                 sourceMapping.start.sourceLine = lineCol.line + 1;
-                lineMap.fillLineAndCharacterFromPosition(ast.end(), lineCol);
+                lineMap.fillLineAndCharacterFromPosition(end, lineCol);
                 sourceMapping.end.sourceColumn = lineCol.character;
                 sourceMapping.end.sourceLine = lineCol.line + 1;
 
@@ -1927,12 +1931,18 @@ module TypeScript {
 
         private recordSourceMappingEnd(ast: ISyntaxElement) {
             if (this.sourceMapper && ASTHelpers.isValidAstNode(ast)) {
-                this.recordSourceMappingSpanEnd(ast);
+                this.recordSourceMappingSpanEnd(ast, start(ast), end(ast));
             }
         }
 
-        private recordSourceMappingSpanEnd(ast: ISpan) {
+        private recordSourceMappingCommentEnd(ast: Comment) {
             if (this.sourceMapper && ASTHelpers.isValidSpan(ast)) {
+                this.recordSourceMappingSpanEnd(ast, ast.start(), ast.end());
+            }
+        }
+
+        private recordSourceMappingSpanEnd(ast: any, start: number, end: number) {
+            if (this.sourceMapper && ast && start !== -1 && end !== -1) {
                 // Pop source mapping childs
                 this.sourceMapper.currentMappings.pop();
 
@@ -1968,8 +1978,8 @@ module TypeScript {
             var constructorDecl = getLastConstructor(this.thisClassNode);
 
             if (constructorDecl) {
-                for (var i = 0, n = constructorDecl.callSignature.parameterList.parameters.nonSeparatorCount(); i < n; i++) {
-                    var parameter = constructorDecl.callSignature.parameterList.parameters.nonSeparatorAt(i);
+                for (var i = 0, n = constructorDecl.callSignature.parameterList.parameters.length; i < n; i++) {
+                    var parameter = constructorDecl.callSignature.parameterList.parameters[i];
 
                     var parameterDecl = this.semanticInfoChain.getDeclForAST(parameter);
                     if (hasFlag(parameterDecl.flags, PullElementFlags.PropertyParameter)) {
@@ -1984,9 +1994,9 @@ module TypeScript {
                 }
             }
 
-            for (var i = 0, n = this.thisClassNode.classElements.childCount(); i < n; i++) {
-                if (this.thisClassNode.classElements.childAt(i).kind() === SyntaxKind.MemberVariableDeclaration) {
-                    var varDecl = <MemberVariableDeclarationSyntax>this.thisClassNode.classElements.childAt(i);
+            for (var i = 0, n = this.thisClassNode.classElements.length; i < n; i++) {
+                if (this.thisClassNode.classElements[i].kind === SyntaxKind.MemberVariableDeclaration) {
+                    var varDecl = <MemberVariableDeclarationSyntax>this.thisClassNode.classElements[i];
                     if (!hasModifier(varDecl.modifiers, PullElementFlags.Static) && varDecl.variableDeclarator.equalsValueClause) {
                         this.emitIndent();
                         this.emitMemberVariableDeclaration(varDecl);
@@ -2006,14 +2016,14 @@ module TypeScript {
             return lineMap.getLineNumberFromPosition(pos1) === lineMap.getLineNumberFromPosition(pos2);
         }
 
-        private emitCommaSeparatedList<T extends ISyntaxNodeOrToken>(parent: ISyntaxElement, list: ISeparatedSyntaxList<T>, buffer: string, preserveNewLines: boolean): void {
-            if (list === null || list.nonSeparatorCount() === 0) {
+        private emitCommaSeparatedList<T extends ISyntaxNodeOrToken>(parent: ISyntaxElement, list: T[], buffer: string, preserveNewLines: boolean): void {
+            if (list === null || list.length === 0) {
                 return;
             }
 
             // If the first element isn't on hte same line as the parent node, then we need to 
             // start with a newline.
-            var startLine = preserveNewLines && !this.isOnSameLine(parent.end(), list.nonSeparatorAt(0).end());
+            var startLine = preserveNewLines && !this.isOnSameLine(end(parent), end(list[0]));
 
             if (preserveNewLines) {
                 // Any elements on a new line will have to be indented.
@@ -2029,8 +2039,8 @@ module TypeScript {
                 this.writeToOutput(buffer);
             }
 
-            for (var i = 0, n = list.nonSeparatorCount(); i < n; i++) {
-                var emitNode = list.nonSeparatorAt(i);
+            for (var i = 0, n = list.length; i < n; i++) {
+                var emitNode = list[i];
 
                 // Write out the element, emitting an indent if we're on a new line.
                 this.emitJavascript(emitNode, startLine);
@@ -2039,7 +2049,7 @@ module TypeScript {
                     // If the next element start on a different line than this element ended on, 
                     // then we want to start on a newline.  Emit the comma with a newline.  
                     // Otherwise, emit the comma with the space.
-                    startLine = preserveNewLines && !this.isOnSameLine(emitNode.end(), list.nonSeparatorAt(i + 1).start());
+                    startLine = preserveNewLines && !this.isOnSameLine(end(emitNode), start(list[i + 1]));
                     if (startLine) {
                         this.writeLineToOutput(",");
                     }
@@ -2058,7 +2068,7 @@ module TypeScript {
             // after the last element and emit our indent so the list's terminator will be
             // on the right line.  Otherwise, emit the buffer string between the last value
             // and the terminator.
-            if (preserveNewLines && !this.isOnSameLine(parent.end(), list.nonSeparatorAt(list.nonSeparatorCount() - 1).end())) {
+            if (preserveNewLines && !this.isOnSameLine(end(parent), end(list[list.length - 1]))) {
                 this.writeLineToOutput("");
                 this.emitIndent();
             }
@@ -2067,7 +2077,7 @@ module TypeScript {
             }
         }
 
-        public emitList<T extends ISyntaxNodeOrToken>(list: ISyntaxList<T>, useNewLineSeparator = true, startInclusive = 0, endExclusive = list.childCount()) {
+        public emitList<T extends ISyntaxNodeOrToken>(list: T[], useNewLineSeparator = true, startInclusive = 0, endExclusive = list.length) {
             if (list === null) {
                 return;
             }
@@ -2076,7 +2086,7 @@ module TypeScript {
             var lastEmittedNode: ISyntaxElement = null;
 
             for (var i = startInclusive; i < endExclusive; i++) {
-                var node = list.childAt(i);
+                var node = list[i];
 
                 if (this.shouldEmit(node)) {
                     this.emitSpaceBetweenConstructs(lastEmittedNode, node);
@@ -2093,7 +2103,7 @@ module TypeScript {
             this.emitComments(list, false);
         }
 
-        public emitSeparatedList<T extends ISyntaxNodeOrToken>(list: ISeparatedSyntaxList<T>, useNewLineSeparator = true, startInclusive = 0, endExclusive = list.nonSeparatorCount()) {
+        public emitSeparatedList<T extends ISyntaxNodeOrToken>(list: T[], useNewLineSeparator = true, startInclusive = 0, endExclusive = list.length) {
             if (list === null) {
                 return;
             }
@@ -2102,7 +2112,7 @@ module TypeScript {
             var lastEmittedNode: ISyntaxElement = null;
 
             for (var i = startInclusive; i < endExclusive; i++) {
-                var node = list.nonSeparatorAt(i);
+                var node = list[i];
 
                 if (this.shouldEmit(node)) {
                     this.emitSpaceBetweenConstructs(lastEmittedNode, node);
@@ -2120,9 +2130,9 @@ module TypeScript {
         }
 
         private isDirectivePrologueElement(node: ISyntaxElement) {
-            if (node.kind() === SyntaxKind.ExpressionStatement) {
+            if (node.kind === SyntaxKind.ExpressionStatement) {
                 var exprStatement = <ExpressionStatementSyntax>node;
-                return exprStatement.expression.kind() === SyntaxKind.StringLiteral;
+                return exprStatement.expression.kind === SyntaxKind.StringLiteral;
             }
 
             return false;
@@ -2135,13 +2145,13 @@ module TypeScript {
                 return;
             }
 
-            if (node1.start() === -1 || node1.end() === -1 || node2.start() === -1 || node2.end() === -1) {
+            if (start(node1) === -1 || end(node1) === -1 || start(node2) === -1 || end(node2) === -1) {
                 return;
             }
 
             var lineMap = this.document.lineMap();
-            var node1EndLine = lineMap.getLineNumberFromPosition(node1.end());
-            var node2StartLine = lineMap.getLineNumberFromPosition(node2.start());
+            var node1EndLine = lineMap.getLineNumberFromPosition(end(node1));
+            var node2StartLine = lineMap.getLineNumberFromPosition(start(node2));
 
             if ((node2StartLine - node1EndLine) > 1) {
                 this.writeLineToOutput("", /*force:*/ true);
@@ -2182,7 +2192,7 @@ module TypeScript {
                 // sure there is at least one blank line between it and the node.  If not, it's not
                 // a copyright header.
                 var lastCommentLine = lineMap.getLineNumberFromPosition(ArrayUtilities.last(detachedComments).end());
-                var astLine = lineMap.getLineNumberFromPosition(element.start());
+                var astLine = lineMap.getLineNumberFromPosition(start(element));
                 if (astLine >= lastCommentLine + 2) {
                     return detachedComments;
                 }
@@ -2196,9 +2206,9 @@ module TypeScript {
             this.emitDetachedComments(script.moduleElements);
         }
 
-        private emitDetachedComments(list: ISyntaxList<ISyntaxNodeOrToken>): void {
-            if (list.childCount() > 0) {
-                var firstElement = list.childAt(0);
+        private emitDetachedComments(list: ISyntaxNodeOrToken[]): void {
+            if (list.length > 0) {
+                var firstElement = childAt(list, 0);
 
                 this.detachedCommentsElement = firstElement;
                 this.emitCommentsArray(this.getDetachedComments(this.detachedCommentsElement), /*trailing:*/ false);
@@ -2211,8 +2221,8 @@ module TypeScript {
             this.emitPossibleCopyrightHeaders(sourceUnit);
 
             // First, emit all the prologue elements.
-            for (var i = 0, n = list.childCount(); i < n; i++) {
-                var node = list.childAt(i);
+            for (var i = 0, n = list.length; i < n; i++) {
+                var node = list[i];
 
                 if (!this.isDirectivePrologueElement(node)) {
                     break;
@@ -2246,7 +2256,7 @@ module TypeScript {
                 var temp = this.setContainer(EmitContainer.DynamicModule);
 
                 var svModuleName = this.moduleName;
-                this.moduleName = sourceUnit.syntaxTree().fileName();
+                this.moduleName = syntaxTree(sourceUnit).fileName();
                 if (TypeScript.isTSFile(this.moduleName)) {
                     this.moduleName = this.moduleName.substring(0, this.moduleName.length - ".ts".length);
                 }
@@ -2320,14 +2330,14 @@ module TypeScript {
             var propertyAssignmentIndex = emitPropertyAssignmentsAfterSuperCall ? 1 : 0;
             var lastEmittedNode: ISyntaxElement = null;
 
-            for (var i = 0, n = list.childCount(); i < n; i++) {
+            for (var i = 0, n = list.length; i < n; i++) {
                 // In some circumstances, class property initializers must be emitted immediately after the 'super' constructor
                 // call which, in these cases, must be the first statement in the constructor body
                 if (i === propertyAssignmentIndex) {
                     this.emitParameterPropertyAndMemberVariableAssignments();
                 }
 
-                var node = list.childAt(i);
+                var node = list[i];
 
                 if (this.shouldEmit(node)) {
                     this.emitSpaceBetweenConstructs(lastEmittedNode, node);
@@ -2362,7 +2372,7 @@ module TypeScript {
         }
 
         public emitAccessorMemberDeclaration(funcDecl: ISyntaxElement, name: ISyntaxToken, className: string, isProto: boolean) {
-            if (funcDecl.kind() !== SyntaxKind.GetAccessor) {
+            if (funcDecl.kind !== SyntaxKind.GetAccessor) {
                 var accessorSymbol = PullHelpers.getAccessorSymbol(funcDecl, this.semanticInfoChain);
                 if (accessorSymbol.getGetter()) {
                     return;
@@ -2467,7 +2477,7 @@ module TypeScript {
             this.indenter.increaseIndent();
 
             if (hasBaseClass) {
-                baseTypeReference = ASTHelpers.getExtendsHeritageClause(classDecl.heritageClauses).typeNames.nonSeparatorAt(0);
+                baseTypeReference = ASTHelpers.getExtendsHeritageClause(classDecl.heritageClauses).typeNames[0];
                 this.emitIndent();
                 this.writeToOutputWithSourceMapRecord("__extends(" + className + ", _super)", baseTypeReference);
                 this.writeLineToOutput(";");
@@ -2546,24 +2556,24 @@ module TypeScript {
             // First, emit all the functions.
             var lastEmittedMember: ISyntaxElement = null;
 
-            for (var i = 0, n = classDecl.classElements.childCount(); i < n; i++) {
-                var memberDecl = classDecl.classElements.childAt(i);
+            for (var i = 0, n = classDecl.classElements.length; i < n; i++) {
+                var memberDecl = classDecl.classElements[i];
 
-                if (memberDecl.kind() === SyntaxKind.GetAccessor) {
+                if (memberDecl.kind === SyntaxKind.GetAccessor) {
                     this.emitSpaceBetweenConstructs(lastEmittedMember, memberDecl);
                     var getter = <GetAccessorSyntax>memberDecl;
                     this.emitAccessorMemberDeclaration(getter, getter.propertyName, classDecl.identifier.text(),
                         !hasModifier(getter.modifiers, PullElementFlags.Static));
                     lastEmittedMember = memberDecl;
                 }
-                else if (memberDecl.kind() === SyntaxKind.SetAccessor) {
+                else if (memberDecl.kind === SyntaxKind.SetAccessor) {
                     this.emitSpaceBetweenConstructs(lastEmittedMember, memberDecl);
                     var setter = <SetAccessorSyntax>memberDecl;
                     this.emitAccessorMemberDeclaration(setter, setter.propertyName, classDecl.identifier.text(),
                         !hasModifier(setter.modifiers, PullElementFlags.Static));
                     lastEmittedMember = memberDecl;
                 }
-                else if (memberDecl.kind() === SyntaxKind.MemberFunctionDeclaration) {
+                else if (memberDecl.kind === SyntaxKind.MemberFunctionDeclaration) {
 
                     var memberFunction = <MemberFunctionDeclarationSyntax>memberDecl;
 
@@ -2577,10 +2587,10 @@ module TypeScript {
             }
 
             // Now emit all the statics.
-            for (var i = 0, n = classDecl.classElements.childCount(); i < n; i++) {
-                var memberDecl = classDecl.classElements.childAt(i);
+            for (var i = 0, n = classDecl.classElements.length; i < n; i++) {
+                var memberDecl = classDecl.classElements[i];
 
-                if (memberDecl.kind() === SyntaxKind.MemberVariableDeclaration) {
+                if (memberDecl.kind === SyntaxKind.MemberVariableDeclaration) {
                     var varDecl = <MemberVariableDeclarationSyntax>memberDecl;
 
                     if (hasModifier(varDecl.modifiers, PullElementFlags.Static) && varDecl.variableDeclarator.equalsValueClause) {
@@ -2590,7 +2600,7 @@ module TypeScript {
                         this.recordSourceMappingStart(varDecl);
 
                         var varDeclName = varDecl.variableDeclarator.propertyName.text();
-                        if (isQuoted(varDeclName) || varDecl.variableDeclarator.propertyName.kind() !== SyntaxKind.IdentifierName) {
+                        if (isQuoted(varDeclName) || varDecl.variableDeclarator.propertyName.kind !== SyntaxKind.IdentifierName) {
                             this.writeToOutput(classDecl.identifier.text() + "[" + varDeclName + "]");
                         }
                         else {
@@ -2620,7 +2630,7 @@ module TypeScript {
                 this.writeToOutput(".prototype");
             }
 
-            if (isQuoted(functionName) || funcDecl.propertyName.kind() !== SyntaxKind.IdentifierName) {
+            if (isQuoted(functionName) || funcDecl.propertyName.kind !== SyntaxKind.IdentifierName) {
                 this.writeToOutput("[" + functionName + "] = ");
             }
             else {
@@ -2648,18 +2658,18 @@ module TypeScript {
             this.writeLineToOutput(";");
         }
 
-        private requiresExtendsBlock(moduleElements: ISyntaxList<IModuleElementSyntax>): boolean {
-            for (var i = 0, n = moduleElements.childCount(); i < n; i++) {
-                var moduleElement = moduleElements.childAt(i);
+        private requiresExtendsBlock(moduleElements: IModuleElementSyntax[]): boolean {
+            for (var i = 0, n = moduleElements.length; i < n; i++) {
+                var moduleElement = moduleElements[i];
 
-                if (moduleElement.kind() === SyntaxKind.ModuleDeclaration) {
+                if (moduleElement.kind === SyntaxKind.ModuleDeclaration) {
                     var moduleAST = <ModuleDeclarationSyntax>moduleElement;
 
                     if (!hasModifier(moduleAST.modifiers, PullElementFlags.Ambient) && this.requiresExtendsBlock(moduleAST.moduleElements)) {
                         return true;
                     }
                 }
-                else if (moduleElement.kind() === SyntaxKind.ClassDeclaration) {
+                else if (moduleElement.kind === SyntaxKind.ClassDeclaration) {
                     var classDeclaration = <ClassDeclarationSyntax>moduleElement;
 
                     if (!hasModifier(classDeclaration.modifiers, PullElementFlags.Ambient) && ASTHelpers.getExtendsHeritageClause(classDeclaration.heritageClauses) !== null) {
@@ -2702,7 +2712,7 @@ module TypeScript {
         }
 
         public emitBlockOrStatement(node: ISyntaxElement): void {
-            if (node.kind() === SyntaxKind.Block) {
+            if (node.kind === SyntaxKind.Block) {
                 this.emit(node);
             }
             else {
@@ -2714,7 +2724,7 @@ module TypeScript {
         }
 
         public emitLiteralExpression(expression: ISyntaxToken): void {
-            switch (expression.kind()) {
+            switch (expression.kind) {
                 case SyntaxKind.NullKeyword:
                     this.writeToOutputWithSourceMapRecord("null", expression);
                     break;
@@ -2750,12 +2760,12 @@ module TypeScript {
         public emitParenthesizedExpression(parenthesizedExpression: ParenthesizedExpressionSyntax): void {
             var omitParentheses = false;
 
-            if (parenthesizedExpression.expression.kind() === SyntaxKind.CastExpression && !parenthesizedExpression.openParenToken.hasTrailingComment()) {
+            if (parenthesizedExpression.expression.kind === SyntaxKind.CastExpression && !parenthesizedExpression.openParenToken.hasTrailingComment()) {
                 var castedExpression = (<CastExpressionSyntax>parenthesizedExpression.expression).expression;
 
                 // Make sure we consider all nested cast expressions, e.g.:
                 // (<any><number><any>-A).x; 
-                while (castedExpression.kind() == SyntaxKind.CastExpression) {
+                while (castedExpression.kind == SyntaxKind.CastExpression) {
                     castedExpression = (<CastExpressionSyntax>castedExpression).expression;
                 }
 
@@ -2773,7 +2783,7 @@ module TypeScript {
                 //      InvocationExpression, only if they are not part of an object creation (new) expression; e.g.:
                 //          new (<any>A()) removing the parentheses would result in calling A as a constructor, instead of calling the 
                 //          result of the function invocation A() as a constructor
-                switch (castedExpression.kind()) {
+                switch (castedExpression.kind) {
                     case SyntaxKind.ParenthesizedExpression:
                     case SyntaxKind.IdentifierName:
                     case SyntaxKind.NullKeyword:
@@ -2791,7 +2801,7 @@ module TypeScript {
                         break;
 
                     case SyntaxKind.InvocationExpression:
-                        if (parenthesizedExpression.parent.kind() !== SyntaxKind.ObjectCreationExpression) {
+                        if (parenthesizedExpression.parent.kind !== SyntaxKind.ObjectCreationExpression) {
                             omitParentheses = true;
                         }
 
@@ -2817,7 +2827,7 @@ module TypeScript {
         }
 
         public emitPrefixUnaryExpression(expression: PrefixUnaryExpressionSyntax): void {
-            var nodeType = expression.kind();
+            var nodeType = expression.kind;
 
             this.recordSourceMappingStart(expression);
             switch (nodeType) {
@@ -2831,14 +2841,14 @@ module TypeScript {
                     break;
                 case SyntaxKind.NegateExpression:
                     this.writeToOutput("-");
-                    if (expression.operand.kind() === SyntaxKind.NegateExpression || expression.operand.kind() === SyntaxKind.PreDecrementExpression) {
+                    if (expression.operand.kind === SyntaxKind.NegateExpression || expression.operand.kind === SyntaxKind.PreDecrementExpression) {
                         this.writeToOutput(" ");
                     }
                     this.emit(expression.operand);
                     break;
                 case SyntaxKind.PlusExpression:
                     this.writeToOutput("+");
-                    if (expression.operand.kind() === SyntaxKind.PlusExpression || expression.operand.kind() === SyntaxKind.PreIncrementExpression) {
+                    if (expression.operand.kind === SyntaxKind.PlusExpression || expression.operand.kind === SyntaxKind.PreIncrementExpression) {
                         this.writeToOutput(" ");
                     }
                     this.emit(expression.operand);
@@ -2859,7 +2869,7 @@ module TypeScript {
         }
 
         public emitPostfixUnaryExpression(expression: PostfixUnaryExpressionSyntax): void {
-            var nodeType = expression.kind();
+            var nodeType = expression.kind;
 
             this.recordSourceMappingStart(expression);
             switch (nodeType) {
@@ -2900,7 +2910,7 @@ module TypeScript {
         }
 
         private canEmitDottedNameMemberAccessExpression(expression: MemberAccessExpressionSyntax) {
-            var memberExpressionNodeType = expression.expression.kind();
+            var memberExpressionNodeType = expression.expression.kind;
 
             // If the memberAccess is of Name or another member access, we could potentially emit the symbol using the this memberAccessSymol
             if (memberExpressionNodeType === SyntaxKind.IdentifierName || memberExpressionNodeType == SyntaxKind.MemberAccessExpression) {
@@ -2934,7 +2944,7 @@ module TypeScript {
         // Emit the member access expression using the declPath
         private emitDottedNameMemberAccessExpression(expression: MemberAccessExpressionSyntax) {
             this.recordSourceMappingStart(expression);
-            if (expression.expression.kind() === SyntaxKind.MemberAccessExpression) {
+            if (expression.expression.kind === SyntaxKind.MemberAccessExpression) {
                 // Emit the dotted name access expression
                 this.emitDottedNameMemberAccessExpressionRecurse(<MemberAccessExpressionSyntax>expression.expression);
             }
@@ -2983,7 +2993,7 @@ module TypeScript {
 
         public emitBinaryExpression(expression: BinaryExpressionSyntax): void {
             this.recordSourceMappingStart(expression);
-            switch (expression.kind()) {
+            switch (expression.kind) {
                 case SyntaxKind.CommaExpression:
                     this.emit(expression.left);
                     this.writeToOutput(", ");
@@ -2992,7 +3002,7 @@ module TypeScript {
                 default:
                     {
                         this.emit(expression.left);
-                        var binOp = SyntaxFacts.getText(SyntaxFacts.getOperatorTokenFromBinaryExpression(expression.kind()));
+                        var binOp = SyntaxFacts.getText(SyntaxFacts.getOperatorTokenFromBinaryExpression(expression.kind));
                         if (binOp === "instanceof") {
                             this.writeToOutput(" instanceof ");
                         }
@@ -3078,7 +3088,7 @@ module TypeScript {
         }
 
         public emitExpressionStatement(statement: ExpressionStatementSyntax): void {
-            var isArrowExpression = statement.expression.kind() === SyntaxKind.SimpleArrowFunctionExpression || statement.expression.kind() === SyntaxKind.ParenthesizedArrowFunctionExpression;
+            var isArrowExpression = statement.expression.kind === SyntaxKind.SimpleArrowFunctionExpression || statement.expression.kind === SyntaxKind.ParenthesizedArrowFunctionExpression;
 
             this.recordSourceMappingStart(statement);
             if (isArrowExpression) {
@@ -3169,7 +3179,7 @@ module TypeScript {
             this.emitBlockOrStatement(statement.statement);
 
             if (statement.elseClause) {
-                if (statement.statement.kind() !== SyntaxKind.Block) {
+                if (statement.statement.kind !== SyntaxKind.Block) {
                     this.writeLineToOutput("");
                     this.emitIndent();
                 }
@@ -3183,7 +3193,7 @@ module TypeScript {
         }
 
         public emitElseClause(elseClause: ElseClauseSyntax): void {
-            if (elseClause.statement.kind() === SyntaxKind.IfStatement) {
+            if (elseClause.statement.kind === SyntaxKind.IfStatement) {
                 this.writeToOutput("else ");
                 this.emit(elseClause.statement);
             }
@@ -3285,10 +3295,10 @@ module TypeScript {
             this.recordSourceMappingEnd(clause);
         }
 
-        private emitSwitchClauseBody(body: ISyntaxList<IStatementSyntax>): void {
-            if (body.childCount() === 1 && body.childAt(0).kind() === SyntaxKind.Block) {
+        private emitSwitchClauseBody(body: IStatementSyntax[]): void {
+            if (body.length === 1 && childAt(body, 0).kind === SyntaxKind.Block) {
                 // The case statement was written with curly braces, so emit it with the appropriate formatting
-                this.emit(body.childAt(0));
+                this.emit(childAt(body, 0));
                 this.writeLineToOutput("");
             }
             else {
@@ -3446,7 +3456,7 @@ module TypeScript {
         }
 
         private firstVariableDeclarator(statement: VariableStatementSyntax): VariableDeclaratorSyntax {
-            return statement.variableDeclaration.variableDeclarators.nonSeparatorAt(0);
+            return statement.variableDeclaration.variableDeclarators[0];
         }
 
         private isNotAmbientOrHasInitializer(variableStatement: VariableStatementSyntax): boolean {
@@ -3478,7 +3488,7 @@ module TypeScript {
                 return false;
             }
 
-            switch (ast.kind()) {
+            switch (ast.kind) {
                 case SyntaxKind.ImportDeclaration:
                     return this.shouldEmitImportDeclaration(<ImportDeclarationSyntax>ast);
                 case SyntaxKind.ClassDeclaration:
@@ -3505,11 +3515,11 @@ module TypeScript {
                 return;
             }
 
-            switch (ast.kind()) {
+            switch (ast.kind) {
                 case SyntaxKind.SeparatedList:
-                    return this.emitSeparatedList(<ISeparatedSyntaxList<ISyntaxNodeOrToken>>ast);
+                    return this.emitSeparatedList(<ISyntaxNodeOrToken[]>ast);
                 case SyntaxKind.List:
-                    return this.emitList(<ISyntaxList<ISyntaxNodeOrToken>>ast);
+                    return this.emitList(<ISyntaxNodeOrToken[]>ast);
                 case SyntaxKind.SourceUnit:
                     return this.emitSourceUnit(<SourceUnitSyntax>ast);
                 case SyntaxKind.ImportDeclaration:
@@ -3558,7 +3568,7 @@ module TypeScript {
                 return;
             }
 
-            switch (ast.kind()) {
+            switch (ast.kind) {
                 case SyntaxKind.NumericLiteral:
                     return this.emitNumericLiteral(<ISyntaxToken>ast);
                 case SyntaxKind.RegularExpressionLiteral:
@@ -3707,10 +3717,10 @@ module TypeScript {
     }
 
     export function getLastConstructor(classDecl: ClassDeclarationSyntax): ConstructorDeclarationSyntax {
-        for (var i = classDecl.classElements.childCount() - 1; i >= 0; i--) {
-            var child = classDecl.classElements.childAt(i);
+        for (var i = classDecl.classElements.length - 1; i >= 0; i--) {
+            var child = classDecl.classElements[i];
 
-            if (child.kind() === SyntaxKind.ConstructorDeclaration) {
+            if (child.kind === SyntaxKind.ConstructorDeclaration) {
                 return <ConstructorDeclarationSyntax>child;
             }
         }

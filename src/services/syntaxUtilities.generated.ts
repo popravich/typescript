@@ -1,7 +1,7 @@
 module TypeScript {
-    function isSeparatedListTypeScriptSpecific(list: ISeparatedSyntaxList<ISyntaxNodeOrToken>): boolean {
-        for (var i = 0, n = this.nonSeparatorCount(); i < n; i++) {
-            if (this.nonSeparatorAt(i).isTypeScriptSpecific()) {
+    function isSeparatedListTypeScriptSpecific(list: ISyntaxNodeOrToken[]): boolean {
+        for (var i = 0, n = childCount(list); i < n; i++) {
+            if (isTypeScriptSpecific(childAt(list, i))) {
                 return true;
             }
         }
@@ -9,9 +9,9 @@ module TypeScript {
         return false;
     }
 
-    function isListTypeScriptSpecific(list: ISyntaxList<ISyntaxNodeOrToken>): boolean {
-        for (var i = 0, n = this.childCount(); i < n; i++) {
-            if (this.childAt(i).isTypeScriptSpecific()) {
+    function isListTypeScriptSpecific(list: ISyntaxNodeOrToken[]): boolean {
+        for (var i = 0, n = list.length; i < n; i++) {
+            if (isTypeScriptSpecific(list[i])) {
                 return true;
             }
         }
@@ -22,10 +22,10 @@ module TypeScript {
     export function isTypeScriptSpecific(element: ISyntaxElement): boolean {
         if (element === null) { return false; }
         if (isToken(element)) { return false; }
-        if (isList(element)) { return isListTypeScriptSpecific(<ISyntaxList<ISyntaxNodeOrToken>>element); }
-        if (isSeparatedList(element)) { return isSeparatedListTypeScriptSpecific(<ISeparatedSyntaxList<ISyntaxNodeOrToken>>element); }
+        if (isList(element)) { return isListTypeScriptSpecific(<ISyntaxNodeOrToken[]>element); }
+        if (isSeparatedList(element)) { return isSeparatedListTypeScriptSpecific(<ISyntaxNodeOrToken[]>element); }
 
-        switch (element.kind()) {
+        switch (element.kind) {
             case SyntaxKind.ExternalModuleReference:
             case SyntaxKind.ModuleNameModuleReference:
             case SyntaxKind.ImportDeclaration:
@@ -170,13 +170,13 @@ module TypeScript {
     }
 
     function isFunctionDeclarationTypeScriptSpecific(node: FunctionDeclarationSyntax): boolean {
-        return node.modifiers.childCount() > 0 ||
+        return node.modifiers.length > 0 ||
                isTypeScriptSpecific(node.callSignature) ||
                isTypeScriptSpecific(node.block);
     }
 
     function isVariableStatementTypeScriptSpecific(node: VariableStatementSyntax): boolean {
-        return node.modifiers.childCount() > 0 ||
+        return node.modifiers.length > 0 ||
                isTypeScriptSpecific(node.variableDeclaration);
     }
 
@@ -278,7 +278,7 @@ module TypeScript {
     }
 
     function isGetAccessorTypeScriptSpecific(node: GetAccessorSyntax): boolean {
-        return node.modifiers.childCount() > 0 ||
+        return node.modifiers.length > 0 ||
                isTypeScriptSpecific(node.parameterList) ||
                node.typeAnnotation !== null ||
                isTypeScriptSpecific(node.block);

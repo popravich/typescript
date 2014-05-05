@@ -5,7 +5,7 @@ module TypeScript {
         public visitToken(token: ISyntaxToken): void {
         }
 
-        public visitNode(node: SyntaxNode): void {
+        public visitNode(node: ISyntaxNode): void {
             visitNodeOrToken(this, node);
         }
 
@@ -14,7 +14,7 @@ module TypeScript {
                 this.visitToken(<ISyntaxToken>nodeOrToken);
             }
             else {
-                this.visitNode(<SyntaxNode>nodeOrToken);
+                this.visitNode(<ISyntaxNode>nodeOrToken);
             }
         }
 
@@ -26,7 +26,7 @@ module TypeScript {
             this.visitToken(token);
         }
 
-        public visitOptionalNode(node: SyntaxNode): void {
+        public visitOptionalNode(node: ISyntaxNode): void {
             if (node === null) {
                 return;
             }
@@ -42,15 +42,15 @@ module TypeScript {
             this.visitNodeOrToken(nodeOrToken);
         }
 
-        public visitList(list: ISyntaxList<ISyntaxNodeOrToken>): void {
-            for (var i = 0, n = list.childCount(); i < n; i++) {
-               this.visitNodeOrToken(list.childAt(i));
+        public visitList(list: ISyntaxNodeOrToken[]): void {
+            for (var i = 0, n = list.length; i < n; i++) {
+               this.visitNodeOrToken(list[i]);
             }
         }
 
-        public visitSeparatedList(list: ISeparatedSyntaxList<ISyntaxNodeOrToken>): void {
-            for (var i = 0, n = list.childCount(); i < n; i++) {
-                var item = list.childAt(i);
+        public visitSeparatedList(list: ISyntaxNodeOrToken[]): void {
+            for (var i = 0, n = childCount(list); i < n; i++) {
+                var item = childAt(list, i);
                 this.visitNodeOrToken(item);
             }
         }

@@ -10,22 +10,22 @@ module TypeScript {
     export class SyntaxNodeInvariantsChecker extends SyntaxWalker {
         private tokenTable = Collections.createHashTable(Collections.DefaultHashTableCapacity, Collections.identityHashCode);
 
-        public static checkInvariants(node: SyntaxNode): void {
+        public static checkInvariants(node: ISyntaxNode): void {
             visitNodeOrToken(new SyntaxNodeInvariantsChecker(), node);
         }
 
-        public visitNode(node: SyntaxNode): void {
-            Debug.assert(node.kind() === SyntaxKind.SourceUnit || node.parent);
+        public visitNode(node: ISyntaxNode): void {
+            Debug.assert(node.kind === SyntaxKind.SourceUnit || node.parent);
             super.visitNode(node);
         }
 
-        public visitList(list: ISyntaxList<ISyntaxNodeOrToken>): void {
-            Debug.assert(list.isShared() || list.parent);
+        public visitList(list: ISyntaxNodeOrToken[]): void {
+            Debug.assert(isShared(list) || list.parent);
             super.visitList(list);
         }
 
-        public visitSeparatedList(list: ISeparatedSyntaxList<ISyntaxNodeOrToken>): void {
-            Debug.assert(list.isShared() || list.parent);
+        public visitSeparatedList(list: ISyntaxNodeOrToken[]): void {
+            Debug.assert(isShared(list) || list.parent);
             super.visitSeparatedList(list);
         }
 
