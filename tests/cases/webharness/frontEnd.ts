@@ -3,6 +3,7 @@
 ///<reference path='..\..\..\src\services\pullLanguageService.ts'/>
 ///<reference path='.\quotedLib.ts'/>
 ///<reference path='.\quotedCompiler.ts'/>
+///<reference path='..\..\..\tests\Fidelity\anders\parser.ts'/>
 
 class DiagnosticsLogger implements TypeScript.ILogger {
 
@@ -45,6 +46,40 @@ class BatchCompiler {
         return TypeScript.Parser.parse(compilerFileName, this.simpleText, false,
             TypeScript.getParseOptions(TypeScript.ImmutableCompilationSettings.defaultSettings()));
     }
+
+    public andersParse(): ts.SourceFile {
+        var file = ts.createSourceFile(compilerFileName, compilerString);
+        ts.parseSourceFile(file);
+        this.setParents(file, file.parent);
+
+        return file;
+    }
+
+    private setParents(node: any, parent: any): void {
+        if (!node || node.parent) {
+            return;
+        }
+
+        node.parent = parent;
+        for (var key in node) {
+            var child = node[key];
+            if (child) {
+                if (child.kind) {
+                    this.setParents(child, node);
+                }
+                else if (TypeScript.ArrayUtilities.isArray(child)) {
+                    for (var i = 0, n = child.length; i < n; i++) {
+                        this.setParents(child[i], node);
+                    }
+                }
+            }
+        }
+    }
+
+    //public newParse2(): TypeScript.SyntaxTree {
+    //    return TypeScript.Parser.parse(libraryFileName, this.libSimpleText, false,
+    //        TypeScript.getParseOptions(TypeScript.ImmutableCompilationSettings.defaultSettings()));
+    //}
 
     public newIncrementalParse(tree: TypeScript.SyntaxTree): TypeScript.SyntaxTree {
         var width = 100;

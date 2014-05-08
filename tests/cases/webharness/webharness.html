@@ -43,6 +43,7 @@
         }
 
         var tree2;
+        var andersTree;
         function newParse() {
             var batch = new BatchCompiler();
 
@@ -57,6 +58,9 @@
                 literalCount = 0;
                 tree2 = batch.newParse();
                 countNodes(tree2.sourceUnit())
+                // TypeScript.ScannerToken.clear();
+
+                andersTree = batch.andersParse();
 
                 appendTime("nodeCount: " + nodeCount + ", tokenCount: " + tokenCount + ", emptyList: " + emptyListCount + ", " +
                     "singleton list: " + singletonListCount + ", listCount: " + listCount + ", literals: " + literalCount);
@@ -103,7 +107,7 @@
                 }
             }
 
-            for (var i = 0, n = e.childCount() ; i < n; i++) {
+            for (var i = 0, n = e.childCount(); i < n; i++) {
                 countNodes(e.childAt(i));
             }
         }
@@ -129,11 +133,13 @@
             run(function () {
                 var start = new Date().getTime();
                 tree = batch.newIncrementalParse(tree);
-
                 var end = new Date().getTime();
                 appendTime("Incremental Parse", end - start);
             });
         }
+
+        var batch = new BatchCompiler();
+        //var tree2 = batch.newParse2();
 
         function newIncrementalParseAndAST() {
             var batch = new BatchCompiler();
