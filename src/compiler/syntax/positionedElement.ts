@@ -182,7 +182,7 @@ module TypeScript {
         }
 
         public nextToken(includeSkippedTokens: boolean = false): PositionedToken {
-            if (this.token().tokenKind === SyntaxKind.EndOfFileToken) {
+            if (this.token().kind() === SyntaxKind.EndOfFileToken) {
                 return null;
             }
 
@@ -272,7 +272,7 @@ module TypeScript {
         }
         
         public nextToken(includeSkippedTokens: boolean = false): PositionedToken {
-            if (this.token().tokenKind === SyntaxKind.EndOfFileToken) {
+            if (this.token().kind() === SyntaxKind.EndOfFileToken) {
                 return null;
             }
 

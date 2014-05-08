@@ -2,9 +2,6 @@
 
 module TypeScript {
     export interface ISyntaxToken extends ISyntaxNodeOrToken, INameSyntax, IPrimaryExpressionSyntax {
-        // Same as kind(), just exposed through a property for perf.
-        tokenKind: SyntaxKind;
-
         // Text for this token, not including leading or trailing trivia.
         text(): string;
 
@@ -41,7 +38,7 @@ module TypeScript {
 
 module TypeScript.Syntax {
     export function isExpression(token: ISyntaxToken): boolean {
-        switch (token.tokenKind) {
+        switch (token.kind()) {
             case SyntaxKind.IdentifierName:
             case SyntaxKind.RegularExpressionLiteral:
             case SyntaxKind.NumericLiteral:
@@ -58,12 +55,12 @@ module TypeScript.Syntax {
     }
 
     export function realizeToken(token: ISyntaxToken): ISyntaxToken {
-        return new RealizedToken(token.tokenKind,
+        return new RealizedToken(token.kind(),
             token.leadingTrivia(), token.text(), token.value(), token.valueText(), token.trailingTrivia());
     }
 
     export function convertToIdentifierName(token: ISyntaxToken): ISyntaxToken {
-        Debug.assert(SyntaxFacts.isAnyKeyword(token.tokenKind));
+        Debug.assert(SyntaxFacts.isAnyKeyword(token.kind()));
         return new RealizedToken(SyntaxKind.IdentifierName,
             token.leadingTrivia(), token.text(), token.text(), token.text(), token.trailingTrivia());
     }
@@ -137,7 +134,7 @@ module TypeScript.Syntax {
     }
 
     export function value(token: ISyntaxToken): any {
-        return value1(token.tokenKind, token.text());
+        return value1(token.kind(), token.text());
     }
 
     function hexValue(text: string, start: number, length: number): number {
@@ -323,7 +320,7 @@ module TypeScript.Syntax {
         }
 
         public clone(): ISyntaxToken {
-            return new EmptyToken(this.tokenKind);
+            return new EmptyToken(this.kind());
         }
 
         public kind() { return this.tokenKind; }
@@ -436,7 +433,7 @@ module TypeScript.Syntax {
         }
 
         public clone(): ISyntaxToken {
-            return new RealizedToken(this.tokenKind, /*this.tokenKeywordKind,*/ this._leadingTrivia,
+            return new RealizedToken(this.kind(), /*this.tokenKeywordKind,*/ this._leadingTrivia,
                 this._text, this._value, this._valueText, this._trailingTrivia);
         }
 
@@ -504,12 +501,12 @@ module TypeScript.Syntax {
 
         public withLeadingTrivia(leadingTrivia: ISyntaxTriviaList): ISyntaxToken {
             return new RealizedToken(
-                this.tokenKind, leadingTrivia, this._text, this._value, this._valueText, this._trailingTrivia);
+                this.kind(), leadingTrivia, this._text, this._value, this._valueText, this._trailingTrivia);
         }
 
         public withTrailingTrivia(trailingTrivia: ISyntaxTriviaList): ISyntaxToken {
             return new RealizedToken(
-                this.tokenKind,  this._leadingTrivia, this._text, this._value, this._valueText, trailingTrivia);
+                this.kind(),  this._leadingTrivia, this._text, this._value, this._valueText, trailingTrivia);
         }
 
         public isExpression(): boolean {

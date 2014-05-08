@@ -1066,10 +1066,10 @@ function generateIfKindCheck(child: IMemberDefinition, tokenKinds: string[], ind
 
         var tokenKind = tokenKinds[j];
         if (tokenKind === "IdentifierName") {
-            result += "!SyntaxFacts.isIdentifierName(" + child.name + ".tokenKind)";
+            result += "!SyntaxFacts.isIdentifierName(" + child.name + ".kind())";
         }
         else {
-            result += child.name + ".tokenKind !== SyntaxKind." + tokenKind;
+            result += child.name + ".kind() !== SyntaxKind." + tokenKind;
         }
     }
 
@@ -1120,7 +1120,7 @@ function generateSwitchKindCheck(child: IMemberDefinition, tokenKinds: string[],
     var notIdentifierName = TypeScript.ArrayUtilities.where(tokenKinds, v => v.indexOf("IdentifierName") < 0);
 
     if (identifierName.length > 0) {
-        result += indent + "        if (!SyntaxFacts.isIdentifierName(" + child.name + ".tokenKind)) {\r\n";
+        result += indent + "        if (!SyntaxFacts.isIdentifierName(" + child.name + ".kind())) {\r\n";
         if (notIdentifierName.length === 0) {
             result += indent + "            throw Errors.argument('" + child.name + "');\r\n"; 
             result += indent + "        }\r\n";
@@ -1134,7 +1134,7 @@ function generateSwitchKindCheck(child: IMemberDefinition, tokenKinds: string[],
         result += generateIfKindCheck(child, notIdentifierName, indent);
     }
     else if (notIdentifierName.length > 2) {
-        result += indent + "        switch (" + child.name + ".tokenKind) {\r\n";
+        result += indent + "        switch (" + child.name + ".kind()) {\r\n";
         result += generateSwitchCases(notIdentifierName, indent);
         result += generateDefaultCase(child, indent);
         result += indent + "        }\r\n";
@@ -2146,10 +2146,12 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 
     if (needsSourcetext) {
         result += "        private _sourceText: ISimpleText;\r\n";
-        result += "        private _fullStart: number;\r\n";
+        result += "        private _fullStartAndKind: number;\r\n";
+    }
+    else {
+        result += "        private _kind: SyntaxKind;\r\n";
     }
 
-    result += "        public tokenKind: SyntaxKind;\r\n";
     // result += "        public tokenKeywordKind: SyntaxKind;\r\n";
 
     if (leading) {
@@ -2167,13 +2169,13 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += "\r\n";
 
     if (needsSourcetext) {
-        result += "        constructor(sourceText: ISimpleText, fullStart: number,";
+        result += "        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind";
     }
     else {
-        result += "        constructor(";
+        result += "        constructor(kind: SyntaxKind";
     }
 
-    result += "kind: SyntaxKind";
+    // result += "kind: SyntaxKind";
 
     if (leading) {
         result += ", leadingTriviaInfo: number";
@@ -2191,10 +2193,11 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 
     if (needsSourcetext) {
         result += "            this._sourceText = sourceText;\r\n";
-        result += "            this._fullStart = fullStart;\r\n";
+        result += "            this._fullStartAndKind = (fullStart << 7) | kind;\r\n";
     }
-
-    result += "            this.tokenKind = kind;\r\n";
+    else {
+        result += "            this._kind = kind;\r\n";
+    }
 
     if (leading) {
         result += "            this._leadingTriviaInfo = leadingTriviaInfo;\r\n";
@@ -2210,12 +2213,20 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 
     result += "        }\r\n\r\n";
 
+    if (needsSourcetext) {
+        result += "        private fullStart(): number { return this._fullStartAndKind >> 7; }\r\n";
+    }
+
     result += "        public clone(): ISyntaxToken {\r\n";
     result += "            return new " + className + "(\r\n";
 
     if (needsSourcetext) {
         result += "                this._sourceText,\r\n";
-        result += "                this._fullStart,\r\n";
+        result += "                this.fullStart(),\r\n";
+        result += "                this.kind()";
+    }
+    else {
+        result += "                this.kind()";
     }
 
     //if (isKeyword) {
@@ -2224,7 +2235,6 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     //else {
     //    result += "                this.tokenKind";
     //}
-    result += "                this.tokenKind";
 
     if (leading) {
         result += ",\r\n                this._leadingTriviaInfo";
@@ -2247,7 +2257,12 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 "        public isList(): boolean { return false; }\r\n" +
 "        public isSeparatedList(): boolean { return false; }\r\n\r\n";
 
-    result += "        public kind(): SyntaxKind { return this.tokenKind; }\r\n\r\n";
+    if (needsSourcetext) {
+        result += "        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }\r\n\r\n";
+    }
+    else {
+        result += "        public kind(): SyntaxKind { return this._kind; }\r\n\r\n";
+    }
 
     result += "        public childCount(): number { return 0; }\r\n";
     result += "        public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }\r\n\r\n";
@@ -2270,10 +2285,10 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 
     if (needsSourcetext) {
         if (leading) {
-            result += "        private start(): number { return this._fullStart + " + leadingTriviaWidth + "; }\r\n";
+            result += "        private start(): number { return this.fullStart() + " + leadingTriviaWidth + "; }\r\n";
         }
         else {
-            result += "        private start(): number { return this._fullStart; }\r\n";
+            result += "        private start(): number { return this.fullStart(); }\r\n";
         }
 
         result += "        private end(): number { return this.start() + this.width(); }\r\n\r\n";
@@ -2287,14 +2302,14 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     }
 
     if (isFixedWidth) {
-        result += "        public text(): string { return SyntaxFacts.getText(this.tokenKind); }\r\n";
+        result += "        public text(): string { return SyntaxFacts.getText(this.kind()); }\r\n";
     }
     else {
         result += "\r\n";
         result += "        public text(): string {\r\n";
         result += "            if (typeof this._textOrWidth === 'number') {\r\n";
         result += "                this._textOrWidth = this._sourceText.substr(\r\n";
-        result += "                    this.start(), this._textOrWidth, /*intern:*/ this.tokenKind === SyntaxKind.IdentifierName);\r\n";
+        result += "                    this.start(), this._textOrWidth, /*intern:*/ this.kind() === SyntaxKind.IdentifierName);\r\n";
         result += "            }\r\n";
         result += "\r\n";
         result += "            return this._textOrWidth;\r\n";
@@ -2302,7 +2317,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     }
 
     if (needsSourcetext) {
-        result += "        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }\r\n\r\n";
+        result += "        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }\r\n\r\n";
     }
     else {
         result += "        public fullText(): string { return this.text(); }\r\n\r\n";
@@ -2335,7 +2350,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
     result += "        public hasLeadingSkippedText(): boolean { return false; }\r\n";
     result += "        public leadingTriviaWidth(): number { return " + (leading ? "getTriviaWidth(this._leadingTriviaInfo)" : "0") + "; }\r\n";
     result += "        public leadingTrivia(): ISyntaxTriviaList { return " + (leading
-        ? "Scanner.scanTrivia(this._sourceText, this._fullStart, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false)"
+        ? "Scanner.scanTrivia(this._sourceText, this.fullStart(), getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false)"
         : "Syntax.emptyTriviaList") + "; }\r\n\r\n";
 
     result += "        public hasTrailingTrivia(): boolean { return " + (trailing ? "true" : "false") + "; }\r\n";
@@ -2353,7 +2368,7 @@ function generateToken(isFixedWidth: boolean, leading: boolean, trailing: boolea
 "        public firstToken(): ISyntaxToken { return this; }\r\n" +
 "        public lastToken(): ISyntaxToken { return this; }\r\n" +
 "        public isTypeScriptSpecific(): boolean { return false; }\r\n" +
-"        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }\r\n" +
+"        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }\r\n" +
 "        public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }\r\n" +
 "        private realize(): ISyntaxToken { return realizeToken(this); }\r\n" +
 "        public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }\r\n\r\n";

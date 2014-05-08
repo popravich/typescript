@@ -3,22 +3,21 @@
 module TypeScript.Syntax {
     export class VariableWidthTokenWithNoTrivia implements ISyntaxToken {
         private _sourceText: ISimpleText;
-        private _fullStart: number;
-        public tokenKind: SyntaxKind;
+        private _fullStartAndKind: number;
         private _textOrWidth: any;
 
-        constructor(sourceText: ISimpleText, fullStart: number,kind: SyntaxKind, textOrWidth: any) {
+        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind, textOrWidth: any) {
             this._sourceText = sourceText;
-            this._fullStart = fullStart;
-            this.tokenKind = kind;
+            this._fullStartAndKind = (fullStart << 7) | kind;
             this._textOrWidth = textOrWidth;
         }
 
+        private fullStart(): number { return this._fullStartAndKind >> 7; }
         public clone(): ISyntaxToken {
             return new VariableWidthTokenWithNoTrivia(
                 this._sourceText,
-                this._fullStart,
-                this.tokenKind,
+                this.fullStart(),
+                this.kind(),
                 this._textOrWidth);
         }
 
@@ -27,13 +26,13 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return this.width(); }
-        private start(): number { return this._fullStart; }
+        private start(): number { return this.fullStart(); }
         private end(): number { return this.start() + this.width(); }
 
         public width(): number { return typeof this._textOrWidth === 'number' ? this._textOrWidth : this._textOrWidth.length; }
@@ -41,13 +40,13 @@ module TypeScript.Syntax {
         public text(): string {
             if (typeof this._textOrWidth === 'number') {
                 this._textOrWidth = this._sourceText.substr(
-                    this.start(), this._textOrWidth, /*intern:*/ this.tokenKind === SyntaxKind.IdentifierName);
+                    this.start(), this._textOrWidth, /*intern:*/ this.kind() === SyntaxKind.IdentifierName);
             }
 
             return this._textOrWidth;
         }
 
-        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }
+        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }
 
         public value(): any {
             if ((<any>this)._value === undefined) {
@@ -84,7 +83,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }
@@ -124,24 +123,23 @@ module TypeScript.Syntax {
 
     export class VariableWidthTokenWithLeadingTrivia implements ISyntaxToken {
         private _sourceText: ISimpleText;
-        private _fullStart: number;
-        public tokenKind: SyntaxKind;
+        private _fullStartAndKind: number;
         private _leadingTriviaInfo: number;
         private _textOrWidth: any;
 
-        constructor(sourceText: ISimpleText, fullStart: number,kind: SyntaxKind, leadingTriviaInfo: number, textOrWidth: any) {
+        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind, leadingTriviaInfo: number, textOrWidth: any) {
             this._sourceText = sourceText;
-            this._fullStart = fullStart;
-            this.tokenKind = kind;
+            this._fullStartAndKind = (fullStart << 7) | kind;
             this._leadingTriviaInfo = leadingTriviaInfo;
             this._textOrWidth = textOrWidth;
         }
 
+        private fullStart(): number { return this._fullStartAndKind >> 7; }
         public clone(): ISyntaxToken {
             return new VariableWidthTokenWithLeadingTrivia(
                 this._sourceText,
-                this._fullStart,
-                this.tokenKind,
+                this.fullStart(),
+                this.kind(),
                 this._leadingTriviaInfo,
                 this._textOrWidth);
         }
@@ -151,13 +149,13 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return getTriviaWidth(this._leadingTriviaInfo) + this.width(); }
-        private start(): number { return this._fullStart + getTriviaWidth(this._leadingTriviaInfo); }
+        private start(): number { return this.fullStart() + getTriviaWidth(this._leadingTriviaInfo); }
         private end(): number { return this.start() + this.width(); }
 
         public width(): number { return typeof this._textOrWidth === 'number' ? this._textOrWidth : this._textOrWidth.length; }
@@ -165,13 +163,13 @@ module TypeScript.Syntax {
         public text(): string {
             if (typeof this._textOrWidth === 'number') {
                 this._textOrWidth = this._sourceText.substr(
-                    this.start(), this._textOrWidth, /*intern:*/ this.tokenKind === SyntaxKind.IdentifierName);
+                    this.start(), this._textOrWidth, /*intern:*/ this.kind() === SyntaxKind.IdentifierName);
             }
 
             return this._textOrWidth;
         }
 
-        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }
+        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }
 
         public value(): any {
             if ((<any>this)._value === undefined) {
@@ -194,7 +192,7 @@ module TypeScript.Syntax {
         public hasLeadingNewLine(): boolean { return hasTriviaNewLine(this._leadingTriviaInfo); }
         public hasLeadingSkippedText(): boolean { return false; }
         public leadingTriviaWidth(): number { return getTriviaWidth(this._leadingTriviaInfo); }
-        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this._fullStart, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
+        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this.fullStart(), getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
 
         public hasTrailingTrivia(): boolean { return false; }
         public hasTrailingComment(): boolean { return false; }
@@ -208,7 +206,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }
@@ -248,24 +246,23 @@ module TypeScript.Syntax {
 
     export class VariableWidthTokenWithTrailingTrivia implements ISyntaxToken {
         private _sourceText: ISimpleText;
-        private _fullStart: number;
-        public tokenKind: SyntaxKind;
+        private _fullStartAndKind: number;
         private _textOrWidth: any;
         private _trailingTriviaInfo: number;
 
-        constructor(sourceText: ISimpleText, fullStart: number,kind: SyntaxKind, textOrWidth: any, trailingTriviaInfo: number) {
+        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind, textOrWidth: any, trailingTriviaInfo: number) {
             this._sourceText = sourceText;
-            this._fullStart = fullStart;
-            this.tokenKind = kind;
+            this._fullStartAndKind = (fullStart << 7) | kind;
             this._textOrWidth = textOrWidth;
             this._trailingTriviaInfo = trailingTriviaInfo;
         }
 
+        private fullStart(): number { return this._fullStartAndKind >> 7; }
         public clone(): ISyntaxToken {
             return new VariableWidthTokenWithTrailingTrivia(
                 this._sourceText,
-                this._fullStart,
-                this.tokenKind,
+                this.fullStart(),
+                this.kind(),
                 this._textOrWidth,
                 this._trailingTriviaInfo);
         }
@@ -275,13 +272,13 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return this.width() + getTriviaWidth(this._trailingTriviaInfo); }
-        private start(): number { return this._fullStart; }
+        private start(): number { return this.fullStart(); }
         private end(): number { return this.start() + this.width(); }
 
         public width(): number { return typeof this._textOrWidth === 'number' ? this._textOrWidth : this._textOrWidth.length; }
@@ -289,13 +286,13 @@ module TypeScript.Syntax {
         public text(): string {
             if (typeof this._textOrWidth === 'number') {
                 this._textOrWidth = this._sourceText.substr(
-                    this.start(), this._textOrWidth, /*intern:*/ this.tokenKind === SyntaxKind.IdentifierName);
+                    this.start(), this._textOrWidth, /*intern:*/ this.kind() === SyntaxKind.IdentifierName);
             }
 
             return this._textOrWidth;
         }
 
-        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }
+        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }
 
         public value(): any {
             if ((<any>this)._value === undefined) {
@@ -332,7 +329,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }
@@ -372,26 +369,25 @@ module TypeScript.Syntax {
 
     export class VariableWidthTokenWithLeadingAndTrailingTrivia implements ISyntaxToken {
         private _sourceText: ISimpleText;
-        private _fullStart: number;
-        public tokenKind: SyntaxKind;
+        private _fullStartAndKind: number;
         private _leadingTriviaInfo: number;
         private _textOrWidth: any;
         private _trailingTriviaInfo: number;
 
-        constructor(sourceText: ISimpleText, fullStart: number,kind: SyntaxKind, leadingTriviaInfo: number, textOrWidth: any, trailingTriviaInfo: number) {
+        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind, leadingTriviaInfo: number, textOrWidth: any, trailingTriviaInfo: number) {
             this._sourceText = sourceText;
-            this._fullStart = fullStart;
-            this.tokenKind = kind;
+            this._fullStartAndKind = (fullStart << 7) | kind;
             this._leadingTriviaInfo = leadingTriviaInfo;
             this._textOrWidth = textOrWidth;
             this._trailingTriviaInfo = trailingTriviaInfo;
         }
 
+        private fullStart(): number { return this._fullStartAndKind >> 7; }
         public clone(): ISyntaxToken {
             return new VariableWidthTokenWithLeadingAndTrailingTrivia(
                 this._sourceText,
-                this._fullStart,
-                this.tokenKind,
+                this.fullStart(),
+                this.kind(),
                 this._leadingTriviaInfo,
                 this._textOrWidth,
                 this._trailingTriviaInfo);
@@ -402,13 +398,13 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return getTriviaWidth(this._leadingTriviaInfo) + this.width() + getTriviaWidth(this._trailingTriviaInfo); }
-        private start(): number { return this._fullStart + getTriviaWidth(this._leadingTriviaInfo); }
+        private start(): number { return this.fullStart() + getTriviaWidth(this._leadingTriviaInfo); }
         private end(): number { return this.start() + this.width(); }
 
         public width(): number { return typeof this._textOrWidth === 'number' ? this._textOrWidth : this._textOrWidth.length; }
@@ -416,13 +412,13 @@ module TypeScript.Syntax {
         public text(): string {
             if (typeof this._textOrWidth === 'number') {
                 this._textOrWidth = this._sourceText.substr(
-                    this.start(), this._textOrWidth, /*intern:*/ this.tokenKind === SyntaxKind.IdentifierName);
+                    this.start(), this._textOrWidth, /*intern:*/ this.kind() === SyntaxKind.IdentifierName);
             }
 
             return this._textOrWidth;
         }
 
-        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }
+        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }
 
         public value(): any {
             if ((<any>this)._value === undefined) {
@@ -445,7 +441,7 @@ module TypeScript.Syntax {
         public hasLeadingNewLine(): boolean { return hasTriviaNewLine(this._leadingTriviaInfo); }
         public hasLeadingSkippedText(): boolean { return false; }
         public leadingTriviaWidth(): number { return getTriviaWidth(this._leadingTriviaInfo); }
-        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this._fullStart, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
+        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this.fullStart(), getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
 
         public hasTrailingTrivia(): boolean { return true; }
         public hasTrailingComment(): boolean { return hasTriviaComment(this._trailingTriviaInfo); }
@@ -459,7 +455,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }
@@ -498,15 +494,15 @@ module TypeScript.Syntax {
     }
 
     export class FixedWidthTokenWithNoTrivia implements ISyntaxToken {
-        public tokenKind: SyntaxKind;
+        private _kind: SyntaxKind;
 
         constructor(kind: SyntaxKind) {
-            this.tokenKind = kind;
+            this._kind = kind;
         }
 
         public clone(): ISyntaxToken {
             return new FixedWidthTokenWithNoTrivia(
-                this.tokenKind);
+                this.kind());
         }
 
         public isNode(): boolean { return false; }
@@ -514,14 +510,14 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._kind; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return this.width(); }
         public width(): number { return this.text().length; }
-        public text(): string { return SyntaxFacts.getText(this.tokenKind); }
+        public text(): string { return SyntaxFacts.getText(this.kind()); }
         public fullText(): string { return this.text(); }
 
         public value(): any { return value(this); }
@@ -545,7 +541,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }
@@ -585,22 +581,21 @@ module TypeScript.Syntax {
 
     export class FixedWidthTokenWithLeadingTrivia implements ISyntaxToken {
         private _sourceText: ISimpleText;
-        private _fullStart: number;
-        public tokenKind: SyntaxKind;
+        private _fullStartAndKind: number;
         private _leadingTriviaInfo: number;
 
-        constructor(sourceText: ISimpleText, fullStart: number,kind: SyntaxKind, leadingTriviaInfo: number) {
+        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind, leadingTriviaInfo: number) {
             this._sourceText = sourceText;
-            this._fullStart = fullStart;
-            this.tokenKind = kind;
+            this._fullStartAndKind = (fullStart << 7) | kind;
             this._leadingTriviaInfo = leadingTriviaInfo;
         }
 
+        private fullStart(): number { return this._fullStartAndKind >> 7; }
         public clone(): ISyntaxToken {
             return new FixedWidthTokenWithLeadingTrivia(
                 this._sourceText,
-                this._fullStart,
-                this.tokenKind,
+                this.fullStart(),
+                this.kind(),
                 this._leadingTriviaInfo);
         }
 
@@ -609,18 +604,18 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return getTriviaWidth(this._leadingTriviaInfo) + this.width(); }
-        private start(): number { return this._fullStart + getTriviaWidth(this._leadingTriviaInfo); }
+        private start(): number { return this.fullStart() + getTriviaWidth(this._leadingTriviaInfo); }
         private end(): number { return this.start() + this.width(); }
 
         public width(): number { return this.text().length; }
-        public text(): string { return SyntaxFacts.getText(this.tokenKind); }
-        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }
+        public text(): string { return SyntaxFacts.getText(this.kind()); }
+        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }
 
         public value(): any { return value(this); }
         public valueText(): string { return valueText(this); }
@@ -629,7 +624,7 @@ module TypeScript.Syntax {
         public hasLeadingNewLine(): boolean { return hasTriviaNewLine(this._leadingTriviaInfo); }
         public hasLeadingSkippedText(): boolean { return false; }
         public leadingTriviaWidth(): number { return getTriviaWidth(this._leadingTriviaInfo); }
-        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this._fullStart, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
+        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this.fullStart(), getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
 
         public hasTrailingTrivia(): boolean { return false; }
         public hasTrailingComment(): boolean { return false; }
@@ -643,7 +638,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }
@@ -683,22 +678,21 @@ module TypeScript.Syntax {
 
     export class FixedWidthTokenWithTrailingTrivia implements ISyntaxToken {
         private _sourceText: ISimpleText;
-        private _fullStart: number;
-        public tokenKind: SyntaxKind;
+        private _fullStartAndKind: number;
         private _trailingTriviaInfo: number;
 
-        constructor(sourceText: ISimpleText, fullStart: number,kind: SyntaxKind, trailingTriviaInfo: number) {
+        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind, trailingTriviaInfo: number) {
             this._sourceText = sourceText;
-            this._fullStart = fullStart;
-            this.tokenKind = kind;
+            this._fullStartAndKind = (fullStart << 7) | kind;
             this._trailingTriviaInfo = trailingTriviaInfo;
         }
 
+        private fullStart(): number { return this._fullStartAndKind >> 7; }
         public clone(): ISyntaxToken {
             return new FixedWidthTokenWithTrailingTrivia(
                 this._sourceText,
-                this._fullStart,
-                this.tokenKind,
+                this.fullStart(),
+                this.kind(),
                 this._trailingTriviaInfo);
         }
 
@@ -707,18 +701,18 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return this.width() + getTriviaWidth(this._trailingTriviaInfo); }
-        private start(): number { return this._fullStart; }
+        private start(): number { return this.fullStart(); }
         private end(): number { return this.start() + this.width(); }
 
         public width(): number { return this.text().length; }
-        public text(): string { return SyntaxFacts.getText(this.tokenKind); }
-        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }
+        public text(): string { return SyntaxFacts.getText(this.kind()); }
+        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }
 
         public value(): any { return value(this); }
         public valueText(): string { return valueText(this); }
@@ -741,7 +735,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }
@@ -781,24 +775,23 @@ module TypeScript.Syntax {
 
     export class FixedWidthTokenWithLeadingAndTrailingTrivia implements ISyntaxToken {
         private _sourceText: ISimpleText;
-        private _fullStart: number;
-        public tokenKind: SyntaxKind;
+        private _fullStartAndKind: number;
         private _leadingTriviaInfo: number;
         private _trailingTriviaInfo: number;
 
-        constructor(sourceText: ISimpleText, fullStart: number,kind: SyntaxKind, leadingTriviaInfo: number, trailingTriviaInfo: number) {
+        constructor(sourceText: ISimpleText, fullStart: number, kind: SyntaxKind, leadingTriviaInfo: number, trailingTriviaInfo: number) {
             this._sourceText = sourceText;
-            this._fullStart = fullStart;
-            this.tokenKind = kind;
+            this._fullStartAndKind = (fullStart << 7) | kind;
             this._leadingTriviaInfo = leadingTriviaInfo;
             this._trailingTriviaInfo = trailingTriviaInfo;
         }
 
+        private fullStart(): number { return this._fullStartAndKind >> 7; }
         public clone(): ISyntaxToken {
             return new FixedWidthTokenWithLeadingAndTrailingTrivia(
                 this._sourceText,
-                this._fullStart,
-                this.tokenKind,
+                this.fullStart(),
+                this.kind(),
                 this._leadingTriviaInfo,
                 this._trailingTriviaInfo);
         }
@@ -808,18 +801,18 @@ module TypeScript.Syntax {
         public isList(): boolean { return false; }
         public isSeparatedList(): boolean { return false; }
 
-        public kind(): SyntaxKind { return this.tokenKind; }
+        public kind(): SyntaxKind { return this._fullStartAndKind & 0x7F; }
 
         public childCount(): number { return 0; }
         public childAt(index: number): ISyntaxElement { throw Errors.argumentOutOfRange('index'); }
 
         public fullWidth(): number { return getTriviaWidth(this._leadingTriviaInfo) + this.width() + getTriviaWidth(this._trailingTriviaInfo); }
-        private start(): number { return this._fullStart + getTriviaWidth(this._leadingTriviaInfo); }
+        private start(): number { return this.fullStart() + getTriviaWidth(this._leadingTriviaInfo); }
         private end(): number { return this.start() + this.width(); }
 
         public width(): number { return this.text().length; }
-        public text(): string { return SyntaxFacts.getText(this.tokenKind); }
-        public fullText(): string { return this._sourceText.substr(this._fullStart, this.fullWidth(), /*intern:*/ false); }
+        public text(): string { return SyntaxFacts.getText(this.kind()); }
+        public fullText(): string { return this._sourceText.substr(this.fullStart(), this.fullWidth(), /*intern:*/ false); }
 
         public value(): any { return value(this); }
         public valueText(): string { return valueText(this); }
@@ -828,7 +821,7 @@ module TypeScript.Syntax {
         public hasLeadingNewLine(): boolean { return hasTriviaNewLine(this._leadingTriviaInfo); }
         public hasLeadingSkippedText(): boolean { return false; }
         public leadingTriviaWidth(): number { return getTriviaWidth(this._leadingTriviaInfo); }
-        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this._fullStart, getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
+        public leadingTrivia(): ISyntaxTriviaList { return Scanner.scanTrivia(this._sourceText, this.fullStart(), getTriviaWidth(this._leadingTriviaInfo), /*isTrailing:*/ false); }
 
         public hasTrailingTrivia(): boolean { return true; }
         public hasTrailingComment(): boolean { return hasTriviaComment(this._trailingTriviaInfo); }
@@ -842,7 +835,7 @@ module TypeScript.Syntax {
         public firstToken(): ISyntaxToken { return this; }
         public lastToken(): ISyntaxToken { return this; }
         public isTypeScriptSpecific(): boolean { return false; }
-        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.tokenKind); }
+        public isIncrementallyUnusable(): boolean { return this.fullWidth() === 0 || SyntaxFacts.isAnyDivideOrRegularExpressionToken(this.kind()); }
         public accept(visitor: ISyntaxVisitor): any { return visitor.visitToken(this); }
         private realize(): ISyntaxToken { return realizeToken(this); }
         public collectTextElements(elements: string[]): void { collectTokenTextElements(this, elements); }

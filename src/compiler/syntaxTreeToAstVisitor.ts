@@ -199,7 +199,7 @@ module TypeScript {
         }
 
         public visitTokenWorker(token: ISyntaxToken): IASTToken {
-            switch (token.tokenKind) {
+            switch (token.kind()) {
                 case SyntaxKind.AnyKeyword:
                     return new BuiltInType(SyntaxKind.AnyKeyword, token.text(), token.valueText());
                 case SyntaxKind.BooleanKeyword:
@@ -350,7 +350,7 @@ module TypeScript {
             var typeNames = this.visitSeparatedSyntaxList(node.typeNames);
 
             var result = new HeritageClause(
-                node.extendsOrImplementsKeyword.tokenKind === SyntaxKind.ExtendsKeyword ? SyntaxKind.ExtendsHeritageClause : SyntaxKind.ImplementsHeritageClause,
+                node.extendsOrImplementsKeyword.kind() === SyntaxKind.ExtendsKeyword ? SyntaxKind.ExtendsHeritageClause : SyntaxKind.ImplementsHeritageClause,
                 typeNames);
             this.setSpan(result, start, node);
 
