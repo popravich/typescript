@@ -133,7 +133,6 @@ var definitions:ITypeDefinition[] = [
         name: 'HeritageClauseSyntax',
         baseType: 'SyntaxNode',
         children: [
-            <any>{ name: 'kind', type: 'SyntaxKind' },
             <any>{ name: 'extendsOrImplementsKeyword', isToken: true, tokenKinds: ['ExtendsKeyword', 'ImplementsKeyword'] },
             <any>{ name: 'typeNames', isSeparatedList: true, requiresAtLeastOneItem: true, elementType: 'INameSyntax' }
         ],
@@ -207,7 +206,6 @@ var definitions:ITypeDefinition[] = [
         baseType: 'SyntaxNode',
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
-            <any>{ name: 'kind', type: 'SyntaxKind' },
             <any>{ name: 'operatorToken', isToken: true, tokenKinds: ['PlusPlusToken', 'MinusMinusToken', 'PlusToken', 'MinusToken', 'TildeToken', 'ExclamationToken'] },
             <any>{ name: 'operand', type: 'IUnaryExpressionSyntax' }
         ]
@@ -398,7 +396,6 @@ var definitions:ITypeDefinition[] = [
         baseType: 'SyntaxNode',
         interfaces: ['IPostfixExpressionSyntax'],
         children: [
-            <any>{ name: 'kind', type: 'SyntaxKind' },
             <any>{ name: 'operand', type: 'IMemberExpressionSyntax' },
             <any>{ name: 'operatorToken', isToken: true, tokenKinds:['PlusPlusToken', 'MinusMinusToken'] }
         ]
@@ -438,7 +435,6 @@ var definitions:ITypeDefinition[] = [
         baseType: 'SyntaxNode',
         interfaces: ['IExpressionSyntax'],
         children: [
-            <any>{ name: 'kind', type: 'SyntaxKind' },
             <any>{ name: 'left', type: 'IExpressionSyntax' },
             <any>{ name: 'operatorToken', isToken: true,
                    tokenKinds:['AsteriskToken',  'SlashToken',  'PercentToken', 'PlusToken', 'MinusToken',  'LessThanLessThanToken',
@@ -1483,7 +1479,30 @@ function generateIsMethod(definition: ITypeDefinition): string {
 function generateKindMethod(definition: ITypeDefinition): string {
     var result = "";
 
-    if (!hasKind) {
+    if (definition.name === "HeritageClauseSyntax") {
+        result += "\r\n";
+        result += "    public kind(): SyntaxKind {\r\n";
+        result += "        return this.extendsOrImplementsKeyword.kind() === SyntaxKind.ExtendsKeyword ? SyntaxKind.ExtendsHeritageClause : SyntaxKind.ImplementsHeritageClause;\r\n";
+        result += "    }\r\n";
+    }
+    else if (definition.name === "BinaryExpressionSyntax") {
+        result += "\r\n";
+        result += "    public kind(): SyntaxKind {\r\n";
+        result += "        return SyntaxFacts.getBinaryExpressionFromOperatorToken(this.operatorToken.kind());\r\n";
+        result += "    }\r\n";
+    } else if (definition.name === "PrefixUnaryExpressionSyntax") {
+        result += "\r\n";
+        result += "    public kind(): SyntaxKind {\r\n";
+        result += "        return SyntaxFacts.getPrefixUnaryExpressionFromOperatorToken(this.operatorToken.kind());\r\n";
+        result += "    }\r\n";
+    }
+    else if (definition.name === "PostfixUnaryExpressionSyntax") {
+        result += "\r\n";
+        result += "    public kind(): SyntaxKind {\r\n";
+        result += "        return SyntaxFacts.getPostfixUnaryExpressionFromOperatorToken(this.operatorToken.kind());\r\n";
+        result += "    }\r\n";
+    }
+    else {
         result += "\r\n";
         result += "    public kind(): SyntaxKind {\r\n";
         result += "        return SyntaxKind." + getNameWithoutSuffix(definition) + ";\r\n";

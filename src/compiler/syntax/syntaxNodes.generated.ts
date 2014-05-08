@@ -637,19 +637,20 @@ module TypeScript {
     }
 
     export class HeritageClauseSyntax extends SyntaxNode {
-    private _kind: SyntaxKind;
 
-        constructor(kind: SyntaxKind,
-                    public extendsOrImplementsKeyword: ISyntaxToken,
+        constructor(public extendsOrImplementsKeyword: ISyntaxToken,
                     public typeNames: ISeparatedSyntaxList,
                     parsedInStrictMode: boolean) {
             super(parsedInStrictMode); 
 
-            this._kind = kind;
         }
 
     public accept(visitor: ISyntaxVisitor): any {
         return visitor.visitHeritageClause(this);
+    }
+
+    public kind(): SyntaxKind {
+        return this.extendsOrImplementsKeyword.kind() === SyntaxKind.ExtendsKeyword ? SyntaxKind.ExtendsHeritageClause : SyntaxKind.ImplementsHeritageClause;
     }
 
     public childCount(): number {
@@ -664,18 +665,13 @@ module TypeScript {
         }
     }
 
-    public kind(): SyntaxKind {
-        return this._kind;
-    }
-
-    public update(kind: SyntaxKind,
-                  extendsOrImplementsKeyword: ISyntaxToken,
+    public update(extendsOrImplementsKeyword: ISyntaxToken,
                   typeNames: ISeparatedSyntaxList): HeritageClauseSyntax {
-        if (this._kind === kind && this.extendsOrImplementsKeyword === extendsOrImplementsKeyword && this.typeNames === typeNames) {
+        if (this.extendsOrImplementsKeyword === extendsOrImplementsKeyword && this.typeNames === typeNames) {
             return this;
         }
 
-        return new HeritageClauseSyntax(kind, extendsOrImplementsKeyword, typeNames, /*parsedInStrictMode:*/ this.parsedInStrictMode());
+        return new HeritageClauseSyntax(extendsOrImplementsKeyword, typeNames, /*parsedInStrictMode:*/ this.parsedInStrictMode());
     }
 
     public withLeadingTrivia(trivia: ISyntaxTriviaList): HeritageClauseSyntax {
@@ -686,16 +682,12 @@ module TypeScript {
         return <HeritageClauseSyntax>super.withTrailingTrivia(trivia);
     }
 
-    public withKind(kind: SyntaxKind): HeritageClauseSyntax {
-        return this.update(kind, this.extendsOrImplementsKeyword, this.typeNames);
-    }
-
     public withExtendsOrImplementsKeyword(extendsOrImplementsKeyword: ISyntaxToken): HeritageClauseSyntax {
-        return this.update(this._kind, extendsOrImplementsKeyword, this.typeNames);
+        return this.update(extendsOrImplementsKeyword, this.typeNames);
     }
 
     public withTypeNames(typeNames: ISeparatedSyntaxList): HeritageClauseSyntax {
-        return this.update(this._kind, this.extendsOrImplementsKeyword, typeNames);
+        return this.update(this.extendsOrImplementsKeyword, typeNames);
     }
 
     public withTypeName(typeName: INameSyntax): HeritageClauseSyntax {
@@ -1233,19 +1225,20 @@ module TypeScript {
     }
 
     export class PrefixUnaryExpressionSyntax extends SyntaxNode implements IUnaryExpressionSyntax {
-    private _kind: SyntaxKind;
 
-        constructor(kind: SyntaxKind,
-                    public operatorToken: ISyntaxToken,
+        constructor(public operatorToken: ISyntaxToken,
                     public operand: IUnaryExpressionSyntax,
                     parsedInStrictMode: boolean) {
             super(parsedInStrictMode); 
 
-            this._kind = kind;
         }
 
     public accept(visitor: ISyntaxVisitor): any {
         return visitor.visitPrefixUnaryExpression(this);
+    }
+
+    public kind(): SyntaxKind {
+        return SyntaxFacts.getPrefixUnaryExpressionFromOperatorToken(this.operatorToken.kind());
     }
 
     public childCount(): number {
@@ -1268,18 +1261,13 @@ module TypeScript {
         return true;
     }
 
-    public kind(): SyntaxKind {
-        return this._kind;
-    }
-
-    public update(kind: SyntaxKind,
-                  operatorToken: ISyntaxToken,
+    public update(operatorToken: ISyntaxToken,
                   operand: IUnaryExpressionSyntax): PrefixUnaryExpressionSyntax {
-        if (this._kind === kind && this.operatorToken === operatorToken && this.operand === operand) {
+        if (this.operatorToken === operatorToken && this.operand === operand) {
             return this;
         }
 
-        return new PrefixUnaryExpressionSyntax(kind, operatorToken, operand, /*parsedInStrictMode:*/ this.parsedInStrictMode());
+        return new PrefixUnaryExpressionSyntax(operatorToken, operand, /*parsedInStrictMode:*/ this.parsedInStrictMode());
     }
 
     public withLeadingTrivia(trivia: ISyntaxTriviaList): PrefixUnaryExpressionSyntax {
@@ -1290,16 +1278,12 @@ module TypeScript {
         return <PrefixUnaryExpressionSyntax>super.withTrailingTrivia(trivia);
     }
 
-    public withKind(kind: SyntaxKind): PrefixUnaryExpressionSyntax {
-        return this.update(kind, this.operatorToken, this.operand);
-    }
-
     public withOperatorToken(operatorToken: ISyntaxToken): PrefixUnaryExpressionSyntax {
-        return this.update(this._kind, operatorToken, this.operand);
+        return this.update(operatorToken, this.operand);
     }
 
     public withOperand(operand: IUnaryExpressionSyntax): PrefixUnaryExpressionSyntax {
-        return this.update(this._kind, this.operatorToken, operand);
+        return this.update(this.operatorToken, operand);
     }
 
     public isTypeScriptSpecific(): boolean {
@@ -2704,19 +2688,20 @@ module TypeScript {
     }
 
     export class PostfixUnaryExpressionSyntax extends SyntaxNode implements IPostfixExpressionSyntax {
-    private _kind: SyntaxKind;
 
-        constructor(kind: SyntaxKind,
-                    public operand: IMemberExpressionSyntax,
+        constructor(public operand: IMemberExpressionSyntax,
                     public operatorToken: ISyntaxToken,
                     parsedInStrictMode: boolean) {
             super(parsedInStrictMode); 
 
-            this._kind = kind;
         }
 
     public accept(visitor: ISyntaxVisitor): any {
         return visitor.visitPostfixUnaryExpression(this);
+    }
+
+    public kind(): SyntaxKind {
+        return SyntaxFacts.getPostfixUnaryExpressionFromOperatorToken(this.operatorToken.kind());
     }
 
     public childCount(): number {
@@ -2743,18 +2728,13 @@ module TypeScript {
         return true;
     }
 
-    public kind(): SyntaxKind {
-        return this._kind;
-    }
-
-    public update(kind: SyntaxKind,
-                  operand: IMemberExpressionSyntax,
+    public update(operand: IMemberExpressionSyntax,
                   operatorToken: ISyntaxToken): PostfixUnaryExpressionSyntax {
-        if (this._kind === kind && this.operand === operand && this.operatorToken === operatorToken) {
+        if (this.operand === operand && this.operatorToken === operatorToken) {
             return this;
         }
 
-        return new PostfixUnaryExpressionSyntax(kind, operand, operatorToken, /*parsedInStrictMode:*/ this.parsedInStrictMode());
+        return new PostfixUnaryExpressionSyntax(operand, operatorToken, /*parsedInStrictMode:*/ this.parsedInStrictMode());
     }
 
     public withLeadingTrivia(trivia: ISyntaxTriviaList): PostfixUnaryExpressionSyntax {
@@ -2765,16 +2745,12 @@ module TypeScript {
         return <PostfixUnaryExpressionSyntax>super.withTrailingTrivia(trivia);
     }
 
-    public withKind(kind: SyntaxKind): PostfixUnaryExpressionSyntax {
-        return this.update(kind, this.operand, this.operatorToken);
-    }
-
     public withOperand(operand: IMemberExpressionSyntax): PostfixUnaryExpressionSyntax {
-        return this.update(this._kind, operand, this.operatorToken);
+        return this.update(operand, this.operatorToken);
     }
 
     public withOperatorToken(operatorToken: ISyntaxToken): PostfixUnaryExpressionSyntax {
-        return this.update(this._kind, this.operand, operatorToken);
+        return this.update(this.operand, operatorToken);
     }
 
     public isTypeScriptSpecific(): boolean {
@@ -3051,20 +3027,21 @@ module TypeScript {
     }
 
     export class BinaryExpressionSyntax extends SyntaxNode implements IExpressionSyntax {
-    private _kind: SyntaxKind;
 
-        constructor(kind: SyntaxKind,
-                    public left: IExpressionSyntax,
+        constructor(public left: IExpressionSyntax,
                     public operatorToken: ISyntaxToken,
                     public right: IExpressionSyntax,
                     parsedInStrictMode: boolean) {
             super(parsedInStrictMode); 
 
-            this._kind = kind;
         }
 
     public accept(visitor: ISyntaxVisitor): any {
         return visitor.visitBinaryExpression(this);
+    }
+
+    public kind(): SyntaxKind {
+        return SyntaxFacts.getBinaryExpressionFromOperatorToken(this.operatorToken.kind());
     }
 
     public childCount(): number {
@@ -3084,19 +3061,14 @@ module TypeScript {
         return true;
     }
 
-    public kind(): SyntaxKind {
-        return this._kind;
-    }
-
-    public update(kind: SyntaxKind,
-                  left: IExpressionSyntax,
+    public update(left: IExpressionSyntax,
                   operatorToken: ISyntaxToken,
                   right: IExpressionSyntax): BinaryExpressionSyntax {
-        if (this._kind === kind && this.left === left && this.operatorToken === operatorToken && this.right === right) {
+        if (this.left === left && this.operatorToken === operatorToken && this.right === right) {
             return this;
         }
 
-        return new BinaryExpressionSyntax(kind, left, operatorToken, right, /*parsedInStrictMode:*/ this.parsedInStrictMode());
+        return new BinaryExpressionSyntax(left, operatorToken, right, /*parsedInStrictMode:*/ this.parsedInStrictMode());
     }
 
     public withLeadingTrivia(trivia: ISyntaxTriviaList): BinaryExpressionSyntax {
@@ -3107,20 +3079,16 @@ module TypeScript {
         return <BinaryExpressionSyntax>super.withTrailingTrivia(trivia);
     }
 
-    public withKind(kind: SyntaxKind): BinaryExpressionSyntax {
-        return this.update(kind, this.left, this.operatorToken, this.right);
-    }
-
     public withLeft(left: IExpressionSyntax): BinaryExpressionSyntax {
-        return this.update(this._kind, left, this.operatorToken, this.right);
+        return this.update(left, this.operatorToken, this.right);
     }
 
     public withOperatorToken(operatorToken: ISyntaxToken): BinaryExpressionSyntax {
-        return this.update(this._kind, this.left, operatorToken, this.right);
+        return this.update(this.left, operatorToken, this.right);
     }
 
     public withRight(right: IExpressionSyntax): BinaryExpressionSyntax {
-        return this.update(this._kind, this.left, this.operatorToken, right);
+        return this.update(this.left, this.operatorToken, right);
     }
 
     public isTypeScriptSpecific(): boolean {

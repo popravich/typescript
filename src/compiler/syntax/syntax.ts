@@ -274,7 +274,7 @@ module TypeScript.Syntax {
     }
 
     export function assignmentExpression(left: IExpressionSyntax, token: ISyntaxToken, right: IExpressionSyntax): BinaryExpressionSyntax {
-        return Syntax.normalModeFactory.binaryExpression(SyntaxKind.AssignmentExpression, left, token, right);
+        return Syntax.normalModeFactory.binaryExpression(left, token, right);
     }
 
     export function nodeHasSkippedOrMissingTokens(node: SyntaxNode): boolean {

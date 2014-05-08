@@ -157,7 +157,6 @@ module TypeScript.Emitter1 {
             // M1.e = e;
             return ExpressionStatementSyntax.create1(
                 this.factory.binaryExpression(
-                    SyntaxKind.AssignmentExpression,
                     MemberAccessExpressionSyntax.create1(
                         this.withNoTrivia(moduleIdentifier),
                         elementIdentifier.withTrailingTrivia(Syntax.spaceTriviaList)),
@@ -243,7 +242,7 @@ module TypeScript.Emitter1 {
         }
 
         private initializedVariable(name: ISyntaxToken): BinaryExpressionSyntax {
-            return this.factory.binaryExpression(SyntaxKind.LogicalOrExpression,
+            return this.factory.binaryExpression(
                 name,
                 Syntax.token(SyntaxKind.BarBarToken),
                 ParenthesizedExpressionSyntax.create1(
@@ -457,7 +456,6 @@ module TypeScript.Emitter1 {
 
             // typeof foo === 'undefined'
             var condition = this.factory.binaryExpression(
-                    SyntaxKind.EqualsExpression,
                     this.factory.typeOfExpression(
                         Syntax.token(SyntaxKind.TypeOfKeyword).withTrailingTrivia(this.space),
                         identifierName),
@@ -989,7 +987,7 @@ module TypeScript.Emitter1 {
                 ? ElementAccessExpressionSyntax.create1(enumIdentifier, variableIdentifier)
                 : <IExpressionSyntax>MemberAccessExpressionSyntax.create1(enumIdentifier, variableIdentifier);
 
-            return this.factory.binaryExpression(SyntaxKind.PlusExpression,
+            return this.factory.binaryExpression(
                 receiver.withTrailingTrivia(Syntax.spaceTriviaList),
                 Syntax.token(SyntaxKind.PlusToken).withTrailingTrivia(this.space),
                 Syntax.numericLiteralExpression("1"));

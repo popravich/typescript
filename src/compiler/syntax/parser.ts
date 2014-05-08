@@ -2675,7 +2675,6 @@ module TypeScript.Parser {
             extendsOrImplementsKeyword = this.addSkippedTokensAfterToken(extendsOrImplementsKeyword, result.skippedTokens);
 
             return this.factory.heritageClause(
-                extendsOrImplementsKeyword.tokenKind === SyntaxKind.ExtendsKeyword ? SyntaxKind.ExtendsHeritageClause : SyntaxKind.ImplementsHeritageClause,
                 extendsOrImplementsKeyword, typeNames);
         }
 
@@ -3493,12 +3492,9 @@ module TypeScript.Parser {
         private parseUnaryExpressionOrLower(): IUnaryExpressionSyntax {
             var currentTokenKind = this.currentToken().tokenKind; 
             if (SyntaxFacts.isPrefixUnaryExpressionOperatorToken(currentTokenKind)) {
-                var operatorKind = SyntaxFacts.getPrefixUnaryExpressionFromOperatorToken(currentTokenKind);
-
                 var operatorToken = this.eatAnyToken();
-
                 var operand = this.parseUnaryExpressionOrLower();
-                return this.factory.prefixUnaryExpression(operatorKind, operatorToken, operand);
+                return this.factory.prefixUnaryExpression(operatorToken, operand);
             }
             else if (currentTokenKind === SyntaxKind.TypeOfKeyword) {
                 return this.parseTypeOfExpression();
@@ -3586,7 +3582,7 @@ module TypeScript.Parser {
                     }
 
                     leftOperand = this.factory.binaryExpression(
-                        binaryExpressionKind, leftOperand, operatorToken, this.parseSubExpression(newPrecedence, allowIn));
+                        leftOperand, operatorToken, this.parseSubExpression(newPrecedence, allowIn));
                     continue;
                 }
 
@@ -3798,7 +3794,7 @@ module TypeScript.Parser {
                     }
 
                     return this.factory.postfixUnaryExpression(
-                        SyntaxFacts.getPostfixUnaryExpressionFromOperatorToken(currentTokenKind), expression, this.eatAnyToken());
+                        expression, this.eatAnyToken());
             }
 
             return expression;
