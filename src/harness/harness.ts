@@ -148,12 +148,12 @@ module Harness {
             }
         }
 
-        export function noDiff(text1: string, text2: string) {
+        export function noDiff(text1: string, text2: string, ondifference?: () => string) {
             text1 = text1.replace(/^\s+|\s+$/g, "").replace(/\r\n?/g, "\n");
             text2 = text2.replace(/^\s+|\s+$/g, "").replace(/\r\n?/g, "\n");
 
             if (text1 !== text2) {
-                var errorString = "";
+                var errorString = ondifference ? ondifference() + "\n" : "";
                 var text1Lines = text1.split(/\n/);
                 var text2Lines = text2.split(/\n/);
                 for (var i = 0; i < text1Lines.length; i++) {
@@ -969,6 +969,19 @@ module Harness {
 
             public getContentForFile(fileName: string) {
                 var snapshot: TypeScript.IScriptSnapshot = this.fileNameToScriptSnapshot.lookup(fileName)
+
+                TypeScript.Debug.assert(!!snapshot, 'Unable to get snapshot for the file "' + fileName + '"', () => {
+                    var verboseInfo = [
+                        '\r\nScriptSnapshots available:',
+                        this.fileNameToScriptSnapshot.getAllKeys().join(', '),
+                        '\r\nInput Files:',
+                        this.inputFiles.join(', '),
+                        '\r\nResolved Files:',
+                        this.resolvedFiles.join(', ')
+                    ].join(' ');
+                    return verboseInfo;
+                });
+
                 return snapshot.getText(0, snapshot.getLength());
             }
 
@@ -998,7 +1011,7 @@ module Harness {
                 this.compiler.updateFile(unitName, TypeScript.ScriptSnapshot.fromString(code), /*version:*/ 0, /*isOpen:*/ true, null);
             }
 
-            public emitAll(ioHost?: IEmitterIOHost): TypeScript.Diagnostic[] {
+            public emitAll(ioHost?: IEmitterIOHost) {
                 var host = typeof ioHost === "undefined" ? this.ioHost : ioHost;
 
                 this.sourcemapRecorder.reset();
@@ -1023,15 +1036,11 @@ module Harness {
 
                     o.sourceMapEntries.forEach(s => sourceMapEmitterCallback(s.emittedFile, s.emittedLine, s.emittedColumn, s.sourceFile, s.sourceLine, s.sourceColumn, s.sourceName));
                 });
-
-                return output.diagnostics;
             }
 
             public emitAllDeclarations(ioHost: IEmitterIOHost) {
                 var output = this.compiler.emitAllDeclarations((path: string) => ioHost.resolvePath(path));
                 output.outputFiles.forEach(o => ioHost.writeFile(o.name, o.text, o.writeByteOrderMark));
-
-                return output.diagnostics;
             }
 
             /** If the compiler already contains the contents of interest, this will re-emit for AMD without re-adding or recompiling the current compiler units */
@@ -1073,13 +1082,13 @@ module Harness {
                 });
 
                 if (!anySyntaxErrors) {
-                    // Emit (note: reportDiagnostics is what causes the emit to happen)
-                    var emitDiagnostics = this.emitAll(this.ioHost);
-                    emitDiagnostics.forEach(d => this.addError(d));
+                    this.compiler.getCompilerOptionsDiagnostics(this.ioHost.resolvePath).forEach(d => this.addError(d));
 
+                    // Emit (note: reportDiagnostics is what causes the emit to happen)
+                    this.emitAll(this.ioHost);
+                    
                     // Emit declarations
-                    var emitDeclarationsDiagnostics = this.emitAllDeclarations(this.ioHost);
-                    emitDeclarationsDiagnostics.forEach(d => this.addError(d));
+                    this.emitAllDeclarations(this.ioHost);
                 }
                 return this.errorList;
             }

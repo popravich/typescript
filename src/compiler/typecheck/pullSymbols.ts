@@ -117,7 +117,7 @@ module TypeScript {
                                 return aliasSymbols;
                             }
 
-                            if (!skipScopeSymbolAliasesLookIn && this.isExternalModuleReferenceAlias(symbol) &&
+                            if (!skipScopeSymbolAliasesLookIn && PullSymbol._isExternalModuleReferenceAlias(symbol) &&
                                 (!symbol.assignedContainer().hasExportAssignment() ||
                                 (symbol.assignedContainer().getExportAssignedContainerSymbol() && symbol.assignedContainer().getExportAssignedContainerSymbol().kind === PullElementKind.DynamicModule))) {// It is a dynamic module)) {
                                 scopeSymbolAliasesToLookIn.push(symbol);
@@ -160,7 +160,7 @@ module TypeScript {
             return null;
         }
 
-        private isExternalModuleReferenceAlias(aliasSymbol: PullTypeAliasSymbol) {
+        public static _isExternalModuleReferenceAlias(aliasSymbol: PullTypeAliasSymbol) {
             if (aliasSymbol) {
                 // Has value symbol
                 if (aliasSymbol.assignedValue()) {
@@ -216,7 +216,7 @@ module TypeScript {
 
             var externalAliases = this.getExternalAliasedSymbols(scopeSymbol);
             // Use only alias symbols to the dynamic module
-            if (externalAliases && this.isExternalModuleReferenceAlias(externalAliases[externalAliases.length - 1])) {
+            if (externalAliases && PullSymbol._isExternalModuleReferenceAlias(externalAliases[externalAliases.length - 1])) {
                 var aliasFullName = aliasNameGetter(externalAliases[0]);
                 if (!aliasFullName) {
                     return null;
@@ -274,10 +274,16 @@ module TypeScript {
         public setRootSymbol(symbol: PullSymbol) { this.rootSymbol = symbol; }
 
         public setIsSynthesized(value = true) {
+            Debug.assert(this.rootSymbol == null);
             this.isSynthesized = value;
         }
 
-        public getIsSynthesized() { return this.isSynthesized; }
+        public getIsSynthesized() {
+            if (this.rootSymbol) {
+                return this.rootSymbol.getIsSynthesized();
+            }
+            return this.isSynthesized;
+        }
 
         public setEnclosingSignature(signature: PullSignatureSymbol) {
             this._enclosingSignature = signature;
@@ -397,57 +403,110 @@ module TypeScript {
             return path;
         }
 
-        public findCommonAncestorPath(b: PullSymbol): PullSymbol[] {
-            var aPath = this.pathToRoot();
-            if (aPath.length === 1) {
-                // Global symbol
-                return aPath;
-            }
-
-            var bPath: PullSymbol[];
-            if (b) {
-                bPath = b.pathToRoot();
-            }
-            else {
-                return aPath;
-            }
-
-            var commonNodeIndex = -1;
-            for (var i = 0, aLen = aPath.length; i < aLen; i++) {
-                var aNode = aPath[i];
-                for (var j = 0, bLen = bPath.length; j < bLen; j++) {
-                    var bNode = bPath[j];
-                    if (aNode === bNode) {
-                        var aDecl: PullDecl = null;
-                        if (i > 0) {
-                            var decls = aPath[i - 1].getDeclarations();
-                            if (decls.length) {
-                                aDecl = decls[0].getParentDecl();
-                            }
+        private static unqualifiedNameReferencesDifferentSymbolInScope(symbol: PullSymbol, scopePath: PullSymbol[], endScopePathIndex: number) {
+            // Declaration path is reverse of symbol path
+            // That is for symbol A.B.C.W the symbolPath = W C B A 
+            // while declPath = A B C W
+            var declPath = scopePath[0].getDeclarations()[0].getParentPath();
+            for (var i = 0, declIndex = declPath.length - 1; i <= endScopePathIndex; i++, declIndex--) {
+                // We should be doing this for all that is type/namespace/value kinds but for now we do this only for 
+                // containers and types in another container
+                if (scopePath[i].isContainer()) {
+                    var scopeContainer = <PullContainerSymbol>scopePath[i];
+                    if (symbol.isContainer()) {
+                        // Non exported container 
+                        var memberSymbol = scopeContainer.findContainedNonMemberContainer(symbol.name, PullElementKind.SomeContainer);
+                        if (memberSymbol
+                            && memberSymbol != symbol
+                            && memberSymbol.getDeclarations()[0].getParentDecl() == declPath[declIndex]) {
+                            // If we found different non exported symbol that is originating in same parent
+                            // So symbol with this name would refer to the memberSymbol instead of symbol
+                            return true;
                         }
-                        var bDecl: PullDecl = null;
-                        if (j > 0) {
-                            var decls = bPath[j - 1].getDeclarations();
-                            if (decls.length) {
-                                bDecl = decls[0].getParentDecl();
-                            }
+
+                        // Exported container
+                        var memberSymbol = scopeContainer.findNestedContainer(symbol.name, PullElementKind.SomeContainer);
+                        if (memberSymbol && memberSymbol != symbol) {
+                            return true;
                         }
-                        if (!aDecl || !bDecl || aDecl === bDecl) {
-                            commonNodeIndex = i;
-                            break;
+                    }
+                    else if (symbol.isType()) {
+                        // Non exported type 
+                        var memberSymbol = scopeContainer.findContainedNonMemberType(symbol.name, PullElementKind.SomeType);
+                        var symbolRootType = PullHelpers.getRootType(<PullTypeSymbol>symbol);
+                        if (memberSymbol
+                            && PullHelpers.getRootType(memberSymbol) != symbolRootType
+                            && memberSymbol.getDeclarations()[0].getParentDecl() == declPath[declIndex]) {
+                            // If we found different non exported symbol that is originating in same parent
+                            // So symbol with this name would refer to the memberSymbol instead of symbol
+                            return true;
+                        }
+
+                        // Exported type
+                        var memberSymbol = scopeContainer.findNestedType(symbol.name, PullElementKind.SomeType);
+                        if (memberSymbol && PullHelpers.getRootType(memberSymbol) != symbolRootType) {
+                            return true;
                         }
                     }
                 }
-                if (commonNodeIndex >= 0) {
-                    break;
+            }
+
+            return false;
+        }
+
+        // Find the path of this symbol in common ancestor of this symbol and b Symbol
+        private findQualifyingSymbolPathInScopeSymbol(scopeSymbol: PullSymbol): PullSymbol[] {
+            var thisPath = this.pathToRoot();
+            if (thisPath.length === 1) {
+                // Global symbol
+                return thisPath;
+            }
+
+            var scopeSymbolPath: PullSymbol[];
+            if (scopeSymbol) {
+                scopeSymbolPath = scopeSymbol.pathToRoot();
+            }
+            else {
+                // If scopeSymbol wasnt provided, then the path is full path
+                return thisPath;
+            }
+
+            var thisCommonAncestorIndex = ArrayUtilities.indexOf(thisPath, thisNode => ArrayUtilities.contains(scopeSymbolPath, thisNode));
+            if (thisCommonAncestorIndex > 0) {
+                // If the symbols matched that does not mean we can use the symbol before the common ancestor directly.
+                // e.g
+                //module A.C {
+                //    export interface Z {
+                //    }
+                //}
+                //module A.B.C {
+                //    export class W implements A.C.Z /*This*/ {
+                //    }
+                //}
+                // When trying to get Name of A.C.Z in the context A.B.C.W 
+                // We find that thisPath = [Z C A] and scopeSymbolPath = [W C B A]
+                // thisCommonAncestorIndex = 2
+                // But we cant use (thisCommonAncestorIndex - 1)C of C.Z as the reference path because 
+                // C in A.B.C.W references A.B.C rather than A.C
+
+                var thisCommonAncestor = thisPath[thisCommonAncestorIndex];
+                var scopeCommonAncestorIndex = ArrayUtilities.indexOf(scopeSymbolPath, scopeNode => scopeNode === thisCommonAncestor);
+                Debug.assert(thisPath.length - thisCommonAncestorIndex === scopeSymbolPath.length - scopeCommonAncestorIndex);
+
+                for (; thisCommonAncestorIndex < thisPath.length; thisCommonAncestorIndex++, scopeCommonAncestorIndex++) {
+                    if (!PullSymbol.unqualifiedNameReferencesDifferentSymbolInScope(
+                        thisPath[thisCommonAncestorIndex - 1], scopeSymbolPath, scopeCommonAncestorIndex)) {
+                        // scope symbol can reference symbol at index commonAncestor - 1 by name itself
+                        break;
+                    }
                 }
             }
 
-            if (commonNodeIndex >= 0) {
-                return aPath.slice(0, commonNodeIndex);
+            if (thisCommonAncestorIndex >= 0 && thisCommonAncestorIndex < thisPath.length) {
+                return thisPath.slice(0, thisCommonAncestorIndex);
             }
             else {
-                return aPath;
+                return thisPath;
             }
         }
 
@@ -495,7 +554,7 @@ module TypeScript {
         }
 
         public getScopedName(scopeSymbol?: PullSymbol, skipTypeParametersInName?: boolean, useConstraintInName?: boolean, skipInternalAliasName?: boolean): string {
-            var path = this.findCommonAncestorPath(scopeSymbol);
+            var path = this.findQualifyingSymbolPathInScopeSymbol(scopeSymbol);
             var fullName = "";
 
             var aliasFullName = this.getAliasSymbolName(scopeSymbol, (symbol) => symbol.getScopedName(scopeSymbol, skipTypeParametersInName, useConstraintInName, skipInternalAliasName),
@@ -1090,7 +1149,7 @@ module TypeScript {
         getAllowedToReferenceTypeParameters(): PullTypeParameterSymbol[];
 
         // Type parameter argument map for this symbol
-        getTypeParameterArgumentMap(): PullTypeSymbol[];
+        getTypeParameterArgumentMap(): TypeArgumentMap;
     }
 
     export class PullSignatureSymbol extends PullSymbol implements InstantiableSymbol {
@@ -1191,7 +1250,7 @@ module TypeScript {
             return memberSymbol;
         }
 
-        public getTypeParameterArgumentMap(): PullTypeSymbol[] { return null; }
+        public getTypeParameterArgumentMap(): TypeArgumentMap { return null; }
 
         public getAllowedToReferenceTypeParameters(): PullTypeParameterSymbol[] {
             Debug.assert(this.getRootSymbol() == this);
@@ -1204,7 +1263,7 @@ module TypeScript {
             return this._allowedToReferenceTypeParameters;
         }
 
-        public addSpecialization(specializedVersionOfThisSignature: PullSignatureSymbol, typeArgumentMap: PullTypeSymbol[]): void {
+        public addSpecialization(specializedVersionOfThisSignature: PullSignatureSymbol, typeArgumentMap: TypeArgumentMap): void {
             Debug.assert(this.getRootSymbol() == this);
             if (!this._instantiationCache) {
                 this._instantiationCache = createIntrinsicsObject<PullSignatureSymbol>();
@@ -1213,7 +1272,7 @@ module TypeScript {
             this._instantiationCache[getIDForTypeSubstitutions(this, typeArgumentMap)] = specializedVersionOfThisSignature;
         }
 
-        public getSpecialization(typeArgumentMap: PullTypeSymbol[]): PullSignatureSymbol {
+        public getSpecialization(typeArgumentMap: TypeArgumentMap): PullSignatureSymbol {
             Debug.assert(this.getRootSymbol() == this);
             if (!this._instantiationCache) {
                 return null;
@@ -1440,11 +1499,11 @@ module TypeScript {
             return true;
         }
 
-        public wrapsSomeTypeParameter(typeParameterArgumentMap: PullTypeSymbol[]): boolean {
+        public wrapsSomeTypeParameter(typeParameterArgumentMap: TypeArgumentMap): boolean {
             return this.getWrappingTypeParameterID(typeParameterArgumentMap) !== 0;
         }
 
-        public getWrappingTypeParameterID(typeParameterArgumentMap: PullTypeSymbol[]): number {            var signature = this;
+        public getWrappingTypeParameterID(typeParameterArgumentMap: TypeArgumentMap): number {            var signature = this;
             if (signature.inWrapCheck) {
                 return 0;
             }
@@ -1459,7 +1518,7 @@ module TypeScript {
             }
             return wrappingTypeParameterID;        }
 
-        public getWrappingTypeParameterIDWorker(typeParameterArgumentMap: PullTypeSymbol[]): number {            var signature = this;
+        public getWrappingTypeParameterIDWorker(typeParameterArgumentMap: TypeArgumentMap): number {            var signature = this;
             signature.inWrapCheck = true;
             PullHelpers.resolveDeclaredSymbolToUseType(signature);
             var wrappingTypeParameterID = signature.returnType ? signature.returnType.getWrappingTypeParameterID(typeParameterArgumentMap) : 0;
@@ -1534,6 +1593,7 @@ module TypeScript {
         private _callSignatures: PullSignatureSymbol[] = null;
         private _allCallSignatures: PullSignatureSymbol[] = null;
         private _constructSignatures: PullSignatureSymbol[] = null;
+        private _allConstructSignatures: PullSignatureSymbol[] = null;
         private _indexSignatures: PullSignatureSymbol[] = null;
         private _allIndexSignatures: PullSignatureSymbol[] = null;
         private _allIndexSignaturesOfAugmentedType: PullSignatureSymbol[] = null;
@@ -1623,13 +1683,16 @@ module TypeScript {
             return this.kind === PullElementKind.Class || (this._constructorMethod !== null);
         }
         public isFunction() { return (this.kind & (PullElementKind.ConstructorType | PullElementKind.FunctionType)) !== 0; }
-        public isConstructor() { return this.kind === PullElementKind.ConstructorType; }
+        public isConstructor() {
+            return this.kind === PullElementKind.ConstructorType ||
+                (this._associatedContainerTypeSymbol && this._associatedContainerTypeSymbol.isClass());
+        }
         public isTypeParameter() { return false; }
         public isTypeVariable() { return false; }
         public isError() { return false; }
         public isEnum() { return this.kind === PullElementKind.Enum; }
 
-        public getTypeParameterArgumentMap(): PullTypeSymbol[] {
+        public getTypeParameterArgumentMap(): TypeArgumentMap {
             return null;
         }
 
@@ -1920,7 +1983,7 @@ module TypeScript {
                 this.isArrayNamedTypeReference();
         }
 
-        private canUseSimpleInstantiationCache(typeArgumentMap: PullTypeSymbol[]): boolean {
+        private canUseSimpleInstantiationCache(typeArgumentMap: TypeArgumentMap): boolean {
             if (this.isTypeParameter()) {
                 return true;
             }
@@ -1929,16 +1992,15 @@ module TypeScript {
             return typeArgumentMap && this.isNamedTypeSymbol() && typeParameters.length === 1 && typeArgumentMap[typeParameters[0].pullSymbolID].kind !== PullElementKind.ObjectType;
         }
 
-        private getSimpleInstantiationCacheId(typeArgumentMap: PullTypeSymbol[]) {
+        private getSimpleInstantiationCacheId(typeArgumentMap: TypeArgumentMap) {
             if (this.isTypeParameter()) {
-                Debug.assert(typeArgumentMap.length == 1); // constraint is passed in
                 return typeArgumentMap[0].pullSymbolID;
             }
 
             return typeArgumentMap[this.getTypeParameters()[0].pullSymbolID].pullSymbolID;
         }
 
-        public addSpecialization(specializedVersionOfThisType: PullTypeSymbol, typeArgumentMap: PullTypeSymbol[]): void {
+        public addSpecialization(specializedVersionOfThisType: PullTypeSymbol, typeArgumentMap: TypeArgumentMap): void {
             if (this.canUseSimpleInstantiationCache(typeArgumentMap)) {
                 if (!this._simpleInstantiationCache) {
                     this._simpleInstantiationCache = [];
@@ -1961,7 +2023,7 @@ module TypeScript {
             this._specializedVersionsOfThisType.push(specializedVersionOfThisType);
         }
 
-        public getSpecialization(typeArgumentMap: PullTypeSymbol[]): PullTypeSymbol {
+        public getSpecialization(typeArgumentMap: TypeArgumentMap): PullTypeSymbol {
             if (this.canUseSimpleInstantiationCache(typeArgumentMap)) {
                 if (!this._simpleInstantiationCache) {
                     return null;
@@ -2001,16 +2063,20 @@ module TypeScript {
             return this.getTypeParameters();
         }
 
+        private addCallOrConstructSignaturePrerequisiteBase(signature: PullSignatureSymbol): void {
+            if (signature.isGeneric()) {
+                this._hasGenericSignature = true;
+            }
+
+            signature.functionType = this;
+        }
+
         private addCallSignaturePrerequisite(callSignature: PullSignatureSymbol): void {
             if (!this._callSignatures) {
                 this._callSignatures = [];
             }
 
-            if (callSignature.isGeneric()) {
-                this._hasGenericSignature = true;
-            }
-
-            callSignature.functionType = this;
+            this.addCallOrConstructSignaturePrerequisiteBase(callSignature);
         }
 
         public appendCallSignature(callSignature: PullSignatureSymbol): void {
@@ -2034,11 +2100,7 @@ module TypeScript {
                 this._constructSignatures = [];
             }
 
-            if (constructSignature.isGeneric()) {
-                this._hasGenericSignature = true;
-            }
-
-            constructSignature.functionType = this;
+            this.addCallOrConstructSignaturePrerequisiteBase(constructSignature);
         }
 
         public appendConstructSignature(constructSignature: PullSignatureSymbol): void {
@@ -2114,15 +2176,27 @@ module TypeScript {
             return this._constructSignatures !== null;
         }
 
-        public getOwnConstructSignatures(): PullSignatureSymbol[] {
+        public getOwnDeclaredConstructSignatures(): PullSignatureSymbol[] {
             return this._constructSignatures || sentinelEmptyArray;
         }
 
         public getConstructSignatures(): PullSignatureSymbol[]{
+            if (this._allConstructSignatures) {
+                return this._allConstructSignatures;
+            }
+
             var signatures: PullSignatureSymbol[] = [];
 
             if (this._constructSignatures) {
                 signatures = signatures.concat(this._constructSignatures);
+            }
+            else if (this.isConstructor()) {
+                if (this._extendedTypes && this._extendedTypes.length > 0) {
+                    signatures = this.getBaseClassConstructSignatures(this._extendedTypes[0]);
+                }
+                else {
+                    signatures = [this.getDefaultClassConstructSignature()];
+                }
             }
 
             // If it's a constructor type, we don't inherit construct signatures
@@ -2140,6 +2214,8 @@ module TypeScript {
                     this._getResolver()._addUnhiddenSignaturesFromBaseType(this._constructSignatures, this._extendedTypes[i].getConstructSignatures(), signatures);
                 }
             }
+
+            this._allConstructSignatures = signatures;
 
             return signatures;
         }
@@ -2235,6 +2311,50 @@ module TypeScript {
             }
 
             return this._allIndexSignaturesOfAugmentedType;
+        }
+
+        private getBaseClassConstructSignatures(baseType: PullTypeSymbol): PullSignatureSymbol[] {
+            Debug.assert(this.isConstructor() && baseType.isConstructor());
+            var instanceTypeSymbol = this.getAssociatedContainerType();
+            Debug.assert(instanceTypeSymbol.getDeclarations().length === 1);
+            if (baseType.hasBase(this)) {
+                return null;
+            }
+
+            var baseConstructSignatures = baseType.getConstructSignatures();
+            var signatures: PullSignatureSymbol[] = [];
+            for (var i = 0; i < baseConstructSignatures.length; i++) {
+                var baseSignature = baseConstructSignatures[i];
+                var currentSignature = new PullSignatureSymbol(PullElementKind.ConstructSignature, baseSignature.isDefinition());
+                currentSignature.returnType = instanceTypeSymbol;
+                currentSignature.addTypeParametersFromReturnType();
+                for (var j = 0; j < baseSignature.parameters.length; j++) {
+                    currentSignature.addParameter(baseSignature.parameters[j], baseSignature.parameters[j].isOptional);
+                }
+                if (baseSignature.parameters.length > 0) {
+                    currentSignature.hasVarArgs = baseSignature.parameters[baseSignature.parameters.length - 1].isVarArg;
+                }
+
+                // Assume the class has only one decl, since it can't mix with anything
+                currentSignature.addDeclaration(instanceTypeSymbol.getDeclarations()[0]);
+                this.addCallOrConstructSignaturePrerequisiteBase(currentSignature);
+                signatures.push(currentSignature);
+            }
+
+            return signatures;
+        }
+
+        private getDefaultClassConstructSignature(): PullSignatureSymbol {
+            Debug.assert(this.isConstructor());
+            var instanceTypeSymbol = this.getAssociatedContainerType();
+            Debug.assert(instanceTypeSymbol.getDeclarations().length == 1);
+            var signature = new PullSignatureSymbol(PullElementKind.ConstructSignature, /*isDefinition*/ true);
+            signature.returnType = instanceTypeSymbol;
+            signature.addTypeParametersFromReturnType();
+            signature.addDeclaration(instanceTypeSymbol.getDeclarations()[0]);
+            this.addCallOrConstructSignaturePrerequisiteBase(signature);
+
+            return signature;
         }
 
         public addImplementedType(implementedType: PullTypeSymbol): void {
@@ -2596,7 +2716,8 @@ module TypeScript {
             // typeof Function
             var functionSymbol = this.getFunctionSymbol();
             if (functionSymbol && functionSymbol.kind === PullElementKind.Function && !PullHelpers.isSymbolLocal(functionSymbol)) {
-                return functionSymbol;
+                // workaround for missing 'bindAllDeclsInOrder' for classes: do not return typeof symbol for functions defined in module part of clodules (they are considered non-local)
+                return PullHelpers.isExportedSymbolInClodule(functionSymbol) ? null : functionSymbol;
             }
 
             return null;
@@ -2608,13 +2729,13 @@ module TypeScript {
             var constructSignatures = this.getConstructSignatures();
             var indexSignatures = this.getIndexSignatures();
 
-            if (members.length > 0 || callSignatures.length > 0 || constructSignatures.length > 0 || indexSignatures.length > 0) {
-                var typeOfSymbol = this.getTypeOfSymbol();
-                if (typeOfSymbol) {
-                    var nameForTypeOf = typeOfSymbol.getScopedNameEx(scopeSymbol, /*skipTypeParametersInName*/ true);
-                    return MemberName.create(nameForTypeOf, "typeof ", "");
-                }
+            var typeOfSymbol = this.getTypeOfSymbol();
+            if (typeOfSymbol) {
+                var nameForTypeOf = typeOfSymbol.getScopedNameEx(scopeSymbol, /*skipTypeParametersInName*/ true);
+                return MemberName.create(nameForTypeOf, "typeof ", "");
+            }
 
+            if (members.length > 0 || callSignatures.length > 0 || constructSignatures.length > 0 || indexSignatures.length > 0) {
                 if (this._inMemberTypeNameEx) {
                     // If recursive without type name possible if function expression type
                     return MemberName.create("any");
@@ -2697,14 +2818,14 @@ module TypeScript {
         // The argument map prevents us from accidentally flagging method type parameters, or (if we
         // ever decide to go that route) allows for partial specialization
         public wrapsSomeTypeParameter(typeParameterArgumentMap: CandidateInferenceInfo[]): boolean;
-        public wrapsSomeTypeParameter(typeParameterArgumentMap: PullTypeSymbol[], skipTypeArgumentCheck?: boolean): boolean;
+        public wrapsSomeTypeParameter(typeParameterArgumentMap: TypeArgumentMap, skipTypeArgumentCheck?: boolean): boolean;
         public wrapsSomeTypeParameter(typeParameterArgumentMap: any[], skipTypeArgumentCheck?: boolean): boolean {
             return this.getWrappingTypeParameterID(typeParameterArgumentMap, skipTypeArgumentCheck) != 0;
         }
 
         // 0 means there was no type parameter ID wrapping
         // otherwise typeParameterID that was wrapped
-        public getWrappingTypeParameterID(typeParameterArgumentMap: PullTypeSymbol[], skipTypeArgumentCheck?: boolean): number {
+        public getWrappingTypeParameterID(typeParameterArgumentMap: TypeArgumentMap, skipTypeArgumentCheck?: boolean): number {
             var type = this;
 
             // if we encounter a type paramter, we're obviously wrapping
@@ -2733,7 +2854,7 @@ module TypeScript {
             return wrappingTypeParameterID;
         }
 
-        private getWrappingTypeParameterIDFromSignatures(signatures: PullSignatureSymbol[], typeParameterArgumentMap: PullTypeSymbol[]): number {
+        private getWrappingTypeParameterIDFromSignatures(signatures: PullSignatureSymbol[], typeParameterArgumentMap: TypeArgumentMap): number {
             for (var i = 0; i < signatures.length; i++) {
                 var wrappingTypeParameterID = signatures[i].getWrappingTypeParameterID(typeParameterArgumentMap);
                 if (wrappingTypeParameterID !== 0) {
@@ -2744,7 +2865,7 @@ module TypeScript {
             return 0;
         }
 
-        private getWrappingTypeParameterIDWorker(typeParameterArgumentMap: PullTypeSymbol[], skipTypeArgumentCheck: boolean): number {
+        private getWrappingTypeParameterIDWorker(typeParameterArgumentMap: TypeArgumentMap, skipTypeArgumentCheck: boolean): number {
             var type = this;
             var wrappingTypeParameterID = 0;
 
@@ -2970,11 +3091,16 @@ module TypeScript {
         constructor(public _anyType: PullTypeSymbol, name: string) {
             super(name);
 
+            Debug.assert(this._anyType);
             this.isResolved = true;
         }
 
         public isError() {
             return true;
+        }
+
+        public _getResolver(): PullTypeResolver {
+            return this._anyType._getResolver();
         }
 
         public getName(scopeSymbol?: PullSymbol, useConstraintInName?: boolean): string {
@@ -3154,10 +3280,14 @@ module TypeScript {
             }
 
             if (this._assignedContainer) {
-                this.retrievingExportAssignment = true;
-                var sym = this._assignedContainer.getExportAssignedValueSymbol();
-                this.retrievingExportAssignment = false;
-                return sym;
+                if (this._assignedContainer.hasExportAssignment()) {
+                    this.retrievingExportAssignment = true;
+                    var sym = this._assignedContainer.getExportAssignedValueSymbol();
+                    this.retrievingExportAssignment = false;
+                    return sym;
+                }
+
+                return this._assignedContainer.getInstanceSymbol();
             }
 
             return null;
@@ -3298,6 +3428,44 @@ module TypeScript {
             return this._constraint;
         }
 
+        // Section 3.4.1 (November 18, 2013):
+        // The base constraint of a type parameter T is defined as follows:
+        //  If T has no declared constraint, T's base constraint is the empty object type {}
+        //  If T's declared constraint is a type parameter, T's base constraint is that of the type parameter.
+        //  Otherwise, T's base constraint is T's declared constraint.
+        public getBaseConstraint(semanticInfoChain: SemanticInfoChain): PullTypeSymbol {
+            var preBaseConstraint = this.getConstraintRecursively({});
+            Debug.assert(preBaseConstraint === null || !preBaseConstraint.isTypeParameter());
+            return preBaseConstraint || semanticInfoChain.emptyTypeSymbol;
+        }
+
+        // Returns null if you hit a cycle or no constraint
+        // The visitedTypeParameters bag is for catching cycles
+        private getConstraintRecursively(visitedTypeParameters: { [n: number]: PullTypeParameterSymbol }): PullTypeSymbol {
+            var constraint = this.getConstraint();
+
+            if (constraint) {
+                if (constraint.isTypeParameter()) {
+                    var constraintAsTypeParameter = <PullTypeParameterSymbol>constraint;
+                    if (!visitedTypeParameters[constraintAsTypeParameter.pullSymbolID]) {
+                        visitedTypeParameters[constraintAsTypeParameter.pullSymbolID] = constraintAsTypeParameter;
+                        return constraintAsTypeParameter.getConstraintRecursively(visitedTypeParameters);
+                    }
+                }
+                else {
+                    return constraint;
+                }
+            }
+
+            return null;
+        }
+
+        // The default constraint is just like the base constraint, but without recursively traversing
+        // type parameters.
+        public getDefaultConstraint(semanticInfoChain: SemanticInfoChain): PullTypeSymbol {
+            return this._constraint || semanticInfoChain.emptyTypeSymbol;
+        }
+
         // Note: This is a deviation from the spec. Using the constraint to get signatures is only
         // warranted when we explicitly ask for an apparent type.
         public getCallSignatures(): PullSignatureSymbol[] {
@@ -3414,9 +3582,9 @@ module TypeScript {
         }
     }
 
-    export function getIDForTypeSubstitutions(instantiatingType: PullTypeSymbol, typeArgumentMap: PullTypeSymbol[]): string;
-    export function getIDForTypeSubstitutions(instantiatingSignature: PullSignatureSymbol, typeArgumentMap: PullTypeSymbol[]): string;
-    export function getIDForTypeSubstitutions(instantiatingTypeOrSignature: PullSymbol, typeArgumentMap: PullTypeSymbol[]): string {
+    export function getIDForTypeSubstitutions(instantiatingType: PullTypeSymbol, typeArgumentMap: TypeArgumentMap): string;
+    export function getIDForTypeSubstitutions(instantiatingSignature: PullSignatureSymbol, typeArgumentMap: TypeArgumentMap): string;
+    export function getIDForTypeSubstitutions(instantiatingTypeOrSignature: PullSymbol, typeArgumentMap: TypeArgumentMap): string {
         var substitution = "";
         var members: PullSymbol[] = null;
 

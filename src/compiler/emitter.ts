@@ -147,7 +147,15 @@ module TypeScript {
                                 updatedPath = true;
 
                                 if (j === 0) {
-                                    if (this._outputDirectory || this._sourceMapRootDirectory) {
+                                    var isDynamicModuleCompilation = ArrayUtilities.any(fileNames, fileName => {
+                                        document = compiler.getDocument(fileName);
+                                        return !document.isDeclareFile() && document.isExternalModule();
+                                    });
+
+                                    if (this._outputDirectory || // there is --outDir specified
+                                        this._sourceRootDirectory || // there is --sourceRoot specified
+                                        (this._sourceMapRootDirectory && // there is --map Specified and there would be multiple js files generated
+                                        (!this._sharedOutputFile || isDynamicModuleCompilation))) {
                                         // Its error to not have common path
                                         this._diagnostic = new Diagnostic(null, null, 0, 0, DiagnosticCode.Cannot_find_the_common_subdirectory_path_for_the_input_files, null);
                                         return;
@@ -216,11 +224,15 @@ module TypeScript {
         public captureThisStmtString = "var _this = this;";
         private currentVariableDeclaration: VariableDeclaration;
         private declStack: PullDecl[] = [];
-        private exportAssignmentIdentifier: string = null;
+        private exportAssignment: ExportAssignment = null;
         private inWithBlock = false;
 
         public document: Document = null;
-        private copyrightElement: AST = null;
+
+        // If we choose to detach comments from an element (for example, the Copyright comments),
+        // then keep track of that element so that we don't emit all on the comments on it when
+        // we visit it.
+        private detachedCommentsElement: AST = null;
 
         constructor(public emittingFileName: string,
             public outfile: TextWriter,
@@ -246,12 +258,12 @@ module TypeScript {
             return enclosingDecl;
         }
 
-        public setExportAssignmentIdentifier(id: string) {
-            this.exportAssignmentIdentifier = id;
+        public setExportAssignment(exportAssignment: ExportAssignment) {
+            this.exportAssignment = exportAssignment;
         }
 
-        public getExportAssignmentIdentifier() {
-            return this.exportAssignmentIdentifier;
+        public getExportAssignment() {
+            return this.exportAssignment;
         }
 
         public setDocument(document: Document) {
@@ -510,11 +522,12 @@ module TypeScript {
             if (pre) {
                 var preComments = ast.preComments();
 
-                if (preComments && ast === this.copyrightElement) {
+                if (preComments && ast === this.detachedCommentsElement) {
                     // We're emitting the comments for the first script element.  Skip any 
                     // copyright comments, as we'll already have emitted those.
-                    var copyrightComments = this.getCopyrightComments();
-                    preComments = preComments.slice(copyrightComments.length);
+                    var detachedComments = this.getDetachedComments(ast);
+                    preComments = preComments.slice(detachedComments.length);
+                    this.detachedCommentsElement = null;
                 }
 
                 // We're emitting comments on an elided element.  Only keep the comment if it is
@@ -701,6 +714,15 @@ module TypeScript {
             }
 
             this.indenter.increaseIndent();
+
+            if (block) {
+                // We want any detached statements at the start of hte block to stay at the start.
+                // This is important for features like VSDoc which place their comments inside a
+                // block, but can't have them preceded by things like "var _this = this" when we
+                // emit.
+
+                this.emitDetachedComments(block.statements);
+            }
 
             // Parameter list parameters with defaults could capture this
             if (this.shouldCaptureThis(funcDecl)) {
@@ -1050,7 +1072,7 @@ module TypeScript {
                 this.emitSingleModuleDeclaration(moduleDecl, moduleDecl.stringLiteral);
             }
             else {
-                var moduleNames = getModuleNames(moduleDecl.name);
+                var moduleNames = ASTHelpers.getModuleNames(moduleDecl.name);
                 this.emitSingleModuleDeclaration(moduleDecl, moduleNames[0]);
             }
         }
@@ -1115,7 +1137,7 @@ module TypeScript {
                 this.emitList(moduleDecl.moduleElements);
             }
             else {
-                var moduleNames = getModuleNames(moduleDecl.name);
+                var moduleNames = ASTHelpers.getModuleNames(moduleDecl.name);
                 var nameIndex = moduleNames.indexOf(<Identifier>moduleName);
                 Debug.assert(nameIndex >= 0);
 
@@ -1712,68 +1734,46 @@ module TypeScript {
             return false;
         }
 
-        // Gets the decl path that needs to be emitted for the symbol in the enclosing context
-        private getPotentialDeclPathInfoForEmit(pullSymbol: PullSymbol) {
-            var decl = pullSymbol.getDeclarations()[0];
-            var parentDecl = decl.getParentDecl();
-            var symbolContainerDeclPath = parentDecl ? parentDecl.getParentPath() : <PullDecl[]>[];
-
+        // In some cases, when emitting a name, the emitter needs to qualify a symbol
+        // name by first emitting its parent's name. This generally happens when the
+        // name referenced is in scope in TypeScript, but not in Javascript. This is true
+        // in any of the following 3 cases:
+        // - It is an enum member, even if accessed from within the enum declaration in which it is defined
+        // - It is an exported var, even if accessed from within the module declaration in which it is defined
+        // - It is an exported member of the current module, but is never defined in this particular module
+        // declaration (i.e. it is only defined in other components of the same merged module)
+        private shouldQualifySymbolNameWithParentName(symbol: PullSymbol): boolean {
             var enclosingContextDeclPath = this.declStack;
-            var commonNodeIndex = -1;
+            var symbolDeclarations = symbol.getDeclarations();
+            for (var i = 0; i < symbolDeclarations.length; i++) {
+                var currentDecl = symbolDeclarations[i];
+                var declParent = currentDecl.getParentDecl();
 
-            // Find the container decl path and the declStack of the context
-            if (enclosingContextDeclPath.length) {
-                for (var i = symbolContainerDeclPath.length - 1; i >= 0; i--) {
-                    var symbolContainerDeclPathNode = symbolContainerDeclPath[i];
-                    for (var j = enclosingContextDeclPath.length - 1; j >= 0; j--) {
-                        var enclosingContextDeclPathNode = enclosingContextDeclPath[j];
-                        if (symbolContainerDeclPathNode === enclosingContextDeclPathNode) {
-                            commonNodeIndex = i;
-                            break;
-                        }
-                    }
+                if (currentDecl.kind === PullElementKind.EnumMember) {
+                    return true;
+                }
 
-                    if (commonNodeIndex >= 0) {
-                        break;
-                    }
+                // All decls of the same symbol must agree on whether they are exported
+                // If one decl is not exported, none of them are, and it is safe to
+                // assume it is just a local
+                if (!hasFlag(currentDecl.flags, PullElementFlags.Exported)) {
+                    return false;
+                }
+
+                // Section 10.6:
+                // When a variable is exported, all references to the variable in the body of the
+                // module are replaced with
+                //    <ModuleName>.< VariableName>
+                if (currentDecl.kind === PullElementKind.Variable && !hasFlag(currentDecl.flags, PullElementFlags.ImplicitVariable)) {
+                    return true;
+                }
+
+                if (ArrayUtilities.contains(this.declStack, declParent)) {
+                    return false;
                 }
             }
 
-            // We can emit dotted names only of exported declarations, so find the index to start emitting dotted name
-            var startingIndex = symbolContainerDeclPath.length - 1
-            for (var i = startingIndex - 1; i > commonNodeIndex; i--) {
-                if (symbolContainerDeclPath[i + 1].flags & PullElementFlags.Exported) {
-                    startingIndex = i;
-                }
-                else {
-                    break;
-                }
-            }
-            return { potentialPath: symbolContainerDeclPath, startingIndex: startingIndex };
-        }
-
-        // Emit the dotted names using the decl path
-        private emitDottedNameFromDeclPath(declPath: PullDecl[], startingIndex: number, lastIndex: number) {
-            for (var i = startingIndex; i <= lastIndex; i++) {
-                if (declPath[i].kind === PullElementKind.DynamicModule ||
-                    declPath[i].flags & PullElementFlags.InitializedDynamicModule) {
-                    this.writeToOutput("exports.");
-                }
-                else {
-                    // Get the name of the decl that would need to referenced and is conflict free.
-                    this.writeToOutput(this.getModuleName(declPath[i], /* changeNameIfAnyDeclarationInContext */ true) + ".");
-                }
-            }
-        }
-
-        // Emits the container name of the symbol in the given enclosing context
-        private emitSymbolContainerNameInEnclosingContext(pullSymbol: PullSymbol) {
-            var declPathInfo = this.getPotentialDeclPathInfoForEmit(pullSymbol);
-            var potentialDeclPath = declPathInfo.potentialPath;
-            var startingIndex = declPathInfo.startingIndex;
-
-            // Emit dotted names for the path
-            this.emitDottedNameFromDeclPath(potentialDeclPath, startingIndex, potentialDeclPath.length - 1);
+            return true;
         }
 
         // Get the symbol information to be used for emitting the ast
@@ -1811,29 +1811,13 @@ module TypeScript {
                     if (pullSymbolContainer) {
                         var pullSymbolContainerKind = pullSymbolContainer.kind;
 
-                        if (pullSymbolContainerKind === PullElementKind.Class) {
-                            if (pullSymbol.anyDeclHasFlag(PullElementFlags.Static)) {
-                                // This is static symbol
-                                this.emitSymbolContainerNameInEnclosingContext(pullSymbol);
-                            }
-                            else if (pullSymbolKind === PullElementKind.Property) {
-                                this.emitThis();
-                                this.writeToOutput(".");
-                            }
-                        }
-                        else if (PullHelpers.symbolIsModule(pullSymbolContainer) || pullSymbolContainerKind === PullElementKind.Enum ||
+                        if (PullHelpers.symbolIsModule(pullSymbolContainer) || pullSymbolContainerKind === PullElementKind.Enum ||
                             pullSymbolContainer.anyDeclHasFlag(PullElementFlags.InitializedModule | PullElementFlags.Enum)) {
-                            // If property or, say, a constructor being invoked locally within the module of its definition
-                            if (pullSymbolKind === PullElementKind.Property || pullSymbolKind === PullElementKind.EnumMember) {
-                                this.emitSymbolContainerNameInEnclosingContext(pullSymbol);
-                            }
-                            else if (pullSymbol.anyDeclHasFlag(PullElementFlags.Exported) &&
-                                pullSymbolKind === PullElementKind.Variable &&
-                                !pullSymbol.anyDeclHasFlag(PullElementFlags.InitializedModule | PullElementFlags.Enum)) {
-                                this.emitSymbolContainerNameInEnclosingContext(pullSymbol);
-                            }
-                            else if (pullSymbol.anyDeclHasFlag(PullElementFlags.Exported) && !this.symbolIsUsedInItsEnclosingContainer(pullSymbol)) {
-                                this.emitSymbolContainerNameInEnclosingContext(pullSymbol);
+                            var needToEmitParentName = this.shouldQualifySymbolNameWithParentName(pullSymbol);
+                            if (needToEmitParentName) {
+                                var parentDecl = pullSymbol.getDeclarations()[0].getParentDecl();
+                                Debug.assert(parentDecl && !parentDecl.isRootDecl());
+                                this.writeToOutput(this.getModuleName(parentDecl, /* changeNameIfAnyDeclarationInContext */ true) + ".");
                             }
                         }
                         else if (pullSymbolContainerKind === PullElementKind.DynamicModule ||
@@ -2139,15 +2123,15 @@ module TypeScript {
             }
         }
 
-        // We consider a sequence of comments to be a copyright header if there are no blank lines 
+        // We consider a sequence of comments to be a detached from an ast if there are no blank lines 
         // between them, and there is a blank line after the last one and the node they're attached 
         // to.
-        private getCopyrightComments(): Comment[] {
-            var preComments = this.copyrightElement.preComments();
+        private getDetachedComments(element: AST): Comment[] {
+            var preComments = element.preComments();
             if (preComments) {
                 var lineMap = this.document.lineMap();
 
-                var copyrightComments: Comment[] = [];
+                var detachedComments: Comment[] = [];
                 var lastComment: Comment = null;
 
                 for (var i = 0, n = preComments.length; i < n; i++) {
@@ -2161,21 +2145,21 @@ module TypeScript {
                             // There was a blank line between the last comment and this comment.  This
                             // comment is not part of the copyright comments.  Return what we have so 
                             // far.
-                            return copyrightComments;
+                            return detachedComments;
                         }
                     }
 
-                    copyrightComments.push(comment);
+                    detachedComments.push(comment);
                     lastComment = comment;
                 }
 
                 // All comments look like they could have been part of the copyright header.  Make
                 // sure there is at least one blank line between it and the node.  If not, it's not
                 // a copyright header.
-                var lastCommentLine = lineMap.getLineNumberFromPosition(ArrayUtilities.last(copyrightComments).end());
-                var astLine = lineMap.getLineNumberFromPosition(this.copyrightElement.start());
+                var lastCommentLine = lineMap.getLineNumberFromPosition(ArrayUtilities.last(detachedComments).end());
+                var astLine = lineMap.getLineNumberFromPosition(element.start());
                 if (astLine >= lastCommentLine + 2) {
-                    return copyrightComments;
+                    return detachedComments;
                 }
             }
 
@@ -2184,12 +2168,15 @@ module TypeScript {
         }
 
         private emitPossibleCopyrightHeaders(script: SourceUnit): void {
-            var list = script.moduleElements;
+            this.emitDetachedComments(script.moduleElements);
+        }
+
+        private emitDetachedComments(list: ISyntaxList2): void {
             if (list.childCount() > 0) {
                 var firstElement = list.childAt(0);
 
-                this.copyrightElement = firstElement;
-                this.emitCommentsArray(this.getCopyrightComments(), /*trailing:*/ false);
+                this.detachedCommentsElement = firstElement;
+                this.emitCommentsArray(this.getDetachedComments(this.detachedCommentsElement), /*trailing:*/ false);
             }
         }
 
@@ -2241,7 +2228,7 @@ module TypeScript {
 
                 // if the external module has an "export =" identifier, we'll
                 // set it in the ExportAssignment emit method
-                this.setExportAssignmentIdentifier(null);
+                this.setExportAssignment(null);
 
                 if(this.emitOptions.compilationSettings().moduleGenTarget() === ModuleGenTarget.Asynchronous) {
                     this.indenter.increaseIndent();
@@ -2264,22 +2251,25 @@ module TypeScript {
                 }
 
                 if (isNonElidedExternalModule) {
-                    var exportAssignmentIdentifier = this.getExportAssignmentIdentifier();
+                    var exportAssignment = this.getExportAssignment();
+                    var exportAssignmentIdentifierText = exportAssignment ? exportAssignment.identifier.text() : null;
                     var exportAssignmentValueSymbol = (<PullContainerSymbol>externalModule.getSymbol()).getExportAssignedValueSymbol();
 
                     if (this.emitOptions.compilationSettings().moduleGenTarget() === ModuleGenTarget.Asynchronous) { // AMD
-                        if (exportAssignmentIdentifier && exportAssignmentValueSymbol && !(exportAssignmentValueSymbol.kind & PullElementKind.SomeTypeReference)) {
+                        if (exportAssignmentIdentifierText && exportAssignmentValueSymbol && !(exportAssignmentValueSymbol.kind & PullElementKind.SomeTypeReference)) {
                             // indent was decreased for AMD above
                             this.indenter.increaseIndent();
                             this.emitIndent();
-                            this.writeLineToOutput("return " + exportAssignmentIdentifier + ";");
+                            this.writeToOutputWithSourceMapRecord("return " + exportAssignmentIdentifierText, exportAssignment);
+                            this.writeLineToOutput(";");
                             this.indenter.decreaseIndent();
                         }
                         this.writeToOutput("});");
                     }
-                    else if (exportAssignmentIdentifier && exportAssignmentValueSymbol && !(exportAssignmentValueSymbol.kind & PullElementKind.SomeTypeReference)) {
+                    else if (exportAssignmentIdentifierText && exportAssignmentValueSymbol && !(exportAssignmentValueSymbol.kind & PullElementKind.SomeTypeReference)) {
                         this.emitIndent();
-                        this.writeToOutput("module.exports = " + exportAssignmentIdentifier + ";");
+                        this.writeToOutputWithSourceMapRecord("module.exports = " + exportAssignmentIdentifierText, exportAssignment);
+                        this.writeToOutput(";");
                     }
 
                     this.recordSourceMappingEnd(sourceUnit);
@@ -2458,7 +2448,8 @@ module TypeScript {
             if (hasBaseClass) {
                 baseTypeReference = ASTHelpers.getExtendsHeritageClause(classDecl.heritageClauses).typeNames.nonSeparatorAt(0);
                 this.emitIndent();
-                this.writeLineToOutput("__extends(" + className + ", _super);");
+                this.writeToOutputWithSourceMapRecord("__extends(" + className + ", _super)", baseTypeReference);
+                this.writeLineToOutput(";");
             }
 
             this.emitIndent();
@@ -2479,7 +2470,8 @@ module TypeScript {
                 this.recordSourceMappingNameStart("constructor");
                 if (hasBaseClass) {
                     this.emitIndent();
-                    this.writeLineToOutput("_super.apply(this, arguments);");
+                    this.writeToOutputWithSourceMapRecord("_super.apply(this, arguments)", baseTypeReference);
+                    this.writeLineToOutput(";");
                 }
 
                 if (this.shouldCaptureThis(classDecl)) {
@@ -2490,7 +2482,8 @@ module TypeScript {
 
                 this.indenter.decreaseIndent();
                 this.emitIndent();
-                this.writeLineToOutput("}");
+                this.writeToOutputWithSourceMapRecord("}", classDecl.closeBraceToken);
+                this.writeLineToOutput("");
 
                 this.recordSourceMappingNameEnd();
                 this.recordSourceMappingEnd(classDecl);
@@ -2864,49 +2857,27 @@ module TypeScript {
         }
 
         // Emit the member access expression using the declPath
-        private emitDottedNameMemberAccessExpressionWorker(expression: MemberAccessExpression, potentialPath: PullDecl[], startingIndex: number, lastIndex: number) {
+        private emitDottedNameMemberAccessExpression(expression: MemberAccessExpression) {
             this.recordSourceMappingStart(expression);
             if (expression.expression.kind() === SyntaxKind.MemberAccessExpression) {
                 // Emit the dotted name access expression
-                this.emitDottedNameMemberAccessExpressionRecurse(<MemberAccessExpression>expression.expression, potentialPath, startingIndex, lastIndex - 1);
+                this.emitDottedNameMemberAccessExpressionRecurse(<MemberAccessExpression>expression.expression);
             }
             else { // Name
-                this.emitComments(expression.expression, true);
-                this.recordSourceMappingStart(expression.expression);
-
-                // Emit the qualifying name fo the expression.expression
-                this.emitDottedNameFromDeclPath(potentialPath, startingIndex, lastIndex - 2); // We would be emitting two identifiers as part of member access
-                // Emit expression.expression
-                this.writeToOutput((<Identifier>expression.expression).text());
-
-                this.recordSourceMappingEnd(expression.expression);
-                this.emitComments(expression.expression, false);
+                this.emitName(<Identifier>expression.expression, /*addThis*/ true);
             }
 
             this.writeToOutput(".");
-            this.emitName(expression.name, false);
+            this.emitName(expression.name, /*addThis*/ false);
 
             this.recordSourceMappingEnd(expression);
         }
 
         // Set the right indices for the recursive member access expression before emitting it using the decl path
-        private emitDottedNameMemberAccessExpressionRecurse(expression: MemberAccessExpression, potentialPath: PullDecl[], startingIndex: number, lastIndex: number) {
+        private emitDottedNameMemberAccessExpressionRecurse(expression: MemberAccessExpression) {
             this.emitComments(expression, true);
-
-            if (lastIndex - startingIndex < 1) { // Member expression emits alteast two identifiers
-                startingIndex = lastIndex - 1;
-                Debug.assert(startingIndex >= 0);
-            } 
-
-            this.emitDottedNameMemberAccessExpressionWorker(expression, potentialPath, startingIndex, lastIndex);
+            this.emitDottedNameMemberAccessExpression(expression);
             this.emitComments(expression, false);
-        }
-
-        private emitDottedNameMemberAccessExpression(expression: MemberAccessExpression) {
-            var memberAccessSymbol = this.getSymbolForEmit(expression).symbol;
-            // Get the decl path info to emit this expression using declPath
-            var potentialDeclInfo = this.getPotentialDeclPathInfoForEmit(memberAccessSymbol);
-            this.emitDottedNameMemberAccessExpressionWorker(expression, potentialDeclInfo.potentialPath, potentialDeclInfo.startingIndex, potentialDeclInfo.potentialPath.length);
         }
 
         public emitMemberAccessExpression(expression: MemberAccessExpression): void {
@@ -3467,7 +3438,7 @@ module TypeScript {
                 case SyntaxKind.ImportDeclaration:
                     return this.emitImportDeclaration(<ImportDeclaration>ast);
                 case SyntaxKind.ExportAssignment:
-                    return this.setExportAssignmentIdentifier((<ExportAssignment>ast).identifier.text());
+                    return this.setExportAssignment(<ExportAssignment>ast);
                 case SyntaxKind.ClassDeclaration:
                     return this.emitClassDeclaration(<ClassDeclaration>ast);
                 case SyntaxKind.InterfaceDeclaration:

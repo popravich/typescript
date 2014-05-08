@@ -10,7 +10,7 @@ module TypeScript {
         // 0 indicates that it does not wrap type parameter
         // undefined indicates that the info wasnt available from cache
         // rest indicates the valid type parameter id
-        public getWrapsTypeParameter(typeParameterArgumentMap: PullTypeSymbol[]): number {
+        public getWrapsTypeParameter(typeParameterArgumentMap: TypeArgumentMap): number {
             // Find result from cache
             var mapHasTypeParameterNotCached = false;
             for (var typeParameterID in typeParameterArgumentMap) {
@@ -32,7 +32,7 @@ module TypeScript {
             return undefined;
         }
 
-        public setWrapsTypeParameter(typeParameterArgumentMap: PullTypeSymbol[], wrappingTypeParameterID: number) {
+        public setWrapsTypeParameter(typeParameterArgumentMap: TypeArgumentMap, wrappingTypeParameterID: number) {
             if (wrappingTypeParameterID) {
                 // wrappingTypeParameterID is the known type parameter that is wrapped
                 // We dont know about other type parameters present in the map and hence we cant set their values
@@ -56,7 +56,7 @@ module TypeScript {
         // helping in not modifying entried in the existing map
         export class MutableTypeArgumentMap {
             public createdDuplicateTypeArgumentMap = false;
-            constructor(public typeParameterArgumentMap: PullTypeSymbol[]) {
+            constructor(public typeParameterArgumentMap: TypeArgumentMap) {
             }
             public ensureTypeArgumentCopy() {
                 if (!this.createdDuplicateTypeArgumentMap) {
@@ -200,6 +200,55 @@ module TypeScript {
             }
 
             return allowedToReferenceTypeParameters;
+        }
+
+        export function createTypeParameterArgumentMap(typeParameters: PullTypeParameterSymbol[], typeArguments: PullTypeSymbol[]): TypeArgumentMap {
+            return updateTypeParameterArgumentMap(typeParameters, typeArguments, {});
+        }
+
+        export function updateTypeParameterArgumentMap(typeParameters: PullTypeParameterSymbol[], typeArguments: PullTypeSymbol[], typeParameterArgumentMap: TypeArgumentMap): TypeArgumentMap {
+            for (var i = 0; i < typeParameters.length; i++) {
+                // The reason we call getRootSymbol below is to handle the case where a signature
+                // has a type parameter constrained to an outer type parameter. Because signatures
+                // are instantiated from the root signature, the map needs to be in terms of the root
+                // type parameter. For example,
+                // interface I<T> {
+                //     foo<U extends T>(u: U): U;
+                // }
+                // var i: I<string>;
+                // var f = i.foo(""); // f should be string
+                //
+                // When we instantiate T to string, we create a new U, but instantiations of the
+                // signature must be against the root U.
+                // Note that when this type of situation does not apply, getRootSymbol is the
+                // identity function.
+                typeParameterArgumentMap[typeParameters[i].getRootSymbol().pullSymbolID] = typeArguments[i];
+            }
+            return typeParameterArgumentMap;
+        }
+
+        export function updateMutableTypeParameterArgumentMap(typeParameters: PullTypeParameterSymbol[], typeArguments: PullTypeSymbol[], mutableMap: MutableTypeArgumentMap): void {
+            for (var i = 0; i < typeParameters.length; i++) {
+                // See comment in updateTypeParameterArgumentMap for why we use getRootSymbol
+                var typeParameterId = typeParameters[i].getRootSymbol().pullSymbolID;
+                if (mutableMap.typeParameterArgumentMap[typeParameterId] !== typeArguments[i]) {
+                    mutableMap.ensureTypeArgumentCopy();
+                    mutableMap.typeParameterArgumentMap[typeParameterId] = typeArguments[i];
+                }
+            }
+        }
+
+        export function twoTypesAreInstantiationsOfSameNamedGenericType(type1: PullTypeSymbol, type2: PullTypeSymbol) {
+            var type1IsGeneric = type1.isGeneric() && type1.getTypeArguments() !== null;
+            var type2IsGeneric = type2.isGeneric() && type2.getTypeArguments() !== null;
+
+            if (type1IsGeneric && type2IsGeneric) {
+                var type1Root = PullHelpers.getRootType(type1);
+                var type2Root = PullHelpers.getRootType(type2);
+                return type1Root === type2Root;
+            }
+
+            return false;
         }
     }
 }

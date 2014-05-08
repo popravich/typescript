@@ -153,9 +153,41 @@ module TypeScript {
                     return true;
                 }
 
-                if (containerKind === TypeScript.PullElementKind.ConstructorType && !symbol.anyDeclHasFlag(TypeScript.PullElementFlags.Static)) {
+                if (containerKind === TypeScript.PullElementKind.ConstructorType && !symbol.anyDeclHasFlag(TypeScript.PullElementFlags.Static | TypeScript.PullElementFlags.Exported)) {
+                    // container kind can be ConstructorType when
+                    // - symbol represents static member of the class or exported value in the clodule
+                    // - symbol represents local varable in the constructor
+                    // 'IsSymbolLocal' should return true only for the second category
                     return true;
                 }
+            }
+
+            return false;
+        }
+
+        export function isExportedSymbolInClodule(symbol: PullSymbol) {
+            var container = symbol.getContainer();
+            return container && container.kind === TypeScript.PullElementKind.ConstructorType && symbolIsModule(container) && symbol.anyDeclHasFlag(PullElementFlags.Exported);
+        }
+
+        export function isSymbolDeclaredInScopeChain(symbol: PullSymbol, scopeSymbol: PullSymbol): boolean {
+            Debug.assert(symbol);
+            var symbolDeclarationScope = symbol.getContainer();
+
+            // If we are looking for something other than global scope, look in the scope chain
+            while (scopeSymbol) {
+                // symbol is declared in same as scope symbol
+                if (scopeSymbol === symbolDeclarationScope) {
+                    return true;
+                }
+
+                // look in the outer scope of scopeSymbol
+                scopeSymbol = scopeSymbol.getContainer();
+            }
+
+            if (scopeSymbol === null && symbolDeclarationScope === null) {
+                // Both are global scopes.
+                return true;
             }
 
             return false;
