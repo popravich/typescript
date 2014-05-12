@@ -62215,7 +62215,7 @@ var TypeScript;
     var BatchCompiler = (function () {
         function BatchCompiler(ioHost) {
             this.ioHost = ioHost;
-            this.compilerVersion = "1.0.2.0";
+            this.compilerVersion = "1.0.2.1";
             this.inputFiles = [];
             this.resolvedFiles = [];
             this.fileNameToSourceFile = new TypeScript.StringHashTable();
