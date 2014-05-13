@@ -326,13 +326,17 @@ module TypeScript.Services {
                         return;
                     }
 
-                    // Each position we're searching for should be at the start of an identifier.  
-                    // As such, we useTrailingTriviaAsLimChar=false so that the position doesn't
-                    // accidently return another node (which may end at that position).
-                    var nameAST = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, p, /*useTrailingTriviaAsLimChar:*/ false);
+                    var nameAST = findToken(sourceUnit, p);
 
                     // Compare the length so we filter out strict superstrings of the symbol we are looking for
-                    if (nameAST === null || nameAST.kind() !== TypeScript.SyntaxKind.IdentifierName || (nameAST.end() - nameAST.start() !== symbolName.length)) {
+                    var tokenStart = start(nameAST);
+                    var tokenEnd = end(nameAST);
+                    var isValidAST =
+                        nameAST !== null && nameAST.kind() === TypeScript.SyntaxKind.IdentifierName && // name is identifier
+                        p >= tokenStart && p <= tokenEnd && // pos is contained between tokenStart and tokenEnd (it is not in trivia)
+                        (tokenEnd - tokenStart === symbolName.length);  // length of token text matches length the length of original symbolName.
+
+                    if (!isValidAST) {
                         return;
                     }
 
@@ -627,8 +631,8 @@ module TypeScript.Services {
 
             var result: DefinitionInfo[] = [];
 
-            if (!this.tryAddDefinition(symbolKind, symbolName, containerKind, containerName, declarations, result) &&
-                !this.tryAddSignatures(symbolKind, symbolName, containerKind, containerName, declarations, result) &&
+            if (!this.tryAddDefinition(symbolKind, symbolName, containerKind, containerName, declarations, symbol.semanticInfoChain, result) &&
+                !this.tryAddSignatures(symbolKind, symbolName, containerKind, containerName, declarations, symbol.semanticInfoChain, result) &&
                 !this.tryAddConstructor(symbolKind, symbolName, containerKind, containerName, declarations, result)) {
 
                 // Just add all the declarations. 
@@ -651,7 +655,7 @@ module TypeScript.Services {
                 ast.start(), ast.end(), symbolKind, symbolName, containerKind, containerName));
         }
 
-        private tryAddDefinition(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], result: DefinitionInfo[]): boolean {
+        private tryAddDefinition(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], semanticInfoChain: SemanticInfoChain, result: DefinitionInfo[]): boolean {
             // First, if there are definitions and signatures, then just pick the definition.
             var definitionDeclaration = TypeScript.ArrayUtilities.firstOrDefault(declarations, d => {
                 var signature = d.getSignatureSymbol();
@@ -666,19 +670,19 @@ module TypeScript.Services {
             return true;
         }
 
-        private tryAddSignatures(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], result: DefinitionInfo[]): boolean {
+        private tryAddSignatures(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], semanticInfoChain: SemanticInfoChain, result: DefinitionInfo[]): boolean {
             // We didn't have a definition.  Check and see if we have any signatures.  If so, just
             // add the last one.
-            var signatureDeclarations = TypeScript.ArrayUtilities.where(declarations, d => {
+            var definitionDeclaration = TypeScript.ArrayUtilities.lastOrDefault(declarations, d => {
                 var signature = d.getSignatureSymbol();
                 return signature && !signature.isDefinition();
             });
 
-            if (signatureDeclarations.length === 0) {
+            if (!definitionDeclaration) {
                 return false;
             }
 
-            this.addDeclaration(symbolKind, symbolName, containerKind, containerName, TypeScript.ArrayUtilities.last(signatureDeclarations), result);
+            this.addDeclaration(symbolKind, symbolName, containerKind, containerName, definitionDeclaration, result);
             return true;
         }
 
