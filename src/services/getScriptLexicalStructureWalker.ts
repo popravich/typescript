@@ -167,15 +167,17 @@ module TypeScript.Services {
                     ? node.modifiers
                     : TypeScript.Syntax.list([TypeScript.Syntax.token(TypeScript.SyntaxKind.ExportKeyword)]);
                 var name = names[nameIndex];
-                var kind = ScriptElementKind.moduleElement;
+                if (name) {
+                    var kind = ScriptElementKind.moduleElement;
 
-                this.createItem(node, node.modifiers, kind, name);
+                    this.createItem(node, node.modifiers, kind, name);
 
-                this.pushNewContainerScope(name, kind);
+                    this.pushNewContainerScope(name, kind);
 
-                this.visitModuleDeclarationWorker(node, names, nameIndex + 1);
+                    this.visitModuleDeclarationWorker(node, names, nameIndex + 1);
 
-                this.popScope();
+                    this.popScope();
+                }
             }
         }
 
@@ -205,30 +207,34 @@ module TypeScript.Services {
 
         public visitClassDeclaration(node: TypeScript.ClassDeclarationSyntax): void {
             var name = node.identifier.text();
-            var kind = ScriptElementKind.classElement;
+            if (name) {
+                var kind = ScriptElementKind.classElement;
 
-            this.createItem(node, node.modifiers, kind, name);
+                this.createItem(node, node.modifiers, kind, name);
 
-            this.pushNewContainerScope(name, kind);
+                this.pushNewContainerScope(name, kind);
 
-            super.visitClassDeclaration(node);
+                super.visitClassDeclaration(node);
 
-            this.popScope();
+                this.popScope();
+            }
         }
 
         public visitInterfaceDeclaration(node: TypeScript.InterfaceDeclarationSyntax): void {
             var name = node.identifier.text();
-            var kind = ScriptElementKind.interfaceElement;
+            if (name) {
+                var kind = ScriptElementKind.interfaceElement;
 
-            this.createItem(node, node.modifiers, kind, name);
+                this.createItem(node, node.modifiers, kind, name);
 
-            this.pushNewContainerScope(name, kind);
+                this.pushNewContainerScope(name, kind);
 
-            this.currentInterfaceDeclaration = node;
-            super.visitInterfaceDeclaration(node);
-            this.currentInterfaceDeclaration = null;
+                this.currentInterfaceDeclaration = node;
+                super.visitInterfaceDeclaration(node);
+                this.currentInterfaceDeclaration = null;
 
-            this.popScope();
+                this.popScope();
+            }
         }
 
         public visitObjectType(node: TypeScript.ObjectTypeSyntax): void {
@@ -244,15 +250,17 @@ module TypeScript.Services {
 
         public visitEnumDeclaration(node: TypeScript.EnumDeclarationSyntax): void {
             var name = node.identifier.text();
-            var kind = ScriptElementKind.enumElement;
+            if (name) {
+                var kind = ScriptElementKind.enumElement;
 
-            this.createItem(node, node.modifiers, kind, name);
+                this.createItem(node, node.modifiers, kind, name);
 
-            this.pushNewContainerScope(name, kind);
+                this.pushNewContainerScope(name, kind);
 
-            super.visitEnumDeclaration(node);
+                super.visitEnumDeclaration(node);
 
-            this.popScope();
+                this.popScope();
+            }
         }
 
         public visitConstructorDeclaration(node: TypeScript.ConstructorDeclarationSyntax): void {
