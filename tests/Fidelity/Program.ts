@@ -920,4 +920,3 @@ TypeScript.Environment.standardOut.WriteLine("Total time: " + (totalTime / count
 TypeScript.Environment.standardOut.WriteLine("Total size: " + (totalSize / count));
 TypeScript.Environment.standardOut.WriteLine("Anders time: " + andersTime);
 TypeScript.Environment.standardOut.WriteLine("Cyrus time : " + cyrusTime);
-TypeScript.Environment.standardOut.WriteLine("Ratio      : " + (cyrusTime / andersTime));

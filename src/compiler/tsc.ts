@@ -52,6 +52,7 @@ module TypeScript {
         public batchCompile() {
             // Parse command line options
             if (this.parseOptions()) {
+                var start = new Date().getTime();
 
                 if (this.compilationSettings.gatherDiagnostics()) {
                     this.logger = new DiagnosticsLogger(this.ioHost);
@@ -80,7 +81,7 @@ module TypeScript {
 
                     this.logger.log("SyntaxTree parse time:                    " + TypeScript.syntaxTreeParseTime);
                     this.logger.log("Syntax Diagnostics time:                  " + TypeScript.syntaxDiagnosticsTime);
-                    this.logger.log("AST translation time:                     " + TypeScript.astTranslationTime);
+                    this.logger.log("Create declarations time:                 " + TypeScript.createDeclarationsTime);
                     this.logger.log("");
                     this.logger.log("Type check time:                          " + TypeScript.typeCheckTime);
                     this.logger.log("");
@@ -116,6 +117,8 @@ module TypeScript {
                     this.logger.log("Node make directory time:                 " + TypeScript.nodeMakeDirectoryTime);
                     this.logger.log("Node writeFileSync time:                  " + TypeScript.nodeWriteFileSyncTime);
                     this.logger.log("Node createBuffer time:                   " + TypeScript.nodeCreateBufferTime);
+
+                    this.logger.log("Total time:                               " + (new Date().getTime() - start));
                 }
             }
 

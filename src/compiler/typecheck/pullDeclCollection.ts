@@ -1197,11 +1197,12 @@ module TypeScript {
 
     export module DeclarationCreator {
         export function create(document: Document, compilationSettings: ImmutableCompilationSettings): PullDecl {
+            var start = new Date().getTime();
             var declCollectionContext = new DeclCollectionContext(document, compilationSettings.propagateEnumConstants());
             
             // create decls
             getAstWalkerFactory().simpleWalk(document.sourceUnit(), preCollectDecls, postCollectDecls, declCollectionContext);
-
+            TypeScript.createDeclarationsTime += new Date().getTime() - start;
             return declCollectionContext.getParent();
         }
     }

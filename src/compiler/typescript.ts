@@ -26,8 +26,8 @@ module TypeScript {
     export var sourceCharactersCompiled = 0;
     export var syntaxTreeParseTime = 0;
     export var syntaxDiagnosticsTime = 0;
-    export var astTranslationTime = 0;
     export var typeCheckTime = 0;
+    export var createDeclarationsTime = 0;
 
     export var compilerResolvePathTime = 0;
     export var compilerDirectoryNameTime = 0;
@@ -479,6 +479,7 @@ module TypeScript {
             onSingleFileEmitComplete: (files: OutputFile) => void,
             sharedEmitter: DeclarationEmitter): DeclarationEmitter {
 
+            var start = new Date().getTime();
             if (this._shouldEmitDeclarations(document)) {
                 if (document.emitToOwnOutputFile()) {
                     var singleEmitter = this.emitDocumentDeclarationsWorker(document, emitOptions);
@@ -492,12 +493,12 @@ module TypeScript {
                 }
             }
 
+            declarationEmitTime += new Date().getTime() - start;
             return sharedEmitter;
         }
 
         // Will not throw exceptions.
         public emitAllDeclarations(resolvePath: (path: string) => string): EmitOutput {
-            var start = new Date().getTime();
             var emitOutput = new EmitOutput();
 
             var emitOptions = new EmitOptions(this, resolvePath);
@@ -521,8 +522,6 @@ module TypeScript {
             if (sharedEmitter) {
                 emitOutput.outputFiles.push(sharedEmitter.getOutputFile());
             }
-
-            declarationEmitTime += new Date().getTime() - start;
 
             return emitOutput;
         }
@@ -612,8 +611,10 @@ module TypeScript {
             onSingleFileEmitComplete: (files: OutputFile[]) => void,
             sharedEmitter: Emitter): Emitter {
 
+            var start = new Date().getTime();
+
             // Emitting module or multiple files, always goes to single file
-                if (this._shouldEmit(document)) {
+            if (this._shouldEmit(document)) {
                 if (document.emitToOwnOutputFile()) {
                     // We're outputting to mulitple files.  We don't want to reuse an emitter in that case.
                     var singleEmitter = this.emitDocumentWorker(document, emitOptions);
@@ -628,12 +629,12 @@ module TypeScript {
                 }
             }
 
+            emitTime += new Date().getTime() - start;
             return sharedEmitter;
         }
 
         // Will not throw exceptions.
         public emitAll(resolvePath: (path: string) => string): EmitOutput {
-            var start = new Date().getTime();
             var emitOutput = new EmitOutput();
 
             var emitOptions = new EmitOptions(this, resolvePath);
@@ -660,7 +661,6 @@ module TypeScript {
                 emitOutput.outputFiles.push.apply(emitOutput.outputFiles, sharedEmitter.getOutputFiles());
             }
 
-            emitTime += new Date().getTime() - start;
             return emitOutput;
         }
 
