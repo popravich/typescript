@@ -54,22 +54,7 @@ class TypeWriterWalker extends TypeScript.SyntaxWalker {
 
     private getAstForElement(element: TypeScript.ISyntaxElement) {
         if (!TypeScript.isShared(element)) {
-            var candidates: string[] = [];
-
-            for (var i = 0; i < TypeScript.fullWidth(element); i++) {
-                var ast = TypeScript.ASTHelpers.getAstAtPosition(this.document.sourceUnit(), TypeScript.fullStart(element) + i, false, false);
-                while (ast) {
-                    if (TypeScript.end(ast) - TypeScript.start(ast) === TypeScript.width(element)) {
-                        return ast;
-                    }
-                    ast = ast.parent;
-                }
-            }
-
-            var errorText = 'Was looking for AST in file ' + this.filename + ' with fulltext = ' + TypeScript.fullText(element) +
-                ', width = ' + TypeScript.width(element) + ', pos = ' + TypeScript.fullStart(element);
-
-            throw new Error(errorText);
+            return element;
         }
     }
 

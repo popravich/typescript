@@ -1116,7 +1116,7 @@ module FourSlash {
             var refSyntaxTree = TypeScript.Parser.parse(this.activeFile.fileName, TypeScript.SimpleText.fromString(content), parseOptions, TypeScript.isDTSFile(this.activeFile.fileName));
             var fullSyntaxErrs = JSON.stringify(refSyntaxTree.diagnostics());
 
-            if (!TypeScript.treeStructuralEquals(refSyntaxTree, this.compiler().getSyntaxTree(this.activeFile.fileName))) {
+            if (!TypeScript.treeStructuralEquals(refSyntaxTree, this.compiler().getSyntaxTree(this.activeFile.fileName), /*checkParents:*/ true)) {
                 throw new Error('Incrementally-parsed and full-parsed syntax trees were not equal');
             }
 
