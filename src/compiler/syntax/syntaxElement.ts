@@ -207,12 +207,12 @@ module TypeScript {
         return null;
     }
 
-    export function nextToken(token: ISyntaxToken, includeSkippedTokens: boolean = false): ISyntaxToken {
+    export function nextToken(token: ISyntaxToken, text?: ISimpleText, includeSkippedTokens: boolean = false): ISyntaxToken {
         if (token.kind() === SyntaxKind.EndOfFileToken) {
             return null;
         }
 
-        var triviaList = token.trailingTrivia();
+        var triviaList = token.trailingTrivia(text);
         if (includeSkippedTokens && triviaList && triviaList.hasSkippedToken()) {
             for (var i = 0, n = triviaList.count(); i < n; i++) {
                 var trivia = triviaList.syntaxTriviaAt(i);
@@ -267,38 +267,38 @@ module TypeScript {
         return obj._syntaxID;
     }
 
-    function collectTextElements(element: ISyntaxElement, elements: string[]): void {
+    function collectTextElements(element: ISyntaxElement, elements: string[], text: ISimpleText): void {
         if (element) {
             if (isToken(element)) {
-                elements.push((<ISyntaxToken>element).fullText());
+                elements.push((<ISyntaxToken>element).fullText(text));
             }
             else {
                 for (var i = 0, n = childCount(element); i < n; i++) {
-                    collectTextElements(childAt(element, i), elements);
+                    collectTextElements(childAt(element, i), elements, text);
                 }
             }
         }
     }
 
-    export function fullText(element: ISyntaxElement): string {
+    export function fullText(element: ISyntaxElement, text?: ISimpleText): string {
         if (isToken(element)) {
-            return (<ISyntaxToken>element).fullText();
+            return (<ISyntaxToken>element).fullText(text);
         }
 
         var elements: string[] = [];
-        collectTextElements(element, elements);
+        collectTextElements(element, elements, text);
 
         return elements.join("");
     }
 
-    export function leadingTriviaWidth(element: ISyntaxElement): number {
+    export function leadingTriviaWidth(element: ISyntaxElement, text?: ISimpleText): number {
         var token = firstToken(element);
-        return token ? token.leadingTriviaWidth() : 0;
+        return token ? token.leadingTriviaWidth(text) : 0;
     }
 
-    export function trailingTriviaWidth(element: ISyntaxElement): number {
+    export function trailingTriviaWidth(element: ISyntaxElement, text?: ISimpleText): number {
         var token = lastToken(element);
-        return token ? token.trailingTriviaWidth() : 0;
+        return token ? token.trailingTriviaWidth(text) : 0;
     }
 
     export function firstToken(element: ISyntaxElement): ISyntaxToken {
@@ -443,28 +443,28 @@ module TypeScript {
             | SyntaxConstants.NodeDataComputed;
     }
 
-    export function start(element: ISyntaxElement): number {
+    export function start(element: ISyntaxElement, text?: ISimpleText): number {
         var token = isToken(element) ? <ISyntaxToken>element : firstToken(element);
-        return token ? token.fullStart() + token.leadingTriviaWidth() : -1;
+        return token ? token.fullStart() + token.leadingTriviaWidth(text) : -1;
     }
 
-    export function end(element: ISyntaxElement): number {
+    export function end(element: ISyntaxElement, text?: ISimpleText): number {
         var token = isToken(element) ? <ISyntaxToken>element : lastToken(element);
-        return token ? fullEnd(token) - token.trailingTriviaWidth() : -1;
+        return token ? fullEnd(token) - token.trailingTriviaWidth(text) : -1;
     }
 
-    export function width(element: ISyntaxElement): number {
+    export function width(element: ISyntaxElement, text?: ISimpleText): number {
         if (isToken(element)) {
             return (<ISyntaxToken>element).text().length;
         }
-        return fullWidth(element) - leadingTriviaWidth(element) - trailingTriviaWidth(element);
+        return fullWidth(element) - leadingTriviaWidth(element, text) - trailingTriviaWidth(element, text);
     }
 
     export function fullEnd(element: ISyntaxElement): number {
         return fullStart(element) + fullWidth(element);
     }
 
-    export function existsNewLineBetweenTokens(token1: ISyntaxToken, token2: ISyntaxToken, lineMap: LineMap) {
+    export function existsNewLineBetweenTokens(token1: ISyntaxToken, token2: ISyntaxToken, text: ISimpleText) {
         if (token1 === token2) {
             return false;
         }
@@ -473,7 +473,8 @@ module TypeScript {
             return true;
         }
 
-        return lineMap.getLineNumberFromPosition(end(token1)) !== lineMap.getLineNumberFromPosition(start(token2));
+        var lineMap = text.lineMap();
+        return lineMap.getLineNumberFromPosition(end(token1, text)) !== lineMap.getLineNumberFromPosition(start(token2, text));
     }
 
     export interface ISyntaxElement {

@@ -884,7 +884,6 @@ module TypeScript {
 
     function preCollectSimplePropertyAssignmentDecls(propertyAssignment: SimplePropertyAssignmentSyntax, context: DeclCollectionContext): void {
         var assignmentText = getPropertyAssignmentNameTextFromIdentifier(propertyAssignment.propertyName);
-        var span = TextSpan.fromBounds(start(propertyAssignment), end(propertyAssignment));
 
         var decl = new NormalPullDecl(assignmentText.memberName, assignmentText.actualText, PullElementKind.Property, PullElementFlags.Public, context.getParent());
 

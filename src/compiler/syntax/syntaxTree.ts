@@ -18,13 +18,13 @@ module TypeScript {
                     isDeclaration: boolean,
                     diagnostics: Diagnostic[],
                     fileName: string,
-                    lineMap: LineMap,
+                    public text: ISimpleText,
                     languageVersion: LanguageVersion) {
             this._sourceUnit = sourceUnit;
             this._isDeclaration = isDeclaration;
             this._parserDiagnostics = diagnostics;
             this._fileName = fileName;
-            this._lineMap = lineMap;
+            this._lineMap = text.lineMap();
             this._languageVersion = languageVersion;
 
             sourceUnit.syntaxTree = this;
@@ -77,7 +77,7 @@ module TypeScript {
             TypeScript.syntaxDiagnosticsTime += new Date().getTime() - start;
 
             var sourceUnit = this.sourceUnit();
-            var leadingTrivia = firstToken(sourceUnit).leadingTrivia();
+            var leadingTrivia = firstToken(sourceUnit).leadingTrivia(this.text);
 
             this._isExternalModule = ASTHelpers.externalModuleIndicatorSpan(sourceUnit) !== null;
 
@@ -129,15 +129,17 @@ module TypeScript {
         private inBlock: boolean = false;
         private inObjectLiteralExpression: boolean = false;
         private currentConstructor: ConstructorDeclarationSyntax = null;
+        private text: ISimpleText;
 
         constructor(private syntaxTree: SyntaxTree,
                     private diagnostics: Diagnostic[]) {
             super();
+            this.text = syntaxTree.text;
         }
 
         private pushDiagnostic(element: ISyntaxElement, diagnosticKey: string, args: any[] = null): void {
             this.diagnostics.push(new Diagnostic(
-                this.syntaxTree.fileName(), this.syntaxTree.lineMap(), start(element), width(element), diagnosticKey, args));
+                this.syntaxTree.fileName(), this.syntaxTree.lineMap(), start(element, this.text), width(element), diagnosticKey, args));
         }
 
         public visitCatchClause(node: CatchClauseSyntax): void {
@@ -320,7 +322,7 @@ module TypeScript {
                 var lastComma = declarators.separatorAt(declarators.separatorCount() - 1);
                 Debug.assert(isToken(lastComma));
 
-                var _nextToken = nextToken(lastComma, /*includeSkippedTokens:*/ true);
+                var _nextToken = nextToken(lastComma, this.text, /*includeSkippedTokens:*/ true);
                 this.pushDiagnostic(_nextToken, DiagnosticCode.Identifier_expected);
                 return;
             }

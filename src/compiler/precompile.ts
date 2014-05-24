@@ -39,10 +39,11 @@ module TypeScript {
 
     export var tripleSlashReferenceRegExp = /^(\/\/\/\s*<reference\s+path=)('|")(.+?)\2\s*(static=('|")(.+?)\2\s*)*\/>/;
 
-    function getFileReferenceFromReferencePath(fileName: string, lineMap: LineMap, position: number, comment: string, diagnostics: Diagnostic[]): IFileReference {
+    function getFileReferenceFromReferencePath(fileName: string, text: ISimpleText, position: number, comment: string, diagnostics: Diagnostic[]): IFileReference {
         // First, just see if they've written: /// <reference\s+
         // If so, then we'll consider this a reference directive and we'll report errors if it's
         // malformed.  Otherwise, we'll completely ignore this.
+        var lineMap = text.lineMap();
 
         var simpleReferenceRegEx = /^\/\/\/\s*<reference\s+/gim;
         if (simpleReferenceRegEx.exec(comment)) {
@@ -79,9 +80,10 @@ module TypeScript {
 
     var reportDiagnostic = () => { };
 
-    function processImports(lineMap: LineMap, scanner: Scanner.IScanner, token: ISyntaxToken, importedFiles: IFileReference[]): void {
+    function processImports(text: ISimpleText, scanner: Scanner.IScanner, token: ISyntaxToken, importedFiles: IFileReference[]): void {
         var lineChar = { line: -1, character: -1 };
 
+        var lineMap = text.lineMap();
         var start = new Date().getTime();
         // Look for: 
         // import foo = module("foo")
@@ -102,13 +104,13 @@ module TypeScript {
                             if (token.kind() === SyntaxKind.OpenParenToken) {
                                 token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                                lineMap.fillLineAndCharacterFromPosition(TypeScript.start(importToken), lineChar);
+                                lineMap.fillLineAndCharacterFromPosition(TypeScript.start(importToken, text), lineChar);
 
                                 if (token.kind() === SyntaxKind.StringLiteral) {
                                     var ref = {
                                         line: lineChar.line,
                                         character: lineChar.character,
-                                        position: TypeScript.start(token),
+                                        position: TypeScript.start(token, text),
                                         length: width(token),
                                         path: stripStartAndEndQuotes(switchToForwardSlashes(token.text())),
                                         isResident: false
@@ -128,21 +130,22 @@ module TypeScript {
         TypeScript.fileResolutionScanImportsTime += totalTime;
     }
 
-    function processTripleSlashDirectives(fileName: string, lineMap: LineMap, firstToken: ISyntaxToken): ITripleSlashDirectiveProperties {
-        var leadingTrivia = firstToken.leadingTrivia();
+    function processTripleSlashDirectives(fileName: string, text: ISimpleText, firstToken: ISyntaxToken): ITripleSlashDirectiveProperties {
+        var leadingTrivia = firstToken.leadingTrivia(text);
 
         var position = 0;
         var lineChar = { line: -1, character: -1 };
         var noDefaultLib = false;
         var diagnostics: Diagnostic[] = [];
         var referencedFiles: IFileReference[] = [];
+        var lineMap = text.lineMap()
 
         for (var i = 0, n = leadingTrivia.count(); i < n; i++) {
             var trivia = leadingTrivia.syntaxTriviaAt(i);
 
             if (trivia.kind() === SyntaxKind.SingleLineCommentTrivia) {
                 var triviaText = trivia.fullText();
-                var referencedCode = getFileReferenceFromReferencePath(fileName, lineMap, position, triviaText, diagnostics);
+                var referencedCode = getFileReferenceFromReferencePath(fileName, text, position, triviaText, diagnostics);
 
                 if (referencedCode) {
                     lineMap.fillLineAndCharacterFromPosition(position, lineChar);
@@ -179,10 +182,10 @@ module TypeScript {
 
         var importedFiles: IFileReference[] = [];
         if (readImportFiles) {
-            processImports(text.lineMap(), scanner, firstToken, importedFiles);
+            processImports(text, scanner, firstToken, importedFiles);
         }
 
-        var properties = processTripleSlashDirectives(fileName, text.lineMap(), firstToken);
+        var properties = processTripleSlashDirectives(fileName, text, firstToken);
 
         return { referencedFiles: properties.referencedFiles, importedFiles: importedFiles, isLibFile: properties.noDefaultLib, diagnostics: properties.diagnostics };
     }
