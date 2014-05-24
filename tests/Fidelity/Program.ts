@@ -366,11 +366,13 @@ class Program {
             var changeLength = i * 2;
 
             timer.start();
-            var tree2 = TypeScript.IncrementalParser.parse(tree, new TypeScript.TextChangeRange( new TypeScript.TextSpan((text.length() / 2) - i, changeLength), changeLength), text);
+            var tree2 = TypeScript.IncrementalParser.parse(tree, new TypeScript.TextChangeRange( new TypeScript.TextSpan(((text.length() / 2) >> 0) - i, changeLength), changeLength), text);
             timer.end();
             totalIncrementalTime += timer.time;
 
-            TypeScript.Debug.assert(TypeScript.treeStructuralEquals(tree, tree2));
+            // we can't check parents here because we are explicitly destroying the original tree 
+            // to make the new tree.  Thus, the parents in the first tree won't actually match.
+            TypeScript.Debug.assert(TypeScript.treeStructuralEquals(tree, tree2, /*checkParents:*/ false));
 
             tree = tree2;
         }
@@ -410,7 +412,7 @@ class Program {
         for (var i = 0; i < repeat; i++) {
 
             var changeLength = i * 2;
-            var changeSpan = new TypeScript.TextSpan((text.length() / 2) - i, changeLength);
+            var changeSpan = new TypeScript.TextSpan(((text.length() / 2) >> 0) - i, changeLength);
 
             contents = text.substr(0, text.length());
             var contentsToReplace = contents.substr(changeSpan.start(), changeSpan.length());
@@ -665,7 +667,7 @@ class Program {
             new TypeScript.TextChangeRange(new TypeScript.TextSpan(0, 0), text.length()),
             text);
 
-        TypeScript.Debug.assert(TypeScript.treeStructuralEquals(tree1, tree2));
+        TypeScript.Debug.assert(TypeScript.treeStructuralEquals(tree1, tree2, /*checkParents:*/ true));
     }
 
     runFindToken(fileName: string,
