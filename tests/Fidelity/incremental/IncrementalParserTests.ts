@@ -66,7 +66,7 @@ module TypeScript {
         TypeScript.visitNodeOrToken(new PositionValidatingWalker(), incrementalNewTree.sourceUnit());
 
         // We should get the same tree when doign a full or incremental parse.
-        Debug.assert(treeStructuralEquals(newTree, incrementalNewTree));
+        Debug.assert(treeStructuralEquals(newTree, incrementalNewTree, /*checkParents:*/ true));
 
         // There should be no reused nodes between two trees that are fully parsed.
         Debug.assert(IncrementalParserTests.reusedElements(oldTree.sourceUnit(), newTree.sourceUnit()) === 0);
@@ -422,7 +422,7 @@ module TypeScript {
             var newTextAndChange = withInsert(oldText, index, " => 1");
 
             // Note the decreased reuse of nodes compared to testStrictMode3
-            compareTrees(oldText, newTextAndChange.text, newTextAndChange.textChangeRange, 7);
+            compareTrees(oldText, newTextAndChange.text, newTextAndChange.textChangeRange, 4);
         }
 
         public static testGenerics2() {
@@ -470,7 +470,7 @@ module TypeScript {
             var newTextAndChange = withInsert(oldText, index, "Foo<Bar<");
 
             // Note the decreased reuse of nodes compared to testStrictMode3
-            compareTrees(oldText, newTextAndChange.text, newTextAndChange.textChangeRange, 5);
+            compareTrees(oldText, newTextAndChange.text, newTextAndChange.textChangeRange, 4);
         }
 
         public static testGenerics6() {

@@ -1477,6 +1477,8 @@ module TypeScript.Scanner {
         // Resets the source to this position. Any diagnostics produced after this point will be
         // removed.
         resetToPosition(absolutePosition: number): void;
+
+        isPinned(): boolean;
     }
 
     interface IScannerRewindPoint extends Parser.IRewindPoint {
@@ -1563,6 +1565,10 @@ module TypeScript.Scanner {
             // rewindPoint.pinCount = slidingWindow.pinCount();
 
             return rewindPoint;
+        }
+
+        function isPinned(): boolean {
+            return slidingWindow.pinCount() > 0;
         }
 
         function rewind(rewindPoint: IScannerRewindPoint): void {
@@ -1686,6 +1692,7 @@ module TypeScript.Scanner {
             release: release,
             absolutePosition: absolutePosition,
             resetToPosition: resetToPosition,
+            isPinned: isPinned
         };
     }
 }

@@ -5,7 +5,7 @@ module TypeScript {
         }
     }
 
-    export function nodeStructuralEquals(node1: TypeScript.ISyntaxNode, node2: TypeScript.ISyntaxNode): boolean {
+    export function nodeStructuralEquals(node1: TypeScript.ISyntaxNode, node2: TypeScript.ISyntaxNode, checkParents: boolean): boolean {
         if (node1 === node2) { return true; }
         if (node1 === null || node2 === null) { return false; }
 
@@ -19,10 +19,12 @@ module TypeScript {
             var element1 = childAt(node1, i);
             var element2 = childAt(node2, i);
 
-            assertParent(node1, element1);
-            assertParent(node2, element2);
+            if (checkParents) {
+                assertParent(node1, element1);
+                assertParent(node2, element2);
+            }
 
-            if (!elementStructuralEquals(element1, element2)) {
+            if (!elementStructuralEquals(element1, element2, checkParents)) {
                 return false;
             }
         }
@@ -30,7 +32,7 @@ module TypeScript {
         return true;
     }
 
-    export function nodeOrTokenStructuralEquals(node1: TypeScript.ISyntaxNodeOrToken, node2: TypeScript.ISyntaxNodeOrToken): boolean {
+    export function nodeOrTokenStructuralEquals(node1: TypeScript.ISyntaxNodeOrToken, node2: TypeScript.ISyntaxNodeOrToken, checkParents: boolean): boolean {
         if (node1 === node2) {
             return true;
         }
@@ -46,7 +48,7 @@ module TypeScript {
             return TypeScript.isToken(node2) ? tokenStructuralEquals(<TypeScript.ISyntaxToken>node1, <TypeScript.ISyntaxToken>node2) : false;
         }
 
-        return TypeScript.isNode(node2) ? nodeStructuralEquals(<TypeScript.ISyntaxNode>node1, <TypeScript.ISyntaxNode>node2) : false;
+        return TypeScript.isNode(node2) ? nodeStructuralEquals(<TypeScript.ISyntaxNode>node1, <TypeScript.ISyntaxNode>node2, checkParents) : false;
     }
 
     export function tokenStructuralEquals(token1: TypeScript.ISyntaxToken, token2: TypeScript.ISyntaxToken): boolean {
@@ -99,7 +101,7 @@ module TypeScript {
             trivia1.fullText() === trivia2.fullText();
     }
 
-    function listStructuralEquals<T extends TypeScript.ISyntaxNodeOrToken>(list1: T[], list2: T[]): boolean {
+    function listStructuralEquals<T extends TypeScript.ISyntaxNodeOrToken>(list1: T[], list2: T[], checkParents: boolean): boolean {
         Debug.assert(TypeScript.isShared(list1) || list1.parent);
         Debug.assert(TypeScript.isShared(list2) || list2.parent);
 
@@ -111,10 +113,12 @@ module TypeScript {
             var child1 = childAt(list1, i);
             var child2 = childAt(list2, i);
 
-            assertParent(list1, child1);
-            assertParent(list2, child2);
+            if (checkParents) {
+                assertParent(list1, child1);
+                assertParent(list2, child2);
+            }
 
-            if (!nodeOrTokenStructuralEquals(child1, child2)) {
+            if (!nodeOrTokenStructuralEquals(child1, child2, checkParents)) {
                 return false;
             }
         }
@@ -122,7 +126,7 @@ module TypeScript {
         return true;
     }
 
-    function separatedListStructuralEquals<T extends TypeScript.ISyntaxNodeOrToken>(list1: T[], list2: T[]): boolean {
+    function separatedListStructuralEquals<T extends TypeScript.ISyntaxNodeOrToken>(list1: T[], list2: T[], checkParents: boolean): boolean {
         Debug.assert(TypeScript.isShared(list1) || list1.parent);
         Debug.assert(TypeScript.isShared(list2) || list2.parent);
 
@@ -134,10 +138,12 @@ module TypeScript {
             var element1 = childAt(list1, i);
             var element2 = childAt(list2, i);
 
-            assertParent(list1, element1);
-            assertParent(list2, element2);
+            if (checkParents) {
+                assertParent(list1, element1);
+                assertParent(list2, element2);
+            }
 
-            if (!nodeOrTokenStructuralEquals(element1, element2)) {
+            if (!nodeOrTokenStructuralEquals(element1, element2, checkParents)) {
                 return false;
             }
         }
@@ -145,7 +151,7 @@ module TypeScript {
         return true;
     }
 
-    export function elementStructuralEquals(element1: TypeScript.ISyntaxElement, element2: TypeScript.ISyntaxElement) {
+    export function elementStructuralEquals(element1: TypeScript.ISyntaxElement, element2: TypeScript.ISyntaxElement, checkParents: boolean) {
         if (element1 === element2) {
             return true;
         }
@@ -181,23 +187,23 @@ module TypeScript {
             return tokenStructuralEquals(<TypeScript.ISyntaxToken>element1, <TypeScript.ISyntaxToken>element2);
         }
         else if (TypeScript.isNode(element1)) {
-            return nodeStructuralEquals(<TypeScript.ISyntaxNode>element1, <TypeScript.ISyntaxNode>element2);
+            return nodeStructuralEquals(<TypeScript.ISyntaxNode>element1, <TypeScript.ISyntaxNode>element2, checkParents);
         }
         else if (TypeScript.isList(element1)) {
-            return listStructuralEquals(<TypeScript.ISyntaxNodeOrToken[]>element1, <TypeScript.ISyntaxNodeOrToken[]>element2);
+            return listStructuralEquals(<TypeScript.ISyntaxNodeOrToken[]>element1, <TypeScript.ISyntaxNodeOrToken[]>element2, checkParents);
         }
         else if (TypeScript.isSeparatedList(element1)) {
-            return separatedListStructuralEquals(<TypeScript.ISyntaxNodeOrToken[]>element1, <TypeScript.ISyntaxNodeOrToken[]>element2);
+            return separatedListStructuralEquals(<TypeScript.ISyntaxNodeOrToken[]>element1, <TypeScript.ISyntaxNodeOrToken[]>element2, checkParents);
         }
 
         throw TypeScript.Errors.invalidOperation();
     }
 
-    export function treeStructuralEquals(tree1: TypeScript.SyntaxTree, tree2: TypeScript.SyntaxTree): boolean {
+    export function treeStructuralEquals(tree1: TypeScript.SyntaxTree, tree2: TypeScript.SyntaxTree, checkParents: boolean): boolean {
         if (!TypeScript.ArrayUtilities.sequenceEquals(tree1.diagnostics(), tree2.diagnostics(), TypeScript.Diagnostic.equals)) {
             return false;
         }
 
-        return nodeStructuralEquals(tree1.sourceUnit(), tree2.sourceUnit());
+        return nodeStructuralEquals(tree1.sourceUnit(), tree2.sourceUnit(), checkParents);
     }
 }
