@@ -1,4 +1,10 @@
 module TypeScript {
+    function assertParent(parent: ISyntaxElement, child: ISyntaxElement) {
+        if (child && !TypeScript.isShared(child)) {
+            return Debug.assert(parent === child.parent);
+        }
+    }
+
     export function nodeStructuralEquals(node1: TypeScript.ISyntaxNode, node2: TypeScript.ISyntaxNode): boolean {
         if (node1 === node2) { return true; }
         if (node1 === null || node2 === null) { return false; }
@@ -12,6 +18,9 @@ module TypeScript {
         for (var i = 0, n = childCount(node1); i < n; i++) {
             var element1 = childAt(node1, i);
             var element2 = childAt(node2, i);
+
+            assertParent(node1, element1);
+            assertParent(node2, element2);
 
             if (!elementStructuralEquals(element1, element2)) {
                 return false;
@@ -102,6 +111,9 @@ module TypeScript {
             var child1 = childAt(list1, i);
             var child2 = childAt(list2, i);
 
+            assertParent(list1, child1);
+            assertParent(list2, child2);
+
             if (!nodeOrTokenStructuralEquals(child1, child2)) {
                 return false;
             }
@@ -121,6 +133,10 @@ module TypeScript {
         for (var i = 0, n = childCount(list1); i < n; i++) {
             var element1 = childAt(list1, i);
             var element2 = childAt(list2, i);
+
+            assertParent(list1, element1);
+            assertParent(list2, element2);
+
             if (!nodeOrTokenStructuralEquals(element1, element2)) {
                 return false;
             }
