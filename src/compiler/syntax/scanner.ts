@@ -189,11 +189,6 @@ module TypeScript.Scanner {
         return token._text.substr(token.fullStart(), token.fullWidth());
     }
 
-    function text(token: IScannerToken): string {
-        fillSizeInfo(token);
-        return token._text.substr(token.fullStart() + lastTokenInfo.leadingTriviaWidth, lastTokenInfo.width);
-    }
-
     function leadingTrivia(token: IScannerToken): ISyntaxTriviaList {
         if (!token.hasLeadingTrivia()) {
             return Syntax.emptyTriviaList;
@@ -297,7 +292,11 @@ module TypeScript.Scanner {
     class LargeScannerToken implements ISyntaxToken {
         public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
 
-        constructor(public _text: ISimpleText, private _packedFullStartAndInfo: number, private _packedFullWidthAndKind: number) {
+        private cachedText: string;
+        constructor(public _text: ISimpleText, private _packedFullStartAndInfo: number, private _packedFullWidthAndKind: number, cachedText: string) {
+            if (cachedText !== undefined) {
+                this.cachedText = cachedText;
+            }
         }
 
         public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
@@ -312,7 +311,11 @@ module TypeScript.Scanner {
         public isKeywordConvertedToIdentifier(): boolean    { return false; }
         public hasSkippedToken(): boolean                   { return false; }
         public fullText(): string                           { return fullText(this); }
-        public text(): string                               { return text(this); }
+        public text(): string {
+            var cachedText = this.cachedText;
+            return cachedText !== undefined ? cachedText : SyntaxFacts.getText(this.kind());
+        }
+
         public leadingTrivia(): ISyntaxTriviaList           { return leadingTrivia(this); }
         public trailingTrivia(): ISyntaxTriviaList          { return trailingTrivia(this); }
         public leadingTriviaWidth(): number                 { return leadingTriviaWidth(this); }
@@ -323,7 +326,7 @@ module TypeScript.Scanner {
         public fullStart(): number { return largeTokenUnpackFullStart(this._packedFullStartAndInfo); }
         public hasLeadingTrivia(): boolean { return largeTokenUnpackHasLeadingTriviaInfo(this._packedFullStartAndInfo) !== 0; }
         public hasTrailingTrivia(): boolean { return largeTokenUnpackHasTrailingTriviaInfo(this._packedFullStartAndInfo) !== 0; }
-        public clone(): ISyntaxToken { return new LargeScannerToken(this._text, this._packedFullStartAndInfo, this._packedFullWidthAndKind); }
+        public clone(): ISyntaxToken { return new LargeScannerToken(this._text, this._packedFullStartAndInfo, this._packedFullWidthAndKind, this.cachedText); }
     }
 
     export interface DiagnosticCallback {
@@ -379,35 +382,37 @@ module TypeScript.Scanner {
 
         function scan(allowContextualToken: boolean): ISyntaxToken {
             var fullStart = index;
-            var hasLeadingTrivia = scanTriviaInfo(/*isTrailing: */ false);
+            var leadingTriviaInfo = scanTriviaInfo(/*isTrailing: */ false);
 
             var start = index;
             var kindAndIsVariableWidth = scanSyntaxKind(allowContextualToken);
 
-            var kind = kindAndIsVariableWidth & ScannerConstants.KindMask;
-
             var end = index;
-            var hasTrailingTrivia = scanTriviaInfo(/*isTrailing: */true);
+            var trailingTriviaInfo = scanTriviaInfo(/*isTrailing: */true);
 
             var fullWidth = index - fullStart;
 
             // If we have no trivia, and we are a fixed width token kind, and our size isn't too 
             // large, and we're a real fixed width token (and not something like "\u0076ar").
-            if (!hasLeadingTrivia && !hasTrailingTrivia &&
-                kind >= SyntaxKind.FirstFixedWidth && kind <= SyntaxKind.LastFixedWidth &&
+            var kind = kindAndIsVariableWidth & ScannerConstants.KindMask;
+            var isFixedWidth = kind >= SyntaxKind.FirstFixedWidth && kind <= SyntaxKind.LastFixedWidth &&
+                ((kindAndIsVariableWidth & ScannerConstants.IsVariableWidthMask) === 0);
+
+            if (isFixedWidth &&
+                leadingTriviaInfo === 0 && trailingTriviaInfo === 0 &&
                 fullStart <= ScannerConstants.FixedWidthTokenMaxFullStart &&
                 (kindAndIsVariableWidth & ScannerConstants.IsVariableWidthMask) === 0) {
 
                 return new FixedWidthTokenWithNoTrivia((fullStart << ScannerConstants.FixedWidthTokenFullStartShift) | kind);
             }
             else {
-                // inline the packing logic for perf.
+                // inline the packing logic for perf.  
                 var packedFullStartAndTriviaInfo = (fullStart << ScannerConstants.LargeTokenFullStartShift) |
-                    (hasLeadingTrivia ? ScannerConstants.LargeTokenLeadingTriviaBitMask : 0) |
-                    (hasTrailingTrivia ? ScannerConstants.LargeTokenTrailingTriviaBitMask : 0);
+                    leadingTriviaInfo | (trailingTriviaInfo << 1);
 
                 var packedFullWidthAndKind = (fullWidth << ScannerConstants.LargeTokenFullWidthShift) | kind;
-                return new LargeScannerToken(text, packedFullStartAndTriviaInfo, packedFullWidthAndKind);
+                var cachedText = isFixedWidth ? undefined : text.substr(start, end - start);
+                return new LargeScannerToken(text, packedFullStartAndTriviaInfo, packedFullWidthAndKind, cachedText);
             }
         }
 
@@ -497,9 +502,11 @@ module TypeScript.Scanner {
             }
         }
 
-        function scanTriviaInfo(isTrailing: boolean): boolean {
+        // Returns 0 if there was no trivia, or 1 if there was trivia.  Returned as an int instead 
+        // of a boolean because we'll need a numerical value later on to store in our tokens.
+        function scanTriviaInfo(isTrailing: boolean): number {
             // Keep this exactly in sync with scanTrivia
-            var result = false;
+            var result = 0;
             var _end = end;
 
             while (index < _end) {
@@ -511,7 +518,7 @@ module TypeScript.Scanner {
                     case CharacterCodes.verticalTab:
                     case CharacterCodes.formFeed:
                         index++;
-                        result = true;
+                        result = 1;
                         continue;
 
                     case CharacterCodes.carriageReturn:
@@ -526,23 +533,23 @@ module TypeScript.Scanner {
                         // trivia (including newlines) up to the first token we see.  If we're 
                         // consuming trailing trivia, then we break after the first newline we see.
                         if (isTrailing) {
-                            return true;
+                            return 1;
                         }
 
-                        result = true;
+                        result = 1;
                         continue;
 
                     case CharacterCodes.slash:
                         if ((index + 1) < _end) {
                             var ch2 = str.charCodeAt(index + 1);
                             if (ch2 === CharacterCodes.slash) {
-                                result = true;
+                                result = 1;
                                 skipSingleLineCommentTrivia();
                                 continue;
                             }
 
                             if (ch2 === CharacterCodes.asterisk) {
-                                result = true;
+                                result = 1;
                                 skipMultiLineCommentTrivia();
                                 continue;
                             }
@@ -553,7 +560,7 @@ module TypeScript.Scanner {
 
                     default:
                         if (ch > CharacterCodes.maxAsciiCharacter && slowScanTriviaInfo(ch)) {
-                            result = true;
+                            result = 1;
                             continue;
                         }
 

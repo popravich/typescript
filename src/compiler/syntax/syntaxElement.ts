@@ -454,6 +454,9 @@ module TypeScript {
     }
 
     export function width(element: ISyntaxElement): number {
+        if (isToken(element)) {
+            return (<ISyntaxToken>element).text().length;
+        }
         return fullWidth(element) - leadingTriviaWidth(element) - trailingTriviaWidth(element);
     }
 
