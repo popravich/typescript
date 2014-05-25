@@ -69,7 +69,7 @@ module TypeScript {
                 for (var i = 0, n = fileNames.length; i < n; i++) {
                     var document = compiler.getDocument(fileNames[i]);
                     if (!document.isDeclareFile() && document.syntaxTree().isExternalModule()) {
-                        var errorSpan = ASTHelpers.externalModuleIndicatorSpan(document.syntaxTree().sourceUnit());
+                        var errorSpan = externalModuleIndicatorSpan(document.syntaxTree().sourceUnit());
                         this._diagnostic = new Diagnostic(document.fileName, document.lineMap(), errorSpan.start(), errorSpan.length(),
                             DiagnosticCode.Cannot_compile_external_modules_unless_the_module_flag_is_provided);
 

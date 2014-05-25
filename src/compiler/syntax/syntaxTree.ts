@@ -1,6 +1,8 @@
 ///<reference path='references.ts' />
 
 module TypeScript {
+    export var syntaxDiagnosticsTime: number = 0;
+
     export class SyntaxTree {
         private _sourceUnit: SourceUnitSyntax;
         private _isDeclaration: boolean;
@@ -52,7 +54,9 @@ module TypeScript {
 
         public diagnostics(): Diagnostic[] {
             if (this._allDiagnostics === null) {
+                var start = new Date().getTime();
                 this._allDiagnostics = this.computeDiagnostics();
+                syntaxDiagnosticsTime += new Date().getTime() - start;
             }
 
             return this._allDiagnostics;
@@ -73,13 +77,10 @@ module TypeScript {
         private cacheSyntaxTreeInfo(): void {
             // If we're not keeping around the syntax tree, store the diagnostics and line
             // map so they don't have to be recomputed.
-            var start = new Date().getTime();
-            TypeScript.syntaxDiagnosticsTime += new Date().getTime() - start;
-
             var sourceUnit = this.sourceUnit();
             var leadingTrivia = firstToken(sourceUnit).leadingTrivia();
 
-            this._isExternalModule = ASTHelpers.externalModuleIndicatorSpan(sourceUnit) !== null;
+            this._isExternalModule =externalModuleIndicatorSpan(sourceUnit) !== null;
 
             var amdDependencies: string[] = [];
             for (var i = 0, n = leadingTrivia.count(); i < n; i++) {
@@ -1442,5 +1443,56 @@ module TypeScript {
 
             super.visitSourceUnit(node);
         }
+    }
+
+    export function externalModuleIndicatorSpan(sourceUnit: SourceUnitSyntax): TextSpan {
+        var leadingTrivia = firstToken(sourceUnit).leadingTrivia();
+        return implicitImportSpan(leadingTrivia) || topLevelImportOrExportSpan(sourceUnit);
+    }
+
+    function implicitImportSpan(sourceUnitLeadingTrivia: ISyntaxTriviaList): TextSpan {
+        for (var i = 0, n = sourceUnitLeadingTrivia.count(); i < n; i++) {
+            var trivia = sourceUnitLeadingTrivia.syntaxTriviaAt(i);
+
+            if (trivia.isComment()) {
+                var span = implicitImportSpanWorker(trivia);
+                if (span) {
+                    return span;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function implicitImportSpanWorker(trivia: ISyntaxTrivia): TextSpan {
+        var implicitImportRegEx = /^(\/\/\/\s*<implicit-import\s*)*\/>/gim;
+        var match = implicitImportRegEx.exec(trivia.fullText());
+
+        if (match) {
+            return new TextSpan(trivia.fullStart(), trivia.fullWidth());
+        }
+
+        return null;
+    }
+
+    function topLevelImportOrExportSpan(node: SourceUnitSyntax): TextSpan {
+        for (var i = 0, n = node.moduleElements.length; i < n; i++) {
+            var moduleElement = node.moduleElements[i];
+
+            var _firstToken = firstToken(moduleElement);
+            if (_firstToken !== null && _firstToken.kind() === SyntaxKind.ExportKeyword) {
+                return new TextSpan(start(_firstToken), width(_firstToken));
+            }
+
+            if (moduleElement.kind() === SyntaxKind.ImportDeclaration) {
+                var importDecl = <ImportDeclarationSyntax>moduleElement;
+                if (importDecl.moduleReference.kind() === SyntaxKind.ExternalModuleReference) {
+                    return new TextSpan(start(importDecl), width(importDecl));
+                }
+            }
+        }
+
+        return null;;
     }
 }

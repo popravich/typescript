@@ -182,14 +182,17 @@ module TypeScript {
         for (var i = 0, n = childCount(element); i < n; i++) {
             var child = childAt(element, i);
 
-            if (child !== null && fullWidth(child) > 0) {
-                var childFullStart = fullStart(child);
+            if (child !== null) {
+                var childFullWidth = fullWidth(child);
+                if (childFullWidth > 0) {
+                    var childFullStart = fullStart(child);
 
-                if (position >= childFullStart) {
-                    var childFullEnd = childFullStart + fullWidth(child);
+                    if (position >= childFullStart) {
+                        var childFullEnd = childFullStart + childFullWidth;
 
-                    if (position < childFullEnd) {
-                        return findTokenWorker(child, position);
+                        if (position < childFullEnd) {
+                            return findTokenWorker(child, position);
+                        }
                     }
                 }
             }
@@ -212,12 +215,14 @@ module TypeScript {
             return null;
         }
 
-        var triviaList = token.trailingTrivia();
-        if (includeSkippedTokens && triviaList && triviaList.hasSkippedToken()) {
-            for (var i = 0, n = triviaList.count(); i < n; i++) {
-                var trivia = triviaList.syntaxTriviaAt(i);
-                if (trivia.isSkippedToken()) {
-                    return trivia.skippedToken();
+        if (includeSkippedTokens) {
+            var triviaList = token.trailingTrivia();
+            if (triviaList && triviaList.hasSkippedToken()) {
+                for (var i = 0, n = triviaList.count(); i < n; i++) {
+                    var trivia = triviaList.syntaxTriviaAt(i);
+                    if (trivia.isSkippedToken()) {
+                        return trivia.skippedToken();
+                    }
                 }
             }
         }

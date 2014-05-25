@@ -25,7 +25,6 @@ module TypeScript {
     export var fileResolutionGetDefaultLibraryTime = 0;
     export var sourceCharactersCompiled = 0;
     export var syntaxTreeParseTime = 0;
-    export var syntaxDiagnosticsTime = 0;
     export var typeCheckTime = 0;
     export var createDeclarationsTime = 0;
 
