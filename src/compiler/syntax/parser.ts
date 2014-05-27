@@ -654,7 +654,6 @@ module TypeScript.Parser {
 
         function addSkippedTokenAfterToken(token: ISyntaxToken, skippedToken: ISyntaxToken): ISyntaxToken {
             // Debug.assert(token.fullWidth() > 0);
-
             var trailingTrivia = token.trailingTrivia().toArray();
             addSkippedTokenToTriviaArray(trailingTrivia, skippedToken);
 
@@ -1387,7 +1386,13 @@ module TypeScript.Parser {
                         start(token0), width(token0), DiagnosticCode.Unexpected_token_0_expected, [SyntaxFacts.getText(SyntaxKind.OpenBraceToken)]);
                     addDiagnostic(diagnostic);
 
-                    addSkippedTokenAfterNode(callSignature, consumeToken(token0));
+                    consumeToken(token0);
+
+                    // Note: we only do this if we're creating a concrete syntax tree (which contains
+                    // everything, including skipped tokens, in it).
+                    if (syntaxFactory.isConcrete) {
+                        addSkippedTokenAfterNode(callSignature, token0);
+                    }
                     return true;
                 }
             }
@@ -3742,24 +3747,27 @@ module TypeScript.Parser {
             // Now, add this skipped token to the last item we successfully parsed in the list.  Or
             // add it to the list of skipped tokens if we haven't parsed anything.  Our caller will
             // have to deal with them.
+            //
+            // Note: we only bother doing this if we're creating a concrete syntax tree.
+            if (syntaxFactory.isConcrete) {
+                var length = nodes.length + (separators ? separators.length : 0);
 
-            var length = nodes.length + (separators ? separators.length : 0);
+                for (var i = length - 1; i >= 0; i--) {
+                    var array: ISyntaxNodeOrToken[] = separators && (i % 2 === 1) ? separators : nodes;
+                    var arrayIndex = separators ? IntegerUtilities.integerDivide(i, 2) : i;
 
-            for (var i = length - 1; i >= 0; i--) {
-                var array: ISyntaxNodeOrToken[] = separators && (i % 2 === 1) ? separators : nodes;
-                var arrayIndex = separators ? IntegerUtilities.integerDivide(i, 2) : i;
-
-                var item = array[arrayIndex];
-                var _lastToken = lastToken(item);
-                if (_lastToken && _lastToken.fullWidth() > 0) {
-                    array[arrayIndex] = <T>addSkippedTokenAfterNodeOrToken(item, skippedToken);
-                    return;
+                    var item = array[arrayIndex];
+                    var _lastToken = lastToken(item);
+                    if (_lastToken && _lastToken.fullWidth() > 0) {
+                        array[arrayIndex] = <T>addSkippedTokenAfterNodeOrToken(item, skippedToken);
+                        return;
+                    }
                 }
-            }
 
-            // Didn't have anything in the list we could add to.  Add to the skipped items array
-            // for our caller to handle.
-            skippedTokens.push(skippedToken);
+                // Didn't have anything in the list we could add to.  Add to the skipped items array
+                // for our caller to handle.
+                skippedTokens.push(skippedToken);
+            }
         }
 
         function tryParseExpectedListItem(
