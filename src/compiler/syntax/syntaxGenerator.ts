@@ -28,6 +28,7 @@ interface IMemberDefinition {
     tokenKinds?: string[];
     isTypeScriptSpecific: boolean;
     elementType?: string;
+    excludeFromAST?: boolean;
 }
 
 var interfaces: TypeScript.IIndexable<any> = {
@@ -58,10 +59,10 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IModuleReferenceSyntax'],
         children: [
-            <any>{ name: 'requireKeyword', isToken: true, tokenKinds: ['RequireKeyword'] }, 
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'requireKeyword', isToken: true, tokenKinds: ['RequireKeyword'], excludeFromAST: true }, 
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'stringLiteral', isToken: true, tokenKinds: ['StringLiteral'] },
-            <any>{ name: 'closeParenToken', isToken: true }
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -80,11 +81,11 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IModuleElementSyntax'],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
-            <any>{ name: 'importKeyword', isToken: true },
+            <any>{ name: 'importKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'equalsToken', isToken: true },
+            <any>{ name: 'equalsToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'moduleReference', type: 'IModuleReferenceSyntax' },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -93,10 +94,10 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IModuleElementSyntax'],
         children: [
-            <any>{ name: 'exportKeyword', isToken: true },
-            <any>{ name: 'equalsToken', isToken: true },
+            <any>{ name: 'exportKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'equalsToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -106,13 +107,13 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IModuleElementSyntax'],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
-            <any>{ name: 'classKeyword', isToken: true },
+            <any>{ name: 'classKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'typeParameterList', type: 'TypeParameterListSyntax', isOptional: true },
             <any>{ name: 'heritageClauses', isList: true, elementType: 'HeritageClauseSyntax' },
-            <any>{ name: 'openBraceToken', isToken: true },
+            <any>{ name: 'openBraceToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'classElements', isList: true, elementType: 'IClassElementSyntax' },
-            <any>{ name: 'closeBraceToken', isToken: true }
+            <any>{ name: 'closeBraceToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -122,7 +123,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IModuleElementSyntax'],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
-            <any>{ name: 'interfaceKeyword', isToken: true },
+            <any>{ name: 'interfaceKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'typeParameterList', type: 'TypeParameterListSyntax', isOptional: true },
             <any>{ name: 'heritageClauses', isList: true, elementType: 'HeritageClauseSyntax' },
@@ -146,12 +147,12 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IModuleElementSyntax'],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
-            <any>{ name: 'moduleKeyword', isToken: true },
+            <any>{ name: 'moduleKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'name', type: 'INameSyntax', isOptional: true },
             <any>{ name: 'stringLiteral', isToken: true, isOptional: true, tokenKinds: ['StringLiteral'] },
-            <any>{ name: 'openBraceToken', isToken: true },
+            <any>{ name: 'openBraceToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'moduleElements', isList: true, elementType: 'IModuleElementSyntax' },
-            <any>{ name: 'closeBraceToken', isToken: true }
+            <any>{ name: 'closeBraceToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -161,11 +162,11 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IStatementSyntax'],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
-            <any>{ name: 'functionKeyword', isToken: true },
+            <any>{ name: 'functionKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -175,7 +176,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
             <any>{ name: 'variableDeclaration', type: 'VariableDeclarationSyntax' },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -199,7 +200,7 @@ var definitions:ITypeDefinition[] = [
         name: 'EqualsValueClauseSyntax',
         baseType: 'ISyntaxNode',
         children: [
-            <any>{ name: 'equalsToken', isToken: true },
+            <any>{ name: 'equalsToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'value', type: 'IExpressionSyntax' }
         ]
     },
@@ -218,9 +219,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IPrimaryExpressionSyntax'],
         children: [
-            <any>{ name: 'openBracketToken', isToken: true },
+            <any>{ name: 'openBracketToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'expressions', isSeparatedList: true, elementType: 'IExpressionSyntax' },
-            <any>{ name: 'closeBracketToken', isToken: true }
+            <any>{ name: 'closeBracketToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -234,9 +235,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IPrimaryExpressionSyntax'],
         children: [
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true }
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -245,7 +246,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
             <any>{ name: 'parameter', type: 'ParameterSyntax' },
-            <any>{ name: 'equalsGreaterThanToken', isToken: true },
+            <any>{ name: 'equalsGreaterThanToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax', isOptional: true }
         ],
@@ -257,7 +258,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
-            <any>{ name: 'equalsGreaterThanToken', isToken: true },
+            <any>{ name: 'equalsGreaterThanToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax', isOptional: true }
         ],
@@ -269,7 +270,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['INameSyntax'],
         children: [
             <any>{ name: 'left', type: 'INameSyntax' },
-            <any>{ name: 'dotToken', isToken: true },
+            <any>{ name: 'dotToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'right', isToken: true, tokenKinds:['IdentifierName'] }
         ],
         // Qualified names only show up in Types, which are TypeScript specific. Note that a dotted
@@ -280,9 +281,9 @@ var definitions:ITypeDefinition[] = [
         name: 'TypeArgumentListSyntax',
         baseType: 'ISyntaxNode',
         children: [
-                <any>{ name: 'lessThanToken', isToken: true },
-                <any>{ name: 'typeArguments', isSeparatedList: true, elementType: 'ITypeSyntax' },
-                <any>{ name: 'greaterThanToken', isToken: true }
+            <any>{ name: 'lessThanToken', isToken: true },
+            <any>{ name: 'typeArguments', isSeparatedList: true, elementType: 'ITypeSyntax' },
+            <any>{ name: 'greaterThanToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -291,10 +292,10 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['ITypeSyntax'],
         children: [
-            <any>{ name: 'newKeyword', isToken: true },
+            <any>{ name: 'newKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'typeParameterList', type: 'TypeParameterListSyntax', isOptional: true },
             <any>{ name: 'parameterList', type: 'ParameterListSyntax' },
-            <any>{ name: 'equalsGreaterThanToken', isToken: true },
+            <any>{ name: 'equalsGreaterThanToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'type', type: 'ITypeSyntax' }
         ],
         isTypeScriptSpecific: true
@@ -306,7 +307,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'typeParameterList', type: 'TypeParameterListSyntax', isOptional: true },
             <any>{ name: 'parameterList', type: 'ParameterListSyntax' },
-            <any>{ name: 'equalsGreaterThanToken', isToken: true },
+            <any>{ name: 'equalsGreaterThanToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'type', type: 'ITypeSyntax' }
         ],
         isTypeScriptSpecific: true
@@ -316,9 +317,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['ITypeSyntax'],
         children: [
-            <any>{ name: 'openBraceToken', isToken: true },
+            <any>{ name: 'openBraceToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'typeMembers', isSeparatedList: true, elementType: 'ITypeMemberSyntax' },
-            <any>{ name: 'closeBraceToken', isToken: true }
+            <any>{ name: 'closeBraceToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -328,8 +329,8 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['ITypeSyntax'],
         children: [
             <any>{ name: 'type', type: 'ITypeSyntax' },
-            <any>{ name: 'openBracketToken', isToken: true },
-            <any>{ name: 'closeBracketToken', isToken: true }
+            <any>{ name: 'openBracketToken', isToken: true, excludeFromAST: true },
+            <any>{ name: 'closeBracketToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -348,7 +349,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['ITypeSyntax'],
         children: [
-            <any>{ name: 'typeOfKeyword', isToken: true },
+            <any>{ name: 'typeOfKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'name', type: 'INameSyntax' }
         ],
         isTypeScriptSpecific: true
@@ -357,7 +358,7 @@ var definitions:ITypeDefinition[] = [
         name: 'TypeAnnotationSyntax',
         baseType: 'ISyntaxNode',
         children: [
-            <any>{ name: 'colonToken', isToken: true },
+            <any>{ name: 'colonToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'type', type: 'ITypeSyntax' }
         ],
         isTypeScriptSpecific: true
@@ -369,7 +370,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'openBraceToken', isToken: true },
             <any>{ name: 'statements', isList: true, elementType: 'IStatementSyntax' },
-            <any>{ name: 'closeBraceToken', isToken: true }
+            <any>{ name: 'closeBraceToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -390,7 +391,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IMemberExpressionSyntax', 'ICallExpressionSyntax'],
         children: [
             <any>{ name: 'expression', type: 'ILeftHandSideExpressionSyntax' },
-            <any>{ name: 'dotToken', isToken: true },
+            <any>{ name: 'dotToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'name', isToken: true, tokenKinds: ['IdentifierName'] }
         ]
     },
@@ -410,9 +411,9 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IMemberExpressionSyntax', 'ICallExpressionSyntax'],
         children: [
             <any>{ name: 'expression', type: 'ILeftHandSideExpressionSyntax' },
-            <any>{ name: 'openBracketToken', isToken: true },
+            <any>{ name: 'openBracketToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'argumentExpression', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeBracketToken', isToken: true }
+            <any>{ name: 'closeBracketToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -429,9 +430,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         children: [
             <any>{ name: 'typeArgumentList', type: 'TypeArgumentListSyntax', isOptional: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'arguments', isSeparatedList: true, elementType: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true }
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -468,9 +469,9 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IExpressionSyntax'],
         children: [
             <any>{ name: 'condition', type: 'IExpressionSyntax' },
-            <any>{ name: 'questionToken', isToken: true },
+            <any>{ name: 'questionToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'whenTrue', type: 'IExpressionSyntax' },
-            <any>{ name: 'colonToken', isToken: true },
+            <any>{ name: 'colonToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'whenFalse', type: 'IExpressionSyntax' }
         ]
     },
@@ -479,7 +480,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['ITypeMemberSyntax'],
         children: [
-            <any>{ name: 'newKeyword', isToken: true },
+            <any>{ name: 'newKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' }
         ],
         isTypeScriptSpecific: true
@@ -531,9 +532,9 @@ var definitions:ITypeDefinition[] = [
         name: 'ParameterListSyntax',
         baseType: 'ISyntaxNode',
         children: [
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'parameters', isSeparatedList: true, elementType: 'ParameterSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true }
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -542,7 +543,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'lessThanToken', isToken: true },
             <any>{ name: 'typeParameters', isSeparatedList: true, elementType: 'TypeParameterSyntax' },
-            <any>{ name: 'greaterThanToken', isToken: true }
+            <any>{ name: 'greaterThanToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -559,7 +560,7 @@ var definitions:ITypeDefinition[] = [
         name: 'ConstraintSyntax',
         baseType: 'ISyntaxNode',
         children: [
-            <any>{ name: 'extendsKeyword', isToken: true },
+            <any>{ name: 'extendsKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'type', type: 'ITypeSyntax' }
         ],
         isTypeScriptSpecific: true
@@ -568,7 +569,7 @@ var definitions:ITypeDefinition[] = [
         name: 'ElseClauseSyntax',
         baseType: 'ISyntaxNode',
         children: [
-            <any>{ name: 'elseKeyword', isToken: true },
+            <any>{ name: 'elseKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' }
         ]
     },
@@ -577,10 +578,10 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'ifKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'ifKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'condition', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true },
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' },
             <any>{ name: 'elseClause', type: 'ElseClauseSyntax', isOptional: true }
         ]
@@ -591,7 +592,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IStatementSyntax'],
         children: [
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -603,7 +604,7 @@ var definitions:ITypeDefinition[] = [
             <any>{ name: 'constructorKeyword', isToken: true },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -616,7 +617,7 @@ var definitions:ITypeDefinition[] = [
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'block', type: 'BlockSyntax', isOptional: true },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -626,7 +627,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IMemberDeclarationSyntax', 'IPropertyAssignmentSyntax' ],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
-            <any>{ name: 'getKeyword', isToken: true },
+            <any>{ name: 'getKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'block', type: 'BlockSyntax' }
@@ -638,7 +639,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IMemberDeclarationSyntax', 'IPropertyAssignmentSyntax'],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken', isTypeScriptSpecific: true },
-            <any>{ name: 'setKeyword', isToken: true },
+            <any>{ name: 'setKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'block', type: 'BlockSyntax' }
@@ -652,7 +653,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
             <any>{ name: 'variableDeclarator', type: 'VariableDeclaratorSyntax' },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -663,7 +664,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
             <any>{ name: 'indexSignature', type: 'IndexSignatureSyntax' },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -672,9 +673,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'throwKeyword', isToken: true },
+            <any>{ name: 'throwKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -684,7 +685,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'returnKeyword', isToken: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax', isOptional: true },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -692,7 +693,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IMemberExpressionSyntax'],
         children: [
-            <any>{ name: 'newKeyword', isToken: true },
+            <any>{ name: 'newKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IMemberExpressionSyntax' },
             <any>{ name: 'argumentList', type: 'ArgumentListSyntax', isOptional: true }
         ]
@@ -702,13 +703,13 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'switchKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'switchKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true },
-            <any>{ name: 'openBraceToken', isToken: true },
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openBraceToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'switchClauses', isList: true, elementType: 'ISwitchClauseSyntax' },
-            <any>{ name: 'closeBraceToken', isToken: true }
+            <any>{ name: 'closeBraceToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -716,9 +717,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['ISwitchClauseSyntax'],
         children: [
-            <any>{ name: 'caseKeyword', isToken: true },
+            <any>{ name: 'caseKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
-            <any>{ name: 'colonToken', isToken: true },
+            <any>{ name: 'colonToken', isToken: true, excludeFromAST: true},
             <any>{ name: 'statements', isList: true, elementType: 'IStatementSyntax' }
         ]
     },
@@ -727,8 +728,8 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['ISwitchClauseSyntax'],
         children: [
-            <any>{ name: 'defaultKeyword', isToken: true },
-            <any>{ name: 'colonToken', isToken: true },
+            <any>{ name: 'defaultKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'colonToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'statements', isList: true, elementType: 'IStatementSyntax' }
         ]
     },
@@ -739,7 +740,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'breakKeyword', isToken: true },
             <any>{ name: 'identifier', isToken: true, isOptional: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -749,7 +750,7 @@ var definitions:ITypeDefinition[] = [
         children: [
             <any>{ name: 'continueKeyword', isToken: true },
             <any>{ name: 'identifier', isToken: true, isOptional: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -757,15 +758,15 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'forKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'forKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'variableDeclaration', type: 'VariableDeclarationSyntax', isOptional: true },
             <any>{ name: 'initializer', type: 'IExpressionSyntax', isOptional: true },
-            <any>{ name: 'firstSemicolonToken', isToken: true, tokenKinds: ['SemicolonToken'] },
+            <any>{ name: 'firstSemicolonToken', isToken: true, tokenKinds: ['SemicolonToken'], excludeFromAST: true },
             <any>{ name: 'condition', type: 'IExpressionSyntax', isOptional: true },
-            <any>{ name: 'secondSemicolonToken', isToken: true, tokenKinds: ['SemicolonToken'] },
+            <any>{ name: 'secondSemicolonToken', isToken: true, tokenKinds: ['SemicolonToken'], excludeFromAST: true },
             <any>{ name: 'incrementor', type: 'IExpressionSyntax', isOptional: true },
-            <any>{ name: 'closeParenToken', isToken: true },
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' }
         ]
     },
@@ -774,13 +775,13 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'forKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'forKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'variableDeclaration', type: 'VariableDeclarationSyntax', isOptional: true },
             <any>{ name: 'left', type: 'IExpressionSyntax', isOptional: true },
-            <any>{ name: 'inKeyword', isToken: true },
+            <any>{ name: 'inKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true },
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' }
         ]
     },
@@ -789,10 +790,10 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'whileKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'whileKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'condition', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true },
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' }
         ]
     },
@@ -801,10 +802,10 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'withKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'withKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'condition', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true },
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' }
         ]
     },
@@ -814,11 +815,11 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IModuleElementSyntax'],
         children: [
             <any>{ name: 'modifiers', isList: true, elementType: 'ISyntaxToken' },
-            <any>{ name: 'enumKeyword', isToken: true },
+            <any>{ name: 'enumKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'openBraceToken', isToken: true },
+            <any>{ name: 'openBraceToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'enumElements', isSeparatedList: true, elementType: 'EnumElementSyntax' },
-            <any>{ name: 'closeBraceToken', isToken: true }
+            <any>{ name: 'closeBraceToken', isToken: true, excludeFromAST: true }
         ],
         isTypeScriptSpecific: true
     },
@@ -835,9 +836,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
-            <any>{ name: 'lessThanToken', isToken: true },
+            <any>{ name: 'lessThanToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'type', type: 'ITypeSyntax' },
-            <any>{ name: 'greaterThanToken', isToken: true },
+            <any>{ name: 'greaterThanToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IUnaryExpressionSyntax' }
         ],
         isTypeScriptSpecific: true
@@ -847,9 +848,9 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IPrimaryExpressionSyntax'],
         children: [
-            <any>{ name: 'openBraceToken', isToken: true },
+            <any>{ name: 'openBraceToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'propertyAssignments', isSeparatedList: true, elementType: 'IPropertyAssignmentSyntax' },
-            <any>{ name: 'closeBraceToken', isToken: true }
+            <any>{ name: 'closeBraceToken', isToken: true, excludeFromAST: true }
         ]
     },
     <any>{
@@ -858,7 +859,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IPropertyAssignmentSyntax'],
         children: [
             <any>{ name: 'propertyName', isToken: true, tokenKinds: ['IdentifierName', 'StringLiteral', 'NumericLiteral'] },
-            <any>{ name: 'colonToken', isToken: true },
+            <any>{ name: 'colonToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IExpressionSyntax' }
         ]
     },
@@ -877,7 +878,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IPrimaryExpressionSyntax'],
         children: [
-            <any>{ name: 'functionKeyword', isToken: true },
+            <any>{ name: 'functionKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, isOptional: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'callSignature', type: 'CallSignatureSyntax' },
             <any>{ name: 'block', type: 'BlockSyntax' }]
@@ -894,7 +895,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'tryKeyword', isToken: true },
+            <any>{ name: 'tryKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'block', type: 'BlockSyntax' },
             <any>{ name: 'catchClause', type: 'CatchClauseSyntax', isOptional: true },
             <any>{ name: 'finallyClause', type: 'FinallyClauseSyntax', isOptional: true }]
@@ -903,18 +904,18 @@ var definitions:ITypeDefinition[] = [
         name: 'CatchClauseSyntax',
         baseType: 'ISyntaxNode',
         children: [
-            <any>{ name: 'catchKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'catchKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
             <any>{ name: 'typeAnnotation', type: 'TypeAnnotationSyntax', isOptional: true, isTypeScriptSpecified: true },
-            <any>{ name: 'closeParenToken', isToken: true },
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'block', type: 'BlockSyntax' }]
     },
     <any>{
         name: 'FinallyClauseSyntax',
         baseType: 'ISyntaxNode',
         children: [
-            <any>{ name: 'finallyKeyword', isToken: true },
+            <any>{ name: 'finallyKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'block', type: 'BlockSyntax' }]
     },
     <any>{
@@ -923,7 +924,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IStatementSyntax'],
         children: [
             <any>{ name: 'identifier', isToken: true, tokenKinds: ['IdentifierName'] },
-            <any>{ name: 'colonToken', isToken: true },
+            <any>{ name: 'colonToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' }]
     },
     <any>{
@@ -931,20 +932,20 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IStatementSyntax'],
         children: [
-            <any>{ name: 'doKeyword', isToken: true },
+            <any>{ name: 'doKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'statement', type: 'IStatementSyntax' },
-            <any>{ name: 'whileKeyword', isToken: true },
-            <any>{ name: 'openParenToken', isToken: true },
+            <any>{ name: 'whileKeyword', isToken: true, excludeFromAST: true },
+            <any>{ name: 'openParenToken', isToken: true, excludeFromAST: true },
             <any>{ name: 'condition', type: 'IExpressionSyntax' },
-            <any>{ name: 'closeParenToken', isToken: true },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }]
+            <any>{ name: 'closeParenToken', isToken: true, excludeFromAST: true },
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }]
     },
     <any>{
         name: 'TypeOfExpressionSyntax',
         baseType: 'ISyntaxNode',
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
-            <any>{ name: 'typeOfKeyword', isToken: true },
+            <any>{ name: 'typeOfKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IUnaryExpressionSyntax' }]
     },
     <any>{
@@ -952,7 +953,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
-            <any>{ name: 'deleteKeyword', isToken: true },
+            <any>{ name: 'deleteKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IUnaryExpressionSyntax' }]
     },
     <any>{
@@ -960,7 +961,7 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         interfaces: ['IUnaryExpressionSyntax'],
         children: [
-            <any>{ name: 'voidKeyword', isToken: true },
+            <any>{ name: 'voidKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IUnaryExpressionSyntax' }]
     },
     <any>{
@@ -969,7 +970,7 @@ var definitions:ITypeDefinition[] = [
         interfaces: ['IStatementSyntax'],
         children: [
             <any>{ name: 'debuggerKeyword', isToken: true },
-            <any>{ name: 'semicolonToken', isToken: true, isOptional: true }]
+            <any>{ name: 'semicolonToken', isToken: true, isOptional: true, excludeFromAST: true }]
     }];
 
 function firstKind(definition: ITypeDefinition): TypeScript.SyntaxKind {
@@ -1498,7 +1499,7 @@ function generateFactoryMethod(definition: ITypeDefinition): string {
     return generateFactory1Method(definition) + generateFactory2Method(definition);
 }
 
-function generateIsProperties(definition: ITypeDefinition): string {
+function generateBrands(definition: ITypeDefinition, accessibility: boolean): string {
     var properties = "";
 
     var types: string[] = [];
@@ -1532,7 +1533,11 @@ function generateIsProperties(definition: ITypeDefinition): string {
         properties += "       ";
 
         for (var i = 0; i < types.length; i++) {
-            properties += " public " + types[i] + ": any;";
+            if (accessibility) {
+                properties += " public ";
+            }
+
+            properties += types[i] + ": any;";
         }
 
         properties += "\r\n";
@@ -1881,48 +1886,7 @@ function generateUpdateMethod(definition: ITypeDefinition): string {
     return result;
 }
 
-function couldBeRegularExpressionToken(child: IMemberDefinition): boolean {
-    var kinds = tokenKinds(child);
-    return TypeScript.ArrayUtilities.contains(kinds, "SlashToken") ||
-           TypeScript.ArrayUtilities.contains(kinds, "SlashEqualsToken") ||
-           TypeScript.ArrayUtilities.contains(kinds, "RegularExpressionLiteral");
-}
-
-function generateStructuralEqualsMethod(definition: ITypeDefinition): string {
-    var result = "\r\n    private structuralEquals(node: ISyntaxNode): boolean {\r\n";
-    result += "        if (this === node) { return true; }\r\n";
-    result += "        if (node === null) { return false; }\r\n";
-    result += "        if (this.kind !== node.kind) { return false; }\r\n";
-    result += "        var other = <" + definition.name + ">node;\r\n";
-
-    for (var i = 0; i < definition.children.length; i++) {
-        var child = definition.children[i];
-
-        if (child.type !== "SyntaxKind") {
-            if (child.isList) {
-                result += "        if (!Syntax.listStructuralEquals(" + getPropertyAccess(child) + ", other._" + child.name + ")) { return false; }\r\n";
-            }
-            else if (child.isSeparatedList) {
-                result += "        if (!Syntax.separatedListStructuralEquals(" + getPropertyAccess(child) + ", other._" + child.name + ")) { return false; }\r\n";
-            }
-            else if (child.isToken) {
-                result += "        if (!Syntax.tokenStructuralEquals(" + getPropertyAccess(child) + ", other._" + child.name + ")) { return false; }\r\n";
-            }
-            else if (isNodeOrToken(child)) {
-                result += "        if (!Syntax.nodeOrTokenStructuralEquals(" + getPropertyAccess(child) + ", other._" + child.name + ")) { return false; }\r\n";
-            }
-            else {
-                result += "        if (!Syntax.nodeStructuralEquals(" + getPropertyAccess(child) + ", other._" + child.name + ")) { return false; }\r\n";
-            }
-        }
-    }
-
-    result += "        return true;\r\n";
-    result += "    }\r\n";
-    return result;
-}
-
-function generateNode(definition: ITypeDefinition): string {
+function generateNode(definition: ITypeDefinition, abstract: boolean): string {
     var result = "    export class " + definition.name + " extends SyntaxNode"
 
     if (definition.interfaces) {
@@ -1941,7 +1905,7 @@ function generateNode(definition: ITypeDefinition): string {
         result += "        public " + child.name + ": " + getType(child) + ";\r\n";
     }
 
-    result += generateIsProperties(definition);
+    result += generateBrands(definition, /*accessibility:*/ true);
 
     result += "        constructor(data: number";
 
@@ -1960,17 +1924,26 @@ function generateNode(definition: ITypeDefinition): string {
     if (definition.children) {
         for (var i = 0; i < definition.children.length; i++) {
             var child = definition.children[i];
+            if (child.excludeFromAST && abstract) {
+                continue;
+            }
 
             result += "            this." + child.name + " = " + getSafeName(child) + ",\r\n";
         }
     }
 
     if (definition.children.length > 0) {
+        var first = true;
         for (var i = 0; i < definition.children.length; i++) {
-            if (i > 0) {
+            var child = definition.children[i];
+            if (child.excludeFromAST && abstract) {
+                continue;
+            }
+
+            if (!first) {
                 result += ",\r\n";
             }
-            var child = definition.children[i];
+            first = false;
 
             if (child.isList || child.isSeparatedList) {
                 result += "            !isShared(" + getSafeName(child) + ") && (" + getSafeName(child) + ".parent = this)";
@@ -1999,246 +1972,8 @@ function generateNode(definition: ITypeDefinition): string {
     else if (definition.name === "HeritageClauseSyntax") {
         result += "        public kind(): SyntaxKind { return this.extendsOrImplementsKeyword.kind() === SyntaxKind.ExtendsKeyword ? SyntaxKind.ExtendsHeritageClause : SyntaxKind.ImplementsHeritageClause; }\r\n";
     }
-    else {
-        // result += "        public kind(): SyntaxKind { return SyntaxKind." + getNameWithoutSuffix(definition) + "; }\r\n";
-    }
 
     result += "    }";
-
-    /*
-    result += "    export function create" + getNameWithoutSuffix(definition) + "(data: number";
-
-    for (var i = 0; i < definition.children.length; i++) {
-        var child = definition.children[i];
-
-        result += ", " + child.name + ": " + getType(child);
-    }
-
-    result += "): " + definition.name + " {\r\n";
-
-    result += "        var result = <" + definition.name + ">{ data: data"
-
-    if (definition.syntaxKinds) {
-        result += ", kind: kind";
-    }
-    else {
-        result += ", kind: SyntaxKind." + getNameWithoutSuffix(definition);
-    }
-
-    if (definition.name === "SourceUnitSyntax") {
-        result += ", syntaxTree: null, parent: null";
-    }
-
-    for (var i = 0; i < definition.children.length; i++) {
-        var child = definition.children[i];
-
-        if (child.type !== "SyntaxKind") {
-            result += ", " + child.name + ": " + child.name;
-        }
-    }
-
-    result += " };\r\n";
-
-    for (var i = 0; i < definition.children.length; i++) {
-        var child = definition.children[i];
-
-        if (child.type === "SyntaxKind") {
-            continue;
-        }
-
-        if (child.isList || child.isSeparatedList) {
-            result += "        !isShared(" + child.name + ") && (" + child.name + ".parent = result);\r\n";
-        }
-        else if (child.isOptional) {
-            result += "        " + child.name + " && (" + child.name + ".parent = result);\r\n";
-        }
-        else {
-            result += "        " + child.name + ".parent = result;\r\n";
-        }
-    }
-    result += "        return result;\r\n";
-    result += "    }"
-    */
-
-    //hasKind = false;
-
-    //result += generateProperties(definition);
-    //result += generateIsProperties(definition);
-    //result += generateConstructor(definition);
-    //result += generateKindMethod(definition);
-    //result += generateSlotMethods(definition);
-    //result += generateAccessors(definition);
-    //// result += generateUpdateMethod(definition);
-
-    //if (!forPrettyPrinter) {
-    //    result += generateFactoryMethod(definition);
-    //    result += generateTriviaMethods(definition);
-    //    result += generateWithMethods(definition);
-    //}
-
-    // result += generateIsMissingMethod(definition);
-    // result += generateFirstTokenMethod(definition);
-    // result += generateLastTokenMethod(definition);
-    // result += generateCollectTextElementsMethod(definition);
-    // result += generateFindTokenInternalMethod(definition);
-    // result += generateStructuralEqualsMethod(definition);
-
-    return result;
-}
-
-function generateSyntaxInterfaces(): string {
-    var result = "///<reference path='references.ts' />\r\n\r\n";
-
-    result += "module TypeScript {\r\n";
-
-    result += "    export enum NodeFlags {\r\n";
-    result += "        Export   = 0x00000001,  // Declarations\r\n";
-    result += "        Ambient  = 0x00000002,  // Declarations\r\n";
-    result += "        Optional = 0x00000004,  // Parameter/Property/Method\r\n";
-    result += "        Rest     = 0x00000008,  // Parameter\r\n";
-    result += "        Public   = 0x00000010,  // Property/Method\r\n";
-    result += "        Private  = 0x00000020,  // Property/Method\r\n";
-    result += "        Static   = 0x00000040,  // Property/Method\r\n";
-    result += "    }\r\n";
-
-    result += "\r\n    interface SyntaxElement {\r\n";
-    result += "        kind: SyntaxKind;\r\n";
-    result += "    }\r\n";
-
-    result += "\r\n";
-    result += "    interface SyntaxNode extends SyntaxElement {\r\n";
-    result += "        flags: NodeFlags;\r\n";
-    result += "    }\r\n"
-
-    result += "\r\n    function nodeStart(node: Node): number {\r\n";
-    result += "    }\r\n"
-
-    result += "\r\n    function nodeWidth(node: Node): number {\r\n";
-    result += "    }\r\n"
-
-    result += "\r\n    interface SyntaxToken extends Name, PrimaryExpression {\r\n"
-    result += "    }\r\n";
-
-    result += "\r\n    // The raw text of the token, as written in the original source.\r\n";
-    result += "    function tokenText(token: SyntaxToken): string {\r\n";
-    result += "    }\r\n";
-
-    result += "\r\n    // The token's javascript value.  i.e. 0.0 in the text would have the javascript number value: 0.\r\n";
-    result += "    function tokenValue(token: SyntaxToken): any {\r\n";
-    result += "    }\r\n";
-
-    result += "\r\n    // The token's value in string form.  i.e. \\u0041 in the source text would result in a string with the text: A.\r\n";
-    result += "    function tokenValueText(token: SyntaxToken): string {\r\n";
-    result += "    }\r\n";
-
-    result += "\r\n    interface SyntaxList<T> extends SyntaxElement {\r\n";
-    result += "        length: number;\r\n";
-    result += "        item(index: number): T;\r\n";
-    result += "    }\r\n";
-
-    var trim = (key: string) => getStringWithoutPrefix(getStringWithoutSuffix(key));
-
-    for (var i = 0; i < definitions.length; i++) {
-        var definition = definitions[i];
-
-        //if (i > 0) {
-        //    result += "\r\n";
-        //}
-
-        var interfaceDefinition = "";
-
-        interfaceDefinition += "\r\n    interface " + getNameWithoutSuffix(definition);
-        var hasChild = false;
-
-        interfaceDefinition += " extends";
-        if (definition.interfaces && definition.interfaces.length > 0) {
-
-            for (var j = 0; j < definition.interfaces.length; j++) {
-                if (j > 0) {
-                    interfaceDefinition += ",";
-                }
-
-                interfaceDefinition += " " + getStringWithoutPrefix(getStringWithoutSuffix(definition.interfaces[j]));
-            }
-        }
-        else {
-            interfaceDefinition += " Node";
-        }
-
-        interfaceDefinition += " {\r\n";
-
-        for (var j = 0; j < definition.children.length; j++) {
-            var child = definition.children[j];
-
-            if (child.type === "SyntaxKind") {
-                continue;
-            }
-
-            if (child.isList || child.isSeparatedList) {
-                if (child.elementType === "ISyntaxToken") {
-                    continue;
-                }
-
-                interfaceDefinition += "        " + child.name + ": SyntaxList<" + getStringWithoutPrefix(getStringWithoutSuffix(child.elementType)) + ">;\r\n";
-                hasChild = true;
-            }
-            else if (child.isToken) {
-                if (child.tokenKinds) {
-                    if (child.tokenKinds.indexOf("IdentifierName") >= 0 || child.tokenKinds.indexOf("StringLiteral") >= 0) {
-                        interfaceDefinition += "        " + child.name;
-                        if (child.isOptional) {
-                            interfaceDefinition += "?";
-                        }
-
-                        interfaceDefinition += ": SyntaxToken;\r\n";
-                        hasChild = true;
-                    }
-                }
-            }
-            else {
-                interfaceDefinition += "        " + child.name;
-                if (child.isOptional) {
-                    interfaceDefinition += "?";
-                }
-
-                interfaceDefinition += ": " + getStringWithoutPrefix(getStringWithoutSuffix(child.type)) + ";\r\n";
-                hasChild = true;
-            }
-        }
-
-        interfaceDefinition += "    }\r\n"
-
-        if (hasChild) {
-            result += interfaceDefinition;
-        }
-    }
-
-    for (var key in interfaces) {
-        if (interfaces.hasOwnProperty(key)) {
-            result += "\r\n    interface " + trim(key) + " extends " + trim(interfaces[key]) + " {\r\n";
-            result += "    }\r\n";
-        }
-    }
-
-    result += "\r\n    interface ModuleElement extends SyntaxElement {\r\n";
-    result += "    }\r\n";
-    result += "\r\n    interface ModuleReference extends Node {\r\n";
-    result += "    }\r\n";
-    result += "\r\n    interface ClassElement extends Node {\r\n";
-    result += "    }\r\n";
-    result += "\r\n    interface TypeMember extends Node {\r\n";
-    result += "    }\r\n";
-    result += "\r\n    interface PropertyAssignment extends Node {\r\n";
-    result += "    }\r\n";
-    result += "\r\n    interface SwitchClause extends Node {\r\n";
-    result += "    }\r\n";
-    result += "\r\n    interface Expression extends SyntaxElement {\r\n";
-    result += "    }\r\n";
-    result += "\r\n    interface Type extends SyntaxElement {\r\n";
-    result += "    }\r\n";
-
-    result += "}";
-
     return result;
 }
 
@@ -2268,13 +2003,24 @@ function getDefinitionForKind(kind: TypeScript.SyntaxKind): ITypeDefinition {
     });
 }
 
-function generateNodes(): string {
+function generateSyntaxInterfaces(): string {
     var result = "///<reference path='references.ts' />\r\n\r\n";
 
     result += "module TypeScript {\r\n";
 
-    result += "    export var nodeMetadata: string[][] = [";
+    for (var i = 0; i < definitions.length; i++) {
+        var definition = definitions[i];
 
+        if (i > 0) {
+            result += "\r\n";
+        }
+
+        result += generateSyntaxInterface(definition);
+    }
+
+    result += "\r\n\r\n";
+
+    result += "    export var nodeMetadata: string[][] = [";
     for (var i = 0; i <= TypeScript.SyntaxKind.LastNode; i++) {
         if (i < TypeScript.SyntaxKind.FirstNode) {
             result += "[],";
@@ -2292,112 +2038,69 @@ function generateNodes(): string {
 
         result += metadata;
     }
-    result += "];\r\n";
+    result += "];\r\n\r\n";
 
-    /*
-    result += "    function children(nodes: ISyntaxNodeOrToken[], cb: (node: ISyntaxElement) => void) {\r\n";
-    result += "        var len = nodes.length;\r\n";
-    result += "        for (var i = 0; i < len; i++) {\r\n";
-    result += "            var result = forEachChild(nodes[i], cb);\r\n";
-    result += "        }\r\n";
-    result += "        return result;\r\n";
-    result += "    }\r\n\r\n";
+    result += "    export module Syntax {\r\n"
 
-    result += "    export function forEachChild(element: ISyntaxElement, cb: (e: ISyntaxElement) => void) {\r\n";
-    result += "        if (element === null) { return; }\r\n";
-    result += "        cb(element);\r\n";
-    result += "        switch (element.kind) {\r\n"
-    //result += "            case SyntaxKind.List: case SyntaxKind.SeparatedList:\r\n";
-    //result += "                children(<ISyntaxNodeOrToken>element);\r\n";
-    
-    for (var i = 0; i < sortedDefinitions.length; i++) {
-        var definition = sortedDefinitions[i];
+    result += "        export interface ISyntaxFactory {\r\n";
+    result += "            isConcrete: boolean;\r\n";
 
-        var importantChildren = definition.children.filter(c => c.type !== "SyntaxKind" && !c.isToken);
-        if (importantChildren.length === 0) {
-            continue;
+    for (var i = 0; i < definitions.length; i++) {
+        var definition = definitions[i];
+        result += "            " + definition.name + ": { new(data: number";
+
+        for (var j = 0; j < definition.children.length; j++) {
+            var child = definition.children[j];
+            result += ", " + child.name + ": " + getType(child);
         }
 
-        result += "            "
-
-        if (definition.syntaxKinds) {
-            for (var j = 0; j < definition.syntaxKinds.length; j++) {
-                result += "case SyntaxKind." + definition.syntaxKinds[j] + ": ";
-            }
-        }
-        else {
-            result += "case SyntaxKind." + getNameWithoutSuffix(definition) + ":";
-        }
-
-        result += "\r\n";
-
-        result += "                ";
-
-        result += "return ";
-        for (var j = 0; j < importantChildren.length; j++) {
-            var child = importantChildren[j];
-
-            if (child.type === "SyntaxKind" || child.isToken) {
-                continue;
-            }
-
-            if (j > 0) {
-                result += " || ";
-            }
-
-
-            if (child.isList || child.isSeparatedList) {
-                result += "children((<" + definition.name + ">element)." + child.name + ", cb)";
-            }
-            else {
-                result += "forEachChild((<" + definition.name + ">element)." + child.name + ", cb)";
-            }
-        }
-
-        result += ";\r\n";
+        result += "): " + definition.name + " };\r\n";
     }
 
     result += "        }\r\n";
-
     result += "    }\r\n";
-    result += "\r\n\r\n";
-    */
+
+    result += "}";
+    return result;
+}
+
+function generateSyntaxInterface(definition: ITypeDefinition): string {
+    var result = "    export interface " + definition.name + " extends ISyntaxNode"
+
+    if (definition.interfaces) {
+        result += ", ";
+        result += definition.interfaces.join(", ");
+    }
+
+    result += " {\r\n";
+
+    if (definition.name === "SourceUnitSyntax") {
+        result += "        syntaxTree: SyntaxTree;\r\n";
+    }
+
+    for (var i = 0; i < definition.children.length; i++) {
+        var child = definition.children[i];
+        result += "        " + child.name + ": " + getType(child) + ";\r\n";
+    }
+
+    result += "    }";
+
+    return result;
+}
 
 
-    /*
-    result += "    function setParentForArray(parent: ISyntaxElement, array: ISyntaxNodeOrToken[]): void {\r\n";
-    result += "        for (var i = 0, n = array.length; i < n; i++) {\r\n";
-    result += "            var child = array[i];\r\n";
-    result += "            if (child && !isShared(child)) {\r\n";
-    result += "                child.parent = parent;\r\n";
-    result += "            }\r\n";
-    result += "        }\r\n";
-    result += "    }\r\n";
-    result += "\r\n";
-    result += "    export function setParentForChildren<T extends ISyntaxElement>(parent: T): T {\r\n";
-    result += "        var kind = parent.kind;\r\n";
-    result += "        if (kind === SyntaxKind.List) {\r\n";
-    result += "            setParentForArray(parent, <ISyntaxNodeOrToken[]><ISyntaxElement>parent);\r\n";
-    result += "        }\r\n";
-    result += "        else if (kind === SyntaxKind.SeparatedList) {\r\n";
-    result += "            var array = <ISyntaxNodeOrToken[]><ISyntaxElement>parent;\r\n";
-    result += "            setParentForArray(parent, array);\r\n";
-    result += "            setParentForArray(parent, array.separators);\r\n";
-    result += "        }\r\n";
-    result += "        else {\r\n";
-    result += "            Debug.assert(isNode(parent));\r\n";
-    result += "            var childNames = nodeMetadata[kind];\r\n";
-    result += "\r\n";
-    result += "            for (var i = 0, n = childNames.length; i < n; i++) {\r\n";
-    result += "                var child: ISyntaxElement = (<any>parent)[childNames[i]];\r\n";
-    result += "                if (child && !isShared(child)) {\r\n";
-    result += "                    child.parent = parent;\r\n";
-    result += "                }\r\n";
-    result += "            }\r\n";
-    result += "        }\r\n\r\n";
-    result += "        return parent;\r\n";
-    result += "    }\r\n\r\n";
-    */
+function generateNodes(abstract: boolean): string {
+    var result = "///<reference path='references.ts' />\r\n\r\n";
+
+    result += "module TypeScript.Syntax.";
+
+    var moduleName = abstract ? "Abstract" : "Concrete";
+    result += moduleName;
+
+    result += " {\r\n";
+    result += "    // Inject this module as the factory for producing syntax nodes in the parser.\r\n";
+    result += "    Parser.syntaxFactory = " + moduleName + ";\r\n";
+    result += "    export var isConcrete: boolean = " + !abstract + ";\r\n\r\n";
 
     for (var i = 0; i < definitions.length; i++) {
         var definition = definitions[i];
@@ -2406,7 +2109,7 @@ function generateNodes(): string {
             result += "\r\n";
         }
 
-        result += generateNode(definition);
+        result += generateNode(definition, abstract);
     }
 
     result += "\r\n\r\n    ";
@@ -2425,8 +2128,9 @@ function generateNodes(): string {
         result += "(<any>" + definition.name + ").prototype.__kind = SyntaxKind." + getNameWithoutSuffix(definition)
     }
 
-    result += ";\r\n}";
+    result += ";\r\n";
 
+    result += "}";
     return result;
 }
 
@@ -3157,7 +2861,8 @@ function generateIsTypeScriptSpecificMethod(definition: ITypeDefinition): string
     return result;
 }
 
-var syntaxNodes = generateNodes();
+var syntaxNodesConcrete = generateNodes(/*abstract:*/ false);
+var syntaxNodesAbstract = generateNodes(/*abstract:*/ true);
 var syntaxInterfaces = generateSyntaxInterfaces();
 var rewriter = generateRewriter();
 var walker = generateWalker();
@@ -3166,8 +2871,9 @@ var visitor = generateVisitor();
 var defaultVisitor = generateDefaultVisitor();
 var servicesUtilities = generateServicesUtilities();
 
-TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxInterfaces.generated.ts", syntaxInterfaces, false);
-TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxNodes.generated.ts", syntaxNodes, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxNodes.concrete.generated.ts", syntaxNodesConcrete, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxNodes.abstract.generated.ts", syntaxNodesAbstract, false);
+TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxNodes.interfaces.generated.ts", syntaxInterfaces, false);
 TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\services\\syntaxRewriter.generated.ts", rewriter, false);
 TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxWalker.generated.ts", walker, false);
 TypeScript.Environment.writeFile(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\scannerUtilities.generated.ts", scannerUtilities, false);

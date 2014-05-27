@@ -79,7 +79,7 @@ var compilerSources = [
 	"syntax/syntaxList.ts",
 	"syntax/syntaxNode.ts",
 	"syntax/syntaxNodeOrToken.ts",
-	"syntax/syntaxNodes.generated.ts",
+	"syntax/syntaxNodes.interfaces.generated.ts",
 	"syntax/syntaxToken.ts",
 	"syntax/syntaxTree.ts",
 	"syntax/syntaxTrivia.ts",

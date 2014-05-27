@@ -19,7 +19,7 @@
 ///<reference path='syntaxList.ts' />
 ///<reference path='syntaxNode.ts' />
 ///<reference path='syntaxNodeOrToken.ts' />
-///<reference path='syntaxNodes.generated.ts' />
+///<reference path='syntaxNodes.interfaces.generated.ts' />
 
 // SyntaxDedenter depends on SyntaxRewriter
 // ///<reference path='syntaxDedenter.ts' />
@@ -39,6 +39,9 @@
 // DepthLimitedWalker depends on PositionTrackingWalker
 ///<reference path='depthLimitedWalker.ts' />
 ///<reference path='parser.ts' />
+
+// Concrete nodes depend on the parser.
+///<reference path='syntaxNodes.concrete.generated.ts' />
 
 // SyntaxTree depends on PositionTrackingWalker
 ///<reference path='syntaxTree.ts' />

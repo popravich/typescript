@@ -309,7 +309,7 @@ class Program {
             fileName => this.runPrettyPrinter(fileName, TypeScript.LanguageVersion.EcmaScript5, verify, /*generateBaselines:*/ generate));
 
         if (specificFile === undefined) {
-            this.testIncrementalSpeed(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\Syntax\\SyntaxNodes.generated.ts");
+            this.testIncrementalSpeed(TypeScript.Environment.currentDirectory() + "\\src\\compiler\\syntax\\syntaxNodes.concrete.generated.ts");
         }
 
         TypeScript.Environment.standardOut.Write("Testing against 262:");
