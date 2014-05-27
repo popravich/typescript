@@ -22,14 +22,14 @@ module TypeScript {
                     isDeclaration: boolean,
                     diagnostics: Diagnostic[],
                     fileName: string,
-                    lineMap: LineMap,
+                    public text: ISimpleText,
                     languageVersion: LanguageVersion) {
             this._isConcrete = isConcrete;
             this._sourceUnit = sourceUnit;
             this._isDeclaration = isDeclaration;
             this._parserDiagnostics = diagnostics;
             this._fileName = fileName;
-            this._lineMap = lineMap;
+            this._lineMap = text.lineMap();
             this._languageVersion = languageVersion;
 
             sourceUnit.syntaxTree = this;
@@ -85,9 +85,10 @@ module TypeScript {
             // If we're not keeping around the syntax tree, store the diagnostics and line
             // map so they don't have to be recomputed.
             var sourceUnit = this.sourceUnit();
-            var leadingTrivia = firstToken(sourceUnit).leadingTrivia();
+            var firstToken = firstSyntaxTreeToken(this);
+            var leadingTrivia = firstToken.leadingTrivia();
 
-            this._isExternalModule =externalModuleIndicatorSpan(sourceUnit) !== null;
+            this._isExternalModule = externalModuleIndicatorSpanWorker(this, firstToken) !== null;
 
             var amdDependencies: string[] = [];
             for (var i = 0, n = leadingTrivia.count(); i < n; i++) {
@@ -264,7 +265,7 @@ module TypeScript {
             return false;
         }
 
-        private checkForTrailingSeparator(parent: ISyntaxElement, list: ISyntaxNodeOrToken[]): boolean {
+        private checkForTrailingSeparator(list: ISyntaxNodeOrToken[]): boolean {
             // If we have at least one child, and we have an even number of children, then that 
             // means we have an illegal trailing separator.
             if (childCount(list) === 0 || childCount(list) % 2 === 1) {
@@ -277,13 +278,13 @@ module TypeScript {
             return true;
         }
 
-        private checkForAtLeastOneElement(parent: ISyntaxElement, list: ISyntaxNodeOrToken[], afterToken: ISyntaxToken, expected: string): boolean {
+        private checkForAtLeastOneElement(parent: ISyntaxElement, list: ISyntaxNodeOrToken[], reportToken: ISyntaxToken, listKind: string): boolean {
             if (childCount(list) > 0) {
                 return false;
             }
 
-            var tokenAtStart = findToken(this.syntaxTree.sourceUnit(), fullEnd(afterToken));
-            this.pushDiagnostic(tokenAtStart, DiagnosticCode.Unexpected_token_0_expected, [expected]);
+
+            this.pushDiagnostic(reportToken, DiagnosticCode._0_list_cannot_be_empty, [listKind]);
 
             return true;
         }
@@ -291,7 +292,7 @@ module TypeScript {
         public visitParameterList(node: ParameterListSyntax): void {
             if (this.checkParameterListAcessibilityModifiers(node) ||
                 this.checkParameterListOrder(node) ||
-                this.checkForTrailingSeparator(node, node.parameters)) {
+                this.checkForTrailingSeparator(node.parameters)) {
 
                 return;
             }
@@ -300,8 +301,8 @@ module TypeScript {
         }
 
         public visitHeritageClause(node: HeritageClauseSyntax): void {
-            if (this.checkForTrailingSeparator(node, node.typeNames) ||
-                this.checkForAtLeastOneElement(node, node.typeNames, node.extendsOrImplementsKeyword, getLocalizedText(DiagnosticCode.type_name, null))) {
+            if (this.checkForTrailingSeparator(node.typeNames) ||
+                this.checkForAtLeastOneElement(node, node.typeNames, node.extendsOrImplementsKeyword, SyntaxFacts.getText(node.extendsOrImplementsKeyword.kind()))) {
                 return;
             }
 
@@ -309,7 +310,7 @@ module TypeScript {
         }
 
         public visitArgumentList(node: ArgumentListSyntax): void {
-            if (this.checkForTrailingSeparator(node, node.arguments)) {
+            if (this.checkForTrailingSeparator(node.arguments)) {
                 return;
             }
 
@@ -317,19 +318,8 @@ module TypeScript {
         }
 
         public visitVariableDeclaration(node: VariableDeclarationSyntax): void {
-            if (this.checkForAtLeastOneElement(node, node.variableDeclarators, node.varKeyword, getLocalizedText(DiagnosticCode.identifier, null))) {
-                return;
-            }
-
-            // If we have at least one child, and we have an even number of children, then that 
-            // means we have an illegal trailing separator.
-            var declarators = node.variableDeclarators;
-            if (childCount(declarators) % 2 === 0) {
-                var lastComma = declarators.separatorAt(declarators.separatorCount() - 1);
-                Debug.assert(isToken(lastComma));
-
-                var _nextToken = nextToken(lastComma, /*includeSkippedTokens:*/ true);
-                this.pushDiagnostic(_nextToken, DiagnosticCode.Identifier_expected);
+            if (this.checkForAtLeastOneElement(node, node.variableDeclarators, node.varKeyword, getLocalizedText(DiagnosticCode.variable_declaration, null)) ||
+                this.checkForTrailingSeparator(node.variableDeclarators)) {
                 return;
             }
 
@@ -337,8 +327,8 @@ module TypeScript {
         }
 
         public visitTypeArgumentList(node: TypeArgumentListSyntax): void {
-            if (this.checkForTrailingSeparator(node, node.typeArguments) ||
-                this.checkForAtLeastOneElement(node, node.typeArguments, node.lessThanToken, getLocalizedText(DiagnosticCode.identifier, null))) {
+            if (this.checkForTrailingSeparator(node.typeArguments) ||
+                this.checkForAtLeastOneElement(node, node.typeArguments, node.lessThanToken, getLocalizedText(DiagnosticCode.type_argument, null))) {
                 return;
             }
 
@@ -346,8 +336,8 @@ module TypeScript {
         }
 
         public visitTypeParameterList(node: TypeParameterListSyntax): void {
-            if (this.checkForTrailingSeparator(node, node.typeParameters) ||
-                this.checkForAtLeastOneElement(node, node.typeParameters, node.lessThanToken, getLocalizedText(DiagnosticCode.identifier, null))) {
+            if (this.checkForTrailingSeparator(node.typeParameters) ||
+                this.checkForAtLeastOneElement(node, node.typeParameters, node.lessThanToken, getLocalizedText(DiagnosticCode.type_parameter, null))) {
                 return;
             }
 
@@ -463,15 +453,12 @@ module TypeScript {
             return false;
         }
 
-        private checkForRequiredDeclareModifier(moduleElement: IModuleElementSyntax,
-                                                typeKeyword: ISyntaxElement,
-                                                modifiers: ISyntaxToken[]): boolean {
+        private checkForRequiredDeclareModifier(moduleElement: IModuleElementSyntax, reportToken: ISyntaxToken, modifiers: ISyntaxToken[]): boolean {
             if (!this.inAmbientDeclaration && this.syntaxTree.isDeclaration()) {
                 // We're at the top level in a declaration file, a 'declare' modifiers is required
                 // on most module elements.
                 if (!SyntaxUtilities.containsToken(modifiers, SyntaxKind.DeclareKeyword)) {
-                    this.pushDiagnostic(firstToken(typeKeyword),
-                        DiagnosticCode.A_declare_modifier_is_required_for_a_top_level_declaration_in_a_d_ts_file);
+                    this.pushDiagnostic(reportToken, DiagnosticCode.A_declare_modifier_is_required_for_a_top_level_declaration_in_a_d_ts_file);
                     return true;
                 }
             }
@@ -488,8 +475,7 @@ module TypeScript {
 
                     if (inFunctionOverloadChain) {
                         if (moduleElement.kind() !== SyntaxKind.FunctionDeclaration) {
-                            this.pushDiagnostic(firstToken(moduleElement),
-                                DiagnosticCode.Function_implementation_expected);
+                            this.pushDiagnostic(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
                             return true;
                         }
 
@@ -646,7 +632,7 @@ module TypeScript {
         public visitClassDeclaration(node: ClassDeclarationSyntax): void {
             if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Class_name_cannot_be_0) ||
                 this.checkForDisallowedDeclareModifier(node.modifiers) ||
-                this.checkForRequiredDeclareModifier(node, node.classKeyword, node.modifiers) ||
+                this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
                 this.checkClassDeclarationHeritageClauses(node) ||
                 this.checkClassOverloads(node)) {
@@ -771,10 +757,9 @@ module TypeScript {
             super.visitMemberFunctionDeclaration(node);
         }
 
-        private checkGetAccessorParameter(node: ISyntaxNode, getKeyword: ISyntaxToken, parameterList: ParameterListSyntax): boolean {
-            if (parameterList.parameters.length !== 0) {
-                this.pushDiagnostic(getKeyword,
-                    DiagnosticCode.get_accessor_cannot_have_parameters);
+        private checkGetAccessorParameter(node: GetAccessorSyntax): boolean {
+            if (node.callSignature.parameterList.parameters.length !== 0) {
+                this.pushDiagnostic(node.propertyName, DiagnosticCode.get_accessor_cannot_have_parameters);
                 return true;
             }
 
@@ -798,9 +783,9 @@ module TypeScript {
             return false;
         }
 
-        private checkEcmaScriptVersionIsAtLeast(parent: ISyntaxElement, node: ISyntaxElement, languageVersion: LanguageVersion, diagnosticKey: string): boolean {
+        private checkEcmaScriptVersionIsAtLeast(parent: ISyntaxElement, reportToken: ISyntaxToken, languageVersion: LanguageVersion, diagnosticKey: string): boolean {
             if (this.syntaxTree.languageVersion() < languageVersion) {
-                this.pushDiagnostic(node, diagnosticKey);
+                this.pushDiagnostic(reportToken, diagnosticKey);
                 return true;
             }
 
@@ -816,11 +801,11 @@ module TypeScript {
 
         public visitGetAccessor(node: GetAccessorSyntax): void {
             if (this.checkForAccessorDeclarationInAmbientContext(node) ||
-                this.checkEcmaScriptVersionIsAtLeast(node, node.getKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
+                this.checkEcmaScriptVersionIsAtLeast(node, node.propertyName, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
                 this.checkForDisallowedModifiers(node, node.modifiers) ||
                 this.checkClassElementModifiers(node.modifiers) ||
                 this.checkForDisallowedAccessorTypeParameters(node.callSignature) ||
-                this.checkGetAccessorParameter(node, node.getKeyword, node.callSignature.parameterList)) {
+                this.checkGetAccessorParameter(node)) {
                 return;
             }
 
@@ -854,14 +839,14 @@ module TypeScript {
             return false;
         }
 
-        private checkSetAccessorParameter(node: ISyntaxNode, setKeyword: ISyntaxToken, parameterList: ParameterListSyntax): boolean {
-            if (childCount(parameterList.parameters) !== 1) {
-                this.pushDiagnostic(setKeyword,
-                    DiagnosticCode.set_accessor_must_have_exactly_one_parameter);
+        private checkSetAccessorParameter(node: SetAccessorSyntax): boolean {
+            var parameters = node.callSignature.parameterList.parameters;
+            if (childCount(parameters) !== 1) {
+                this.pushDiagnostic(node.propertyName, DiagnosticCode.set_accessor_must_have_exactly_one_parameter);
                 return true;
             }
 
-            var parameter = <ParameterSyntax>childAt(parameterList.parameters, 0);
+            var parameter = parameters[0];
 
             if (parameter.questionToken) {
                 this.pushDiagnostic(parameter,
@@ -886,12 +871,12 @@ module TypeScript {
 
         public visitSetAccessor(node: SetAccessorSyntax): void {
             if (this.checkForAccessorDeclarationInAmbientContext(node) ||
-                this.checkEcmaScriptVersionIsAtLeast(node, node.setKeyword, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
+                this.checkEcmaScriptVersionIsAtLeast(node, node.propertyName, LanguageVersion.EcmaScript5, DiagnosticCode.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher) ||
                 this.checkForDisallowedModifiers(node, node.modifiers) ||
                 this.checkClassElementModifiers(node.modifiers) ||
                 this.checkForDisallowedAccessorTypeParameters(node.callSignature) ||
                 this.checkForDisallowedSetAccessorTypeAnnotation(node) ||
-                this.checkSetAccessorParameter(node, node.setKeyword, node.callSignature.parameterList)) {
+                this.checkSetAccessorParameter(node)) {
                 return;
             }
 
@@ -901,7 +886,7 @@ module TypeScript {
         public visitEnumDeclaration(node: EnumDeclarationSyntax): void {
             if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Enum_name_cannot_be_0) ||
                 this.checkForDisallowedDeclareModifier(node.modifiers) ||
-                this.checkForRequiredDeclareModifier(node, node.enumKeyword, node.modifiers) ||
+                this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers),
                 this.checkEnumElements(node)) {
 
@@ -941,8 +926,7 @@ module TypeScript {
             if (this.inAmbientDeclaration && node.equalsValueClause) {
                 var expression = node.equalsValueClause.value;
                 if (!Syntax.isIntegerLiteral(expression)) {
-                    this.pushDiagnostic(node.equalsValueClause.equalsToken,
-                        DiagnosticCode.Ambient_enum_elements_can_only_have_integer_literal_initializers);
+                    this.pushDiagnostic(node.equalsValueClause.value, DiagnosticCode.Ambient_enum_elements_can_only_have_integer_literal_initializers);
                     return;
                 }
             }
@@ -1041,7 +1025,7 @@ module TypeScript {
 
         public visitModuleDeclaration(node: ModuleDeclarationSyntax): void {
             if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
-                this.checkForRequiredDeclareModifier(node, node.moduleKeyword, node.modifiers) ||
+                this.checkForRequiredDeclareModifier(node, node.stringLiteral ? node.stringLiteral : firstToken(node.name), node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
                 this.checkForDisallowedImportDeclaration(node) ||
                 this.checkForDisallowedExports(node, node.moduleElements) ||
@@ -1132,7 +1116,7 @@ module TypeScript {
 
         public visitBlock(node: BlockSyntax): void {
             if (this.inAmbientDeclaration || this.syntaxTree.isDeclaration()) {
-                this.pushDiagnostic(firstToken(node), DiagnosticCode.A_function_implementation_cannot_be_declared_in_an_ambient_context);
+                this.pushDiagnostic(node.openBraceToken, DiagnosticCode.A_function_implementation_cannot_be_declared_in_an_ambient_context);
                 return;
             }
 
@@ -1311,7 +1295,7 @@ module TypeScript {
         public visitFunctionDeclaration(node: FunctionDeclarationSyntax): void {
             if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForDisallowedModifiers(node, node.modifiers) ||
-                this.checkForRequiredDeclareModifier(node, node.functionKeyword, node.modifiers) ||
+                this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers)) {
 
                 return;
@@ -1326,7 +1310,7 @@ module TypeScript {
         public visitVariableStatement(node: VariableStatementSyntax): void {
             if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForDisallowedModifiers(node, node.modifiers) ||
-                this.checkForRequiredDeclareModifier(node, node.variableDeclaration, node.modifiers) ||
+                this.checkForRequiredDeclareModifier(node, node.variableDeclaration.varKeyword, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers)) {
 
                 return;
@@ -1387,8 +1371,7 @@ module TypeScript {
 
         public visitVariableDeclarator(node: VariableDeclaratorSyntax): void {
             if (this.inAmbientDeclaration && node.equalsValueClause) {
-                this.pushDiagnostic(node.equalsValueClause.equalsToken,
-                    DiagnosticCode.Initializers_are_not_allowed_in_ambient_contexts);
+                this.pushDiagnostic(firstToken(node.equalsValueClause.value), DiagnosticCode.Initializers_are_not_allowed_in_ambient_contexts);
                 return;
             }
 
@@ -1452,9 +1435,21 @@ module TypeScript {
         }
     }
 
-    export function externalModuleIndicatorSpan(sourceUnit: SourceUnitSyntax): TextSpan {
-        var leadingTrivia = firstToken(sourceUnit).leadingTrivia();
-        return implicitImportSpan(leadingTrivia) || topLevelImportOrExportSpan(sourceUnit);
+    function firstSyntaxTreeToken(syntaxTree: SyntaxTree) {
+        // We don't just access the firstToken of the tree here as the tree may be abstract and may
+        // not have a firstToken in it.
+        var scanner = Scanner.createScanner(syntaxTree.languageVersion(), syntaxTree.text, () => { });
+        return scanner.scan(/*allowContextualToken:*/ false);
+    }
+
+    export function externalModuleIndicatorSpan(syntaxTree: SyntaxTree): TextSpan {
+        var firstToken = firstSyntaxTreeToken(syntaxTree);
+        return externalModuleIndicatorSpanWorker(syntaxTree, firstToken);
+    }
+
+    export function externalModuleIndicatorSpanWorker(syntaxTree: SyntaxTree, firstToken: ISyntaxToken) {
+        var leadingTrivia = firstToken.leadingTrivia();
+        return implicitImportSpan(leadingTrivia) || topLevelImportOrExportSpan(syntaxTree.sourceUnit());
     }
 
     function implicitImportSpan(sourceUnitLeadingTrivia: ISyntaxTriviaList): TextSpan {
@@ -1495,7 +1490,8 @@ module TypeScript {
             if (moduleElement.kind() === SyntaxKind.ImportDeclaration) {
                 var importDecl = <ImportDeclarationSyntax>moduleElement;
                 if (importDecl.moduleReference.kind() === SyntaxKind.ExternalModuleReference) {
-                    return new TextSpan(start(importDecl), width(importDecl));
+                    var literal = (<TypeScript.ExternalModuleReferenceSyntax>importDecl.moduleReference).stringLiteral;
+                    return new TextSpan(start(literal), width(literal));
                 }
             }
         }

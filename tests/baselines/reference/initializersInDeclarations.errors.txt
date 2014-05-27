@@ -4,11 +4,11 @@
     
     declare class Foo {
         name = "test";
-          ~
-!!! initializersInDeclarations.ts(5,7): error TS1039: Initializers are not allowed in ambient contexts.
+            ~~~~~~
+!!! initializersInDeclarations.ts(5,9): error TS1039: Initializers are not allowed in ambient contexts.
         "some prop" = 42;
-                 ~
-!!! initializersInDeclarations.ts(6,14): error TS1039: Initializers are not allowed in ambient contexts.
+                   ~~
+!!! initializersInDeclarations.ts(6,16): error TS1039: Initializers are not allowed in ambient contexts.
         fn(): boolean {
                    ~
 !!! initializersInDeclarations.ts(7,16): error TS1037: A function implementation cannot be declared in an ambient context.
@@ -17,11 +17,11 @@
     }
     
     declare var x = [];
-                  ~
-!!! initializersInDeclarations.ts(12,15): error TS1039: Initializers are not allowed in ambient contexts.
+                    ~
+!!! initializersInDeclarations.ts(12,17): error TS1039: Initializers are not allowed in ambient contexts.
     declare var y = {};
-                  ~
-!!! initializersInDeclarations.ts(13,15): error TS1039: Initializers are not allowed in ambient contexts.
+                    ~
+!!! initializersInDeclarations.ts(13,17): error TS1039: Initializers are not allowed in ambient contexts.
     
     declare module M1 {
         while(true);
@@ -29,6 +29,6 @@
 !!! initializersInDeclarations.ts(16,2): error TS1036: Statements are not allowed in ambient contexts.
     
         export var v1 = () => false;
-                   ~
-!!! initializersInDeclarations.ts(18,16): error TS1039: Initializers are not allowed in ambient contexts.
+                     ~
+!!! initializersInDeclarations.ts(18,18): error TS1039: Initializers are not allowed in ambient contexts.
     }

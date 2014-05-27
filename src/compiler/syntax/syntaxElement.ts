@@ -436,7 +436,7 @@ module TypeScript {
         for (var i = 0, n = slotCount; i < n; i++) {
             var child = childAt(element, i);
 
-            if (child !== null) {
+            if (child) {
                 fullWidth += TypeScript.fullWidth(child);
 
                 isIncrementallyUnusable = isIncrementallyUnusable || TypeScript.isIncrementallyUnusable(child);

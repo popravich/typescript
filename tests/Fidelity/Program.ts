@@ -1,6 +1,7 @@
 /// <reference path='..\..\src\services\es5compat.ts' />
 
 ///<reference path='..\..\src\compiler\syntax\references.ts' />
+///<reference path='..\..\src\compiler\syntax\syntaxNodes.concrete.generated.ts' />
 ///<reference path='..\..\src\compiler\syntax\prettyPrinter.ts' />
 ///<reference path='Test262.ts' />
 ///<reference path='incremental\IncrementalParserTests.ts' />
@@ -671,7 +672,7 @@ class Program {
 
         var tree1 = TypeScript.Parser.parse(fileName, text, languageVersion, TypeScript.isDTSFile(fileName));
         var tree2 = TypeScript.IncrementalParser.parse(
-            new TypeScript.SyntaxTree(/*isConcrete:*/ true, emptySourceUnit(), TypeScript.isDTSFile(fileName), [], fileName, null, tree1.languageVersion()),
+            new TypeScript.SyntaxTree(/*isConcrete:*/ true, emptySourceUnit(), TypeScript.isDTSFile(fileName), [], fileName, text, tree1.languageVersion()),
             new TypeScript.TextChangeRange(new TypeScript.TextSpan(0, 0), text.length()),
             text);
 

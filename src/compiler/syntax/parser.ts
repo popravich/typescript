@@ -225,7 +225,7 @@ module TypeScript.Parser {
             var allDiagnostics = source.tokenDiagnostics().concat(diagnostics);
             allDiagnostics.sort((a: Diagnostic, b: Diagnostic) => a.start() - b.start());
 
-            return new SyntaxTree(syntaxFactory.isConcrete, sourceUnit, isDeclaration, allDiagnostics, fileName, source.text.lineMap(), languageVersion);
+            return new SyntaxTree(syntaxFactory.isConcrete, sourceUnit, isDeclaration, allDiagnostics, fileName, source.text, languageVersion);
         }
 
         function getRewindPoint(): IParserRewindPoint {
