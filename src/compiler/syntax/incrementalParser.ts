@@ -847,6 +847,7 @@ module TypeScript.IncrementalParser {
     var setTokenTextAndFullStartWalker = new SetTokenTextAndFullStartWalker();
 
     export function parse(oldSyntaxTree: SyntaxTree, textChangeRange: TextChangeRange, newText: ISimpleText): SyntaxTree {
+        Debug.assert(oldSyntaxTree.isConcrete(), "Can only incrementally parse a concrete syntax tree.");
         if (textChangeRange.isUnchanged()) {
             return oldSyntaxTree;
         }
