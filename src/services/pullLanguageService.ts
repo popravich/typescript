@@ -25,7 +25,7 @@ module TypeScript.Services {
         }
 
         public cleanupSemanticCache(): void {
-            // doesn't require synchronization with the host
+            // just dropping the data - no need to synchronize with the host
             this.compiler.cleanupSemanticCache();
         }
 
@@ -332,13 +332,11 @@ module TypeScript.Services {
 
                     var nameAST = findToken(sourceUnit, p);
 
-                    // Compare the length so we filter out strict superstrings of the symbol we are looking for
-                    var tokenStart = start(nameAST);
-                    var tokenEnd = end(nameAST);
+                    // Compare the length so we filter out strict superstrings of the symbol we are looking for                    
                     var isValidAST =
                         nameAST !== null && nameAST.kind() === TypeScript.SyntaxKind.IdentifierName && // name is identifier
-                        p >= tokenStart && p <= tokenEnd && // pos is contained between tokenStart and tokenEnd (it is not in trivia)
-                        (tokenEnd - tokenStart === symbolName.length);  // length of token text matches length the length of original symbolName.
+                        p >= start(nameAST) && p < end(nameAST) && // pos is contained between tokenStart and tokenEnd (it is not in trivia)
+                        width(nameAST) === symbolName.length;  // length of token text matches length the length of original symbolName.
 
                     if (!isValidAST) {
                         return;
@@ -1703,6 +1701,7 @@ module TypeScript.Services {
         //
 
         public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo {
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var node = this.getTypeInfoEligiblePath(this.getSyntaxTree(fileName).sourceUnit(), startPos, false);
@@ -1726,34 +1725,39 @@ module TypeScript.Services {
         }
 
         public getBreakpointStatementAtPosition(fileName: string, pos: number): SpanInfo {
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxtree = this.getSyntaxTree(fileName);
             return TypeScript.Services.Breakpoints.getBreakpointLocation(syntaxtree, pos);
         }
 
-        public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
+        public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
             return manager.formatSelection(minChar, limChar);
         }
 
-        public getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
+        public getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
             return manager.formatDocument(minChar, limChar);
         }
 
-        public getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
+        public getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
             return manager.formatOnPaste(minChar, limChar);
         }
 
-        public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[]{
+        public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[] {
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
@@ -1801,6 +1805,7 @@ module TypeScript.Services {
         // (assuming the line is empty). Returns "null" in case the
         // smart indent cannot be determined.
         public getIndentationAtPosition(fileName: string, position: number, editorOptions: EditorOptions): number {
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
