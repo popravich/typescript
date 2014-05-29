@@ -126,6 +126,12 @@ module TypeScript.Services {
             this._hostCache = new HostCache(_host);
         }
 
+        public getCurrentScriptSnapshot(fileName: string): IScriptSnapshot {
+            // update _currentFileScriptSnapshot as a part of 'getCurrentFileSyntaxTree' call
+            this.getCurrentFileSyntaxTree(fileName);
+            return this._currentFileScriptSnapshot;
+        }
+
         public getCurrentFileSyntaxTree(fileName: string): TypeScript.SyntaxTree {
             this._hostCache = new HostCache(this._host);
 

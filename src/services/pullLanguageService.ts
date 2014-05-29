@@ -322,7 +322,7 @@ module TypeScript.Services {
             var possiblePositions = this.getPossibleSymbolReferencePositions(fileName, symbolName);
             if (possiblePositions && possiblePositions.length > 0) {
                 var document = this.compiler.getDocument(fileName);
-                var sourceUnit = document.sourceUnit();
+                var sourceUnit = document.syntaxTree().sourceUnit();
 
                 possiblePositions.forEach(p => {
                     // If it's not in the bounds of the AST we're asking for, then this can't possibly be a hit.
@@ -330,15 +330,20 @@ module TypeScript.Services {
                         return;
                     }
 
-                    var nameAST = findToken(sourceUnit, p);
+                    var nameToken = sourceUnit.findToken(p);
 
                     // Compare the length so we filter out strict superstrings of the symbol we are looking for                    
                     var isValidAST =
-                        nameAST !== null && nameAST.kind() === TypeScript.SyntaxKind.IdentifierName && // name is identifier
-                        p >= start(nameAST) && p < end(nameAST) && // pos is contained between tokenStart and tokenEnd (it is not in trivia)
-                        width(nameAST) === symbolName.length;  // length of token text matches length the length of original symbolName.
+                        nameToken !== null && nameToken.kind() === TypeScript.SyntaxKind.IdentifierName && // name is identifier
+                        p >= nameToken.start() && p < nameToken.end() && // pos is contained between tokenStart and tokenEnd (it is not in trivia)
+                        (nameToken.end() - nameToken.start()) === symbolName.length;  // length of token text matches length the length of original symbolName.
 
                     if (!isValidAST) {
+                        return;
+                    }
+
+                    var nameAST: AST = (<any>nameToken)._ast || (nameToken.element() && (<any>nameToken.element())._ast);
+                    if (!nameAST) {
                         return;
                     }
 
@@ -635,8 +640,8 @@ module TypeScript.Services {
 
             var result: DefinitionInfo[] = [];
 
-            if (!this.tryAddDefinition(symbolKind, symbolName, containerKind, containerName, declarations, symbol.semanticInfoChain, result) &&
-                !this.tryAddSignatures(symbolKind, symbolName, containerKind, containerName, declarations, symbol.semanticInfoChain, result) &&
+            if (!this.tryAddDefinition(symbolKind, symbolName, containerKind, containerName, declarations, result) &&
+                !this.tryAddSignatures(symbolKind, symbolName, containerKind, containerName, declarations, result) &&
                 !this.tryAddConstructor(symbolKind, symbolName, containerKind, containerName, declarations, result)) {
 
                 // Just add all the declarations. 
@@ -659,7 +664,7 @@ module TypeScript.Services {
                 ast.start(), ast.end(), symbolKind, symbolName, containerKind, containerName));
         }
 
-        private tryAddDefinition(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], semanticInfoChain: SemanticInfoChain, result: DefinitionInfo[]): boolean {
+        private tryAddDefinition(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], result: DefinitionInfo[]): boolean {
             // First, if there are definitions and signatures, then just pick the definition.
             var definitionDeclaration = TypeScript.ArrayUtilities.firstOrDefault(declarations, d => {
                 var signature = d.getSignatureSymbol();
@@ -674,7 +679,7 @@ module TypeScript.Services {
             return true;
         }
 
-        private tryAddSignatures(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], semanticInfoChain: SemanticInfoChain, result: DefinitionInfo[]): boolean {
+        private tryAddSignatures(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], result: DefinitionInfo[]): boolean {
             // We didn't have a definition.  Check and see if we have any signatures.  If so, just
             // add the last one.
             var definitionDeclaration = TypeScript.ArrayUtilities.lastOrDefault(declarations, d => {
@@ -1011,7 +1016,7 @@ module TypeScript.Services {
             return symbol.fullName(enclosingScopeSymbol);
         }
 
-        private getTypeInfoEligiblePath(sourceUnit: SourceUnitSyntax, position: number, isConstructorValidPosition: boolean) {
+        private getTypeInfoEligiblePath(sourceUnit: SourceUnit, position: number, isConstructorValidPosition: boolean) {
 
             var ast = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, position, /*useTrailingTriviaAsLimChar*/ false, /*forceInclusive*/ true);
             if (ast === null) {
@@ -1052,7 +1057,7 @@ module TypeScript.Services {
             fileName = TypeScript.switchToForwardSlashes(fileName);
             var document = this.compiler.getDocument(fileName);
 
-            var node = this.getTypeInfoEligiblePath(document.syntaxTree().sourceUnit(), position, true);
+            var node = this.getTypeInfoEligiblePath(document.sourceUnit(), position, true);
             if (!node) {
                 return null;
             }
@@ -1701,10 +1706,11 @@ module TypeScript.Services {
         //
 
         public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo {
-            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
-            var node = this.getTypeInfoEligiblePath(this.getSyntaxTree(fileName).sourceUnit(), startPos, false);
+            this.compiler.synchronizeHostData();
+            var document = this.compiler.getDocument(fileName);
+            var node = this.getTypeInfoEligiblePath(document.sourceUnit(), startPos, false);
 
             if (!node) {
                 return null;
@@ -1783,11 +1789,10 @@ module TypeScript.Services {
 
             this.formattingRulesProvider.ensureUpToDate(options);
 
-            // Get the Syntax Tree
-            var syntaxTree = this.getSyntaxTree(fileName);
-            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(syntaxTree.text);
+            var scriptSnapshot = this._syntaxTreeCache.getCurrentScriptSnapshot(fileName);            
+            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(SimpleText.fromScriptSnapshot(scriptSnapshot));
 
-            var manager = new TypeScript.Services.Formatting.FormattingManager(syntaxTree, textSnapshot, this.formattingRulesProvider, options);
+            var manager = new TypeScript.Services.Formatting.FormattingManager(this.getSyntaxTree(fileName), textSnapshot, this.formattingRulesProvider, options);
 
             return manager;
         }
@@ -1808,11 +1813,11 @@ module TypeScript.Services {
             // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
-            var syntaxTree = this.getSyntaxTree(fileName);
-            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(syntaxTree.text);
+            var scriptSnapshot = this._syntaxTreeCache.getCurrentScriptSnapshot(fileName);
+            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(SimpleText.fromScriptSnapshot(scriptSnapshot));
             var options = new FormattingOptions(!editorOptions.ConvertTabsToSpaces, editorOptions.TabSize, editorOptions.IndentSize, editorOptions.NewLineCharacter)
 
-            return TypeScript.Services.Formatting.SingleTokenIndenter.getIndentationAmount(position, syntaxTree.sourceUnit(), textSnapshot, options);
+            return TypeScript.Services.Formatting.SingleTokenIndenter.getIndentationAmount(position, this.getSyntaxTree(fileName).sourceUnit(), textSnapshot, options);
         }
 
         // Given a script name and position in the script, return a pair of text range if the 
