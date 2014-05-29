@@ -261,7 +261,7 @@ module TypeScript.Services {
             this.logger = this.host;
         }
 
-        private synchronizeHostData(): void {
+        public synchronizeHostData(): void {
             TypeScript.timeFunction(this.logger, "synchronizeHostData()", () => {
                 this.synchronizeHostDataWorker();
             });
@@ -338,7 +338,6 @@ module TypeScript.Services {
         // Methods that defer to the host cache to get the result.
 
         public getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
-            this.synchronizeHostData();
             return this.hostCache.getScriptSnapshot(fileName);
         }
 
@@ -362,12 +361,10 @@ module TypeScript.Services {
         // Methods that defer to the compiler to get the result.
 
         public compilationSettings(): TypeScript.ImmutableCompilationSettings {
-            this.synchronizeHostData();
             return this.compiler.compilationSettings();
         }
 
         public fileNames(): string[] {
-            this.synchronizeHostData();
             return this.compiler.fileNames();
         }
 
@@ -376,77 +373,62 @@ module TypeScript.Services {
         }
 
         public getDocument(fileName: string): TypeScript.Document {
-            this.synchronizeHostData();
             return this.compiler.getDocument(fileName);
         }
 
         public getSyntacticDiagnostics(fileName: string): TypeScript.Diagnostic[] {
-            this.synchronizeHostData();
             return this.compiler.getSyntacticDiagnostics(fileName);
         }
 
         public getSemanticDiagnostics(fileName: string): TypeScript.Diagnostic[] {
-            this.synchronizeHostData();
             return this.compiler.getSemanticDiagnostics(fileName);
         }
 
         public getCompilerOptionsDiagnostics(resolvePath: (path: string) => string): TypeScript.Diagnostic[] {
-            this.synchronizeHostData();
             return this.compiler.getCompilerOptionsDiagnostics(resolvePath);
         }
 
         public getSymbolInformationFromAST(ast: TypeScript.AST, document: TypeScript.Document) {
-            this.synchronizeHostData();
             return this.compiler.pullGetSymbolInformationFromAST(ast, document);
         }
 
         public getCallInformationFromAST(ast: TypeScript.AST, document: TypeScript.Document) {
-            this.synchronizeHostData();
             return this.compiler.pullGetCallInformationFromAST(ast, document);
         }
 
         public getVisibleMemberSymbolsFromAST(ast: TypeScript.AST, document: TypeScript.Document) {
-            this.synchronizeHostData();
             return this.compiler.pullGetVisibleMemberSymbolsFromAST(ast, document);
         }
 
         public getVisibleDeclsFromAST(ast: TypeScript.AST, document: TypeScript.Document) {
-            this.synchronizeHostData();
             return this.compiler.pullGetVisibleDeclsFromAST(ast, document);
         }
 
         public getContextualMembersFromAST(ast: TypeScript.AST, document: TypeScript.Document) {
-            this.synchronizeHostData();
             return this.compiler.pullGetContextualMembersFromAST(ast, document);
         }
 
         public pullGetDeclInformation(decl: TypeScript.PullDecl, ast: TypeScript.AST, document: TypeScript.Document) {
-            this.synchronizeHostData();
             return this.compiler.pullGetDeclInformation(decl, ast, document);
         }
 
         public topLevelDeclaration(fileName: string) {
-            this.synchronizeHostData();
             return this.compiler.topLevelDeclaration(fileName);
         }
 
         public getDeclForAST(ast: TypeScript.AST): TypeScript.PullDecl {
-            this.synchronizeHostData();
             return this.compiler.getDeclForAST(ast);
         }
 
         public emit(fileName: string, resolvePath: (path: string) => string): TypeScript.EmitOutput {
-            this.synchronizeHostData();
             return this.compiler.emit(fileName, resolvePath);
         }
 
         public emitDeclarations(fileName: string, resolvePath: (path: string) => string): TypeScript.EmitOutput {
-            this.synchronizeHostData();
             return this.compiler.emitDeclarations(fileName, resolvePath);
         }
 
         public canEmitDeclarations(fileName: string) {
-            this.synchronizeHostData();
             return this.compiler.canEmitDeclarations(fileName);
         }
     }

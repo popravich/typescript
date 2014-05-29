@@ -25,6 +25,7 @@ module TypeScript.Services {
         }
 
         public cleanupSemanticCache(): void {
+            // doesn't require synchronization with the host
             this.compiler.cleanupSemanticCache();
         }
 
@@ -72,7 +73,8 @@ module TypeScript.Services {
             return { symbol: symbol, containingASTOpt: containingASTOpt };
         }
 
-        public getReferencesAtPosition(fileName: string, pos: number): ReferenceEntry[] {
+        public getReferencesAtPosition(fileName: string, pos: number): ReferenceEntry[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var symbolAndContainingAST = this.getSymbolInfoAtPosition(fileName, pos, /*requireName:*/ true);
@@ -132,7 +134,8 @@ module TypeScript.Services {
             return null;
         }
 
-        public getOccurrencesAtPosition(fileName: string, pos: number): ReferenceEntry[] {
+        public getOccurrencesAtPosition(fileName: string, pos: number): ReferenceEntry[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var symbolAndContainingAST = this.getSymbolInfoAtPosition(fileName, pos, /*requireName:*/ true);
@@ -165,7 +168,8 @@ module TypeScript.Services {
             return [new ReferenceEntry(this._getHostFileName(fileName), node.start(), node.end(), isWriteAccess)];
         }
 
-        public getImplementorsAtPosition(fileName: string, pos: number): ReferenceEntry[] {
+        public getImplementorsAtPosition(fileName: string, pos: number): ReferenceEntry[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var result: ReferenceEntry[] = [];
@@ -454,6 +458,7 @@ module TypeScript.Services {
         }
 
         public getSignatureAtPosition(fileName: string, position: number): SignatureInfo {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var document = this.compiler.getDocument(fileName);
@@ -602,7 +607,8 @@ module TypeScript.Services {
             return null;
         }
 
-        public getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[] {
+        public getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var symbolInfo = this.getSymbolInfoAtPosition(fileName, position, /*requireName:*/ false);
@@ -700,7 +706,7 @@ module TypeScript.Services {
         // Return array of NavigateToItems in which each item has matched name with searchValue. If none is found, return an empty array.
         // The function will search all files (both close and open) in the solutions. SearchValue can be either one search term or multiple terms separated by comma.
         public getNavigateToItems(searchValue: string): NavigateToItem[] {
-
+            this.compiler.synchronizeHostData();
             Debug.assert(searchValue !== null && searchValue !== undefined, "The searchValue argument was not supplied or null");
             // Split search value in terms array
             var terms = searchValue.split(" ");
@@ -873,12 +879,14 @@ module TypeScript.Services {
             return true;
         }
 
-        public getSyntacticDiagnostics(fileName: string): TypeScript.Diagnostic[] {
+        public getSyntacticDiagnostics(fileName: string): TypeScript.Diagnostic[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
             return this.compiler.getSyntacticDiagnostics(fileName);
         }
 
         public getSemanticDiagnostics(fileName: string): TypeScript.Diagnostic[] {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
             return this.compiler.getSemanticDiagnostics(fileName);
         }
@@ -890,6 +898,7 @@ module TypeScript.Services {
         }
 
         public getCompilerOptionsDiagnostics(): TypeScript.Diagnostic[]{
+            this.compiler.synchronizeHostData();
             var resolvePath = (fileName: string) => this.host.resolveRelativePath(fileName, null);
             var compilerOptionsDiagnostics = this.compiler.getCompilerOptionsDiagnostics(resolvePath);
             return compilerOptionsDiagnostics.map(d => this._getHostSpecificDiagnosticWithFileName(d));
@@ -903,6 +912,7 @@ module TypeScript.Services {
         }
 
         public getEmitOutput(fileName: string): TypeScript.EmitOutput {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var resolvePath = (fileName: string) => this.host.resolveRelativePath(fileName, null);
@@ -1042,6 +1052,7 @@ module TypeScript.Services {
         }
 
         public getTypeAtPosition(fileName: string, position: number): TypeInfo {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var node = this.getTypeInfoEligiblePath(fileName, position, true);
@@ -1166,6 +1177,7 @@ module TypeScript.Services {
         }
 
         public getCompletionsAtPosition(fileName: string, position: number, isMemberCompletion: boolean): CompletionInfo {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var document = this.compiler.getDocument(fileName);
@@ -1399,6 +1411,8 @@ module TypeScript.Services {
         }
 
         public getCompletionEntryDetails(fileName: string, position: number, entryName: string): CompletionEntryDetails {
+            this.compiler.synchronizeHostData();
+
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             // Ensure that the current active completion session is still valid for this request
@@ -1691,6 +1705,7 @@ module TypeScript.Services {
         //
 
         public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var node = this.getTypeInfoEligiblePath(fileName, startPos, false);
@@ -1714,34 +1729,39 @@ module TypeScript.Services {
         }
 
         public getBreakpointStatementAtPosition(fileName: string, pos: number): SpanInfo {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxtree = this.getSyntaxTree(fileName);
             return TypeScript.Services.Breakpoints.getBreakpointLocation(syntaxtree, pos);
         }
 
-        public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
             return manager.formatSelection(minChar, limChar);
         }
 
-        public getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
             return manager.formatDocument(minChar, limChar);
         }
 
-        public getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
             return manager.formatOnPaste(minChar, limChar);
         }
 
-        public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[] {
+        public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[]{
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
@@ -1780,7 +1800,8 @@ module TypeScript.Services {
             return manager;
         }
 
-        public getOutliningRegions(fileName: string): TypeScript.TextSpan[] {
+        public getOutliningRegions(fileName: string): TypeScript.TextSpan[]{            
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
@@ -1792,6 +1813,7 @@ module TypeScript.Services {
         // (assuming the line is empty). Returns "null" in case the
         // smart indent cannot be determined.
         public getIndentationAtPosition(fileName: string, position: number, editorOptions: EditorOptions): number {
+            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
@@ -1814,7 +1836,8 @@ module TypeScript.Services {
             return BraceMatcher.getMatchSpans(syntaxTree, position);
         }
 
-        public getScriptLexicalStructure(fileName: string): NavigateToItem[] {
+        public getScriptLexicalStructure(fileName: string): NavigateToItem[]{
+            // doesn't use compiler - no need to synchronize with host
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
