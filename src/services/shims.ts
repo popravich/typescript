@@ -98,9 +98,7 @@ module TypeScript.Services {
         getBreakpointStatementAtPosition(fileName: string, position: number): string;
 
         getSignatureHelpItems(fileName: string, position: number): string;
-        getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): string;
-        getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): string;
-        getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): string;
+        getSignatureHelpCurrentArgumentState(fileName: string, position: number, applicableSpanStart: number): string;
 
         // Returns a JSON encoded value of the type:
         // { canRename: boolean, localizedErrorMessage: string, displayName: string, fullDisplayName: string, kind: string, kindModifiers: string, triggerSpan: { start; length } }
@@ -463,29 +461,11 @@ module TypeScript.Services {
                 });
         }
 
-        public getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): string {
+        public getSignatureHelpCurrentArgumentState(fileName: string, position: number, applicableSpanStart: number): string {
             return this.forwardJSONCall(
-                "getSignatureHelpCurrentArgumentCount(\"" + fileName + "\", " + signatureHelpItemId + ")",
+                'getSignatureHelpCurrentArgumentState("' + fileName + '", ' + position + '", "' + applicableSpanStart + '")',
                 () => {
-                    var signatureInfo = this.languageService.getSignatureHelpCurrentArgumentCount(fileName, signatureHelpItemId);
-                    return signatureInfo;
-                });
-        }
-
-        public getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): string {
-            return this.forwardJSONCall(
-                "getSignatureHelpCurrentParameterIndex(\"" + fileName + "\", " + signatureHelpItemId + ")",
-                () => {
-                    var signatureInfo = this.languageService.getSignatureHelpCurrentParameterIndex(fileName, position, signatureHelpItemId);
-                    return signatureInfo;
-                });
-        }
-
-        public getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): string {
-            return this.forwardJSONCall(
-                "getSignatureHelpCurrentTextSpan(\"" + fileName + "\", " + signatureHelpItemId + ")",
-                () => {
-                    var signatureInfo = this.languageService.getSignatureHelpCurrentTextSpan(fileName, signatureHelpItemId);
+                    var signatureInfo = this.languageService.getSignatureHelpCurrentArgumentState(fileName, position, applicableSpanStart);
                     return signatureInfo;
                 });
         }

@@ -146,8 +146,7 @@ module TypeScript.Services {
                 symbol: TypeScript.PullSymbol,
                 signatures: TypeScript.PullSignatureSymbol[],
                 enclosingScopeSymbol: TypeScript.PullSymbol,
-                compilerState: LanguageServiceCompiler,
-                id: any): SignatureHelpItem[] {
+                compilerState: LanguageServiceCompiler): SignatureHelpItem[] {
             var signatureGroup: SignatureHelpItem[] = [];
 
             var hasOverloads = signatures.length > 1;
@@ -186,7 +185,7 @@ module TypeScript.Services {
                     suffix += ": " + signature.returnType.getScopedNameEx(enclosingScopeSymbol);
                 }
 
-                var item = new SignatureHelpItem(signature.isVarArg, prefix, suffix, ", ", parameters, signature.docComments(), id);
+                var item = new SignatureHelpItem(signature.isVarArg, prefix, suffix, ", ", parameters, signature.docComments());
 
                 signatureGroup.push(item);
             }

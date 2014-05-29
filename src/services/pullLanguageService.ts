@@ -478,30 +478,11 @@ module TypeScript.Services {
             return null;
         }
 
-        public getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): number {
+        public getSignatureHelpCurrentArgumentState(fileName: string, position: number, applicableSpanStart: number): SignatureHelpState {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var document = this.compiler.getDocument(fileName);
-            var openCharIndex: number = signatureHelpItemId;
-
-            var char = this.charAtIndex(document, openCharIndex);
-            if (char === CharacterCodes.lessThan) {
-                // TODO: handle generics.
-                return null;
-            }
-            else if (char === CharacterCodes.openParen) {
-                var expressionWithArgumentList = this.recoverExpressionWithArgumentList(document, openCharIndex);
-                return expressionWithArgumentList.argumentList.arguments.separatorCount();
-            }
-
-            return 0;
-        }
-
-        public getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): number {
-            fileName = TypeScript.switchToForwardSlashes(fileName);
-
-            var document = this.compiler.getDocument(fileName);
-            var openCharIndex: number = signatureHelpItemId;
+            var openCharIndex = applicableSpanStart;
 
             var char = this.charAtIndex(document, openCharIndex);
             if (char === CharacterCodes.lessThan) {
@@ -532,18 +513,17 @@ module TypeScript.Services {
                     }
                 }
 
-                return index;
+                var count = expressionWithArgumentList.argumentList.arguments.separatorCount();
+                return new SignatureHelpState(index, count);
             }
 
             return null;
         }
 
-        public getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): TextSpan {
-            fileName = TypeScript.switchToForwardSlashes(fileName);
+        private getSignatureHelpApplicableSpan(document: Document, applicableSpanStart: number): TextSpan {
 
-            var document = this.compiler.getDocument(fileName);
             var scriptSnapshot = document.scriptSnapshot;
-            var openCharIndex: number = signatureHelpItemId;
+            var openCharIndex = applicableSpanStart;
 
             var char = this.charAtIndex(document, openCharIndex);
             if (char === CharacterCodes.lessThan) {
@@ -556,7 +536,7 @@ module TypeScript.Services {
                 if (lastToken.fullWidth() !== 0) {
                     // invocation has a close paren.  The span that we want to pass back is from 
                     // the start of the invocation itself, to the start of the close paren token.
-                    return TextSpan.fromBounds(expressionWithArgumentList.start(), lastToken.start());
+                    return TextSpan.fromBounds(expressionWithArgumentList.argumentList.openParenToken.start(), lastToken.start());
                 }
 
                 // we're missing the close paren.  The span should be up to the start of the next 
@@ -564,7 +544,7 @@ module TypeScript.Services {
                 var nextToken = expressionWithArgumentList.lastToken().nextToken();
                 var end = nextToken === null ? scriptSnapshot.getLength() : nextToken.start();
 
-                return TextSpan.fromBounds(expressionWithArgumentList.start(), end);
+                return TextSpan.fromBounds(expressionWithArgumentList.argumentList.openParenToken.start(), end);
             }
 
             return null;
@@ -647,11 +627,11 @@ module TypeScript.Services {
 
             // We use the start of the argument list as the 'id' for this signature help item so 
             // that we can try to recover it later on when we get subsequent sig help questions.
-            var id = callExpression.argumentList.openParenToken.start();
+            var applicableSpanStart = callExpression.argumentList.openParenToken.start();
 
             // Build the result
             var items = SignatureInfoHelpers.getSignatureInfoFromSignatureSymbol(
-                callSymbolInfo.targetSymbol, callSymbolInfo.resolvedSignatures, callSymbolInfo.enclosingScopeSymbol, this.compiler, id);
+                callSymbolInfo.targetSymbol, callSymbolInfo.resolvedSignatures, callSymbolInfo.enclosingScopeSymbol, this.compiler);
 
             var selectedItemIndex = callSymbolInfo.resolvedSignatures && callSymbolInfo.candidateSignature
                 ? callSymbolInfo.resolvedSignatures.indexOf(callSymbolInfo.candidateSignature) 
@@ -662,7 +642,7 @@ module TypeScript.Services {
                 return null;
             }
 
-            return new SignatureHelpItems(items, selectedItemIndex);
+            return new SignatureHelpItems(items, this.getSignatureHelpApplicableSpan(document, applicableSpanStart), selectedItemIndex);
         }
 
         //private getSignatureHelpItemsFromPartiallyWrittenTypeArgumentList(document: TypeScript.Document, position: number, genericTypeArgumentListInfo: IPartiallyWrittenTypeArgumentListInformation): SignatureHelpItems {

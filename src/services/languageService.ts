@@ -57,9 +57,7 @@ module TypeScript.Services {
         getBreakpointStatementAtPosition(fileName: string, position: number): TextSpan;
 
         getSignatureHelpItems(fileName: string, position: number): SignatureHelpItems;
-        getSignatureHelpCurrentArgumentCount(fileName: string, signatureHelpItemId: any): number;
-        getSignatureHelpCurrentParameterIndex(fileName: string, position: number, signatureHelpItemId: any): number;
-        getSignatureHelpCurrentTextSpan(fileName: string, signatureHelpItemId: any): TextSpan;
+        getSignatureHelpCurrentArgumentState(fileName: string, position: number, applicableSpanStart: number): SignatureHelpState;
 
         getRenameInfo(fileName: string, position: number): RenameInfo;
         getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
@@ -148,8 +146,7 @@ module TypeScript.Services {
                     public suffix: string,
                     public separator: string,
                     public parameters: SignatureHelpParameter[],
-                    public documentation: string,
-                    public id: any) {
+                    public documentation: string) {
         }
     }
 
@@ -158,7 +155,15 @@ module TypeScript.Services {
      */
     export class SignatureHelpItems {
         constructor(public items: SignatureHelpItem[],
+                    public applicableSpan: TextSpan,
                     public selectedItemIndex: number) {
+        }
+    }
+
+    export class SignatureHelpState {
+        constructor(public argumentIndex: number,
+                    public argumentCount: number) {
+
         }
     }
 
