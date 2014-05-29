@@ -1013,9 +1013,7 @@ module TypeScript.Services {
             return symbol.fullName(enclosingScopeSymbol);
         }
 
-        private getTypeInfoEligiblePath(fileName: string, position: number, isConstructorValidPosition: boolean) {
-            var document = this.compiler.getDocument(fileName);
-            var sourceUnit = document.sourceUnit();
+        private getTypeInfoEligiblePath(sourceUnit: SourceUnitSyntax, position: number, isConstructorValidPosition: boolean) {
 
             var ast = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, position, /*useTrailingTriviaAsLimChar*/ false, /*forceInclusive*/ true);
             if (ast === null) {
@@ -1054,13 +1052,13 @@ module TypeScript.Services {
         public getTypeAtPosition(fileName: string, position: number): TypeInfo {
             this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
+            var document = this.compiler.getDocument(fileName);
 
-            var node = this.getTypeInfoEligiblePath(fileName, position, true);
+            var node = this.getTypeInfoEligiblePath(document.syntaxTree().sourceUnit(), position, true);
             if (!node) {
                 return null;
             }
 
-            var document = this.compiler.getDocument(fileName);
             var ast: TypeScript.AST;
             var symbol: TypeScript.PullSymbol;
             var typeSymbol: TypeScript.PullTypeSymbol;
@@ -1705,10 +1703,9 @@ module TypeScript.Services {
         //
 
         public getNameOrDottedNameSpan(fileName: string, startPos: number, endPos: number): SpanInfo {
-            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
-            var node = this.getTypeInfoEligiblePath(fileName, startPos, false);
+            var node = this.getTypeInfoEligiblePath(this.getSyntaxTree(fileName).sourceUnit(), startPos, false);
 
             if (!node) {
                 return null;
@@ -1729,7 +1726,6 @@ module TypeScript.Services {
         }
 
         public getBreakpointStatementAtPosition(fileName: string, pos: number): SpanInfo {
-            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxtree = this.getSyntaxTree(fileName);
@@ -1737,7 +1733,6 @@ module TypeScript.Services {
         }
 
         public getFormattingEditsForRange(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
-            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
@@ -1745,7 +1740,6 @@ module TypeScript.Services {
         }
 
         public getFormattingEditsForDocument(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
-            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
@@ -1753,7 +1747,6 @@ module TypeScript.Services {
         }
 
         public getFormattingEditsOnPaste(fileName: string, minChar: number, limChar: number, options: FormatCodeOptions): TextEdit[]{
-            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
@@ -1761,7 +1754,6 @@ module TypeScript.Services {
         }
 
         public getFormattingEditsAfterKeystroke(fileName: string, position: number, key: string, options: FormatCodeOptions): TextEdit[]{
-            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var manager = this.getFormattingManager(fileName, options);
@@ -1789,11 +1781,7 @@ module TypeScript.Services {
 
             // Get the Syntax Tree
             var syntaxTree = this.getSyntaxTree(fileName);
-
-            // Convert IScriptSnapshot to ITextSnapshot
-            var scriptSnapshot = this.compiler.getScriptSnapshot(fileName);
-            var scriptText = TypeScript.SimpleText.fromScriptSnapshot(scriptSnapshot);
-            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(scriptText);
+            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(syntaxTree.text);
 
             var manager = new TypeScript.Services.Formatting.FormattingManager(syntaxTree, textSnapshot, this.formattingRulesProvider, options);
 
@@ -1813,14 +1801,10 @@ module TypeScript.Services {
         // (assuming the line is empty). Returns "null" in case the
         // smart indent cannot be determined.
         public getIndentationAtPosition(fileName: string, position: number, editorOptions: EditorOptions): number {
-            this.compiler.synchronizeHostData();
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
             var syntaxTree = this.getSyntaxTree(fileName);
-
-            var scriptSnapshot = this.compiler.getScriptSnapshot(fileName);
-            var scriptText = TypeScript.SimpleText.fromScriptSnapshot(scriptSnapshot);
-            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(scriptText);
+            var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(syntaxTree.text);
             var options = new FormattingOptions(!editorOptions.ConvertTabsToSpaces, editorOptions.TabSize, editorOptions.IndentSize, editorOptions.NewLineCharacter)
 
             return TypeScript.Services.Formatting.SingleTokenIndenter.getIndentationAmount(position, syntaxTree.sourceUnit(), textSnapshot, options);
