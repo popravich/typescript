@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1847,
         "fullWidth": 1847,
         "width": 1176,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -107,7 +103,7 @@
                     "width": 6,
                     "text": "__func",
                     "value": "__func",
-                    "valueText": "__func"
+                    "valueText": "___func"
                 },
                 "callSignature": {
                     "kind": "CallSignature",
@@ -349,7 +345,7 @@
                                 "width": 6,
                                 "text": "__func",
                                 "value": "__func",
-                                "valueText": "__func"
+                                "valueText": "___func"
                             },
                             "dotToken": {
                                 "kind": "DotToken",
@@ -609,7 +605,7 @@
                                                         "width": 6,
                                                         "text": "__gunc",
                                                         "value": "__gunc",
-                                                        "valueText": "__gunc"
+                                                        "valueText": "___gunc"
                                                     },
                                                     "dotToken": {
                                                         "kind": "DotToken",
@@ -709,7 +705,6 @@
                 "end": 1291,
                 "fullWidth": 348,
                 "width": 175,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 944,
@@ -810,7 +805,6 @@
                     "end": 1159,
                     "fullWidth": 39,
                     "width": 39,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 1120,
@@ -819,7 +813,6 @@
                         "end": 1148,
                         "fullWidth": 29,
                         "width": 28,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "MemberAccessExpression",
                             "fullStart": 1120,
@@ -838,7 +831,7 @@
                                 "width": 6,
                                 "text": "__func",
                                 "value": "__func",
-                                "valueText": "__func"
+                                "valueText": "___func"
                             },
                             "dotToken": {
                                 "kind": "DotToken",
@@ -888,6 +881,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -930,7 +924,7 @@
                         "width": 6,
                         "text": "__func",
                         "value": "__func",
-                        "valueText": "__func"
+                        "valueText": "___func"
                     }
                 },
                 "closeParenToken": {
@@ -962,7 +956,6 @@
                     "end": 1291,
                     "fullWidth": 131,
                     "width": 130,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 1161,
@@ -994,7 +987,6 @@
                             "end": 1289,
                             "fullWidth": 127,
                             "width": 125,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "InvocationExpression",
                                 "fullStart": 1163,
@@ -1003,7 +995,6 @@
                                 "end": 1288,
                                 "fullWidth": 125,
                                 "width": 124,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "IdentifierName",
                                     "fullStart": 1163,
@@ -1033,7 +1024,6 @@
                                     "end": 1288,
                                     "fullWidth": 118,
                                     "width": 118,
-                                    "isIncrementallyUnusable": true,
                                     "openParenToken": {
                                         "kind": "OpenParenToken",
                                         "fullStart": 1170,
@@ -1055,7 +1045,6 @@
                                             "end": 1287,
                                             "fullWidth": 116,
                                             "width": 116,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "StringLiteral",
                                                 "fullStart": 1171,
@@ -1088,7 +1077,6 @@
                                                 "end": 1287,
                                                 "fullWidth": 28,
                                                 "width": 28,
-                                                "isIncrementallyUnusable": true,
                                                 "expression": {
                                                     "kind": "MemberAccessExpression",
                                                     "fullStart": 1259,
@@ -1107,7 +1095,7 @@
                                                         "width": 6,
                                                         "text": "__gunc",
                                                         "value": "__gunc",
-                                                        "valueText": "__gunc"
+                                                        "valueText": "___gunc"
                                                     },
                                                     "dotToken": {
                                                         "kind": "DotToken",
@@ -1156,7 +1144,8 @@
                                                     "width": 11,
                                                     "text": "constructor",
                                                     "value": "constructor",
-                                                    "valueText": "constructor"
+                                                    "valueText": "constructor",
+                                                    "isKeywordConvertedToIdentifier": true
                                                 }
                                             }
                                         }
@@ -1315,7 +1304,7 @@
                                 "width": 25,
                                 "text": "__constructor_was__enumed",
                                 "value": "__constructor_was__enumed",
-                                "valueText": "__constructor_was__enumed"
+                                "valueText": "___constructor_was__enumed"
                             }
                         }
                     ]
@@ -1404,7 +1393,7 @@
                     "width": 6,
                     "text": "__prop",
                     "value": "__prop",
-                    "valueText": "__prop",
+                    "valueText": "___prop",
                     "hasTrailingTrivia": true,
                     "trailingTrivia": [
                         {
@@ -1454,7 +1443,7 @@
                         "width": 6,
                         "text": "__func",
                         "value": "__func",
-                        "valueText": "__func"
+                        "valueText": "___func"
                     },
                     "dotToken": {
                         "kind": "DotToken",
@@ -1592,7 +1581,7 @@
                                     "width": 6,
                                     "text": "__prop",
                                     "value": "__prop",
-                                    "valueText": "__prop",
+                                    "valueText": "___prop",
                                     "hasTrailingTrivia": true,
                                     "trailingTrivia": [
                                         {
@@ -1685,7 +1674,7 @@
                                         "width": 25,
                                         "text": "__constructor_was__enumed",
                                         "value": "__constructor_was__enumed",
-                                        "valueText": "__constructor_was__enumed",
+                                        "valueText": "___constructor_was__enumed",
                                         "hasLeadingTrivia": true,
                                         "hasTrailingTrivia": true,
                                         "leadingTrivia": [
@@ -1874,7 +1863,7 @@
                     "width": 25,
                     "text": "__constructor_was__enumed",
                     "value": "__constructor_was__enumed",
-                    "valueText": "__constructor_was__enumed"
+                    "valueText": "___constructor_was__enumed"
                 },
                 "closeParenToken": {
                     "kind": "CloseParenToken",
@@ -2028,7 +2017,7 @@
                                                 "width": 25,
                                                 "text": "__constructor_was__enumed",
                                                 "value": "__constructor_was__enumed",
-                                                "valueText": "__constructor_was__enumed"
+                                                "valueText": "___constructor_was__enumed"
                                             }
                                         }
                                     ],

@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 707,
         "fullWidth": 707,
         "width": 363,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -124,7 +120,7 @@
                                 "width": 6,
                                 "text": "__func",
                                 "value": "__func",
-                                "valueText": "__func",
+                                "valueText": "___func",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -355,7 +351,7 @@
                                 "width": 6,
                                 "text": "__func",
                                 "value": "__func",
-                                "valueText": "__func",
+                                "valueText": "___func",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -607,7 +603,6 @@
                 "end": 704,
                 "fullWidth": 168,
                 "width": 156,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 537,
@@ -672,7 +667,6 @@
                     "end": 583,
                     "fullWidth": 31,
                     "width": 31,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 552,
@@ -681,7 +675,6 @@
                         "end": 570,
                         "fullWidth": 19,
                         "width": 18,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "IdentifierName",
                             "fullStart": 552,
@@ -692,7 +685,7 @@
                             "width": 6,
                             "text": "__func",
                             "value": "__func",
-                            "valueText": "__func"
+                            "valueText": "___func"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -717,6 +710,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {

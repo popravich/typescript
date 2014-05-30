@@ -25,7 +25,7 @@ module TypeScript {
     }
 
     class DiagnosticsLogger implements ILogger {
-        constructor(public ioHost: IIO) {
+        constructor(public ioHost: IEnvironment) {
         }
         public information(): boolean { return false; }
         public debug(): boolean { return false; }
@@ -33,26 +33,7 @@ module TypeScript {
         public error(): boolean { return false; }
         public fatal(): boolean { return false; }
         public log(s: string): void {
-            this.ioHost.stdout.WriteLine(s);
-        }
-    }
-
-    class FileLogger implements ILogger {
-
-        private fileName: string;
-        
-        constructor(public ioHost: IIO) {
-            var file = "tsc." + Date.now() + ".log";
-
-            this.fileName = this.ioHost.resolvePath(file);
-        }
-        public information(): boolean { return false; }
-        public debug(): boolean { return false; }
-        public warning(): boolean { return false; }
-        public error(): boolean { return false; }
-        public fatal(): boolean { return false; }
-        public log(s: string): void {
-            this.ioHost.appendFile(this.fileName, s + '\r\n');
+            this.ioHost.standardOut.WriteLine(s);
         }
     }
 
@@ -65,21 +46,16 @@ module TypeScript {
         private hasErrors: boolean = false;
         private logger: ILogger = null;
 
-        constructor(private ioHost: IIO) {
+        constructor(private ioHost: IEnvironment) {
         }
 
         // Begin batch compilation
         public batchCompile() {
-            var start = new Date().getTime();
-
-            CompilerDiagnostics.diagnosticWriter = { Alert: (s: string) => { this.ioHost.printLine(s); } };
-
             // Parse command line options
             if (this.parseOptions()) {
+                var start = new Date().getTime();
 
-                if (this.compilationSettings.createFileLog()) {
-                    this.logger = new FileLogger(this.ioHost);
-                } else if (this.compilationSettings.gatherDiagnostics()) {
+                if (this.compilationSettings.gatherDiagnostics()) {
                     this.logger = new DiagnosticsLogger(this.ioHost);
                 } else {
                     this.logger = new NullLogger();
@@ -96,46 +72,6 @@ module TypeScript {
 
                 this.compile();
 
-                if (this.compilationSettings.createFileLog()) {
-                    this.logger.log("Compilation settings:");
-                    this.logger.log(" propagateEnumConstants " + this.compilationSettings.propagateEnumConstants());
-                    this.logger.log(" removeComments " + this.compilationSettings.removeComments());
-                    this.logger.log(" watch " + this.compilationSettings.watch());
-                    this.logger.log(" noResolve " + this.compilationSettings.noResolve());
-                    this.logger.log(" noImplicitAny " + this.compilationSettings.noImplicitAny());
-                    this.logger.log(" nolib " + this.compilationSettings.noLib());
-                    this.logger.log(" target " + this.compilationSettings.codeGenTarget());
-                    this.logger.log(" module " + this.compilationSettings.moduleGenTarget());
-                    this.logger.log(" out " + this.compilationSettings.outFileOption());
-                    this.logger.log(" outDir " + this.compilationSettings.outDirOption());
-                    this.logger.log(" sourcemap " + this.compilationSettings.mapSourceFiles());
-                    this.logger.log(" mapRoot " + this.compilationSettings.mapRoot());
-                    this.logger.log(" sourceroot " + this.compilationSettings.sourceRoot());
-                    this.logger.log(" declaration " + this.compilationSettings.generateDeclarationFiles());
-                    this.logger.log(" useCaseSensitiveFileResolution " + this.compilationSettings.useCaseSensitiveFileResolution());
-                    this.logger.log(" diagnostics " + this.compilationSettings.gatherDiagnostics());
-                    this.logger.log(" codepage " + this.compilationSettings.codepage());
-
-                    this.logger.log("");
-
-                    this.logger.log("Input files:");
-                    this.inputFiles.forEach((file) => {
-                        this.logger.log(" " + file);
-                    });
-
-                    this.logger.log("");
-
-                    this.logger.log("Resolved Files:");
-                    this.resolvedFiles.forEach((file) => {
-                        file.importedFiles.forEach((file) => {
-                            this.logger.log(" " + file);
-                        });
-                        file.referencedFiles.forEach((file) => {
-                            this.logger.log(" " + file);
-                        });
-                    });
-                }
-
                 if (this.compilationSettings.gatherDiagnostics()) {
                     this.logger.log("");
                     this.logger.log("File resolution time:                     " + TypeScript.fileResolutionTime);
@@ -146,7 +82,7 @@ module TypeScript {
 
                     this.logger.log("SyntaxTree parse time:                    " + TypeScript.syntaxTreeParseTime);
                     this.logger.log("Syntax Diagnostics time:                  " + TypeScript.syntaxDiagnosticsTime);
-                    this.logger.log("AST translation time:                     " + TypeScript.astTranslationTime);
+                    this.logger.log("Create declarations time:                 " + TypeScript.createDeclarationsTime);
                     this.logger.log("");
                     this.logger.log("Type check time:                          " + TypeScript.typeCheckTime);
                     this.logger.log("");
@@ -182,6 +118,8 @@ module TypeScript {
                     this.logger.log("Node make directory time:                 " + TypeScript.nodeMakeDirectoryTime);
                     this.logger.log("Node writeFileSync time:                  " + TypeScript.nodeWriteFileSyncTime);
                     this.logger.log("Node createBuffer time:                   " + TypeScript.nodeCreateBufferTime);
+
+                    this.logger.log("Total time:                               " + (new Date().getTime() - start));
                 }
             }
 
@@ -389,13 +327,6 @@ module TypeScript {
                 }
             });
 
-            opts.flag('logFile', {
-                experimental: true,
-                set: () => {
-                    mutableSettings.createFileLog = true;
-                }
-            });
-
             opts.option('target', {
                 usage: {
                     locCode: DiagnosticCode.Specify_ECMAScript_target_version_0_default_or_1,
@@ -413,7 +344,7 @@ module TypeScript {
                     }
                     else {
                         this.addDiagnostic(
-                            new Diagnostic(null, null, 0, 0, DiagnosticCode.ECMAScript_target_version_0_not_supported_Specify_a_valid_target_version_1_default_or_2, [type, "ES3", "ES5"]));
+                            new Diagnostic(null, null, 0, 0, DiagnosticCode.Argument_for_0_option_must_be_1_or_2, ["target", "ES3", "ES5"]));
                     }
                 }
             }, 't');
@@ -435,7 +366,7 @@ module TypeScript {
                     }
                     else {
                         this.addDiagnostic(
-                            new Diagnostic(null, null, 0, 0, DiagnosticCode.Module_code_generation_0_not_supported, [type]));
+                            new Diagnostic(null, null, 0, 0, DiagnosticCode.Argument_for_0_option_must_be_1_or_2, ["module", "commonjs", "amd"]));
                     }
                 }
             }, 'm');
@@ -552,8 +483,8 @@ module TypeScript {
 
         private setLanguageAndTerritory(language: string, territory: string): boolean {
 
-            var compilerFilePath = this.ioHost.getExecutingFilePath();
-            var containingDirectoryPath = this.ioHost.dirName(compilerFilePath);
+            var compilerFilePath = this.ioHost.executingFilePath();
+            var containingDirectoryPath = this.ioHost.directoryName(compilerFilePath);
 
             var filePath = IOUtils.combine(containingDirectoryPath, language);
             if (territory) {
@@ -588,18 +519,12 @@ module TypeScript {
                     var watcher = this.ioHost.watchFile(fileName, onWatchedFileChange);
                     watchers[fileName] = watcher;
                 }
-                else {
-                    CompilerDiagnostics.debugPrint("Cannot watch file, it is already watched.");
-                }
             };
 
             var removeWatcher = (fileName: string) => {
                 if (watchers[fileName]) {
                     watchers[fileName].close();
                     delete watchers[fileName];
-                }
-                else {
-                    CompilerDiagnostics.debugPrint("Cannot stop watching file, it is not being watched.");
                 }
             };
 
@@ -657,7 +582,7 @@ module TypeScript {
                     for (var k = 0; k < lastResolvedFileSet.length; k++) {
                         fileNames += Environment.newLine + "    " + lastResolvedFileSet[k];
                     }
-                    this.ioHost.printLine(getLocalizedText(DiagnosticCode.NL_Recompiling_0, [fileNames]));
+                    this.ioHost.standardError.WriteLine(getLocalizedText(DiagnosticCode.NL_Recompiling_0, [fileNames]));
                 }
                 else {
                     firstTime = false;
@@ -668,7 +593,7 @@ module TypeScript {
             };
 
             // Switch to using stdout for all error messages
-            this.ioHost.stderr = this.ioHost.stdout;
+            this.ioHost.standardOut = this.ioHost.standardOut;
 
             onWatchedFileChange();
         }
@@ -696,8 +621,8 @@ module TypeScript {
         }
 
         private getDefaultLibraryFilePath(): string {
-            var compilerFilePath = this.ioHost.getExecutingFilePath();
-            var containingDirectoryPath = this.ioHost.dirName(compilerFilePath);
+            var compilerFilePath = this.ioHost.executingFilePath();
+            var containingDirectoryPath = this.ioHost.directoryName(compilerFilePath);
             var libraryFilePath = this.resolvePath(IOUtils.combine(containingDirectoryPath, "lib.d.ts"));
 
             return libraryFilePath;
@@ -709,8 +634,6 @@ module TypeScript {
         }
 
         resolveRelativePath(path: string, directory: string): string {
-            var start = new Date().getTime();
-
             var unQuotedPath = stripStartAndEndQuotes(path);
             var normalizedPath: string;
 
@@ -745,7 +668,7 @@ module TypeScript {
 
         getParentDirectory(path: string): string {
             var start = new Date().getTime();
-            var result = this.ioHost.dirName(path);
+            var result = this.ioHost.directoryName(path);
             TypeScript.compilerDirectoryNameTime += new Date().getTime() - start;
 
             return result;
@@ -758,7 +681,7 @@ module TypeScript {
                 this.hasErrors = true;
             }
 
-            this.ioHost.stderr.Write(TypeScriptCompiler.getFullDiagnosticText(diagnostic, path => this.resolvePath(path)));
+            this.ioHost.standardError.Write(TypeScriptCompiler.getFullDiagnosticText(diagnostic, path => this.resolvePath(path)));
         }
 
         private tryWriteOutputFiles(outputFiles: OutputFile[]): boolean {
@@ -799,7 +722,7 @@ module TypeScript {
             var cachedValue = this.resolvePathCache[path];
             if (!cachedValue) {
                 var start = new Date().getTime();
-                cachedValue = this.ioHost.resolvePath(path);
+                cachedValue = this.ioHost.absolutePath(path);
                 this.resolvePathCache[path] = cachedValue;
                 TypeScript.compilerResolvePathTime += new Date().getTime() - start;
             }
@@ -809,6 +732,6 @@ module TypeScript {
     }
 
     // Start the batch compilation using the current hosts IO
-    var batch = new TypeScript.BatchCompiler(IO);
+    var batch = new TypeScript.BatchCompiler(Environment);
     batch.batchCompile();
 }

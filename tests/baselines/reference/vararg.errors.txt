@@ -12,22 +12,22 @@
     
             public fnope(x:string,...rest:number) {
                                   ~~~~~~~~~~~~~~
-!!! vararg.ts(12,31): error TS2162: Rest parameters must be array types.
+!!! vararg.ts(12,31): error TS2162: A rest parameter must be of an array type.
         
             }
     
             public fonly(...rest:string[]) {
                 builder="";
                 ~~~~~~~
-!!! vararg.ts(17,13): error TS2095: Could not find symbol 'builder'.
+!!! vararg.ts(17,13): error TS2095: Cannot find name 'builder'.
                 for (var i=0;i<rest.length;i++) {
                     builder+=rest[i];
                     ~~~~~~~
-!!! vararg.ts(19,17): error TS2095: Could not find symbol 'builder'.
+!!! vararg.ts(19,17): error TS2095: Cannot find name 'builder'.
                 }
                 return builder;
                        ~~~~~~~
-!!! vararg.ts(21,20): error TS2095: Could not find symbol 'builder'.
+!!! vararg.ts(21,20): error TS2095: Cannot find name 'builder'.
             }
         }
     }

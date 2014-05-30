@@ -1,16 +1,13 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
-            "start": 16,
-            "length": 1,
-            "diagnosticCode": "Unexpected token; '{0}' expected.",
+            "start": 8,
+            "length": 7,
+            "diagnosticCode": "'{0}' list cannot be empty.",
             "arguments": [
-                "type name"
+                "extends"
             ]
         }
     ],
@@ -22,7 +19,6 @@
         "end": 20,
         "fullWidth": 20,
         "width": 20,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ClassDeclaration",

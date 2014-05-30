@@ -1,19 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
-    "diagnostics": [
-        {
-            "start": 7,
-            "length": 6,
-            "diagnosticCode": "Module name cannot be '{0}'.",
-            "arguments": [
-                "number"
-            ]
-        }
-    ],
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -22,7 +9,6 @@
         "end": 18,
         "fullWidth": 18,
         "width": 18,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ModuleDeclaration",
@@ -32,7 +18,6 @@
                 "end": 18,
                 "fullWidth": 18,
                 "width": 18,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "moduleKeyword": {
                     "kind": "ModuleKeyword",
@@ -66,6 +51,7 @@
                     "text": "number",
                     "value": "number",
                     "valueText": "number",
+                    "isKeywordConvertedToIdentifier": true,
                     "hasTrailingTrivia": true,
                     "trailingTrivia": [
                         {

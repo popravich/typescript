@@ -20,7 +20,7 @@ class TypeWriterWalker extends TypeScript.SyntaxWalker {
     }
 
     public run() {
-        this.syntaxTree.sourceUnit().accept(this);
+        TypeScript.visitNodeOrToken(this, this.syntaxTree.sourceUnit());
     }
 
     private isName(token: TypeScript.ISyntaxToken) {
@@ -48,27 +48,13 @@ class TypeWriterWalker extends TypeScript.SyntaxWalker {
         return super.visitToken(token);
     }
 
-    public visitNode(node: TypeScript.SyntaxNode) {
+    public visitNode(node: TypeScript.ISyntaxNode) {
         return super.visitNode(node);
     }
 
     private getAstForElement(element: TypeScript.ISyntaxElement) {
-        if (!element.isShared()) {
-            var candidates: string[] = [];
-
-            for (var i = 0; i < element.fullWidth(); i++) {
-                var ast = TypeScript.ASTHelpers.getAstAtPosition(this.document.sourceUnit(), element.fullStart() + i, false, false);
-                while (ast) {
-                    if (ast.end() - ast.start() === element.width()) {
-                        return ast;
-                    }
-                    ast = ast.parent;
-                }
-            }
-
-            var errorText = 'Was looking for AST in file ' + this.filename + ' with fulltext = ' + element.fullText() + ', width = ' + element.width() + ', pos = ' + element.fullStart();
-
-            throw new Error(errorText);
+        if (!TypeScript.isShared(element)) {
+            return element;
         }
     }
 
@@ -173,7 +159,7 @@ class TypeWriterWalker extends TypeScript.SyntaxWalker {
     }
 
     public log(node: TypeScript.ISyntaxNodeOrToken) {
-        var pos = this.document.lineMap().getLineAndCharacterFromPosition(node.fullStart());
-        this.results.push({ line: pos.line(), column: pos.character(), syntaxKind: TypeScript.SyntaxKind[node.kind()], identifierName: node.fullText().trim(), type: this.getTypeOfElement(node) });
+        var pos = this.document.lineMap().getLineAndCharacterFromPosition(TypeScript.fullStart(node));
+        this.results.push({ line: pos.line(), column: pos.character(), syntaxKind: TypeScript.SyntaxKind[node.kind()], identifierName: TypeScript.fullText(node).trim(), type: this.getTypeOfElement(node) });
     }
 }

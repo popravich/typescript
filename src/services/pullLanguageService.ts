@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the Apache License, Version 2.0. 
 // See LICENSE.txt in the project root for complete license information.
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 
 module TypeScript.Services {
@@ -12,17 +12,23 @@ module TypeScript.Services {
         private _syntaxTreeCache: SyntaxTreeCache;
         private formattingRulesProvider: TypeScript.Services.Formatting.RulesProvider;
 
-        private activeCompletionSession: CompletionSession = null;
+        private activeCompletionSession: CompletionSession = null;        
+        private cancellationToken: CancellationToken;
 
-        constructor(public host: ILanguageServiceHost) {
+        constructor(public host: ILanguageServiceHost, documentRegistry: IDocumentRegistry) {
             this.logger = this.host;
-            this.compiler = new LanguageServiceCompiler(this.host);
+            this.cancellationToken = new CancellationToken(this.host.getCancellationToken());
+            this.compiler = new LanguageServiceCompiler(this.host, documentRegistry, this.cancellationToken);
             this._syntaxTreeCache = new SyntaxTreeCache(this.host);
 
             // Check if the localized messages json is set, otherwise query the host for it
             if (!TypeScript.LocalizedDiagnosticMessages) {
                 TypeScript.LocalizedDiagnosticMessages = this.host.getLocalizedDiagnosticMessages();
             }
+        }
+
+        public dispose() {
+            this.compiler.dispose();
         }
 
         public cleanupSemanticCache(): void {
@@ -33,13 +39,20 @@ module TypeScript.Services {
             // No-op.  Only kept around for compatability with the interface we shipped.
         }
 
+        private getSemanticInfoChain(): SemanticInfoChain {
+            return this.compiler.getSemanticInfoChain();
+        }
+
         private getSymbolInfoAtPosition(fileName: string, pos: number, requireName: boolean): { symbol: TypeScript.PullSymbol; containingASTOpt: TypeScript.ISyntaxElement } {
             var document = this.compiler.getDocument(fileName);
             var sourceUnit = document.sourceUnit();
 
             /// TODO: this does not allow getting references on "constructor"
-
             var topNode = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, pos);
+            return this.getSymbolInfoAtAST(document, topNode, pos, requireName);
+        }
+
+        private getSymbolInfoAtAST(document: Document, topNode: ISyntaxElement, pos: number, requireName: boolean): { symbol: TypeScript.PullSymbol; containingASTOpt: TypeScript.ISyntaxElement } {
             if (topNode === null || (requireName && topNode.kind() !== TypeScript.SyntaxKind.IdentifierName)) {
                 this.logger.log("No name found at the given position");
                 return null;
@@ -59,7 +72,7 @@ module TypeScript.Services {
 
             // if we are not looking for any but we get an any symbol, then we ran into a wrong symbol
             if (requireName) {
-                var actualNameAtPosition = (<TypeScript.ISyntaxToken>topNode).valueText();
+                var actualNameAtPosition = tokenValueText(<TypeScript.ISyntaxToken>topNode);
 
                 if ((symbol.isError() || symbol.isAny()) && actualNameAtPosition !== symbolName) {
                     this.logger.log("Unknown symbol found at the given position");
@@ -94,6 +107,8 @@ module TypeScript.Services {
 
             var fileNames = this.compiler.fileNames();
             for (var i = 0, n = fileNames.length; i < n; i++) {
+                this.cancellationToken.throwIfCancellationRequested();
+
                 var tempFileName = fileNames[i];
 
                 if (containingASTOpt && fileName != tempFileName) {
@@ -163,7 +178,7 @@ module TypeScript.Services {
             }
 
             var isWriteAccess = this.isWriteAccess(node);
-            return [new ReferenceEntry(this._getHostFileName(fileName), TextSpan.fromBounds(node.start(), node.end()), isWriteAccess)];
+            return [new ReferenceEntry(this._getHostFileName(fileName), TextSpan.fromBounds(start(node), end(node)), isWriteAccess)];
         }
 
         public getImplementorsAtPosition(fileName: string, pos: number): ReferenceEntry[] {
@@ -181,7 +196,7 @@ module TypeScript.Services {
             }
 
             // Store the actual name before calling getSymbolInformationFromPath
-            var actualNameAtPosition = (<TypeScript.ISyntaxToken>ast).valueText();
+            var actualNameAtPosition = tokenValueText(<TypeScript.ISyntaxToken>ast);
 
             var symbolInfoAtPosition = this.compiler.getSymbolInformationFromAST(ast, document);
             var symbol = symbolInfoAtPosition.symbol;
@@ -205,12 +220,10 @@ module TypeScript.Services {
             if (typeSymbol.isClass() || typeSymbol.isInterface()) {
                 typesToSearch = typeSymbol.getTypesThatExtendThisType();
             }
-            else if (symbol.kind == TypeScript.PullElementKind.Property ||
-                symbol.kind == TypeScript.PullElementKind.Function ||
-                typeSymbol.isMethod() || typeSymbol.isProperty()) {
+            else if (symbol.kind == TypeScript.PullElementKind.Property || typeSymbol.isMethod() || typeSymbol.isProperty()) {
 
                 var declaration: TypeScript.PullDecl = symbol.getDeclarations()[0];
-                var classSymbol: TypeScript.PullTypeSymbol = declaration.getParentDecl().getSymbol().type;
+                var classSymbol: TypeScript.PullTypeSymbol = declaration.getParentDecl().getSymbol(symbol.semanticInfoChain).type;
 
                 typesToSearch = [];
                 var extendingTypes = classSymbol.getTypesThatExtendThisType();
@@ -296,14 +309,14 @@ module TypeScript.Services {
                         }
                         else {
                             var declaration = searchSymbolInfoAtPosition.symbol.getDeclarations()[0];
-                            normalizedSymbol = declaration.getSymbol();
+                            normalizedSymbol = declaration.getSymbol(symbol.semanticInfoChain);
                         }
 
                         if (normalizedSymbol === symbol) {
                             var isWriteAccess = this.isWriteAccess(nameAST);
 
                             result.push(new ReferenceEntry(this._getHostFileName(fileName),
-                                TextSpan.fromBounds(nameAST.start(), nameAST.end()), isWriteAccess));
+                                TextSpan.fromBounds(start(nameAST), end(nameAST)), isWriteAccess));
                         }
                     }
                 });
@@ -322,8 +335,9 @@ module TypeScript.Services {
                 var sourceUnit = document.sourceUnit();
 
                 possiblePositions.forEach(p => {
+                    this.cancellationToken.throwIfCancellationRequested();
                     // If it's not in the bounds of the ISyntaxElement we're asking for, then this can't possibly be a hit.
-                    if (containingASTOpt && (p < containingASTOpt.start() || p > containingASTOpt.end())) {
+                    if (containingASTOpt && (p < start(containingASTOpt) || p > end(containingASTOpt))) {
                         return;
                     }
 
@@ -333,7 +347,7 @@ module TypeScript.Services {
                     var nameAST = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, p, /*useTrailingTriviaAsLimChar:*/ false);
 
                     // Compare the length so we filter out strict superstrings of the symbol we are looking for
-                    if (nameAST === null || nameAST.kind() !== TypeScript.SyntaxKind.IdentifierName || (nameAST.end() - nameAST.start() !== symbolName.length)) {
+                    if (nameAST === null || nameAST.kind() !== TypeScript.SyntaxKind.IdentifierName || (end(nameAST) - start(nameAST) !== symbolName.length)) {
                         return;
                     }
 
@@ -343,7 +357,7 @@ module TypeScript.Services {
 
                         if (FindReferenceHelpers.compareSymbolsForLexicalIdentity(searchSymbol, symbol)) {
                             var isWriteAccess = this.isWriteAccess(nameAST);
-                            result.push(new ReferenceEntry(this._getHostFileName(fileName), TextSpan.fromBounds(nameAST.start(), nameAST.end()), isWriteAccess));
+                            result.push(new ReferenceEntry(this._getHostFileName(fileName), TextSpan.fromBounds(start(nameAST), end(nameAST)), isWriteAccess));
                         }
                     }
                 });
@@ -427,12 +441,14 @@ module TypeScript.Services {
             }
 
             var sourceText = this.compiler.getScriptSnapshot(fileName);
+
             var sourceLength = sourceText.getLength();
             var text = sourceText.getText(0, sourceLength);
             var symbolNameLength = symbolName.length;
 
             var position = text.indexOf(symbolName);
             while (position >= 0) {
+                this.cancellationToken.throwIfCancellationRequested();
                 // We found a match.  Make sure it's not part of a larger word (i.e. the char 
                 // before and after it have to be a non-identifier char).
                 var endPosition = position + symbolNameLength;
@@ -463,8 +479,8 @@ module TypeScript.Services {
         private recoverExpressionWithArgumentList(document: Document, openParenIndex: number): IExpressionWithArgumentListSyntax {
             var sourceUnit = document.sourceUnit();
 
-            var token = sourceUnit.findToken(openParenIndex);
-            if (token && token.start() === openParenIndex && token.tokenKind === SyntaxKind.OpenParenToken &&
+            var token = findToken(sourceUnit, openParenIndex);
+            if (token && start(token) === openParenIndex && token.kind() === SyntaxKind.OpenParenToken &&
                 token.parent && token.parent.parent &&
                 token.parent.kind() === SyntaxKind.ArgumentList) {
 
@@ -493,22 +509,21 @@ module TypeScript.Services {
                 var expressionWithArgumentList = this.recoverExpressionWithArgumentList(document, openCharIndex);
                 var argumentList = expressionWithArgumentList.argumentList;
 
-                if (position < argumentList.openParenToken.end()) {
+                if (position < end(argumentList.openParenToken)) {
                     return null;
                 }
 
                 var closeToken = argumentList.closeParenToken;
                 if (closeToken.fullWidth() > 0 &&
-                    position > closeToken.start()) {
+                    position > start(closeToken)) {
                     return null;
                 }
 
-                var argumentsWithSeparators = argumentList.arguments.toArray();
                 var index = 0;
-                for (var i = 1, n = argumentsWithSeparators.length; i < n; i += 2) {
-                    var element = argumentsWithSeparators[i];
+                for (var i = 0, n = argumentList.arguments.separators.length; i < n; i++) {
+                    var separator = argumentList.arguments.separators[i];
 
-                    if (position >= element.end()) {
+                    if (position >= end(separator)) {
                         index++;
                     }
                 }
@@ -536,15 +551,15 @@ module TypeScript.Services {
                 if (lastToken.fullWidth() !== 0) {
                     // invocation has a close paren.  The span that we want to pass back is from 
                     // the start of the invocation itself, to the start of the close paren token.
-                    return TextSpan.fromBounds(expressionWithArgumentList.argumentList.openParenToken.start(), lastToken.start());
+                    return TextSpan.fromBounds(start(expressionWithArgumentList.argumentList.openParenToken), start(lastToken));
                 }
 
                 // we're missing the close paren.  The span should be up to the start of the next 
                 // token (or the end of the document if there is no next token).
-                var nextToken = expressionWithArgumentList.lastToken().nextToken();
-                var end = nextToken === null ? scriptSnapshot.getLength() : nextToken.start();
+                var nextToken = TypeScript.nextToken(TypeScript.lastToken(expressionWithArgumentList));
+                var end = nextToken === null ? scriptSnapshot.getLength() : start(nextToken);
 
-                return TextSpan.fromBounds(expressionWithArgumentList.argumentList.openParenToken.start(), end);
+                return TextSpan.fromBounds(start(expressionWithArgumentList.argumentList.openParenToken), end);
             }
 
             return null;
@@ -581,7 +596,7 @@ module TypeScript.Services {
             while (node) {
                 if (node.kind() === TypeScript.SyntaxKind.InvocationExpression ||
                     node.kind() === TypeScript.SyntaxKind.ObjectCreationExpression ||  // Valid call or new expressions
-                    (isSignatureHelpBlocker(node) && position > node.start())) // Its a declaration node - call expression cannot be in parent scope
+                    (isSignatureHelpBlocker(node) && position > start(node))) // Its a declaration node - call expression cannot be in parent scope
                 {
                     break;
                 }
@@ -598,7 +613,7 @@ module TypeScript.Services {
                 return null;
             }
 
-            var callExpression = <TypeScript.IExpressionWithArgumentListSyntax>node;
+            var callExpression = <TypeScript.Services.IExpressionWithArgumentListSyntax>node;
             var isNew = callExpression.kind() === TypeScript.SyntaxKind.ObjectCreationExpression;
 
             if (isNew && callExpression.argumentList === null) {
@@ -608,10 +623,10 @@ module TypeScript.Services {
 
             TypeScript.Debug.assert(callExpression.argumentList.arguments !== null, "Expected call expression to have arguments, but it did not");
 
-            var argumentsStart = callExpression.argumentList.openParenToken.end();
+            var argumentsStart = end(callExpression.argumentList.openParenToken);
             var argumentsEnd = callExpression.argumentList.closeParenToken.fullWidth() > 0
-                ? callExpression.argumentList.closeParenToken.start()
-                : callExpression.argumentList.fullEnd();
+                ? start(callExpression.argumentList.closeParenToken)
+                : fullEnd(callExpression.argumentList);
 
             if (position < argumentsStart || position > argumentsEnd) {
                 this.logger.log("Outside argument list");
@@ -627,7 +642,7 @@ module TypeScript.Services {
 
             // We use the start of the argument list as the 'id' for this signature help item so 
             // that we can try to recover it later on when we get subsequent sig help questions.
-            var applicableSpanStart = callExpression.argumentList.openParenToken.start();
+            var applicableSpanStart = start(callExpression.argumentList.openParenToken);
 
             // Build the result
             var items = SignatureInfoHelpers.getSignatureInfoFromSignatureSymbol(
@@ -729,27 +744,38 @@ module TypeScript.Services {
                 symbol.name,
                 this.mapPullElementKind(symbol.kind, symbol),
                 this.getScriptElementKindModifiers(symbol),
-                TextSpan.fromBounds(topNode.start(), topNode.end()));
+                TextSpan.fromBounds(start(topNode), end(topNode)));
         }
 
         public getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[] {
             fileName = TypeScript.switchToForwardSlashes(fileName);
 
-            var symbolInfo = this.getSymbolInfoAtPosition(fileName, position, /*requireName:*/ false);
-            if (symbolInfo === null || symbolInfo.symbol === null) {
-                return null;
-            }
+            var document = this.compiler.getDocument(fileName);
+            var sourceUnit = document.sourceUnit();
+            var currentNode = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, position);
 
-            var symbol = symbolInfo.symbol;
+            // first check if we are at InvocationExpression\ObjectCreationExpression - if yes then try to obtain concrete overload that was used
+            var callExpressionTarget = ASTHelpers.getCallExpressionTarget(currentNode);
+            var callInformation = callExpressionTarget && callExpressionTarget.parent && this.compiler.getCallInformationFromAST(callExpressionTarget.parent, document);
+            var symbol: PullSymbol = callInformation && callInformation.candidateSignature;
 
-            TypeScript.Debug.assert(symbol.kind !== TypeScript.PullElementKind.None &&
-                symbol.kind !== TypeScript.PullElementKind.Global &&
-                symbol.kind !== TypeScript.PullElementKind.Script, "getDefinitionAtPosition - Invalid symbol kind");
+            if (!symbol) {
+                var symbolInfo = this.getSymbolInfoAtAST(document, currentNode, position, /*requireName:*/ false);
+                if (symbolInfo === null || symbolInfo.symbol === null) {
+                    return null;
+                }
 
-            if (symbol.kind === TypeScript.PullElementKind.Primitive) {
-                // Primitive symbols do not have definition locations that map to host soruces.
-                // Return null to indicate they have no "definition locations".
-                return null;
+                var symbol = symbolInfo.symbol;
+
+                TypeScript.Debug.assert(symbol.kind !== TypeScript.PullElementKind.None &&
+                    symbol.kind !== TypeScript.PullElementKind.Global &&
+                    symbol.kind !== TypeScript.PullElementKind.Script, "getDefinitionAtPosition - Invalid symbol kind");
+
+                if (symbol.kind === TypeScript.PullElementKind.Primitive) {
+                    // Primitive symbols do not have definition locations that map to host soruces.
+                    // Return null to indicate they have no "definition locations".
+                    return null;
+                }
             }
 
             var declarations = symbol.getDeclarations();
@@ -782,13 +808,13 @@ module TypeScript.Services {
             var ast = declaration.ast();
             result.push(new DefinitionInfo(
                 this._getHostFileName(declaration.fileName()),
-                TextSpan.fromBounds(ast.start(), ast.end()), symbolKind, symbolName, containerKind, containerName));
+                TextSpan.fromBounds(start(ast), end(ast)), symbolKind, symbolName, containerKind, containerName));
         }
 
         private tryAddDefinition(symbolKind: string, symbolName: string, containerKind: string, containerName: string, declarations: TypeScript.PullDecl[], result: DefinitionInfo[]): boolean {
             // First, if there are definitions and signatures, then just pick the definition.
             var definitionDeclaration = TypeScript.ArrayUtilities.firstOrDefault(declarations, d => {
-                var signature = d.getSignatureSymbol();
+                var signature = d.getSignatureSymbol(this.getSemanticInfoChain());
                 return signature && signature.isDefinition();
             });
 
@@ -804,7 +830,7 @@ module TypeScript.Services {
             // We didn't have a definition.  Check and see if we have any signatures.  If so, just
             // add the last one.
             var signatureDeclarations = TypeScript.ArrayUtilities.where(declarations, d => {
-                var signature = d.getSignatureSymbol();
+                var signature = d.getSignatureSymbol(this.getSemanticInfoChain());
                 return signature && !signature.isDefinition();
             });
 
@@ -916,7 +942,7 @@ module TypeScript.Services {
                         item.kind = this.mapPullElementKind(declaration.kind);
                         item.kindModifiers = this.getScriptElementKindModifiersFromDecl(declaration);
                         item.fileName = this._getHostFileName(fileName);
-                        item.textSpan = TextSpan.fromBounds(ast.start(), ast.end());
+                        item.textSpan = TextSpan.fromBounds(start(ast), end(ast));
                         item.containerName = parentName || "";
                         item.containerKind = parentkindName || "";
                         results.push(item);
@@ -1150,7 +1176,7 @@ module TypeScript.Services {
                     return null;
                 case TypeScript.SyntaxKind.ConstructorDeclaration:
                     var constructorAST = <TypeScript.ConstructorDeclarationSyntax>ast;
-                    if (!isConstructorValidPosition || !(position >= constructorAST.start() && position <= constructorAST.start() + "constructor".length)) {
+                    if (!isConstructorValidPosition || !(position >= start(constructorAST) && position <= start(constructorAST) + "constructor".length)) {
                         return null;
                     }
                     else {
@@ -1207,7 +1233,7 @@ module TypeScript.Services {
                     TypeScript.ASTHelpers.isNameOfMemberFunction(node)) {
                     var funcDecl = node.kind() === TypeScript.SyntaxKind.IdentifierName ? node.parent : node;
                     if (symbol && symbol.kind != TypeScript.PullElementKind.Property) {
-                        var signatureInfo = TypeScript.PullHelpers.getSignatureForFuncDecl(this.compiler.getDeclForAST(funcDecl));
+                        var signatureInfo = TypeScript.PullHelpers.getSignatureForFuncDecl(this.compiler.getDeclForAST(funcDecl), symbol.semanticInfoChain);
                         _isCallExpression = true;
                         candidateSignature = signatureInfo.signature;
                         resolvedSignatures = signatureInfo.allSignatures;
@@ -1288,8 +1314,8 @@ module TypeScript.Services {
             var docCommentSymbol = candidateSignature || symbol;
             var docComment = docCommentSymbol.docComments(!_isCallExpression);
             var symbolName = this.getFullNameOfSymbol(symbol, enclosingScopeSymbol);
-            var minChar = ast ? ast.start() : -1;
-            var limChar = ast ? ast.end() : -1;
+            var minChar = ast ? start(ast) : -1;
+            var limChar = ast ? end(ast) : -1;
 
             return new TypeInfo(memberName, docComment, symbolName, kind, TextSpan.fromBounds(minChar, limChar));
         }
@@ -1308,7 +1334,7 @@ module TypeScript.Services {
             var node = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, position, /*useTrailingTriviaAsLimChar*/ true, /*forceInclusive*/ true);
 
             if (node && node.kind() === TypeScript.SyntaxKind.IdentifierName &&
-                node.start() === node.end()) {
+                start(node) === end(node)) {
                 // Ignore missing name nodes
                 node = node.parent;
             }
@@ -1316,14 +1342,14 @@ module TypeScript.Services {
             var isRightOfDot = false;
             if (node &&
                 node.kind() === TypeScript.SyntaxKind.MemberAccessExpression &&
-                (<TypeScript.MemberAccessExpressionSyntax>node).expression.end() < position) {
+                end((<TypeScript.MemberAccessExpressionSyntax>node).expression) < position) {
 
                 isRightOfDot = true;
                 node = (<TypeScript.MemberAccessExpressionSyntax>node).expression;
             }
             else if (node &&
                 node.kind() === TypeScript.SyntaxKind.QualifiedName &&
-                (<TypeScript.QualifiedNameSyntax>node).left.end() < position) {
+                end((<TypeScript.QualifiedNameSyntax>node).left) < position) {
 
                 isRightOfDot = true;
                 node = (<TypeScript.QualifiedNameSyntax>node).left;
@@ -1363,7 +1389,7 @@ module TypeScript.Services {
 
                 // Object literal expression, look up possible property names from contextual type
                 if (containingObjectLiteral) {
-                    var searchPosition = Math.min(position, containingObjectLiteral.end());
+                    var searchPosition = Math.min(position, end(containingObjectLiteral));
                     var path = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, searchPosition);
                     // Get the object literal node
 
@@ -1460,6 +1486,7 @@ module TypeScript.Services {
         }
 
         private getCompletionEntriesFromDecls(decls: TypeScript.PullDecl[], result: TypeScript.IdentiferNameHashTable<CachedCompletionEntryDetails>): void {
+            var semanticInfoChain = this.getSemanticInfoChain();
             for (var i = 0, n = decls ? decls.length : 0; i < n; i++) {
                 var decl = decls[i];
 
@@ -1484,10 +1511,10 @@ module TypeScript.Services {
                 // Do not call getSymbol if the decl is not already bound. This would force a bind,
                 // which is too expensive to do for every completion item when we are building the
                 // list.
-                var symbol = decl.hasSymbol() && decl.getSymbol();
+                var symbol = decl.hasSymbol(semanticInfoChain) && decl.getSymbol(semanticInfoChain);
                 // If the symbol has already been resolved, cache the needed information for completion details.
                 var enclosingDecl = decl.getEnclosingDecl();
-                var enclosingScopeSymbol = (enclosingDecl && enclosingDecl.hasSymbol()) ? enclosingDecl.getSymbol() : null;
+                var enclosingScopeSymbol = (enclosingDecl && enclosingDecl.hasSymbol(semanticInfoChain)) ? enclosingDecl.getSymbol(semanticInfoChain) : null;
 
                 if (symbol && symbol.isResolved && enclosingScopeSymbol && enclosingScopeSymbol.isResolved) {
                     var completionInfo = this.getResolvedCompletionEntryDetailsFromSymbol(symbol, enclosingScopeSymbol);
@@ -1838,7 +1865,7 @@ module TypeScript.Services {
                 }
             }
 
-            var spanInfo = TextSpan.fromBounds(node.start(), node.end());
+            var spanInfo = TextSpan.fromBounds(start(node), end(node));
             return spanInfo;
         }
 

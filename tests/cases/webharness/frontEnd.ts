@@ -16,14 +16,15 @@ class DiagnosticsLogger implements TypeScript.ILogger {
     }
 }
 
-var libraryFileName = "lib.d.ts";
-var compilerFileName = "compiler.ts";
+var libDTSFileName = "lib.d.ts";
+var libDTSSource = TypeScript.SimpleText.fromString(libString);
 
 class BatchCompiler {
     public compiler: TypeScript.TypeScriptCompiler;
-    private simpleText = TypeScript.SimpleText.fromString(compilerString);
-    private libScriptSnapshot = TypeScript.ScriptSnapshot.fromString(libString);
-    private compilerScriptSnapshot = TypeScript.ScriptSnapshot.fromString(compilerString);
+
+    private getFileName(i: number): string {
+        return "file" + i + ".ts";
+    }
 
     public compile() {
         var settings = new TypeScript.CompilationSettings();
@@ -33,30 +34,59 @@ class BatchCompiler {
         this.compiler = new TypeScript.TypeScriptCompiler(new DiagnosticsLogger(),
             TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings));
 
-        this.compiler.addFile("lib.d.ts", this.libScriptSnapshot, TypeScript.ByteOrderMark.None, "0", false, []);
-        this.compiler.addFile("compiler.ts", this.compilerScriptSnapshot, TypeScript.ByteOrderMark.None, "0", false, []);
+        this.compiler.addFile(libDTSFileName, TypeScript.ScriptSnapshot.fromString(libString), TypeScript.ByteOrderMark.None, "0", false, []);
+
+        for (var i = 0; i < compilerFiles.length; i++) {
+            this.compiler.addFile(this.getFileName(i), TypeScript.ScriptSnapshot.fromString(compilerFiles[i]), TypeScript.ByteOrderMark.None, "0", false, []);
+        }
 
         this.compiler.getSyntacticDiagnostics("lib.d.ts");
-        this.compiler.getSyntacticDiagnostics("compiler.ts");
-        this.compiler.getSemanticDiagnostics("compiler.ts");
+
+        for (var i = 0; i < compilerFiles.length; i++) {
+            var fileName = "file" + i + ".ts";
+            this.compiler.getSyntacticDiagnostics(fileName);
+            this.compiler.getSemanticDiagnostics(fileName);
+        }
     }
 
-    public newParse(): TypeScript.SyntaxTree {
-        return TypeScript.Parser.parse(compilerFileName, this.simpleText, false,
-            TypeScript.getParseOptions(TypeScript.ImmutableCompilationSettings.defaultSettings()));
+    public parseCompilerSources(): TypeScript.SyntaxTree[] {
+        var result: TypeScript.SyntaxTree[] = [];
+
+        for (var i = 0; i < compilerFiles.length; i++) {
+            var contents = TypeScript.SimpleText.fromString(compilerFiles[i]);
+            var tree = TypeScript.Parser.parse(this.getFileName(i), contents, TypeScript.LanguageVersion.EcmaScript5, /*isDeclaration:*/ false);
+            result.push(tree);
+        }
+
+        return result;
     }
 
-    public newIncrementalParse(tree: TypeScript.SyntaxTree): TypeScript.SyntaxTree {
-        var width = 100;
-        var span = new TypeScript.TextSpan(TypeScript.IntegerUtilities.integerDivide(compilerString.length - width, 2), width);
+    public parseLibDTSSource(): TypeScript.SyntaxTree {
+        return TypeScript.Parser.parse(libDTSFileName, libDTSSource,
+            TypeScript.ImmutableCompilationSettings.defaultSettings().codeGenTarget(), /*isDeclaration:*/ true);
+    }
+
+    public incrementalParseLibDTSSource(tree: TypeScript.SyntaxTree): TypeScript.SyntaxTree {
+        var width = 1;
+        var span = new TypeScript.TextSpan(TypeScript.IntegerUtilities.integerDivide(libString.length - width, 2), width);
         var range = new TypeScript.TextChangeRange(span, width);
-        return TypeScript.Parser.incrementalParse(tree, range, this.simpleText);
+        return TypeScript.IncrementalParser.parse(tree, range, libDTSSource);
     }
 }
 
 function compile() {
     var batch = new BatchCompiler();
     batch.compile();
+}
+
+class OneField {
+    constructor(public any1: any, public any2: any, public field1: number) {
+    }
+}
+
+class TwoField {
+    constructor(public any1: any, public any2: any, public field1: number, public field2: number) {
+    }
 }
 
 // for (var i = 0; i < 2; i++) {

@@ -62,9 +62,6 @@ module TypeScript {
                     var adjustedPath = normalizePath(path);
 
                     var isResident = fullReference.length >= 7 && fullReference[6] === "true";
-                    if (isResident) {
-                        CompilerDiagnostics.debugPrint(path + " is resident");
-                    }
                     return {
                         line: 0,
                         character: 0,
@@ -80,42 +77,39 @@ module TypeScript {
         return null;
     }
 
-    var scannerWindow = ArrayUtilities.createArray<number>(2048, 0);
-    var scannerDiagnostics: any[] = [];
+    var reportDiagnostic = () => { };
 
-    function processImports(lineMap: LineMap, scanner: Scanner, token: ISyntaxToken, importedFiles: IFileReference[]): void {
-        var position = 0;
+    function processImports(lineMap: LineMap, scanner: Scanner.IScanner, token: ISyntaxToken, importedFiles: IFileReference[]): void {
         var lineChar = { line: -1, character: -1 };
 
         var start = new Date().getTime();
         // Look for: 
         // import foo = module("foo")
-        while (token.tokenKind !== SyntaxKind.EndOfFileToken) {
-            if (token.tokenKind === SyntaxKind.ImportKeyword) {
-                var importStart = position + token.leadingTriviaWidth();
-                token = scanner.scan(scannerDiagnostics, /*allowRegularExpression:*/ false);
+        while (token.kind() !== SyntaxKind.EndOfFileToken) {
+            if (token.kind() === SyntaxKind.ImportKeyword) {
+                var importToken = token;
+                token = scanner.scan(/*allowRegularExpression:*/ false);
 
                 if (SyntaxFacts.isIdentifierNameOrAnyKeyword(token)) {
-                    token = scanner.scan(scannerDiagnostics, /*allowRegularExpression:*/ false);
+                    token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                    if (token.tokenKind === SyntaxKind.EqualsToken) {
-                        token = scanner.scan(scannerDiagnostics, /*allowRegularExpression:*/ false);
+                    if (token.kind() === SyntaxKind.EqualsToken) {
+                        token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                        if (token.tokenKind === SyntaxKind.ModuleKeyword || token.tokenKind === SyntaxKind.RequireKeyword) {
-                            token = scanner.scan(scannerDiagnostics, /*allowRegularExpression:*/ false);
+                        if (token.kind() === SyntaxKind.ModuleKeyword || token.kind() === SyntaxKind.RequireKeyword) {
+                            token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                            if (token.tokenKind === SyntaxKind.OpenParenToken) {
-                                var afterOpenParenPosition = scanner.absoluteIndex();
-                                token = scanner.scan(scannerDiagnostics, /*allowRegularExpression:*/ false);
+                            if (token.kind() === SyntaxKind.OpenParenToken) {
+                                token = scanner.scan(/*allowRegularExpression:*/ false);
 
-                                lineMap.fillLineAndCharacterFromPosition(importStart, lineChar);
+                                lineMap.fillLineAndCharacterFromPosition(TypeScript.start(importToken), lineChar);
 
-                                if (token.tokenKind === SyntaxKind.StringLiteral) {
+                                if (token.kind() === SyntaxKind.StringLiteral) {
                                     var ref = {
                                         line: lineChar.line,
                                         character: lineChar.character,
-                                        position: afterOpenParenPosition + token.leadingTriviaWidth(),
-                                        length: token.width(),
+                                        position: TypeScript.start(token),
+                                        length: width(token),
                                         path: stripStartAndEndQuotes(switchToForwardSlashes(token.text())),
                                         isResident: false
                                     };
@@ -127,8 +121,7 @@ module TypeScript {
                 }
             }
 
-            position = scanner.absoluteIndex();
-            token = scanner.scan(scannerDiagnostics, /*allowRegularExpression:*/ false);
+            token = scanner.scan(/*allowRegularExpression:*/ false);
         }
 
         var totalTime = new Date().getTime() - start;
@@ -176,9 +169,9 @@ module TypeScript {
 
     export function preProcessFile(fileName: string, sourceText: IScriptSnapshot, readImportFiles = true): IPreProcessedFileInfo {
         var text = SimpleText.fromScriptSnapshot(sourceText);
-        var scanner = new Scanner(fileName, text, LanguageVersion.EcmaScript5, scannerWindow);
+        var scanner = Scanner.createScanner(LanguageVersion.EcmaScript5, text, reportDiagnostic);
 
-        var firstToken = scanner.scan(scannerDiagnostics, /*allowRegularExpression:*/ false);
+        var firstToken = scanner.scan(/*allowRegularExpression:*/ false);
 
         // only search out dynamic mods
         // if you find a dynamic mod, ignore every other mod inside, until you balance rcurlies
@@ -191,12 +184,7 @@ module TypeScript {
 
         var properties = processTripleSlashDirectives(fileName, text.lineMap(), firstToken);
 
-        scannerDiagnostics.length = 0;
         return { referencedFiles: properties.referencedFiles, importedFiles: importedFiles, isLibFile: properties.noDefaultLib, diagnostics: properties.diagnostics };
-    }
-
-    export function getParseOptions(settings: ImmutableCompilationSettings): ParseOptions {
-        return new ParseOptions(settings.codeGenTarget(), settings.allowAutomaticSemicolonInsertion());
     }
 
     export function getReferencedFiles(fileName: string, sourceText: IScriptSnapshot): IFileReference[] {

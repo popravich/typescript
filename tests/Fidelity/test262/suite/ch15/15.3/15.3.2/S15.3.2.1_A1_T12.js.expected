@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1349,
         "fullWidth": 1349,
         "width": 472,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "TryStatement",
@@ -694,7 +690,6 @@
                 "end": 1176,
                 "fullWidth": 204,
                 "width": 192,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 973,
@@ -759,7 +754,6 @@
                     "end": 1014,
                     "fullWidth": 26,
                     "width": 26,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 988,
@@ -768,7 +762,6 @@
                         "end": 1001,
                         "fullWidth": 14,
                         "width": 13,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "IdentifierName",
                             "fullStart": 988,
@@ -804,6 +797,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {

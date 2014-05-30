@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1323,
         "fullWidth": 1323,
         "width": 828,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -124,7 +120,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj",
+                                "valueText": "___obj",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -699,7 +695,7 @@
                                 "width": 6,
                                 "text": "__obj2",
                                 "value": "__obj2",
-                                "valueText": "__obj2",
+                                "valueText": "___obj2",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -1029,7 +1025,7 @@
                                 "width": 9,
                                 "text": "__FACTORY",
                                 "value": "__FACTORY",
-                                "valueText": "__FACTORY",
+                                "valueText": "___FACTORY",
                                 "hasLeadingTrivia": true,
                                 "hasLeadingNewLine": true,
                                 "leadingTrivia": [
@@ -1290,7 +1286,7 @@
                                 "width": 10,
                                 "text": "__instance",
                                 "value": "__instance",
-                                "valueText": "__instance",
+                                "valueText": "___instance",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -1369,7 +1365,7 @@
                                         "width": 9,
                                         "text": "__FACTORY",
                                         "value": "__FACTORY",
-                                        "valueText": "__FACTORY"
+                                        "valueText": "___FACTORY"
                                     },
                                     "argumentList": {
                                         "kind": "ArgumentList",
@@ -1703,7 +1699,7 @@
                                                         "width": 10,
                                                         "text": "__instance",
                                                         "value": "__instance",
-                                                        "valueText": "__instance"
+                                                        "valueText": "___instance"
                                                     },
                                                     "dotToken": {
                                                         "kind": "DotToken",
@@ -1761,7 +1757,7 @@
                                                             "width": 5,
                                                             "text": "__obj",
                                                             "value": "__obj",
-                                                            "valueText": "__obj"
+                                                            "valueText": "___obj"
                                                         },
                                                         {
                                                             "kind": "CommaToken",
@@ -1794,7 +1790,7 @@
                                                             "width": 6,
                                                             "text": "__obj2",
                                                             "value": "__obj2",
-                                                            "valueText": "__obj2"
+                                                            "valueText": "___obj2"
                                                         }
                                                     ],
                                                     "closeParenToken": {
@@ -2430,7 +2426,6 @@
                 "end": 1321,
                 "fullWidth": 245,
                 "width": 161,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "functionKeyword": {
                     "kind": "FunctionKeyword",
@@ -2498,7 +2493,7 @@
                     "width": 9,
                     "text": "__FACTORY",
                     "value": "__FACTORY",
-                    "valueText": "__FACTORY"
+                    "valueText": "___FACTORY"
                 },
                 "callSignature": {
                     "kind": "CallSignature",
@@ -2601,7 +2596,6 @@
                     "end": 1321,
                     "fullWidth": 134,
                     "width": 133,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 1188,
@@ -3103,7 +3097,6 @@
                             "end": 1319,
                             "fullWidth": 51,
                             "width": 46,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "AssignmentExpression",
                                 "fullStart": 1269,
@@ -3112,7 +3105,6 @@
                                 "end": 1318,
                                 "fullWidth": 49,
                                 "width": 45,
-                                "isIncrementallyUnusable": true,
                                 "left": {
                                     "kind": "MemberAccessExpression",
                                     "fullStart": 1269,
@@ -3187,7 +3179,6 @@
                                     "end": 1318,
                                     "fullWidth": 32,
                                     "width": 32,
-                                    "isIncrementallyUnusable": true,
                                     "functionKeyword": {
                                         "kind": "FunctionKeyword",
                                         "fullStart": 1286,
@@ -3251,7 +3242,6 @@
                                         "end": 1318,
                                         "fullWidth": 22,
                                         "width": 22,
-                                        "isIncrementallyUnusable": true,
                                         "openBraceToken": {
                                             "kind": "OpenBraceToken",
                                             "fullStart": 1296,
@@ -3273,7 +3263,6 @@
                                                 "end": 1317,
                                                 "fullWidth": 20,
                                                 "width": 20,
-                                                "isIncrementallyUnusable": true,
                                                 "returnKeyword": {
                                                     "kind": "ReturnKeyword",
                                                     "fullStart": 1297,
@@ -3372,16 +3361,6 @@
                                                         "value": "",
                                                         "valueText": ""
                                                     }
-                                                },
-                                                "semicolonToken": {
-                                                    "kind": "SemicolonToken",
-                                                    "fullStart": 1317,
-                                                    "fullEnd": 1317,
-                                                    "start": 1317,
-                                                    "end": 1317,
-                                                    "fullWidth": 0,
-                                                    "width": 0,
-                                                    "text": ""
                                                 }
                                             }
                                         ],

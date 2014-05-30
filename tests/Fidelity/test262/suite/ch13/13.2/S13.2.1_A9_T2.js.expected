@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1034,
         "fullWidth": 1034,
         "width": 564,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -166,7 +162,6 @@
                 "end": 528,
                 "fullWidth": 51,
                 "width": 49,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "variableDeclaration": {
                     "kind": "VariableDeclaration",
@@ -226,7 +221,7 @@
                                 "width": 6,
                                 "text": "__func",
                                 "value": "__func",
-                                "valueText": "__func",
+                                "valueText": "___func",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -543,16 +538,6 @@
                             }
                         }
                     ]
-                },
-                "semicolonToken": {
-                    "kind": "SemicolonToken",
-                    "fullStart": 529,
-                    "fullEnd": 529,
-                    "start": 529,
-                    "end": 529,
-                    "fullWidth": 0,
-                    "width": 0,
-                    "text": ""
                 }
             },
             {
@@ -657,7 +642,7 @@
                             "width": 6,
                             "text": "__func",
                             "value": "__func",
-                            "valueText": "__func"
+                            "valueText": "___func"
                         },
                         "argumentList": {
                             "kind": "ArgumentList",
@@ -897,7 +882,7 @@
                                                     "width": 6,
                                                     "text": "__func",
                                                     "value": "__func",
-                                                    "valueText": "__func"
+                                                    "valueText": "___func"
                                                 },
                                                 "argumentList": {
                                                     "kind": "ArgumentList",

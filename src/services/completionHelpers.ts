@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the Apache License, Version 2.0. 
 // See LICENSE.txt in the project root for complete license information.
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 module TypeScript.Services {
     export class CompletionHelpers {
         private static getSpan(ast: ISyntaxElement): TextSpan {
-            return new TextSpan(ast.start(), ast.width());
+            return new TextSpan(start(ast), width(ast));
         }
 
         private static symbolDeclarationIntersectsPosition(symbol: PullSymbol, fileName: string, position: number) {
@@ -55,7 +55,7 @@ module TypeScript.Services {
             // isEntirelyInsideComment can't handle when the position is out of bounds, 
             // callers should be fixed, however we should be resiliant to bad inputs
             // so we return true (this position is a blocker for getting completions)
-            if (position < 0 || position > sourceUnit.fullWidth()) {
+            if (position < 0 || position > fullWidth(sourceUnit)) {
                 return true;
             }
 
@@ -140,16 +140,16 @@ module TypeScript.Services {
         }
 
         public static getNonIdentifierCompleteTokenOnLeft(sourceUnit: TypeScript.SourceUnitSyntax, position: number): TypeScript.ISyntaxToken {
-            var positionedToken = sourceUnit.findCompleteTokenOnLeft(position, /*includeSkippedTokens*/true);
+            var positionedToken = Syntax.findCompleteTokenOnLeft(sourceUnit, position, /*includeSkippedTokens*/true);
 
-            if (positionedToken && position === positionedToken.end() && positionedToken.kind() == TypeScript.SyntaxKind.EndOfFileToken) {
+            if (positionedToken && position === end(positionedToken) && positionedToken.kind() == TypeScript.SyntaxKind.EndOfFileToken) {
                 // EndOfFile token is not intresting, get the one before it
-                positionedToken = positionedToken.previousToken(/*includeSkippedTokens*/true);
+                positionedToken = previousToken(positionedToken, /*includeSkippedTokens*/true);
             }
 
-            if (positionedToken && position === positionedToken.end() && positionedToken.kind() === TypeScript.SyntaxKind.IdentifierName) {
+            if (positionedToken && position === end(positionedToken) && positionedToken.kind() === TypeScript.SyntaxKind.IdentifierName) {
                 // The caret is at the end of an identifier, the decession to provide completion depends on the previous token
-                positionedToken = positionedToken.previousToken(/*includeSkippedTokens*/true);
+                positionedToken = previousToken(positionedToken, /*includeSkippedTokens*/true);
             }
 
             return positionedToken;
@@ -161,7 +161,7 @@ module TypeScript.Services {
             if (positionedToken) {
                 switch (positionedToken.kind()) {
                     case TypeScript.SyntaxKind.DotToken:
-                        var leftOfDotPositionedToken = positionedToken.previousToken(/*includeSkippedTokens*/true);
+                        var leftOfDotPositionedToken = previousToken(positionedToken, /*includeSkippedTokens*/true);
                         return leftOfDotPositionedToken && leftOfDotPositionedToken.kind() === TypeScript.SyntaxKind.NumericLiteral;
 
                     case TypeScript.SyntaxKind.NumericLiteral:

@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 20,
@@ -98,14 +95,13 @@
                     ]
                 },
                 "moduleReference": {
-                    "kind": "Last",
+                    "kind": "ModuleNameModuleReference",
                     "fullStart": 14,
                     "fullEnd": 20,
                     "start": 14,
                     "end": 20,
                     "fullWidth": 6,
                     "width": 6,
-                    "isIncrementallyUnusable": true,
                     "moduleName": {
                         "kind": "IdentifierName",
                         "fullStart": 14,
@@ -116,7 +112,8 @@
                         "width": 6,
                         "text": "module",
                         "value": "module",
-                        "valueText": "module"
+                        "valueText": "module",
+                        "isKeywordConvertedToIdentifier": true
                     }
                 },
                 "semicolonToken": {

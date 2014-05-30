@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 899,
         "fullWidth": 899,
         "width": 322,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -22,7 +18,6 @@
                 "end": 873,
                 "fullWidth": 875,
                 "width": 296,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "functionKeyword": {
                     "kind": "FunctionKeyword",
@@ -206,7 +201,6 @@
                     "end": 873,
                     "fullWidth": 278,
                     "width": 276,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 597,
@@ -538,7 +532,6 @@
                             "end": 869,
                             "fullWidth": 187,
                             "width": 183,
-                            "isIncrementallyUnusable": true,
                             "ifKeyword": {
                                 "kind": "IfKeyword",
                                 "fullStart": 684,
@@ -589,7 +582,6 @@
                                 "end": 843,
                                 "fullWidth": 153,
                                 "width": 153,
-                                "isIncrementallyUnusable": true,
                                 "left": {
                                     "kind": "LogicalAndExpression",
                                     "fullStart": 690,
@@ -598,7 +590,6 @@
                                     "end": 806,
                                     "fullWidth": 117,
                                     "width": 116,
-                                    "isIncrementallyUnusable": true,
                                     "left": {
                                         "kind": "LogicalAndExpression",
                                         "fullStart": 690,
@@ -607,7 +598,6 @@
                                         "end": 770,
                                         "fullWidth": 81,
                                         "width": 80,
-                                        "isIncrementallyUnusable": true,
                                         "left": {
                                             "kind": "EqualsExpression",
                                             "fullStart": 690,
@@ -616,7 +606,6 @@
                                             "end": 737,
                                             "fullWidth": 48,
                                             "width": 47,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "MemberAccessExpression",
                                                 "fullStart": 690,
@@ -700,7 +689,6 @@
                                                 "end": 737,
                                                 "fullWidth": 33,
                                                 "width": 32,
-                                                "isIncrementallyUnusable": true,
                                                 "expression": {
                                                     "kind": "MemberAccessExpression",
                                                     "fullStart": 705,
@@ -769,6 +757,7 @@
                                                     "text": "constructor",
                                                     "value": "constructor",
                                                     "valueText": "constructor",
+                                                    "isKeywordConvertedToIdentifier": true,
                                                     "hasTrailingTrivia": true,
                                                     "trailingTrivia": [
                                                         {

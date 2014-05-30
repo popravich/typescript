@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 500,
         "fullWidth": 500,
         "width": 148,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "IfStatement",
@@ -22,7 +18,6 @@
                 "end": 495,
                 "fullWidth": 499,
                 "width": 143,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 0,
@@ -129,7 +124,6 @@
                     "end": 393,
                     "fullWidth": 37,
                     "width": 37,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 356,
@@ -138,7 +132,6 @@
                         "end": 383,
                         "fullWidth": 28,
                         "width": 27,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "MemberAccessExpression",
                             "fullStart": 356,
@@ -207,6 +200,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -281,7 +275,6 @@
                     "end": 495,
                     "fullWidth": 104,
                     "width": 100,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 395,
@@ -313,7 +306,6 @@
                             "end": 493,
                             "fullWidth": 97,
                             "width": 94,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "InvocationExpression",
                                 "fullStart": 397,
@@ -322,7 +314,6 @@
                                 "end": 492,
                                 "fullWidth": 95,
                                 "width": 93,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "IdentifierName",
                                     "fullStart": 397,
@@ -352,7 +343,6 @@
                                     "end": 492,
                                     "fullWidth": 87,
                                     "width": 87,
-                                    "isIncrementallyUnusable": true,
                                     "openParenToken": {
                                         "kind": "OpenParenToken",
                                         "fullStart": 405,
@@ -374,7 +364,6 @@
                                             "end": 491,
                                             "fullWidth": 85,
                                             "width": 85,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "StringLiteral",
                                                 "fullStart": 406,
@@ -425,7 +414,6 @@
                                                 "end": 491,
                                                 "fullWidth": 29,
                                                 "width": 29,
-                                                "isIncrementallyUnusable": true,
                                                 "openParenToken": {
                                                     "kind": "OpenParenToken",
                                                     "fullStart": 462,
@@ -446,7 +434,6 @@
                                                     "end": 490,
                                                     "fullWidth": 27,
                                                     "width": 27,
-                                                    "isIncrementallyUnusable": true,
                                                     "expression": {
                                                         "kind": "MemberAccessExpression",
                                                         "fullStart": 463,
@@ -514,7 +501,8 @@
                                                         "width": 11,
                                                         "text": "constructor",
                                                         "value": "constructor",
-                                                        "valueText": "constructor"
+                                                        "valueText": "constructor",
+                                                        "isKeywordConvertedToIdentifier": true
                                                     }
                                                 },
                                                 "closeParenToken": {

@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 673,
         "fullWidth": 673,
         "width": 322,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "IfStatement",
@@ -544,7 +540,6 @@
                 "end": 670,
                 "fullWidth": 181,
                 "width": 169,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 490,
@@ -600,7 +595,6 @@
                     "end": 563,
                     "fullWidth": 59,
                     "width": 59,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 504,
@@ -609,7 +603,6 @@
                         "end": 530,
                         "fullWidth": 27,
                         "width": 26,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "ParenthesizedExpression",
                             "fullStart": 504,
@@ -742,6 +735,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -782,7 +776,6 @@
                         "end": 563,
                         "fullWidth": 28,
                         "width": 28,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "MemberAccessExpression",
                             "fullStart": 535,
@@ -850,7 +843,8 @@
                             "width": 11,
                             "text": "constructor",
                             "value": "constructor",
-                            "valueText": "constructor"
+                            "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true
                         }
                     }
                 },

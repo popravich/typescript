@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 54,
@@ -704,7 +701,8 @@
                                                                 "width": 3,
                                                                 "text": "any",
                                                                 "value": "any",
-                                                                "valueText": "any"
+                                                                "valueText": "any",
+                                                                "isKeywordConvertedToIdentifier": true
                                                             },
                                                             {
                                                                 "kind": "CommaToken",
@@ -784,7 +782,8 @@
                                                                 "width": 3,
                                                                 "text": "any",
                                                                 "value": "any",
-                                                                "valueText": "any"
+                                                                "valueText": "any",
+                                                                "isKeywordConvertedToIdentifier": true
                                                             }
                                                         ],
                                                         "closeParenToken": {
@@ -845,7 +844,6 @@
                                                 "end": 147,
                                                 "fullWidth": 6,
                                                 "width": 4,
-                                                "isIncrementallyUnusable": true,
                                                 "expression": {
                                                     "kind": "IdentifierName",
                                                     "fullStart": 143,
@@ -856,7 +854,8 @@
                                                     "width": 3,
                                                     "text": "any",
                                                     "value": "any",
-                                                    "valueText": "any"
+                                                    "valueText": "any",
+                                                    "isKeywordConvertedToIdentifier": true
                                                 },
                                                 "semicolonToken": {
                                                     "kind": "SemicolonToken",
@@ -914,16 +913,6 @@
                                             ]
                                         }
                                     }
-                                },
-                                "semicolonToken": {
-                                    "kind": "SemicolonToken",
-                                    "fullStart": 156,
-                                    "fullEnd": 156,
-                                    "start": 156,
-                                    "end": 156,
-                                    "fullWidth": 0,
-                                    "width": 0,
-                                    "text": ""
                                 }
                             }
                         ],

@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1436,
         "fullWidth": 1436,
         "width": 877,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -22,7 +18,6 @@
                 "end": 1410,
                 "fullWidth": 1412,
                 "width": 851,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "functionKeyword": {
                     "kind": "FunctionKeyword",
@@ -206,7 +201,6 @@
                     "end": 1410,
                     "fullWidth": 833,
                     "width": 831,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 579,
@@ -1368,7 +1362,6 @@
                             "end": 1206,
                             "fullWidth": 392,
                             "width": 380,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "InvocationExpression",
                                 "fullStart": 816,
@@ -1377,7 +1370,6 @@
                                 "end": 1205,
                                 "fullWidth": 389,
                                 "width": 379,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "MemberAccessExpression",
                                     "fullStart": 816,
@@ -1447,7 +1439,6 @@
                                     "end": 1205,
                                     "fullWidth": 358,
                                     "width": 358,
-                                    "isIncrementallyUnusable": true,
                                     "openParenToken": {
                                         "kind": "OpenParenToken",
                                         "fullStart": 847,
@@ -1535,7 +1526,6 @@
                                             "end": 1204,
                                             "fullWidth": 346,
                                             "width": 346,
-                                            "isIncrementallyUnusable": true,
                                             "openBraceToken": {
                                                 "kind": "OpenBraceToken",
                                                 "fullStart": 858,
@@ -1567,7 +1557,6 @@
                                                     "end": 1160,
                                                     "fullWidth": 299,
                                                     "width": 287,
-                                                    "isIncrementallyUnusable": true,
                                                     "propertyName": {
                                                         "kind": "IdentifierName",
                                                         "fullStart": 861,
@@ -1579,6 +1568,7 @@
                                                         "text": "get",
                                                         "value": "get",
                                                         "valueText": "get",
+                                                        "isKeywordConvertedToIdentifier": true,
                                                         "hasLeadingTrivia": true,
                                                         "leadingTrivia": [
                                                             {
@@ -1618,7 +1608,6 @@
                                                         "end": 1160,
                                                         "fullWidth": 282,
                                                         "width": 282,
-                                                        "isIncrementallyUnusable": true,
                                                         "functionKeyword": {
                                                             "kind": "FunctionKeyword",
                                                             "fullStart": 878,
@@ -1700,7 +1689,6 @@
                                                             "end": 1160,
                                                             "fullWidth": 270,
                                                             "width": 270,
-                                                            "isIncrementallyUnusable": true,
                                                             "openBraceToken": {
                                                                 "kind": "OpenBraceToken",
                                                                 "fullStart": 890,
@@ -1732,7 +1720,6 @@
                                                                     "end": 1118,
                                                                     "fullWidth": 227,
                                                                     "width": 209,
-                                                                    "isIncrementallyUnusable": true,
                                                                     "expression": {
                                                                         "kind": "InvocationExpression",
                                                                         "fullStart": 893,
@@ -1741,7 +1728,6 @@
                                                                         "end": 1117,
                                                                         "fullWidth": 224,
                                                                         "width": 208,
-                                                                        "isIncrementallyUnusable": true,
                                                                         "expression": {
                                                                             "kind": "MemberAccessExpression",
                                                                             "fullStart": 893,
@@ -1804,7 +1790,6 @@
                                                                             "end": 1117,
                                                                             "fullWidth": 187,
                                                                             "width": 187,
-                                                                            "isIncrementallyUnusable": true,
                                                                             "openParenToken": {
                                                                                 "kind": "OpenParenToken",
                                                                                 "fullStart": 930,
@@ -1925,7 +1910,6 @@
                                                                                     "end": 1116,
                                                                                     "fullWidth": 162,
                                                                                     "width": 162,
-                                                                                    "isIncrementallyUnusable": true,
                                                                                     "openBraceToken": {
                                                                                         "kind": "OpenBraceToken",
                                                                                         "fullStart": 954,
@@ -1957,7 +1941,6 @@
                                                                                             "end": 1056,
                                                                                             "fullWidth": 99,
                                                                                             "width": 79,
-                                                                                            "isIncrementallyUnusable": true,
                                                                                             "propertyName": {
                                                                                                 "kind": "IdentifierName",
                                                                                                 "fullStart": 957,
@@ -1969,6 +1952,7 @@
                                                                                                 "text": "get",
                                                                                                 "value": "get",
                                                                                                 "valueText": "get",
+                                                                                                "isKeywordConvertedToIdentifier": true,
                                                                                                 "hasLeadingTrivia": true,
                                                                                                 "leadingTrivia": [
                                                                                                     {

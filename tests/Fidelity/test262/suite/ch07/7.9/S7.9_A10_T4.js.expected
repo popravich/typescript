@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 307,
@@ -247,7 +244,6 @@
                 "end": 313,
                 "fullWidth": 2,
                 "width": 1,
-                "isIncrementallyUnusable": true,
                 "expression": {
                     "kind": "NumericLiteral",
                     "fullStart": 312,
@@ -269,16 +265,6 @@
                             "text": "\n"
                         }
                     ]
-                },
-                "semicolonToken": {
-                    "kind": "SemicolonToken",
-                    "fullStart": 314,
-                    "fullEnd": 314,
-                    "start": 314,
-                    "end": 314,
-                    "fullWidth": 0,
-                    "width": 0,
-                    "text": ""
                 }
             }
         ],

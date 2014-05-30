@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1101,
         "fullWidth": 1101,
         "width": 499,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -22,7 +18,6 @@
                 "end": 1075,
                 "fullWidth": 1077,
                 "width": 473,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "functionKeyword": {
                     "kind": "FunctionKeyword",
@@ -206,7 +201,6 @@
                     "end": 1075,
                     "fullWidth": 455,
                     "width": 453,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 622,
@@ -785,7 +779,6 @@
                             "end": 1068,
                             "fullWidth": 335,
                             "width": 325,
-                            "isIncrementallyUnusable": true,
                             "tryKeyword": {
                                 "kind": "TryKeyword",
                                 "fullStart": 735,
@@ -824,7 +817,6 @@
                                 "end": 1016,
                                 "fullWidth": 270,
                                 "width": 269,
-                                "isIncrementallyUnusable": true,
                                 "openBraceToken": {
                                     "kind": "OpenBraceToken",
                                     "fullStart": 747,
@@ -856,7 +848,6 @@
                                         "end": 820,
                                         "fullWidth": 72,
                                         "width": 58,
-                                        "isIncrementallyUnusable": true,
                                         "expression": {
                                             "kind": "AssignmentExpression",
                                             "fullStart": 750,
@@ -865,7 +856,6 @@
                                             "end": 819,
                                             "fullWidth": 69,
                                             "width": 57,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "MemberAccessExpression",
                                                 "fullStart": 750,
@@ -958,7 +948,6 @@
                                                 "end": 819,
                                                 "fullWidth": 45,
                                                 "width": 45,
-                                                "isIncrementallyUnusable": true,
                                                 "openBraceToken": {
                                                     "kind": "OpenBraceToken",
                                                     "fullStart": 774,
@@ -990,7 +979,6 @@
                                                         "end": 804,
                                                         "fullWidth": 29,
                                                         "width": 11,
-                                                        "isIncrementallyUnusable": true,
                                                         "propertyName": {
                                                             "kind": "IdentifierName",
                                                             "fullStart": 777,
@@ -1002,6 +990,7 @@
                                                             "text": "set",
                                                             "value": "set",
                                                             "valueText": "set",
+                                                            "isKeywordConvertedToIdentifier": true,
                                                             "hasLeadingTrivia": true,
                                                             "leadingTrivia": [
                                                                 {

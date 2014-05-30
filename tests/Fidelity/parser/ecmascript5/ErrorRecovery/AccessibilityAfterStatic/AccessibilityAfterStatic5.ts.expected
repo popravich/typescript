@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 34,
         "fullWidth": 34,
         "width": 34,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ClassDeclaration",
@@ -22,7 +18,6 @@
                 "end": 32,
                 "fullWidth": 34,
                 "width": 32,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "classKeyword": {
                     "kind": "ClassKeyword",
@@ -98,7 +93,6 @@
                         "end": 29,
                         "fullWidth": 15,
                         "width": 13,
-                        "isIncrementallyUnusable": true,
                         "modifiers": [
                             {
                                 "kind": "StaticKeyword",
@@ -130,7 +124,6 @@
                             "end": 29,
                             "fullWidth": 8,
                             "width": 6,
-                            "isIncrementallyUnusable": true,
                             "propertyName": {
                                 "kind": "IdentifierName",
                                 "fullStart": 23,
@@ -142,6 +135,7 @@
                                 "text": "public",
                                 "value": "public",
                                 "valueText": "public",
+                                "isKeywordConvertedToIdentifier": true,
                                 "hasTrailingTrivia": true,
                                 "hasTrailingNewLine": true,
                                 "trailingTrivia": [
@@ -153,16 +147,6 @@
                                     }
                                 ]
                             }
-                        },
-                        "semicolonToken": {
-                            "kind": "SemicolonToken",
-                            "fullStart": 31,
-                            "fullEnd": 31,
-                            "start": 31,
-                            "end": 31,
-                            "fullWidth": 0,
-                            "width": 0,
-                            "text": ""
                         }
                     }
                 ],

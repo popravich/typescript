@@ -1,14 +1,11 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 29,
             "length": 6,
-            "diagnosticCode": "Parameter property declarations can only be used in a non-ambient constructor declaration."
+            "diagnosticCode": "A parameter property is only allowed in a constructor implementation."
         }
     ],
     "sourceUnit": {
@@ -19,7 +16,6 @@
         "end": 56,
         "fullWidth": 56,
         "width": 56,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ClassDeclaration",

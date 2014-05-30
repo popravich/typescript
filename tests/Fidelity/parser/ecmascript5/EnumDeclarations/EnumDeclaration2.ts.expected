@@ -1,14 +1,11 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 22,
             "length": 7,
-            "diagnosticCode": "'declare' modifier not allowed for code already in an ambient context."
+            "diagnosticCode": "A 'declare' modifier cannot be used in an already ambient context."
         }
     ],
     "sourceUnit": {
@@ -19,7 +16,6 @@
         "end": 46,
         "fullWidth": 46,
         "width": 46,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ModuleDeclaration",

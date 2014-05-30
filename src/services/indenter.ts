@@ -13,19 +13,18 @@
 // limitations under the License.
 //
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 module TypeScript.Services {
     export class Indenter {
         public static getIndentation(node: TypeScript.SourceUnitSyntax, soruceText: TypeScript.IScriptSnapshot, position: number, editorOptions: TypeScript.Services.EditorOptions): number {
-            
             var indentation = 0;
-            var currentToken = node.findToken(position);
+            var currentToken = TypeScript.findToken(node, position);
             var currentNode: TypeScript.ISyntaxElement = currentToken;
 
             if (currentToken.kind() === TypeScript.SyntaxKind.EndOfFileToken) {
                 // Ignore EOF tokens, pick the one before it
-                currentNode = currentToken.previousToken();
+                currentNode = previousToken(currentToken);
             }
             else if (Indenter.belongsToBracket(soruceText, currentToken, position)) {
                 // Let braces and brackets take the indentation of thier parents
@@ -47,7 +46,7 @@ module TypeScript.Services {
 
             while (parent !== null) {
                 // Skip nodes that start at the position, these will have the indentation level of thier parent
-                if (parent.fullStart() !== currentNode.fullStart()) {
+                if (fullStart(parent) !== fullStart(currentNode)) {
                     if (Indenter.isInContainerNode(parent, currentElement)) {
                         indentation += editorOptions.IndentSize;
                     }
@@ -77,8 +76,8 @@ module TypeScript.Services {
                 case TypeScript.SyntaxKind.OpenBracketToken:
                 case TypeScript.SyntaxKind.CloseBracketToken:
                     // the current token is a bracket, check if the current position is separated from it by a new line
-                    if (position < token.start()) {
-                        var text = sourceText.getText(position, token.start());
+                    if (position < start(token)) {
+                        var text = sourceText.getText(position, start(token));
                         for(var i = 0; i< text.length; i++){
                             if (TypeScript.CharacterInfo.isLineTerminator(text.charCodeAt(i))) {
                                 return false;
@@ -133,7 +132,7 @@ module TypeScript.Services {
                     // and we want these on the same indentation level.
                     return false;
                 default:
-                    return parent.isNode() && (<TypeScript.SyntaxNode>parent).isStatement();
+                    return isNode(parent) && SyntaxUtilities.isStatement(parent);
             }
         }
 
@@ -141,8 +140,8 @@ module TypeScript.Services {
             switch (list.kind()) {
                 case TypeScript.SyntaxKind.SeparatedList:
                     // If it is the first in the list, let it have its parents indentation; no custom indentation here.
-                    for (var i = 0, n = list.childCount(); i < n ; i++) {
-                        var child = list.childAt(i);
+                    for (var i = 0, n = childCount(list); i < n ; i++) {
+                        var child = childAt(list, i);
                         if (child !== null && child === element)
                             return Indenter.getListItemIndentation(list, i - 1);
                     }
@@ -154,7 +153,7 @@ module TypeScript.Services {
                     var argumentList = <TypeScript.ArgumentListSyntax> list;
                     var _arguments = argumentList.arguments;
                     if (_arguments !== null && argumentList.closeParenToken === element) {
-                        return Indenter.getListItemIndentation(_arguments, _arguments.childCount() - 1);
+                        return Indenter.getListItemIndentation(_arguments, childCount(_arguments) - 1);
                     }
                     break;
 
@@ -164,7 +163,7 @@ module TypeScript.Services {
                     var parameterList = <TypeScript.ParameterListSyntax> list;
                     var parameters = parameterList.parameters;
                     if (parameters !== null && parameterList.closeParenToken === element) {
-                        return Indenter.getListItemIndentation(parameters, parameters.childCount() - 1);
+                        return Indenter.getListItemIndentation(parameters, childCount(parameters) - 1);
                     }
                     break;
 
@@ -174,7 +173,7 @@ module TypeScript.Services {
                     var typeArgumentList = <TypeScript.TypeArgumentListSyntax> list;
                     var typeArguments = typeArgumentList.typeArguments;
                     if (typeArguments !== null && typeArgumentList.greaterThanToken === element) {
-                        return Indenter.getListItemIndentation(typeArguments, typeArguments.childCount() - 1);
+                        return Indenter.getListItemIndentation(typeArguments, childCount(typeArguments) - 1);
                     }
                     break;
 
@@ -184,7 +183,7 @@ module TypeScript.Services {
                     var typeParameterList = <TypeScript.TypeParameterListSyntax> list;
                     var typeParameters = typeParameterList.typeParameters;
                     if (typeParameters !== null && typeParameterList.greaterThanToken === element) {
-                        return Indenter.getListItemIndentation(typeParameters, typeParameters.childCount() - 1);
+                        return Indenter.getListItemIndentation(typeParameters, childCount(typeParameters) - 1);
                     }
                     break;
             }
@@ -193,13 +192,13 @@ module TypeScript.Services {
 
         private static getListItemIndentation(list: TypeScript.ISyntaxElement, elementIndex: number): number {
             for (var i = elementIndex; i > 0 ; i--) {
-                var child = list.childAt(i);
-                var previousChild = list.childAt(i - 1);
-                if ((child !== null && child.leadingTrivia().hasNewLine()) ||
-                    (previousChild !== null && previousChild.trailingTrivia().hasNewLine())) {
+                var child = childAt(list, i);
+                var previousChild = childAt(list, i - 1);
+                if ((child !== null && firstToken(child).leadingTrivia().hasNewLine()) ||
+                    (previousChild !== null && lastToken(previousChild).trailingTrivia().hasNewLine())) {
 
                     // TODO: get the trivia after new line
-                    return child.leadingTriviaWidth();
+                    return leadingTriviaWidth(child);
                 }
             }
             return -1;

@@ -1,14 +1,11 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 19,
             "length": 1,
-            "diagnosticCode": "Required parameter cannot follow optional parameter."
+            "diagnosticCode": "A required parameter cannot follow an optional parameter."
         }
     ],
     "sourceUnit": {
@@ -19,7 +16,6 @@
         "end": 28,
         "fullWidth": 28,
         "width": 28,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ClassDeclaration",

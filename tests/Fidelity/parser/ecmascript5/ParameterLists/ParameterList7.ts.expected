@@ -1,19 +1,16 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 25,
             "length": 6,
-            "diagnosticCode": "Parameter property declarations cannot be used in a constructor overload."
+            "diagnosticCode": "A parameter property is only allowed in a constructor implementation."
         },
         {
             "start": 67,
             "length": 7,
-            "diagnosticCode": "Parameter property declarations cannot be used in a constructor overload."
+            "diagnosticCode": "A parameter property is only allowed in a constructor implementation."
         }
     ],
     "sourceUnit": {
@@ -24,7 +21,6 @@
         "end": 136,
         "fullWidth": 136,
         "width": 136,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ClassDeclaration",

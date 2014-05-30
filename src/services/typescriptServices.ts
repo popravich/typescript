@@ -13,25 +13,7 @@
 // limitations under the License.
 //
 
-///<reference path='es5compat.ts' />
-///<reference path='..\compiler\typescript.ts' />
-///<reference path='coreServices.ts' />
-///<reference path='classifier.ts' />
-///<reference path='compilerState.ts' />
-///<reference path='languageService.ts' />
-///<reference path='completionHelpers.ts' />
-///<reference path='keywordCompletions.ts' />
-///<reference path='signatureInfoHelpers.ts' />
-///<reference path='completionSession.ts' />
-///<reference path='pullLanguageService.ts' />
-///<reference path='findReferenceHelpers.ts' />
-///<reference path='shims.ts' />
-///<reference path='formatting\formatting.ts' />
-///<reference path='outliningElementsCollector.ts' />
-///<reference path='braceMatcher.ts' />
-///<reference path='indenter.ts' />
-///<reference path='breakpoints.ts' />
-///<reference path='getScriptLexicalStructureWalker.ts' />
+///<reference path="references.ts" />
 
 module TypeScript.Services {
     export function copyDataObject(dst: any, src: any): any {
@@ -48,10 +30,11 @@ module TypeScript.Services {
 
     export class TypeScriptServicesFactory implements IShimFactory {
         private _shims: IShim[] = [];
+        private documentRegistry: DocumentRegistry = new DocumentRegistry();
 
         public createPullLanguageService(host: TypeScript.Services.ILanguageServiceHost): TypeScript.Services.ILanguageService {
             try {
-                return new TypeScript.Services.LanguageService(host);
+                return new TypeScript.Services.LanguageService(host, this.documentRegistry);
             }
             catch (err) {
                 TypeScript.Services.logInternalError(host, err);
@@ -114,6 +97,7 @@ module TypeScript.Services {
         public close(): void {
             // Forget all the registered shims
             this._shims = [];
+            this.documentRegistry = new DocumentRegistry();
         }
 
         public registerShim(shim: IShim): void {

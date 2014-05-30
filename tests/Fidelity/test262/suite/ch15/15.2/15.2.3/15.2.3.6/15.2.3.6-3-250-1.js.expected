@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1152,
         "fullWidth": 1152,
         "width": 528,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -22,7 +18,6 @@
                 "end": 1126,
                 "fullWidth": 1128,
                 "width": 502,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "functionKeyword": {
                     "kind": "FunctionKeyword",
@@ -206,7 +201,6 @@
                     "end": 1126,
                     "fullWidth": 484,
                     "width": 482,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 644,
@@ -405,7 +399,6 @@
                             "end": 1119,
                             "fullWidth": 451,
                             "width": 441,
-                            "isIncrementallyUnusable": true,
                             "tryKeyword": {
                                 "kind": "TryKeyword",
                                 "fullStart": 670,
@@ -444,7 +437,6 @@
                                 "end": 1056,
                                 "fullWidth": 375,
                                 "width": 374,
-                                "isIncrementallyUnusable": true,
                                 "openBraceToken": {
                                     "kind": "OpenBraceToken",
                                     "fullStart": 682,
@@ -476,7 +468,6 @@
                                         "end": 785,
                                         "fullWidth": 102,
                                         "width": 88,
-                                        "isIncrementallyUnusable": true,
                                         "expression": {
                                             "kind": "AssignmentExpression",
                                             "fullStart": 685,
@@ -485,7 +476,6 @@
                                             "end": 784,
                                             "fullWidth": 99,
                                             "width": 87,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "MemberAccessExpression",
                                                 "fullStart": 685,
@@ -494,7 +484,6 @@
                                                 "end": 717,
                                                 "fullWidth": 33,
                                                 "width": 20,
-                                                "isIncrementallyUnusable": true,
                                                 "expression": {
                                                     "kind": "MemberAccessExpression",
                                                     "fullStart": 685,
@@ -572,6 +561,7 @@
                                                     "text": "set",
                                                     "value": "set",
                                                     "valueText": "set",
+                                                    "isKeywordConvertedToIdentifier": true,
                                                     "hasTrailingTrivia": true,
                                                     "trailingTrivia": [
                                                         {
@@ -1905,7 +1895,6 @@
                                 "end": 1119,
                                 "fullWidth": 64,
                                 "width": 62,
-                                "isIncrementallyUnusable": true,
                                 "finallyKeyword": {
                                     "kind": "FinallyKeyword",
                                     "fullStart": 1057,
@@ -1935,7 +1924,6 @@
                                     "end": 1119,
                                     "fullWidth": 56,
                                     "width": 54,
-                                    "isIncrementallyUnusable": true,
                                     "openBraceToken": {
                                         "kind": "OpenBraceToken",
                                         "fullStart": 1065,
@@ -1967,7 +1955,6 @@
                                             "end": 1108,
                                             "fullWidth": 42,
                                             "width": 28,
-                                            "isIncrementallyUnusable": true,
                                             "expression": {
                                                 "kind": "DeleteExpression",
                                                 "fullStart": 1068,
@@ -1976,7 +1963,6 @@
                                                 "end": 1107,
                                                 "fullWidth": 39,
                                                 "width": 27,
-                                                "isIncrementallyUnusable": true,
                                                 "deleteKeyword": {
                                                     "kind": "DeleteKeyword",
                                                     "fullStart": 1068,
@@ -2015,7 +2001,6 @@
                                                     "end": 1107,
                                                     "fullWidth": 20,
                                                     "width": 20,
-                                                    "isIncrementallyUnusable": true,
                                                     "expression": {
                                                         "kind": "MemberAccessExpression",
                                                         "fullStart": 1087,
@@ -2083,7 +2068,8 @@
                                                         "width": 3,
                                                         "text": "set",
                                                         "value": "set",
-                                                        "valueText": "set"
+                                                        "valueText": "set",
+                                                        "isKeywordConvertedToIdentifier": true
                                                     }
                                                 }
                                             },

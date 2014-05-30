@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 48,
         "fullWidth": 48,
         "width": 48,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ExpressionStatement",
@@ -65,7 +61,6 @@
                 "end": 46,
                 "fullWidth": 33,
                 "width": 29,
-                "isIncrementallyUnusable": true,
                 "parsedInStrictMode": true,
                 "modifiers": [],
                 "enumKeyword": {
@@ -151,7 +146,6 @@
                         "end": 42,
                         "fullWidth": 13,
                         "width": 9,
-                        "isIncrementallyUnusable": true,
                         "parsedInStrictMode": true,
                         "propertyName": {
                             "kind": "IdentifierName",
@@ -164,6 +158,7 @@
                             "text": "interface",
                             "value": "interface",
                             "valueText": "interface",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasLeadingTrivia": true,
                             "leadingTrivia": [
                                 {

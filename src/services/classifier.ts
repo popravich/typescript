@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 module TypeScript.Services {
     export enum EndOfLineState {
@@ -50,9 +50,11 @@ module TypeScript.Services {
     noRegexTable[TypeScript.SyntaxKind.FalseKeyword] = true;
 
     export class Classifier {
-        private scanner: TypeScript.Scanner;
-        private characterWindow: number[] = TypeScript.ArrayUtilities.createArray<number>(2048, 0);
-        private diagnostics: TypeScript.Diagnostic[] = [];
+        private scanner: TypeScript.Scanner.IScanner;
+        private lastDiagnosticKey: string = null;
+        private reportDiagnostic = (position: number, fullWidth: number, key: string, args: any[]) => {
+            this.lastDiagnosticKey = key;
+        };
 
         constructor(public host: IClassifierHost) {
         }
@@ -80,36 +82,37 @@ module TypeScript.Services {
             }
 
             var result = new ClassificationResult();
-            this.scanner = new TypeScript.Scanner("", TypeScript.SimpleText.fromString(text), TypeScript.LanguageVersion.EcmaScript5, this.characterWindow);
+            this.scanner = Scanner.createScanner(TypeScript.LanguageVersion.EcmaScript5, TypeScript.SimpleText.fromString(text), this.reportDiagnostic);
 
             var lastTokenKind = TypeScript.SyntaxKind.None;
+            var token: ISyntaxToken = null;
+            do {
+                this.lastDiagnosticKey = null;
 
-            while (this.scanner.absoluteIndex() < text.length) {
-                this.diagnostics.length = 0;
-                var token = this.scanner.scan(this.diagnostics, !noRegexTable[lastTokenKind]);
-                lastTokenKind = token.tokenKind;
+                token = this.scanner.scan(!noRegexTable[lastTokenKind]);
+                lastTokenKind = token.kind();
 
                 this.processToken(text, offset, token, result);
             }
+            while (token.kind() !== SyntaxKind.EndOfFileToken);
 
+            this.lastDiagnosticKey = null;
             return result;
         }
 
         private processToken(text: string, offset: number, token: TypeScript.ISyntaxToken, result: ClassificationResult): void {
             this.processTriviaList(text, offset, token.leadingTrivia(), result);
-            this.addResult(text, offset, result, token.width(), token.tokenKind);
+            this.addResult(text, offset, result, width(token), token.kind());
             this.processTriviaList(text, offset, token.trailingTrivia(), result);
 
-            if (this.scanner.absoluteIndex() >= text.length) {
+            if (fullEnd(token) >= text.length) {
                 // We're at the end.
-                if (this.diagnostics.length > 0) {
-                    if (this.diagnostics[this.diagnostics.length - 1].diagnosticKey() === TypeScript.DiagnosticCode.AsteriskSlash_expected) {
-                        result.finalLexState = EndOfLineState.InMultiLineCommentTrivia;
-                        return;
-                    }
+                if (this.lastDiagnosticKey === TypeScript.DiagnosticCode.AsteriskSlash_expected) {
+                    result.finalLexState = EndOfLineState.InMultiLineCommentTrivia;
+                    return;
                 }
 
-                if (token.tokenKind === TypeScript.SyntaxKind.StringLiteral) {
+                if (token.kind() === TypeScript.SyntaxKind.StringLiteral) {
                     var tokenText = token.text();
                     if (tokenText.length > 0 && tokenText.charCodeAt(tokenText.length - 1) === TypeScript.CharacterCodes.backslash) {
                         var quoteChar = tokenText.charCodeAt(0);

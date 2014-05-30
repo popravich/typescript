@@ -1,14 +1,11 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 0,
             "length": 7,
-            "diagnosticCode": "'declare' modifier cannot appear on an interface declaration."
+            "diagnosticCode": "A 'declare' modifier cannot be used with an interface declaration."
         }
     ],
     "sourceUnit": {
@@ -19,7 +16,6 @@
         "end": 24,
         "fullWidth": 24,
         "width": 24,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "InterfaceDeclaration",

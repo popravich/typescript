@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1449,
         "fullWidth": 1449,
         "width": 956,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ExpressionStatement",
@@ -22,7 +18,6 @@
                 "end": 608,
                 "fullWidth": 609,
                 "width": 115,
-                "isIncrementallyUnusable": true,
                 "expression": {
                     "kind": "AssignmentExpression",
                     "fullStart": 0,
@@ -41,7 +36,7 @@
                         "width": 9,
                         "text": "__FACTORY",
                         "value": "__FACTORY",
-                        "valueText": "__FACTORY",
+                        "valueText": "___FACTORY",
                         "hasLeadingTrivia": true,
                         "hasLeadingComment": true,
                         "hasLeadingNewLine": true,
@@ -851,16 +846,6 @@
                             }
                         }
                     }
-                },
-                "semicolonToken": {
-                    "kind": "SemicolonToken",
-                    "fullStart": 609,
-                    "fullEnd": 609,
-                    "start": 609,
-                    "end": 609,
-                    "fullWidth": 0,
-                    "width": 0,
-                    "text": ""
                 }
             },
             {
@@ -889,7 +874,7 @@
                         "width": 5,
                         "text": "__obj",
                         "value": "__obj",
-                        "valueText": "__obj",
+                        "valueText": "___obj",
                         "hasLeadingTrivia": true,
                         "hasLeadingNewLine": true,
                         "hasTrailingTrivia": true,
@@ -970,7 +955,7 @@
                             "width": 9,
                             "text": "__FACTORY",
                             "value": "__FACTORY",
-                            "valueText": "__FACTORY"
+                            "valueText": "___FACTORY"
                         },
                         "argumentList": {
                             "kind": "ArgumentList",
@@ -1580,7 +1565,7 @@
                             "width": 5,
                             "text": "__obj",
                             "value": "__obj",
-                            "valueText": "__obj"
+                            "valueText": "___obj"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -2035,7 +2020,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj"
+                                "valueText": "___obj"
                             },
                             "dotToken": {
                                 "kind": "DotToken",

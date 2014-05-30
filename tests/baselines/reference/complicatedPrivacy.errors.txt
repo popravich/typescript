@@ -14,8 +14,8 @@
                                        ~~~~~
 !!! complicatedPrivacy.ts(10,36): error TS2019: Exported class 'C2' implements private interface 'm3.i3'.
                 public get p1(arg) {
-                       ~~~
-!!! complicatedPrivacy.ts(11,20): error TS1054: 'get' accessor cannot have parameters.
+                           ~~
+!!! complicatedPrivacy.ts(11,24): error TS1054: 'get' accessor cannot have parameters.
                     return new C1();
                     ~~~~~~~~~~~~~~~~
 !!! complicatedPrivacy.ts(12,17): error TS2051: Return type of public property getter from exported class has or is using private type 'C1'.
@@ -112,7 +112,7 @@
     
             export class c_pr  implements mglo5.i5, mglo5.i6 {
                                                           ~~
-!!! complicatedPrivacy.ts(73,55): error TS2094: The property 'i6' does not exist on value of type 'mglo5'.
+!!! complicatedPrivacy.ts(73,55): error TS2094: Property 'i6' does not exist on value of type 'mglo5'.
                 f1() {
                     return "Hello";
                 }

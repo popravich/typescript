@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1667,
         "fullWidth": 1667,
         "width": 1083,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -107,7 +103,7 @@
                     "width": 9,
                     "text": "__FACTORY",
                     "value": "__FACTORY",
-                    "valueText": "__FACTORY"
+                    "valueText": "___FACTORY"
                 },
                 "callSignature": {
                     "kind": "CallSignature",
@@ -226,7 +222,6 @@
                 "end": 665,
                 "fullWidth": 58,
                 "width": 56,
-                "isIncrementallyUnusable": true,
                 "expression": {
                     "kind": "AssignmentExpression",
                     "fullStart": 608,
@@ -235,7 +230,6 @@
                     "end": 664,
                     "fullWidth": 56,
                     "width": 55,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 608,
@@ -262,7 +256,7 @@
                                 "width": 9,
                                 "text": "__FACTORY",
                                 "value": "__FACTORY",
-                                "valueText": "__FACTORY",
+                                "valueText": "___FACTORY",
                                 "hasLeadingTrivia": true,
                                 "hasLeadingNewLine": true,
                                 "leadingTrivia": [
@@ -344,7 +338,6 @@
                         "end": 664,
                         "fullWidth": 26,
                         "width": 26,
-                        "isIncrementallyUnusable": true,
                         "functionKeyword": {
                             "kind": "FunctionKeyword",
                             "fullStart": 638,
@@ -408,7 +401,6 @@
                             "end": 664,
                             "fullWidth": 16,
                             "width": 16,
-                            "isIncrementallyUnusable": true,
                             "openBraceToken": {
                                 "kind": "OpenBraceToken",
                                 "fullStart": 648,
@@ -430,7 +422,6 @@
                                     "end": 663,
                                     "fullWidth": 14,
                                     "width": 14,
-                                    "isIncrementallyUnusable": true,
                                     "returnKeyword": {
                                         "kind": "ReturnKeyword",
                                         "fullStart": 649,
@@ -463,16 +454,6 @@
                                         "text": "\"tostr\"",
                                         "value": "tostr",
                                         "valueText": "tostr"
-                                    },
-                                    "semicolonToken": {
-                                        "kind": "SemicolonToken",
-                                        "fullStart": 663,
-                                        "fullEnd": 663,
-                                        "start": 663,
-                                        "end": 663,
-                                        "fullWidth": 0,
-                                        "width": 0,
-                                        "text": ""
                                     }
                                 }
                             ],
@@ -581,7 +562,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj",
+                                "valueText": "___obj",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -660,7 +641,7 @@
                                         "width": 9,
                                         "text": "__FACTORY",
                                         "value": "__FACTORY",
-                                        "valueText": "__FACTORY"
+                                        "valueText": "___FACTORY"
                                     }
                                 }
                             }
@@ -757,7 +738,7 @@
                                 "width": 5,
                                 "text": "__str",
                                 "value": "__str",
-                                "valueText": "__str",
+                                "valueText": "___str",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -869,7 +850,7 @@
                                                 "width": 5,
                                                 "text": "__obj",
                                                 "value": "__obj",
-                                                "valueText": "__obj"
+                                                "valueText": "___obj"
                                             }
                                         ],
                                         "closeParenToken": {
@@ -1036,7 +1017,7 @@
                             "width": 5,
                             "text": "__str",
                             "value": "__str",
-                            "valueText": "__str",
+                            "valueText": "___str",
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -1263,7 +1244,7 @@
                                                     "width": 5,
                                                     "text": "__str",
                                                     "value": "__str",
-                                                    "valueText": "__str",
+                                                    "valueText": "___str",
                                                     "hasTrailingTrivia": true,
                                                     "trailingTrivia": [
                                                         {
@@ -1353,7 +1334,6 @@
                 "end": 1299,
                 "fullWidth": 338,
                 "width": 163,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 962,
@@ -1454,7 +1434,6 @@
                     "end": 1168,
                     "fullWidth": 28,
                     "width": 28,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 1140,
@@ -1463,7 +1442,6 @@
                         "end": 1157,
                         "fullWidth": 18,
                         "width": 17,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "IdentifierName",
                             "fullStart": 1140,
@@ -1474,7 +1452,7 @@
                             "width": 5,
                             "text": "__str",
                             "value": "__str",
-                            "valueText": "__str"
+                            "valueText": "___str"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -1499,6 +1477,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -1573,7 +1552,6 @@
                     "end": 1299,
                     "fullWidth": 130,
                     "width": 129,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 1170,
@@ -1605,7 +1583,6 @@
                             "end": 1296,
                             "fullWidth": 126,
                             "width": 122,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "InvocationExpression",
                                 "fullStart": 1172,
@@ -1614,7 +1591,6 @@
                                 "end": 1295,
                                 "fullWidth": 123,
                                 "width": 121,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "IdentifierName",
                                     "fullStart": 1172,
@@ -1644,7 +1620,6 @@
                                     "end": 1295,
                                     "fullWidth": 115,
                                     "width": 115,
-                                    "isIncrementallyUnusable": true,
                                     "openParenToken": {
                                         "kind": "OpenParenToken",
                                         "fullStart": 1180,
@@ -1666,7 +1641,6 @@
                                             "end": 1293,
                                             "fullWidth": 113,
                                             "width": 112,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "StringLiteral",
                                                 "fullStart": 1181,
@@ -1699,7 +1673,6 @@
                                                 "end": 1293,
                                                 "fullWidth": 18,
                                                 "width": 17,
-                                                "isIncrementallyUnusable": true,
                                                 "expression": {
                                                     "kind": "IdentifierName",
                                                     "fullStart": 1276,
@@ -1710,7 +1683,7 @@
                                                     "width": 5,
                                                     "text": "__str",
                                                     "value": "__str",
-                                                    "valueText": "__str"
+                                                    "valueText": "___str"
                                                 },
                                                 "dotToken": {
                                                     "kind": "DotToken",
@@ -1735,6 +1708,7 @@
                                                     "text": "constructor",
                                                     "value": "constructor",
                                                     "valueText": "constructor",
+                                                    "isKeywordConvertedToIdentifier": true,
                                                     "hasTrailingTrivia": true,
                                                     "trailingTrivia": [
                                                         {
@@ -1934,7 +1908,7 @@
                         "width": 5,
                         "text": "__str",
                         "value": "__str",
-                        "valueText": "__str",
+                        "valueText": "___str",
                         "hasTrailingTrivia": true,
                         "trailingTrivia": [
                             {
@@ -2131,7 +2105,7 @@
                                                 "width": 5,
                                                 "text": "__str",
                                                 "value": "__str",
-                                                "valueText": "__str",
+                                                "valueText": "___str",
                                                 "hasTrailingTrivia": true,
                                                 "trailingTrivia": [
                                                     {

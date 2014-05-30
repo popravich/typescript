@@ -1,14 +1,11 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 18,
             "length": 7,
-            "diagnosticCode": "Rest parameter cannot be optional."
+            "diagnosticCode": "A rest parameter cannot be optional."
         }
     ],
     "sourceUnit": {
@@ -19,7 +16,6 @@
         "end": 33,
         "fullWidth": 33,
         "width": 33,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ClassDeclaration",

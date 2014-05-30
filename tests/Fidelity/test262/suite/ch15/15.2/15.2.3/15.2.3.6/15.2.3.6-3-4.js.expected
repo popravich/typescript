@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1189,
         "fullWidth": 1189,
         "width": 391,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -22,7 +18,6 @@
                 "end": 1163,
                 "fullWidth": 1165,
                 "width": 365,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "functionKeyword": {
                     "kind": "FunctionKeyword",
@@ -206,7 +201,6 @@
                     "end": 1163,
                     "fullWidth": 347,
                     "width": 345,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 818,
@@ -405,7 +399,6 @@
                             "end": 897,
                             "fullWidth": 61,
                             "width": 28,
-                            "isIncrementallyUnusable": true,
                             "modifiers": [],
                             "variableDeclaration": {
                                 "kind": "VariableDeclaration",
@@ -674,16 +667,6 @@
                                         }
                                     }
                                 ]
-                            },
-                            "semicolonToken": {
-                                "kind": "SemicolonToken",
-                                "fullStart": 899,
-                                "fullEnd": 899,
-                                "start": 899,
-                                "end": 899,
-                                "fullWidth": 0,
-                                "width": 0,
-                                "text": ""
                             }
                         },
                         {
@@ -694,7 +677,6 @@
                             "end": 947,
                             "fullWidth": 50,
                             "width": 44,
-                            "isIncrementallyUnusable": true,
                             "modifiers": [],
                             "variableDeclaration": {
                                 "kind": "VariableDeclaration",
@@ -704,7 +686,6 @@
                                 "end": 946,
                                 "fullWidth": 47,
                                 "width": 43,
-                                "isIncrementallyUnusable": true,
                                 "varKeyword": {
                                     "kind": "VarKeyword",
                                     "fullStart": 899,
@@ -744,7 +725,6 @@
                                         "end": 946,
                                         "fullWidth": 39,
                                         "width": 39,
-                                        "isIncrementallyUnusable": true,
                                         "propertyName": {
                                             "kind": "IdentifierName",
                                             "fullStart": 907,
@@ -774,7 +754,6 @@
                                             "end": 946,
                                             "fullWidth": 34,
                                             "width": 34,
-                                            "isIncrementallyUnusable": true,
                                             "equalsToken": {
                                                 "kind": "EqualsToken",
                                                 "fullStart": 912,
@@ -804,7 +783,6 @@
                                                 "end": 946,
                                                 "fullWidth": 32,
                                                 "width": 32,
-                                                "isIncrementallyUnusable": true,
                                                 "openBraceToken": {
                                                     "kind": "OpenBraceToken",
                                                     "fullStart": 914,
@@ -835,7 +813,6 @@
                                                         "end": 927,
                                                         "fullWidth": 11,
                                                         "width": 11,
-                                                        "isIncrementallyUnusable": true,
                                                         "propertyName": {
                                                             "kind": "IdentifierName",
                                                             "fullStart": 916,
@@ -846,7 +823,8 @@
                                                             "width": 3,
                                                             "text": "set",
                                                             "value": "set",
-                                                            "valueText": "set"
+                                                            "valueText": "set",
+                                                            "isKeywordConvertedToIdentifier": true
                                                         },
                                                         "colonToken": {
                                                             "kind": "ColonToken",

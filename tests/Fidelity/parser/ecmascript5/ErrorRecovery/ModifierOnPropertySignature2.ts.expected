@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -97,7 +94,6 @@
                             "end": 26,
                             "fullWidth": 12,
                             "width": 6,
-                            "isIncrementallyUnusable": true,
                             "propertyName": {
                                 "kind": "IdentifierName",
                                 "fullStart": 16,
@@ -109,6 +105,7 @@
                                 "text": "public",
                                 "value": "public",
                                 "valueText": "public",
+                                "isKeywordConvertedToIdentifier": true,
                                 "hasLeadingTrivia": true,
                                 "hasTrailingTrivia": true,
                                 "hasTrailingNewLine": true,

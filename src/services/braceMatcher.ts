@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 module TypeScript.Services {
     export class BraceMatcher {
@@ -24,21 +24,21 @@ module TypeScript.Services {
         public static getMatchSpans(syntaxTree: TypeScript.SyntaxTree, position: number): TypeScript.TextSpan[] {
             var result: TypeScript.TextSpan[] = [];
 
-            var token = syntaxTree.sourceUnit().findToken(position);
+            var token = findToken(syntaxTree.sourceUnit(), position);
 
-            if (token.start() === position) {
+            if (start(token) === position) {
                 var matchKind = BraceMatcher.getMatchingTokenKind(token);
 
                 if (matchKind !== null) {
                     var parentElement = token.parent;
 
-                    for (var i = 0, n = parentElement.childCount(); i < n; i++) {
-                        var current = parentElement.childAt(i);
+                    for (var i = 0, n = childCount(parentElement); i < n; i++) {
+                        var current = childAt(parentElement, i);
 
-                        if (current !== null && current.fullWidth() > 0) {
+                        if (current !== null && fullWidth(current) > 0) {
                             if (current.kind() === matchKind) {
-                                var range1 = new TypeScript.TextSpan(token.start(), token.width());
-                                var range2 = new TypeScript.TextSpan(current.start(), current.width());
+                                var range1 = new TypeScript.TextSpan(start(token), width(token));
+                                var range2 = new TypeScript.TextSpan(start(current), width(current));
                                 if (range1.start() < range2.start()) {
                                     result.push(range1, range2);
                                 }

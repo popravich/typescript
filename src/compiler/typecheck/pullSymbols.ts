@@ -8,7 +8,7 @@ module TypeScript {
     export var sentinelEmptyArray: any[] = [];
 
     export class PullSymbol {
-
+        
         // private state
         // The symbol ids start with 1 and not 0 as 0 is reserved to detect false conditions eg. in determining 
         // wrappingTypeParameterID
@@ -89,7 +89,7 @@ module TypeScript {
 
         public isContainer() { return false; }
 
-        constructor(name: string, declKind: PullElementKind) {
+        constructor(name: string, declKind: PullElementKind, public semanticInfoChain:  SemanticInfoChain) {
             this.name = name;
             this.kind = declKind;
         }
@@ -109,7 +109,7 @@ module TypeScript {
                         var childDecl = childDecls[j];
                         if (childDecl.kind === PullElementKind.TypeAlias &&
                             (!lookIntoOnlyExportedAlias || (childDecl.flags & PullElementFlags.Exported))) {
-                            var symbol = <PullTypeAliasSymbol>childDecl.getSymbol();
+                            var symbol = <PullTypeAliasSymbol>childDecl.getSymbol(this.semanticInfoChain);
 
                             if (PullContainerSymbol.usedAsSymbol(symbol, this) || // this is symbol is used as this alias
                                 (this.rootSymbol && PullContainerSymbol.usedAsSymbol(symbol, this.rootSymbol))) { // the root symbol of the alias is used as import symbol
@@ -231,8 +231,7 @@ module TypeScript {
         }
 
         public _getResolver(): PullTypeResolver {
-            Debug.assert(this._declarations && this._declarations.length > 0);
-            return this._declarations[0].semanticInfoChain.getResolver();
+            return this.semanticInfoChain.getResolver();
         }
 
         public _resolveDeclaredSymbol() {
@@ -656,11 +655,11 @@ module TypeScript {
             return MemberName.create(nameStr);
         }
 
-        static getTypeParameterString(typars: PullTypeSymbol[], scopeSymbol?: PullSymbol, useContraintInName?: boolean) {
-            return PullSymbol.getTypeParameterStringEx(typars, scopeSymbol, useContraintInName).toString();
+        static getTypeParameterString(typars: PullTypeSymbol[], scopeSymbol?: PullSymbol, useConstraintInName?: boolean) {
+            return PullSymbol.getTypeParameterStringEx(typars, scopeSymbol, useConstraintInName).toString();
         }
 
-        static getTypeParameterStringEx(typeParameters: PullTypeSymbol[], scopeSymbol?: PullSymbol, useContraintInName?: boolean) {
+        static getTypeParameterStringEx(typeParameters: PullTypeSymbol[], scopeSymbol?: PullSymbol, useConstraintInName?: boolean) {
             var builder = new MemberNameArray();
             builder.prefix = "";
 
@@ -672,7 +671,7 @@ module TypeScript {
                         builder.add(MemberName.create(", "));
                     }
 
-                    builder.add(typeParameters[i].getScopedNameEx(scopeSymbol, /*skipTypeParametersInName*/ false, useContraintInName));
+                    builder.add(typeParameters[i].getScopedNameEx(scopeSymbol, /*skipTypeParametersInName*/ false, useConstraintInName));
                 }
 
                 builder.add(MemberName.create(">"));
@@ -738,7 +737,7 @@ module TypeScript {
                 if (decls.length) {
                     var parentDecl = decls[0].getParentDecl();
                     if (parentDecl) {
-                        var parentSymbol = parentDecl.getSymbol();
+                        var parentSymbol = parentDecl.getSymbol(this.semanticInfoChain);
                         if (!parentSymbol || parentDecl.kind === PullElementKind.Script) {
                             return true;
                         }
@@ -881,7 +880,7 @@ module TypeScript {
                         else {
                             var declarationList = this.getDeclarations();
                             if (declarationList.length > 0) {
-                                docComments = declarationList[0].getSymbol()._docComments || "";
+                                docComments = declarationList[0].getSymbol(this.semanticInfoChain)._docComments || "";
                                 getSymbolComments = false;
                             }
                         }
@@ -1075,7 +1074,7 @@ module TypeScript {
         private consumeLeadingSpace(line: string, startIndex: number, maxSpacesToRemove?: number) {
             var endIndex = line.length;
             if (maxSpacesToRemove !== undefined) {
-                endIndex = MathPrototype.min(startIndex + maxSpacesToRemove, endIndex);
+                endIndex = Math.min(startIndex + maxSpacesToRemove, endIndex);
             }
 
             for (; startIndex < endIndex; startIndex++) {
@@ -1171,8 +1170,8 @@ module TypeScript {
 
         private _wrapsTypeParameterCache: WrapsTypeParameterCache;
 
-        constructor(kind: PullElementKind, private _isDefinition = false) {
-            super("", kind);
+        constructor(kind: PullElementKind, semanticInfoChain: SemanticInfoChain, private _isDefinition = false) {
+            super("", kind, semanticInfoChain);
         }
 
         public isDefinition() { return this._isDefinition; }
@@ -1253,7 +1252,7 @@ module TypeScript {
             if (!this._allowedToReferenceTypeParameters) {
                 // If the type is not named, it cannot have its own type parameters
                 // But it can refer to typeParameters from enclosing type
-                this._allowedToReferenceTypeParameters = PullInstantiationHelpers.getAllowedToReferenceTypeParametersFromDecl(this.getDeclarations()[0]);
+                this._allowedToReferenceTypeParameters = PullInstantiationHelpers.getAllowedToReferenceTypeParametersFromDecl(this.getDeclarations()[0], this.semanticInfoChain);
             }
 
             return this._allowedToReferenceTypeParameters;
@@ -1671,8 +1670,8 @@ module TypeScript {
 
         private _wrapsTypeParameterCache: WrapsTypeParameterCache;
 
-        constructor(name: string, kind: PullElementKind) {
-            super(name, kind);
+        constructor(name: string, kind: PullElementKind, semanticInfoChain: SemanticInfoChain) {
+            super(name, kind, semanticInfoChain);
             this.type = this;
         }
 
@@ -1998,7 +1997,7 @@ module TypeScript {
             if (!this._allowedToReferenceTypeParameters) {
                 // If the type is not named, it cannot have its own type parameters
                 // But it can refer to typeParameters from enclosing type
-                this._allowedToReferenceTypeParameters = PullInstantiationHelpers.getAllowedToReferenceTypeParametersFromDecl(this.getDeclarations()[0]);
+                this._allowedToReferenceTypeParameters = PullInstantiationHelpers.getAllowedToReferenceTypeParametersFromDecl(this.getDeclarations()[0], this.semanticInfoChain);
             }
 
             return this._allowedToReferenceTypeParameters;
@@ -2353,7 +2352,7 @@ module TypeScript {
                 // Make sure the base signature is resolved, so that the parameter symbols from the new 
                 // siganture are used, they will have the type associated with them. 
                 baseSignature._resolveDeclaredSymbol();
-                var currentSignature = new PullSignatureSymbol(PullElementKind.ConstructSignature, baseSignature.isDefinition());
+                var currentSignature = new PullSignatureSymbol(PullElementKind.ConstructSignature, this.semanticInfoChain, baseSignature.isDefinition());
                 currentSignature.returnType = instanceTypeSymbol;
                 currentSignature.addTypeParametersFromReturnType();
                 for (var j = 0; j < baseSignature.parameters.length; j++) {
@@ -2376,7 +2375,7 @@ module TypeScript {
             Debug.assert(this.isConstructor());
             var instanceTypeSymbol = this.getAssociatedContainerType();
             Debug.assert(instanceTypeSymbol.getDeclarations().length == 1);
-            var signature = new PullSignatureSymbol(PullElementKind.ConstructSignature, /*isDefinition*/ true);
+            var signature = new PullSignatureSymbol(PullElementKind.ConstructSignature, this.semanticInfoChain, /*isDefinition*/ true);
             signature.returnType = instanceTypeSymbol;
             signature.addTypeParametersFromReturnType();
             signature.addDeclaration(instanceTypeSymbol.getDeclarations()[0]);
@@ -3085,8 +3084,8 @@ module TypeScript {
     }
 
     export class PullPrimitiveTypeSymbol extends PullTypeSymbol {
-        constructor(name: string) {
-            super(name, PullElementKind.Primitive);
+        constructor(name: string, semanticInfoChain: SemanticInfoChain) {
+            super(name, PullElementKind.Primitive, semanticInfoChain);
 
             this.isResolved = true;
         }
@@ -3123,8 +3122,8 @@ module TypeScript {
     }
 
     export class PullStringConstantTypeSymbol extends PullPrimitiveTypeSymbol {
-        constructor(name: string) {
-            super(name);
+        constructor(name: string, semanticInfoChain: SemanticInfoChain) {
+            super(name, semanticInfoChain);
         }
 
         public isStringConstant() {
@@ -3134,8 +3133,8 @@ module TypeScript {
 
     export class PullErrorTypeSymbol extends PullPrimitiveTypeSymbol {
 
-        constructor(public _anyType: PullTypeSymbol, name: string) {
-            super(name);
+        constructor(public _anyType: PullTypeSymbol, name: string, semanticInfoChain: SemanticInfoChain) {
+            super(name, semanticInfoChain);
 
             Debug.assert(this._anyType);
             this.isResolved = true;
@@ -3170,8 +3169,8 @@ module TypeScript {
         private assignedType: PullTypeSymbol = null;
         private assignedContainer: PullContainerSymbol = null;
 
-        constructor(name: string, kind: PullElementKind) {
-            super(name, kind);
+        constructor(name: string, kind: PullElementKind, semanticInfoChain: SemanticInfoChain) {
+            super(name, kind, semanticInfoChain);
         }
 
         public isContainer() { return true; }
@@ -3260,8 +3259,8 @@ module TypeScript {
         private retrievingExportAssignment = false;
         private linkedAliasSymbols: PullTypeAliasSymbol[] = null;
 
-        constructor(name: string) {
-            super(name, PullElementKind.TypeAlias);
+        constructor(name: string, semanticInfoChain: SemanticInfoChain) {
+            super(name, PullElementKind.TypeAlias, semanticInfoChain);
         }
 
         public isUsedInExportedAlias(): boolean {
@@ -3472,8 +3471,8 @@ module TypeScript {
     export class PullTypeParameterSymbol extends PullTypeSymbol {
         private _constraint: PullTypeSymbol = null;
 
-        constructor(name: string) {
-            super(name, PullElementKind.TypeParameter);
+        constructor(name: string, semanticInfoChain: SemanticInfoChain) {
+            super(name, PullElementKind.TypeParameter, semanticInfoChain);
         }
 
         public isTypeParameter() { return true; }
@@ -3609,8 +3608,8 @@ module TypeScript {
         private _getterSymbol: PullSymbol = null;
         private _setterSymbol: PullSymbol = null;
 
-        constructor(name: string) {
-            super(name, PullElementKind.Property);
+        constructor(name: string, semanticInfoChain: SemanticInfoChain) {
+            super(name, PullElementKind.Property, semanticInfoChain);
         }
 
         public isAccessor() { return true; }

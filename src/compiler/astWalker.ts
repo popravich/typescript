@@ -16,9 +16,9 @@
 ///<reference path='references.ts' />
 
 module TypeScript {
-    function walkListChildren(preAst: ISyntaxList<ISyntaxNodeOrToken>, walker: AstWalker): void {
-        for (var i = 0, n = preAst.childCount(); i < n; i++) {
-            walker.walk(preAst.childAt(i));
+    function walkListChildren(preAst: ISyntaxNodeOrToken[], walker: AstWalker): void {
+        for (var i = 0, n = preAst.length; i < n; i++) {
+            walker.walk(preAst[i]);
         }
     }
 
@@ -72,20 +72,19 @@ module TypeScript {
 
     function walkGetAccessorChildren(preAst: GetAccessorSyntax, walker: AstWalker): void {
         walker.walk(preAst.propertyName);
-        walker.walk(preAst.parameterList);
-        walker.walk(preAst.typeAnnotation);
+        walker.walk(preAst.callSignature);
         walker.walk(preAst.block);
     }
 
-    function walkSeparatedListChildren(preAst: ISeparatedSyntaxList<ISyntaxNodeOrToken>, walker: AstWalker): void {
-        for (var i = 0, n = preAst.nonSeparatorCount(); i < n; i++) {
-            walker.walk(preAst.nonSeparatorAt(i));
+    function walkSeparatedListChildren(preAst: ISyntaxNodeOrToken[], walker: AstWalker): void {
+        for (var i = 0, n = preAst.length; i < n; i++) {
+            walker.walk(preAst[i]);
         }
     }
 
     function walkSetAccessorChildren(preAst: SetAccessorSyntax, walker: AstWalker): void {
         walker.walk(preAst.propertyName);
-        walker.walk(preAst.parameterList);
+        walker.walk(preAst.callSignature);
         walker.walk(preAst.block);
     }
 
@@ -183,7 +182,7 @@ module TypeScript {
     }
 
     function walkSimpleArrowFunctionExpressionChildren(preAst: SimpleArrowFunctionExpressionSyntax, walker: AstWalker): void {
-        walker.walk(preAst.identifier);
+        walker.walk(preAst.parameter);
         walker.walk(preAst.block);
         walker.walk(preAst.expression);
     }
@@ -205,7 +204,7 @@ module TypeScript {
     }
 
     function walkIndexSignatureChildren(preAst: IndexSignatureSyntax, walker: AstWalker): void {
-        walker.walk(preAst.parameter);
+        walker.walk(preAst.parameters);
         walker.walk(preAst.typeAnnotation);
     }
 
@@ -422,7 +421,7 @@ module TypeScript {
         walker.walk(preAst.variableDeclaration);
     }
 
-    var childrenWalkers: IAstWalkChildren[] = new Array<IAstWalkChildren>(SyntaxKind.Last + 1);
+    var childrenWalkers: IAstWalkChildren[] = new Array<IAstWalkChildren>(SyntaxKind.LastNode + 1);
 
     // Tokens/trivia can't ever be walked into. 
     for (var i = SyntaxKind.FirstToken, n = SyntaxKind.LastToken; i <= n; i++) {

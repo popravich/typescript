@@ -1,14 +1,11 @@
 {
     "isDeclaration": true,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
-            "start": 0,
-            "length": 6,
-            "diagnosticCode": "'declare' modifier required for top level element."
+            "start": 7,
+            "length": 1,
+            "diagnosticCode": "A 'declare' modifier is required for a top level declaration in a .d.ts file."
         }
     ],
     "sourceUnit": {
@@ -19,7 +16,6 @@
         "end": 13,
         "fullWidth": 13,
         "width": 13,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ModuleDeclaration",

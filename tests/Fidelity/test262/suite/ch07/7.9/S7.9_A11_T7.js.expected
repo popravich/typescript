@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 437,
         "fullWidth": 437,
         "width": 130,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -223,7 +219,6 @@
                 "end": 347,
                 "fullWidth": 30,
                 "width": 29,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 318,
@@ -392,7 +387,6 @@
                     "end": 347,
                     "fullWidth": 12,
                     "width": 11,
-                    "isIncrementallyUnusable": true,
                     "elseKeyword": {
                         "kind": "ElseKeyword",
                         "fullStart": 336,
@@ -422,7 +416,6 @@
                         "end": 347,
                         "fullWidth": 7,
                         "width": 6,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "AssignmentExpression",
                             "fullStart": 341,
@@ -516,16 +509,6 @@
                                     ]
                                 }
                             }
-                        },
-                        "semicolonToken": {
-                            "kind": "SemicolonToken",
-                            "fullStart": 348,
-                            "fullEnd": 348,
-                            "start": 348,
-                            "end": 348,
-                            "fullWidth": 0,
-                            "width": 0,
-                            "text": ""
                         }
                     }
                 }

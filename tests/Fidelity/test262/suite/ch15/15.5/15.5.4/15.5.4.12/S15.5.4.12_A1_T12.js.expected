@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 920,
         "fullWidth": 920,
         "width": 541,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -22,7 +18,6 @@
                 "end": 461,
                 "fullWidth": 462,
                 "width": 82,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "variableDeclaration": {
                     "kind": "VariableDeclaration",
@@ -125,7 +120,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj",
+                                "valueText": "___obj",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -619,16 +614,6 @@
                             }
                         }
                     ]
-                },
-                "semicolonToken": {
-                    "kind": "SemicolonToken",
-                    "fullStart": 462,
-                    "fullEnd": 462,
-                    "start": 462,
-                    "end": 462,
-                    "fullWidth": 0,
-                    "width": 0,
-                    "text": ""
                 }
             },
             {
@@ -688,7 +673,7 @@
                                 "width": 5,
                                 "text": "__str",
                                 "value": "__str",
-                                "valueText": "__str",
+                                "valueText": "___str",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -921,7 +906,7 @@
                     "width": 5,
                     "text": "__str",
                     "value": "__str",
-                    "valueText": "__str"
+                    "valueText": "___str"
                 },
                 "closeParenToken": {
                     "kind": "CloseParenToken",
@@ -1192,7 +1177,7 @@
                                                                         "width": 5,
                                                                         "text": "__obj",
                                                                         "value": "__obj",
-                                                                        "valueText": "__obj"
+                                                                        "valueText": "___obj"
                                                                     }
                                                                 ],
                                                                 "closeParenToken": {

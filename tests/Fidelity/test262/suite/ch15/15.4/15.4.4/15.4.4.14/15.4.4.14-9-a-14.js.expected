@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -494,7 +491,6 @@
                             "end": 848,
                             "fullWidth": 209,
                             "width": 197,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "InvocationExpression",
                                 "fullStart": 641,
@@ -503,7 +499,6 @@
                                 "end": 847,
                                 "fullWidth": 206,
                                 "width": 196,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "MemberAccessExpression",
                                     "fullStart": 641,
@@ -573,7 +568,6 @@
                                     "end": 847,
                                     "fullWidth": 175,
                                     "width": 175,
-                                    "isIncrementallyUnusable": true,
                                     "openParenToken": {
                                         "kind": "OpenParenToken",
                                         "fullStart": 672,
@@ -661,7 +655,6 @@
                                             "end": 846,
                                             "fullWidth": 163,
                                             "width": 163,
-                                            "isIncrementallyUnusable": true,
                                             "openBraceToken": {
                                                 "kind": "OpenBraceToken",
                                                 "fullStart": 683,
@@ -693,7 +686,6 @@
                                                     "end": 802,
                                                     "fullWidth": 116,
                                                     "width": 104,
-                                                    "isIncrementallyUnusable": true,
                                                     "propertyName": {
                                                         "kind": "IdentifierName",
                                                         "fullStart": 686,
@@ -705,6 +697,7 @@
                                                         "text": "get",
                                                         "value": "get",
                                                         "valueText": "get",
+                                                        "isKeywordConvertedToIdentifier": true,
                                                         "hasLeadingTrivia": true,
                                                         "leadingTrivia": [
                                                             {

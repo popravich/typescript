@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 ///<reference path='diagnosticServices.ts' />
 
 module TypeScript.Services {
@@ -31,6 +31,7 @@ module TypeScript.Services {
         getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot;
         getDiagnosticsObject(): TypeScript.Services.ILanguageServicesDiagnostics;
         getLocalizedDiagnosticMessages(): any;
+        getCancellationToken(): ICancellationToken;
     }
 
     //
@@ -79,6 +80,8 @@ module TypeScript.Services {
         getEmitOutput(fileName: string): TypeScript.EmitOutput;
 
         getSyntaxTree(fileName: string): TypeScript.SyntaxTree;
+
+        dispose(): void;
     }
 
     export function logInternalError(logger: TypeScript.ILogger, err: Error) {

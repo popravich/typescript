@@ -2,15 +2,7 @@
 
 module TypeScript {
     export interface ISyntaxTriviaList {
-        parent: ISyntaxToken;
-        syntaxTree(): SyntaxTree;
-
-        isNode(): boolean;
-        isToken(): boolean;
-        isTrivia(): boolean;
-        isList(): boolean;
-        isSeparatedList(): boolean;
-        isTriviaList(): boolean;
+        parent?: ISyntaxToken;
 
         isShared(): boolean;
 
@@ -30,35 +22,18 @@ module TypeScript {
         last(): ISyntaxTrivia;
         toArray(): ISyntaxTrivia[];
 
-        concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList;
-
-        collectTextElements(elements: string[]): void;
-
         clone(): ISyntaxTriviaList;
     }
 }
 
 module TypeScript.Syntax {
     class EmptyTriviaList implements ISyntaxTriviaList {
-        public parent: ISyntaxToken = null;
-
-        public isNode(): boolean { return false; }
-        public isToken(): boolean { return false; }
-        public isTrivia(): boolean { return false; }
-        public isList(): boolean { return false; }
-        public isSeparatedList(): boolean { return false; }
-        public isTriviaList(): boolean { return true; }
+        public kind() {
+            return SyntaxKind.TriviaList;
+        }
 
         public isShared(): boolean {
             return true;
-        }
-
-        public syntaxTree(): SyntaxTree {
-            throw Errors.invalidOperation("Shared lists do not belong to a single tree.");
-        }
-
-        public kind() {
-            return SyntaxKind.TriviaList;
         }
 
         public count(): number {
@@ -93,19 +68,8 @@ module TypeScript.Syntax {
             return false;
         }
 
-        public toJSON(key: any): any {
-            return [];
-        }
-
-        public collectTextElements(elements: string[]): void {
-        }
-
         public toArray(): ISyntaxTrivia[] {
             return [];
-        }
-
-        public concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList {
-            return trivia;
         }
 
         public clone() {
@@ -115,27 +79,11 @@ module TypeScript.Syntax {
 
     export var emptyTriviaList: ISyntaxTriviaList = new EmptyTriviaList();
 
-    function concatTrivia(list1: ISyntaxTriviaList, list2: ISyntaxTriviaList): ISyntaxTriviaList {
-        if (list1.count() === 0) {
-            return list2;
-        }
-
-        if (list2.count() === 0) {
-            return list1;
-        }
-
-        var trivia = list1.toArray();
-        trivia.push.apply(trivia, list2.toArray());
-
-        return triviaList(trivia);
-    }
-
     function isComment(trivia: ISyntaxTrivia): boolean {
         return trivia.kind() === SyntaxKind.MultiLineCommentTrivia || trivia.kind() === SyntaxKind.SingleLineCommentTrivia;
     }
 
     class SingletonSyntaxTriviaList implements ISyntaxTriviaList {
-        public parent: ISyntaxToken = null;
         private item: ISyntaxTrivia;
 
         constructor(item: ISyntaxTrivia) {
@@ -143,22 +91,13 @@ module TypeScript.Syntax {
             this.item.parent = this;
         }
 
-        public isNode(): boolean { return false; }
-        public isToken(): boolean { return false; }
-        public isTrivia(): boolean { return false; }
-        public isList(): boolean { return false; }
-        public isSeparatedList(): boolean { return false; }
-        public isTriviaList(): boolean { return true; }
-
-        public syntaxTree(): SyntaxTree {
-            return this.parent.syntaxTree();
+        public kind() {
+            return SyntaxKind.TriviaList;
         }
 
         public isShared(): boolean {
             return false;
         }
-
-        public kind(): SyntaxKind { return SyntaxKind.TriviaList; }
 
         public count(): number {
             return 1;
@@ -196,20 +135,8 @@ module TypeScript.Syntax {
             return this.item.kind() === SyntaxKind.SkippedTokenTrivia;
         }
 
-        public toJSON(key: any): ISyntaxTrivia[] {
-            return [this.item];
-        }
-
-        public collectTextElements(elements: string[]): void {
-            (<any>this.item).collectTextElements(elements);
-        }
-
         public toArray(): ISyntaxTrivia[] {
             return [this.item];
-        }
-
-        public concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList {
-            return concatTrivia(this, trivia);
         }
 
         public clone(): ISyntaxTriviaList {
@@ -218,7 +145,6 @@ module TypeScript.Syntax {
     }
 
     class NormalSyntaxTriviaList implements ISyntaxTriviaList {
-        public parent: ISyntaxToken = null;
         private trivia: ISyntaxTrivia[];
 
         constructor(trivia: ISyntaxTrivia[]) {
@@ -229,22 +155,13 @@ module TypeScript.Syntax {
             });
         }
 
-        public isNode(): boolean { return false; }
-        public isToken(): boolean { return false; }
-        public isTrivia(): boolean { return false; }
-        public isList(): boolean { return false; }
-        public isSeparatedList(): boolean { return false; }
-        public isTriviaList(): boolean { return true; }
+        public kind() {
+            return SyntaxKind.TriviaList;
+        }
 
         public isShared(): boolean {
             return false;
         }
-
-        public syntaxTree(): SyntaxTree {
-            return this.parent.syntaxTree();
-        }
-
-        public kind(): SyntaxKind { return SyntaxKind.TriviaList; }
 
         public count() {
             return this.trivia.length;
@@ -267,13 +184,13 @@ module TypeScript.Syntax {
         }
 
         public fullText(): string {
-            var result = "";
+            var result: string[] = [];
 
             for (var i = 0, n = this.trivia.length; i < n; i++) {
-                result += this.trivia[i].fullText();
+                result.push(this.trivia[i].fullText());
             }
 
-            return result;
+            return result.join("");
         }
 
         public hasComment(): boolean {
@@ -306,22 +223,8 @@ module TypeScript.Syntax {
             return false;
         }
 
-        public toJSON(key: any): ISyntaxTrivia[] {
-            return this.trivia;
-        }
-
-        public collectTextElements(elements: string[]): void {
-            for (var i = 0; i < this.trivia.length; i++) {
-                (<any>this.trivia[i]).collectTextElements(elements);
-            }
-        }
-
         public toArray(): ISyntaxTrivia[] {
             return this.trivia.slice(0);
-        }
-
-        public concat(trivia: ISyntaxTriviaList): ISyntaxTriviaList {
-            return concatTrivia(this, trivia);
         }
 
         public clone(): ISyntaxTriviaList {
@@ -340,6 +243,4 @@ module TypeScript.Syntax {
 
         return new NormalSyntaxTriviaList(trivia);
     }
-
-    export var spaceTriviaList: ISyntaxTriviaList = triviaList([Syntax.spaceTrivia]);
 }

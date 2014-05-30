@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1130,
         "fullWidth": 1130,
         "width": 652,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -22,7 +18,6 @@
                 "end": 530,
                 "fullWidth": 531,
                 "width": 52,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "variableDeclaration": {
                     "kind": "VariableDeclaration",
@@ -125,7 +120,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj",
+                                "valueText": "___obj",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -399,16 +394,6 @@
                             }
                         }
                     ]
-                },
-                "semicolonToken": {
-                    "kind": "SemicolonToken",
-                    "fullStart": 531,
-                    "fullEnd": 531,
-                    "start": 531,
-                    "end": 531,
-                    "fullWidth": 0,
-                    "width": 0,
-                    "text": ""
                 }
             },
             {
@@ -419,7 +404,6 @@
                 "end": 586,
                 "fullWidth": 56,
                 "width": 55,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "variableDeclaration": {
                     "kind": "VariableDeclaration",
@@ -469,7 +453,7 @@
                                 "width": 6,
                                 "text": "__obj2",
                                 "value": "__obj2",
-                                "valueText": "__obj2",
+                                "valueText": "___obj2",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -743,16 +727,6 @@
                             }
                         }
                     ]
-                },
-                "semicolonToken": {
-                    "kind": "SemicolonToken",
-                    "fullStart": 587,
-                    "fullEnd": 587,
-                    "start": 587,
-                    "end": 587,
-                    "fullWidth": 0,
-                    "width": 0,
-                    "text": ""
                 }
             },
             {
@@ -812,7 +786,7 @@
                                 "width": 5,
                                 "text": "__str",
                                 "value": "__str",
-                                "valueText": "__str",
+                                "valueText": "___str",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -1036,7 +1010,7 @@
                     "width": 5,
                     "text": "__str",
                     "value": "__str",
-                    "valueText": "__str"
+                    "valueText": "___str"
                 },
                 "closeParenToken": {
                     "kind": "CloseParenToken",
@@ -1403,7 +1377,7 @@
                                                                                     "width": 5,
                                                                                     "text": "__obj",
                                                                                     "value": "__obj",
-                                                                                    "valueText": "__obj"
+                                                                                    "valueText": "___obj"
                                                                                 },
                                                                                 {
                                                                                     "kind": "CommaToken",
@@ -1436,7 +1410,7 @@
                                                                                     "width": 6,
                                                                                     "text": "__obj2",
                                                                                     "value": "__obj2",
-                                                                                    "valueText": "__obj2"
+                                                                                    "valueText": "___obj2"
                                                                                 }
                                                                             ],
                                                                             "closeParenToken": {

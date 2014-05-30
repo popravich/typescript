@@ -1,8 +1,7 @@
-
 // Copyright (c) Microsoft. All rights reserved. Licensed under the Apache License, Version 2.0. 
 // See LICENSE.txt in the project root for complete license information.
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 module TypeScript.Services {
     export class FindReferenceHelpers {
@@ -57,6 +56,25 @@ module TypeScript.Services {
                         secondParentDecl.kind === TypeScript.PullElementKind.ObjectLiteral) {
 
                         return firstParentDecl.ast() === secondParentDecl.ast();
+                    }
+                }
+
+                // check if we are dealing with the implementation of interface method or a method override
+                if (firstSymbol.name === secondSymbol.name) {
+                    // at this point firstSymbol.kind === secondSymbol.kind so we can pick any of those
+                    switch (firstSymbol.kind) {
+                        case PullElementKind.Property:
+                        case PullElementKind.Method:
+                        case PullElementKind.GetAccessor:
+                        case PullElementKind.SetAccessor:
+                            // these kinds can only be defined in types
+                            var t1 = <PullTypeSymbol>firstSymbol.getContainer();
+                            var t2 = <PullTypeSymbol>secondSymbol.getContainer();
+                            t1._resolveDeclaredSymbol();
+                            t2._resolveDeclaredSymbol();
+
+                            return t1.hasBase(t2) || t2.hasBase(t1);
+                            break;
                     }
                 }
 

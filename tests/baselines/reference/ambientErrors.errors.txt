@@ -1,8 +1,8 @@
 ==== tests/cases/compiler/ambientErrors.ts (16 errors) ====
     // Ambient variable with an initializer 
     declare var x = 4;
-                  ~
-!!! ambientErrors.ts(2,15): error TS1039: Initializers are not allowed in ambient contexts.
+                    ~
+!!! ambientErrors.ts(2,17): error TS1039: Initializers are not allowed in ambient contexts.
     
     // Ambient functions with invalid overloads
     declare function fn(x: number): string;
@@ -21,51 +21,51 @@
     // Ambient function with default parameter values
     declare function fn3(x = 3);
                          ~~~~~
-!!! ambientErrors.ts(17,22): error TS2174: Default arguments are only allowed in implementation.
+!!! ambientErrors.ts(17,22): error TS2174: A parameter initializer is only allowed in a function or constructor implementation.
     
     // Ambient function with function body
     declare function fn4() { };
                            ~
-!!! ambientErrors.ts(20,24): error TS1037: Implementations are not allowed in ambient contexts.
+!!! ambientErrors.ts(20,24): error TS1037: A function implementation cannot be declared in an ambient context.
     
     // Ambient enum with non - integer literal constant member
     declare enum E1 {
         y = 4.23
-          ~
-!!! ambientErrors.ts(24,7): error TS1066: Ambient enum elements can only have integer literal initializers.
+            ~~~~
+!!! ambientErrors.ts(24,9): error TS1066: Ambient enum elements can only have integer literal initializers.
     }
     
     // Ambient enum with computer member
     declare enum E2 {
         x = 'foo'.length
-          ~
-!!! ambientErrors.ts(29,7): error TS1066: Ambient enum elements can only have integer literal initializers.
+            ~~~~~~~~~~~~
+!!! ambientErrors.ts(29,9): error TS1066: Ambient enum elements can only have integer literal initializers.
     }
     
     // Ambient module with initializers for values, bodies for functions / classes
     declare module M1 {
         var x = 3;
-              ~
-!!! ambientErrors.ts(34,11): error TS1039: Initializers are not allowed in ambient contexts.
+                ~
+!!! ambientErrors.ts(34,13): error TS1039: Initializers are not allowed in ambient contexts.
         function fn() { }
                       ~
-!!! ambientErrors.ts(35,19): error TS1037: Implementations are not allowed in ambient contexts.
+!!! ambientErrors.ts(35,19): error TS1037: A function implementation cannot be declared in an ambient context.
         class C {
             static x = 3;
-                     ~
-!!! ambientErrors.ts(37,18): error TS1039: Initializers are not allowed in ambient contexts.
+                       ~
+!!! ambientErrors.ts(37,20): error TS1039: Initializers are not allowed in ambient contexts.
             y = 4;
-              ~
-!!! ambientErrors.ts(38,11): error TS1039: Initializers are not allowed in ambient contexts.
+                ~
+!!! ambientErrors.ts(38,13): error TS1039: Initializers are not allowed in ambient contexts.
             constructor() { }
                           ~
-!!! ambientErrors.ts(39,23): error TS1037: Implementations are not allowed in ambient contexts.
+!!! ambientErrors.ts(39,23): error TS1037: A function implementation cannot be declared in an ambient context.
             fn() { }
                  ~
-!!! ambientErrors.ts(40,14): error TS1037: Implementations are not allowed in ambient contexts.
+!!! ambientErrors.ts(40,14): error TS1037: A function implementation cannot be declared in an ambient context.
             static sfn() { }
                          ~
-!!! ambientErrors.ts(41,22): error TS1037: Implementations are not allowed in ambient contexts.
+!!! ambientErrors.ts(41,22): error TS1037: A function implementation cannot be declared in an ambient context.
         }
     }
     

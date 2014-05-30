@@ -209,8 +209,7 @@
     
     function Point(x, y) {
              ~~~~~
-!!! contextualTyping.ts(207,10): error TS2000: Duplicate identifier 'Point'. Additional locations:
-!!! 	contextualTyping.ts(197,1)
+!!! contextualTyping.ts(207,10): error TS2000: Duplicate identifier 'Point'.
         this.x = x;
         this.y = y;
     
@@ -235,5 +234,5 @@
     interface B extends A { }
     var x: B = { };
         ~~~~~~~~~~
-!!! contextualTyping.ts(230,5): error TS2012: Cannot convert '{}' to 'B':
+!!! contextualTyping.ts(230,5): error TS2012: Type '{}' is not assignable to type 'B':
 !!! 	Type '{}' is missing property 'x' from type 'B'.

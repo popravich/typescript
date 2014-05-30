@@ -29,7 +29,6 @@ var compilerSources = [
 	"emitter.ts",
 	"enumerator.ts",
 	"flags.ts",
-	"hashTable.ts",
 	"identifierWalker.ts",
 	"pathUtils.ts",
 	"precompile.ts",
@@ -39,7 +38,6 @@ var compilerSources = [
 	"referenceResolver.ts",
 	"settings.ts",
 	"sourceMapping.ts",
-	"syntaxTreeToAstVisitor.ts",
 	"types.ts",
 	"core/arrayUtilities.ts",
 	"core/bitVector.ts",
@@ -52,15 +50,12 @@ var compilerSources = [
 	"core/environment.ts",
 	"core/errors.ts",
 	"core/hash.ts",
-	"core/hashTable.ts",
 	"core/integerUtilities.ts",
 	"core/lineAndCharacter.ts",
 	"core/lineMap.ts",
 	"core/linePosition.ts",
-	"core/mathPrototype.ts",
 	"core/references.ts",
 	"core/require.ts",
-	"core/stringTable.ts",
 	"core/stringUtilities.ts",
 	"core/timer.ts",
 	"resources/diagnosticCode.generated.ts",
@@ -70,33 +65,22 @@ var compilerSources = [
 	"syntax/constants.ts",
 	"syntax/depthLimitedWalker.ts",
 	"syntax/formattingOptions.ts",
-	"syntax/indentation.ts",
 	"syntax/languageVersion.ts",
-	"syntax/parseOptions.ts",
 	"syntax/parser.ts",
 	"syntax/references.ts",
 	"syntax/scanner.ts",
 	"syntax/scannerUtilities.generated.ts",
-	"syntax/separatedSyntaxList.ts",
 	"syntax/slidingWindow.ts",
 	"syntax/syntax.ts",
-	"syntax/syntaxDedenter.ts",
 	"syntax/syntaxElement.ts",
-	"syntax/syntaxFactory.generated.ts",
 	"syntax/syntaxFacts.ts",
 	"syntax/syntaxFacts2.ts",
-	"syntax/syntaxIndenter.ts",
-	"syntax/syntaxIndenter.ts",
 	"syntax/syntaxKind.ts",
 	"syntax/syntaxList.ts",
 	"syntax/syntaxNode.ts",
-	"syntax/syntaxNodeInvariantsChecker.ts",
 	"syntax/syntaxNodeOrToken.ts",
-	"syntax/syntaxNodes.generated.ts",
-	"syntax/syntaxRewriter.generated.ts",
-	"syntax/syntaxToken.generated.ts",
+	"syntax/syntaxNodes.interfaces.generated.ts",
 	"syntax/syntaxToken.ts",
-	"syntax/syntaxTokenReplacer.ts",
 	"syntax/syntaxTree.ts",
 	"syntax/syntaxTrivia.ts",
 	"syntax/syntaxTriviaList.ts",
@@ -111,7 +95,6 @@ var compilerSources = [
 	"text/text.ts",
 	"text/textChangeRange.ts",
 	"text/textFactory.ts",
-	"text/textLine.ts",
 	"text/textSpan.ts",
 	"text/textUtilities.ts",
 	"typecheck/pullDeclCollection.ts",
@@ -140,6 +123,7 @@ var tscSources = [
 });
 
 var servicesSources = [
+	"references.ts",
 	"braceMatcher.ts",
 	"breakpoints.ts",
 	"classifier.ts",
@@ -149,6 +133,7 @@ var servicesSources = [
 	"coreServices.ts",
 	"getScriptLexicalStructureWalker.ts",
 	"diagnosticServices.ts",
+	"document.ts",
 	"es5compat.ts",
 	"findReferenceHelpers.ts",
 	"indenter.ts",
@@ -158,6 +143,7 @@ var servicesSources = [
 	"pullLanguageService.ts",
 	"shims.ts",
 	"signatureInfoHelpers.ts",
+	"../compiler/syntax/incrementalParser.ts",
 	"formatting/formatter.ts", 
 	"formatting/formatting.ts", 
 	"formatting/formattingContext.ts",
@@ -396,7 +382,7 @@ compileFile(run, harnessSources, [builtTestDirectory, tscFile].concat(libraryTar
 // Webharness
 var frontEndPath = "tests/cases/webharness/frontEnd.ts";
 var perfCompilerPath = "tests/cases/webharness/perfCompiler.js";
-compileFile(perfCompilerPath, [frontEndPath], [tscFile], [], true);
+compileFile(perfCompilerPath, [frontEndPath], [tscFile, frontEndPath], [], true);
 
 // Webhost
 var webhostPath = "tests/cases/webhost/webtsc.ts";
@@ -413,7 +399,7 @@ task("webhost", [webhostJsPath], function() {
 var fidelityTestsOutFile = "tests/Fidelity/program.js";
 var fidelityTestsInFile1 = "tests/Fidelity/Program.ts";
 var fidelityTestsInFile2 = "tests/Fidelity/incremental/IncrementalParserTests.ts";
-compileFile(fidelityTestsOutFile, [fidelityTestsInFile1], [tscFile, fidelityTestsInFile2].concat(compilerSources.concat(servicesSources)), [], true);
+compileFile(fidelityTestsOutFile, [fidelityTestsInFile1], [tscFile, fidelityTestsInFile1, fidelityTestsInFile2].concat(compilerSources.concat(servicesSources)), [], true);
 
 desc("Builds the web harness front end");
 task("test-harness", [perfCompilerPath]);

@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 682,
         "fullWidth": 682,
         "width": 341,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -124,7 +120,7 @@
                                 "width": 5,
                                 "text": "__arr",
                                 "value": "__arr",
-                                "valueText": "__arr"
+                                "valueText": "___arr"
                             },
                             "equalsValueClause": {
                                 "kind": "EqualsValueClause",
@@ -329,7 +325,7 @@
                                 "width": 5,
                                 "text": "__arr",
                                 "value": "__arr",
-                                "valueText": "__arr",
+                                "valueText": "___arr",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -581,7 +577,6 @@
                 "end": 680,
                 "fullWidth": 164,
                 "width": 152,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 517,
@@ -646,7 +641,6 @@
                     "end": 559,
                     "fullWidth": 27,
                     "width": 27,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 532,
@@ -655,7 +649,6 @@
                         "end": 549,
                         "fullWidth": 18,
                         "width": 17,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "IdentifierName",
                             "fullStart": 532,
@@ -666,7 +659,7 @@
                             "width": 5,
                             "text": "__arr",
                             "value": "__arr",
-                            "valueText": "__arr"
+                            "valueText": "___arr"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -691,6 +684,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {

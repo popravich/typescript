@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1465,
         "fullWidth": 1465,
         "width": 1059,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -124,7 +120,7 @@
                                 "width": 8,
                                 "text": "__string",
                                 "value": "__string",
-                                "valueText": "__string",
+                                "valueText": "___string",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -347,7 +343,7 @@
                                 "width": 7,
                                 "text": "__split",
                                 "value": "__split",
-                                "valueText": "__split",
+                                "valueText": "___split",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -413,7 +409,7 @@
                                             "width": 8,
                                             "text": "__string",
                                             "value": "__string",
-                                            "valueText": "__string"
+                                            "valueText": "___string"
                                         },
                                         "dotToken": {
                                             "kind": "DotToken",
@@ -510,7 +506,6 @@
                 "end": 737,
                 "fullWidth": 267,
                 "width": 176,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 471,
@@ -587,7 +582,6 @@
                     "end": 594,
                     "fullWidth": 29,
                     "width": 29,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 565,
@@ -596,7 +590,6 @@
                         "end": 584,
                         "fullWidth": 20,
                         "width": 19,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "IdentifierName",
                             "fullStart": 565,
@@ -607,7 +600,7 @@
                             "width": 7,
                             "text": "__split",
                             "value": "__split",
-                            "valueText": "__split"
+                            "valueText": "___split"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -632,6 +625,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -706,7 +700,6 @@
                     "end": 737,
                     "fullWidth": 142,
                     "width": 141,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 596,
@@ -738,7 +731,6 @@
                             "end": 735,
                             "fullWidth": 138,
                             "width": 135,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "InvocationExpression",
                                 "fullStart": 598,
@@ -747,7 +739,6 @@
                                 "end": 734,
                                 "fullWidth": 136,
                                 "width": 134,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "IdentifierName",
                                     "fullStart": 598,
@@ -777,7 +768,6 @@
                                     "end": 734,
                                     "fullWidth": 128,
                                     "width": 128,
-                                    "isIncrementallyUnusable": true,
                                     "openParenToken": {
                                         "kind": "OpenParenToken",
                                         "fullStart": 606,
@@ -799,7 +789,6 @@
                                             "end": 732,
                                             "fullWidth": 126,
                                             "width": 125,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "StringLiteral",
                                                 "fullStart": 607,
@@ -832,7 +821,6 @@
                                                 "end": 732,
                                                 "fullWidth": 20,
                                                 "width": 19,
-                                                "isIncrementallyUnusable": true,
                                                 "expression": {
                                                     "kind": "IdentifierName",
                                                     "fullStart": 713,
@@ -843,7 +831,7 @@
                                                     "width": 7,
                                                     "text": "__split",
                                                     "value": "__split",
-                                                    "valueText": "__split"
+                                                    "valueText": "___split"
                                                 },
                                                 "dotToken": {
                                                     "kind": "DotToken",
@@ -868,6 +856,7 @@
                                                     "text": "constructor",
                                                     "value": "constructor",
                                                     "valueText": "constructor",
+                                                    "isKeywordConvertedToIdentifier": true,
                                                     "hasTrailingTrivia": true,
                                                     "trailingTrivia": [
                                                         {
@@ -1069,7 +1058,7 @@
                             "width": 7,
                             "text": "__split",
                             "value": "__split",
-                            "valueText": "__split"
+                            "valueText": "___split"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -1299,7 +1288,7 @@
                                                     "width": 7,
                                                     "text": "__split",
                                                     "value": "__split",
-                                                    "valueText": "__split"
+                                                    "valueText": "___split"
                                                 },
                                                 "dotToken": {
                                                     "kind": "DotToken",
@@ -1525,7 +1514,7 @@
                             "width": 7,
                             "text": "__split",
                             "value": "__split",
-                            "valueText": "__split"
+                            "valueText": "___split"
                         },
                         "openBracketToken": {
                             "kind": "OpenBracketToken",
@@ -1767,7 +1756,7 @@
                                                     "width": 7,
                                                     "text": "__split",
                                                     "value": "__split",
-                                                    "valueText": "__split"
+                                                    "valueText": "___split"
                                                 },
                                                 "openBracketToken": {
                                                     "kind": "OpenBracketToken",

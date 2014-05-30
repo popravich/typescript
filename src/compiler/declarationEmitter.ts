@@ -62,15 +62,15 @@ module TypeScript {
             this.emitDeclarationsForSourceUnit(sourceUnit);
         }
 
-        private emitDeclarationsForList(list: ISyntaxList<ISyntaxNodeOrToken>) {
-            for (var i = 0, n = list.childCount(); i < n; i++) {
-                this.emitDeclarationsForAST(list.childAt(i));
+        private emitDeclarationsForList(list: ISyntaxNodeOrToken[]) {
+            for (var i = 0, n = list.length; i < n; i++) {
+                this.emitDeclarationsForAST(list[i]);
             }
         }
 
-        private emitSeparatedList(list: ISeparatedSyntaxList<ISyntaxNodeOrToken>) {
-            for (var i = 0, n = list.nonSeparatorCount(); i < n; i++) {
-                this.emitDeclarationsForAST(list.nonSeparatorAt(i));
+        private emitSeparatedList(list: ISyntaxNodeOrToken[]) {
+            for (var i = 0, n = list.length; i < n; i++) {
+                this.emitDeclarationsForAST(list[i]);
             }
         }
 
@@ -168,7 +168,7 @@ module TypeScript {
                     var declAST = this.semanticInfoChain.getASTForDecl(pullDecl);
                     var container = DeclarationEmitter.getEnclosingContainer(declAST);
 
-                    var isExternalModule = container.kind() === SyntaxKind.SourceUnit && this.document.isExternalModule();
+                    var isExternalModule = container.kind() === SyntaxKind.SourceUnit && this.document.syntaxTree().isExternalModule();
 
                     // Emit export only for global export statements. 
                     // The container for this would be dynamic module which is whole file
@@ -248,7 +248,7 @@ module TypeScript {
             var start = new Date().getTime();
             var declarationContainerDecl = this.semanticInfoChain.getDeclForAST(declarationContainerAst);
 
-            var declarationPullSymbol = declarationContainerDecl.getSymbol();
+            var declarationPullSymbol = declarationContainerDecl.getSymbol(this.semanticInfoChain);
             TypeScript.declarationEmitTypeSignatureTime += new Date().getTime() - start;
 
             var isNotAGenericType = ast.kind() !== SyntaxKind.GenericType;
@@ -327,7 +327,7 @@ module TypeScript {
         private emitTypeOfVariableDeclaratorOrParameter(boundDecl: ISyntaxElement) {
             var start = new Date().getTime();
             var decl = this.semanticInfoChain.getDeclForAST(boundDecl);
-            var pullSymbol = decl.getSymbol();
+            var pullSymbol = decl.getSymbol(this.semanticInfoChain);
             TypeScript.declarationEmitGetBoundDeclTypeTime += new Date().getTime() - start;
 
             var type = pullSymbol.type;
@@ -375,7 +375,7 @@ module TypeScript {
             }
         }
 
-        private emitClassElementModifiers(modifiers: ISyntaxList<ISyntaxToken>): void {
+        private emitClassElementModifiers(modifiers: ISyntaxToken[]): void {
             if (hasModifier(modifiers, PullElementFlags.Static)) {
                 if (hasModifier(modifiers, PullElementFlags.Private)) {
                     this.declFile.Write("private ");
@@ -414,18 +414,22 @@ module TypeScript {
         }
 
         private emitDeclarationsForVariableDeclaration(variableDeclaration: VariableDeclarationSyntax) {
-            var varListCount = variableDeclaration.variableDeclarators.nonSeparatorCount();
+            var varListCount = variableDeclaration.variableDeclarators.length;
             for (var i = 0; i < varListCount; i++) {
-                this.emitVariableDeclarator(variableDeclaration.variableDeclarators.nonSeparatorAt(i), i === 0, i === varListCount - 1);
+                this.emitVariableDeclarator(variableDeclaration.variableDeclarators[i], i === 0, i === varListCount - 1);
             }
         }
 
-        private emitArgDecl(argDecl: ISyntaxElement, id: ISyntaxToken, isOptional: boolean, isPrivate: boolean) {
+        private parameterIsOptional(parameter: ParameterSyntax) {
+            return parameter.questionToken !== null || parameter.equalsValueClause !== null;
+        }
+
+        private emitParameter(argDecl: ParameterSyntax, isPrivate: boolean) {
             this.indenter.increaseIndent();
 
             this.emitDeclarationComments(argDecl, false);
-            this.declFile.Write(id.text());
-            if (isOptional) {
+            this.declFile.Write(argDecl.identifier.text());
+            if (this.parameterIsOptional(argDecl)) {
                 this.declFile.Write("?");
             }
 
@@ -439,7 +443,7 @@ module TypeScript {
         private isOverloadedCallSignature(funcDecl: ISyntaxElement) {
             var start = new Date().getTime();
             var functionDecl = this.semanticInfoChain.getDeclForAST(funcDecl);
-            var funcSymbol = functionDecl.getSymbol();
+            var funcSymbol = functionDecl.getSymbol(this.semanticInfoChain);
             TypeScript.declarationEmitIsOverloadedCallSignatureTime += new Date().getTime() - start;
 
             var funcTypeSymbol = funcSymbol.type;
@@ -468,7 +472,7 @@ module TypeScript {
             }
 
             var funcPullDecl = this.semanticInfoChain.getDeclForAST(funcDecl);
-            var funcSignature = funcPullDecl.getSignatureSymbol();
+            var funcSignature = funcPullDecl.getSignatureSymbol(this.semanticInfoChain);
             this.emitDeclarationComments(funcDecl);
 
             this.emitIndent();
@@ -481,19 +485,19 @@ module TypeScript {
 
         private emitParameterList(isPrivate: boolean, parameterList: ParameterListSyntax): void {
             this.declFile.Write("(");
-            this.emitParameters(isPrivate, ASTHelpers.parametersFromParameterList(parameterList));
+            this.emitParameters(isPrivate, parameterList.parameters);
             this.declFile.Write(")");
         }
 
-        private emitParameters(isPrivate: boolean, parameterList: IParameters): void {
-            var hasLastParameterRestParameter = parameterList.lastParameterIsRest();
+        private emitParameters(isPrivate: boolean, parameterList: ParameterSyntax[]): void {
+            var hasLastParameterRestParameter = lastParameterIsRest(parameterList);
             var argsLen = parameterList.length;
             if (hasLastParameterRestParameter) {
                 argsLen--;
             }
 
             for (var i = 0; i < argsLen; i++) {
-                this.emitArgDecl(parameterList.astAt(i), parameterList.identifierAt(i), parameterList.isOptionalAt(i), isPrivate);
+                this.emitParameter(parameterList[i], isPrivate);
                 if (i < (argsLen - 1)) {
                     this.declFile.Write(", ");
                 }
@@ -508,7 +512,7 @@ module TypeScript {
                 }
 
                 var index = parameterList.length - 1;
-                this.emitArgDecl(parameterList.astAt(index), parameterList.identifierAt(index), parameterList.isOptionalAt(index), isPrivate);
+                this.emitParameter(parameterList[index], isPrivate);
             }
         }
 
@@ -546,7 +550,7 @@ module TypeScript {
             }
 
             var funcPullDecl = this.semanticInfoChain.getDeclForAST(funcDecl);
-            var funcSignature = funcPullDecl.getSignatureSymbol();
+            var funcSignature = funcPullDecl.getSignatureSymbol(this.semanticInfoChain);
             this.emitDeclarationComments(funcDecl);
 
             this.emitDeclFlags(funcDecl, "function");
@@ -572,7 +576,7 @@ module TypeScript {
 
             this.emitDeclarationComments(funcDecl);
 
-            var funcSignature = funcPullDecl.getSignatureSymbol();
+            var funcSignature = funcPullDecl.getSignatureSymbol(this.semanticInfoChain);
             this.emitTypeParameters(funcDecl.typeParameterList, funcSignature);
 
             this.emitIndent();
@@ -604,7 +608,7 @@ module TypeScript {
             this.emitIndent();
             this.declFile.Write("new");
 
-            var funcSignature = funcPullDecl.getSignatureSymbol();
+            var funcSignature = funcPullDecl.getSignatureSymbol(this.semanticInfoChain);
             this.emitTypeParameters(funcDecl.callSignature.typeParameterList, funcSignature);
 
             this.emitParameterList(/*isPrivate:*/ false, funcDecl.callSignature.parameterList);
@@ -637,7 +641,7 @@ module TypeScript {
                 this.declFile.Write("? ");
             }
 
-            var funcSignature = funcPullDecl.getSignatureSymbol();
+            var funcSignature = funcPullDecl.getSignatureSymbol(this.semanticInfoChain);
             this.emitTypeParameters(funcDecl.callSignature.typeParameterList, funcSignature);
 
             this.emitParameterList(/*isPrivate:*/ false, funcDecl.callSignature.parameterList);
@@ -689,7 +693,7 @@ module TypeScript {
                 this.declFile.Write("new");
             }
 
-            var funcSignature = funcPullDecl.getSignatureSymbol();
+            var funcSignature = funcPullDecl.getSignatureSymbol(this.semanticInfoChain);
             this.emitTypeParameters(funcDecl.callSignature.typeParameterList, funcSignature);
 
             this.emitParameterList(/*isPrivate:*/ false, funcDecl.callSignature.parameterList);
@@ -719,11 +723,11 @@ module TypeScript {
 
             this.emitIndent();
             this.declFile.Write("[");
-            this.emitParameters(/*isPrivate:*/ false, ASTHelpers.parametersFromParameter(funcDecl.parameter));
+            this.emitParameters(/*isPrivate:*/ false, funcDecl.parameters);
             this.declFile.Write("]");
 
             var funcPullDecl = this.semanticInfoChain.getDeclForAST(funcDecl);
-            var funcSignature = funcPullDecl.getSignatureSymbol();
+            var funcSignature = funcPullDecl.getSignatureSymbol(this.semanticInfoChain);
             var returnType = funcSignature.returnType;
             this.declFile.Write(": ");
             this.emitTypeSignature(funcDecl, returnType);
@@ -731,16 +735,16 @@ module TypeScript {
             this.declFile.WriteLine(";");
         }
 
-        private emitBaseList(bases: ISeparatedSyntaxList<INameSyntax>, useExtendsList: boolean) {
-            if (bases && (bases.nonSeparatorCount() > 0)) {
+        private emitBaseList(bases: INameSyntax[], useExtendsList: boolean) {
+            if (bases && (bases.length > 0)) {
                 var qual = useExtendsList ? "extends" : "implements";
                 this.declFile.Write(" " + qual + " ");
-                var basesLen = bases.nonSeparatorCount();
+                var basesLen = bases.length;
                 for (var i = 0; i < basesLen; i++) {
                     if (i > 0) {
                         this.declFile.Write(", ");
                     }
-                    var base = bases.nonSeparatorAt(i);
+                    var base = bases[i];
                     var baseType = <PullTypeSymbol>this.semanticInfoChain.getSymbolForAST(base);
                     this.emitTypeSignature(base, baseType);
                 }
@@ -775,7 +779,7 @@ module TypeScript {
             this.emitMemberAccessorDeclaration(funcDecl, funcDecl.modifiers, funcDecl.propertyName);
         }
 
-        private emitMemberAccessorDeclaration(funcDecl: ISyntaxElement, modifiers: ISyntaxList<ISyntaxToken>, name: ISyntaxToken) {
+        private emitMemberAccessorDeclaration(funcDecl: ISyntaxElement, modifiers: ISyntaxToken[], name: ISyntaxToken) {
             var start = new Date().getTime();
             var accessorSymbol = PullHelpers.getAccessorSymbol(funcDecl, this.semanticInfoChain);
             TypeScript.declarationEmitGetAccessorFunctionTime += new Date().getTime();
@@ -799,13 +803,13 @@ module TypeScript {
         }
 
         private emitClassMembersFromConstructorDefinition(funcDecl: ConstructorDeclarationSyntax) {
-            var argsLen = funcDecl.callSignature.parameterList.parameters.nonSeparatorCount();
-            if (lastParameterIsRest(funcDecl.callSignature.parameterList)) {
+            var argsLen = funcDecl.callSignature.parameterList.parameters.length;
+            if (lastParameterIsRest(funcDecl.callSignature.parameterList.parameters)) {
                 argsLen--;
             }
 
             for (var i = 0; i < argsLen; i++) {
-                var parameter = funcDecl.callSignature.parameterList.parameters.nonSeparatorAt(i);
+                var parameter = funcDecl.callSignature.parameterList.parameters[i];
                 var parameterDecl = this.semanticInfoChain.getDeclForAST(parameter);
                 if (hasFlag(parameterDecl.flags, PullElementFlags.PropertyParameter)) {
                     var funcPullDecl = this.semanticInfoChain.getDeclForAST(funcDecl);
@@ -851,10 +855,10 @@ module TypeScript {
             this.declFile.WriteLine("}");
         }
 
-        private emitHeritageClauses(clauses: ISyntaxList<HeritageClauseSyntax>): void {
+        private emitHeritageClauses(clauses: HeritageClauseSyntax[]): void {
             if (clauses) {
-                for (var i = 0, n = clauses.childCount(); i < n; i++) {
-                    this.emitHeritageClause(clauses.childAt(i));
+                for (var i = 0, n = clauses.length; i < n; i++) {
+                    this.emitHeritageClause(clauses[i]);
                 }
             }
         }
@@ -886,7 +890,7 @@ module TypeScript {
         }
 
         private emitTypeParameters(typeParams: TypeParameterListSyntax, funcSignature?: PullSignatureSymbol) {
-            if (!typeParams || !typeParams.typeParameters.nonSeparatorCount()) {
+            if (!typeParams || !typeParams.typeParameters.length) {
                 return;
             }
 
@@ -895,7 +899,7 @@ module TypeScript {
 
             var start = new Date().getTime();
             var containerDecl = this.semanticInfoChain.getDeclForAST(containerAst);
-            var containerSymbol = <PullTypeSymbol>containerDecl.getSymbol();
+            var containerSymbol = <PullTypeSymbol>containerDecl.getSymbol(this.semanticInfoChain);
             TypeScript.declarationEmitGetTypeParameterSymbolTime += new Date().getTime() - start;
 
             var typars: PullTypeSymbol[];
@@ -945,7 +949,7 @@ module TypeScript {
 
         private emitDeclarationsForImportDeclaration(importDeclAST: ImportDeclarationSyntax) {
             var importDecl = this.semanticInfoChain.getDeclForAST(importDeclAST);
-            var importSymbol = <PullTypeAliasSymbol>importDecl.getSymbol();
+            var importSymbol = <PullTypeAliasSymbol>importDecl.getSymbol(this.semanticInfoChain);
             var isExportedImportDecl = hasModifier(importDeclAST.modifiers, PullElementFlags.Exported);
 
             if (isExportedImportDecl || importSymbol.typeUsedExternally() || PullContainerSymbol.usedAsSymbol(importSymbol.getContainer(), importSymbol)) {
@@ -976,9 +980,9 @@ module TypeScript {
             this.declFile.WriteLine(moduleDecl.identifier.text() + " {");
 
             this.indenter.increaseIndent();
-            var membersLen = moduleDecl.enumElements.nonSeparatorCount();
+            var membersLen = moduleDecl.enumElements.length;
             for (var j = 0; j < membersLen; j++) {
-                var enumElement = moduleDecl.enumElements.nonSeparatorAt(j);
+                var enumElement = moduleDecl.enumElements[j];
                 var enumElementDecl = <PullEnumElementDecl>this.semanticInfoChain.getDeclForAST(enumElement);
                 this.emitDeclarationComments(enumElement);
                 this.emitIndent();
@@ -1066,7 +1070,7 @@ module TypeScript {
 
                         documents = documents.concat(document);
 
-                            if (!document.isDeclareFile() && document.isExternalModule()) {
+                            if (!document.isDeclareFile() && document.syntaxTree().isExternalModule()) {
                             addedGlobalDocument = true;
                         }
                     }
@@ -1077,7 +1081,7 @@ module TypeScript {
                 var fileNames = this.compiler.fileNames();
                 for (var i = 0; i < fileNames.length; i++) {
                     var doc = this.compiler.getDocument(fileNames[i]);
-                    if (!doc.isDeclareFile() && !doc.isExternalModule()) {
+                    if (!doc.isDeclareFile() && !doc.syntaxTree().isExternalModule()) {
                         // Check what references need to be added
                         var scriptReferences = doc.referencedFiles;
                         for (var j = 0; j < scriptReferences.length; j++) {
@@ -1085,7 +1089,7 @@ module TypeScript {
                             var document = this.compiler.getDocument(currentReference);
                             // All the references that are not going to be part of same file
                             if (document &&
-                                (document.isDeclareFile() || document.isExternalModule())) {
+                                (document.isDeclareFile() || document.syntaxTree().isExternalModule())) {
                                 for (var k = 0; k < documents.length; k++) {
                                     if (documents[k] === document) {
                                         break;

@@ -18,9 +18,6 @@
 if (Error) (<any>Error).stackTraceLimit = 1000;
 
 module TypeScript {
-
-    declare var IO: any;
-
     export var fileResolutionTime = 0;
     export var fileResolutionIOTime = 0;
     export var fileResolutionScanImportsTime = 0;
@@ -28,9 +25,8 @@ module TypeScript {
     export var fileResolutionGetDefaultLibraryTime = 0;
     export var sourceCharactersCompiled = 0;
     export var syntaxTreeParseTime = 0;
-    export var syntaxDiagnosticsTime = 0;
-    export var astTranslationTime = 0;
     export var typeCheckTime = 0;
+    export var createDeclarationsTime = 0;
 
     export var compilerResolvePathTime = 0;
     export var compilerDirectoryNameTime = 0;
@@ -126,6 +122,188 @@ module TypeScript {
             return result;
         }
     }
+    
+    export interface ICancellationToken {
+        isCancellationRequested(): boolean;
+    }
+
+    export class OperationCanceledException { }
+
+    export class CancellationToken {
+
+        public static None: CancellationToken = new CancellationToken(null)
+
+        constructor(private cancellationToken: ICancellationToken) {
+        }
+
+        public isCancellationRequested() {
+            return this.cancellationToken && this.cancellationToken.isCancellationRequested();
+        }
+
+        public throwIfCancellationRequested(): void {
+            if (this.isCancellationRequested()) {
+                throw new OperationCanceledException();
+            }
+        }
+    }    
+
+    class DocumentRegistryEntry {
+        public refCount: number = 0;
+        public owners: string[] = [];
+        constructor(public document: Document) {
+        }
+    }
+
+    export interface IDocumentRegistry {
+        acquireDocument(
+            fileName: string,
+            compilationSettings: ImmutableCompilationSettings,
+            scriptSnapshot: IScriptSnapshot,
+            byteOrderMark: ByteOrderMark,
+            version: string,
+            isOpen: boolean,
+            referencedFiles: string[]): TypeScript.Document;
+
+        updateDocument(
+            document: Document,
+            fileName: string,
+            compilationSettings: ImmutableCompilationSettings,
+            scriptSnapshot: IScriptSnapshot,
+            version: string,
+            isOpen: boolean,
+            textChangeRange: TextChangeRange): TypeScript.Document;
+
+        releaseDocument(fileName: string, compilationSettings: ImmutableCompilationSettings): void
+    }
+
+    export class NonCachingDocumentRegistry implements IDocumentRegistry {
+
+        public static Instance: IDocumentRegistry = new NonCachingDocumentRegistry();
+
+        public acquireDocument(
+            fileName: string,
+            compilationSettings: ImmutableCompilationSettings,
+            scriptSnapshot: IScriptSnapshot,
+            byteOrderMark: ByteOrderMark,
+            version: string,
+            isOpen: boolean,
+            referencedFiles: string[]= []): TypeScript.Document {
+            return Document.create(compilationSettings, fileName, scriptSnapshot, byteOrderMark, version, isOpen, referencedFiles);
+        }
+
+        public updateDocument(
+            document: Document,
+            fileName: string,
+            compilationSettings: ImmutableCompilationSettings,
+            scriptSnapshot: IScriptSnapshot,
+            version: string,
+            isOpen: boolean,
+            textChangeRange: TextChangeRange
+            ): TypeScript.Document {
+            return document.update(scriptSnapshot, version, isOpen, textChangeRange);
+        }
+
+        public releaseDocument(fileName: string, compilationSettings: ImmutableCompilationSettings): void {
+            // no op since this class doesn't cache anything
+        }
+    }
+
+    export class DocumentRegistry implements IDocumentRegistry {
+        private buckets: IIndexable<StringHashTable<DocumentRegistryEntry>> = {};
+
+        private getKeyFromCompilationSettings(settings: ImmutableCompilationSettings): string {
+            return "_" + settings.propagateEnumConstants().toString() + "|" + settings.allowAutomaticSemicolonInsertion().toString() + "|" + LanguageVersion[settings.codeGenTarget()];
+        }
+
+        private getBucketForCompilationSettings(settings: ImmutableCompilationSettings, createIfMissing: boolean): StringHashTable<DocumentRegistryEntry> {
+            var key = this.getKeyFromCompilationSettings(settings);
+            var bucket = this.buckets[key];
+            if (!bucket && createIfMissing) {
+                this.buckets[key] = bucket = new StringHashTable<DocumentRegistryEntry>();
+            }
+            return bucket;
+        }
+
+        public reportStats() {
+            var bucketInfoArray = Object.keys(this.buckets).filter(name => name && name.charAt(0) === '_').map(name => {
+                var entries = this.buckets[name];
+                var documents = entries.getAllKeys().map((name) => {
+                    var entry = entries.lookup(name);
+                    return {
+                        name: name,
+                        refCount: entry.refCount,
+                        references: entry.owners.slice(0)
+                    };
+                });
+                documents.sort((x, y) => y.refCount - x.refCount);
+                return { bucket: name, documents: documents }
+            });
+            return JSON.stringify(bucketInfoArray, null, 2);
+        }
+
+        public acquireDocument(
+            fileName: string,
+            compilationSettings: ImmutableCompilationSettings,
+            scriptSnapshot: IScriptSnapshot,
+            byteOrderMark: ByteOrderMark,
+            version: string,
+            isOpen: boolean,
+            referencedFiles: string[]= []): TypeScript.Document {
+
+            var bucket = this.getBucketForCompilationSettings(compilationSettings, /*createIfMissing*/ true);
+            var entry = bucket.lookup(fileName);
+            if (!entry) {
+                var document = Document.create(compilationSettings, fileName, scriptSnapshot, byteOrderMark, version, isOpen, referencedFiles);
+
+                entry = new DocumentRegistryEntry(document);
+                bucket.add(fileName, entry);
+            }
+            entry.refCount++;
+
+            return entry.document;
+        }
+
+        public updateDocument(
+            document: Document,
+            fileName: string,
+            compilationSettings: ImmutableCompilationSettings,
+            scriptSnapshot: IScriptSnapshot,
+            version: string,
+            isOpen: boolean,
+            textChangeRange: TextChangeRange
+            ): TypeScript.Document {
+
+            var bucket = this.getBucketForCompilationSettings(compilationSettings, /*createIfMissing*/ false);
+            Debug.assert(bucket);
+            var entry = bucket.lookup(fileName);
+            Debug.assert(entry);
+
+            if (entry.document.isOpen === isOpen && entry.document.version === version) {
+                return entry.document;
+            }
+
+            entry.document = entry.document.update(scriptSnapshot, version, isOpen, textChangeRange);
+            return entry.document;
+        }
+
+        public releaseDocument(fileName: string, compilationSettings: ImmutableCompilationSettings): void {
+            var bucket = this.getBucketForCompilationSettings(compilationSettings, false);
+            Debug.assert(bucket);
+
+            var entry = bucket.lookup(fileName);
+            entry.refCount--;
+
+            Debug.assert(entry.refCount >= 0);
+            if (entry.refCount === 0) {
+                bucket.remove(fileName);
+            }
+        }
+    }
+
+    interface IExpressionWithArgumentListSyntax extends IExpressionSyntax {
+        expression: IExpressionSyntax;
+        argumentList: ArgumentListSyntax;
+    }
 
     export class TypeScriptCompiler {
         private semanticInfoChain: SemanticInfoChain = null;
@@ -133,6 +311,10 @@ module TypeScript {
         constructor(public logger: ILogger = new NullLogger(),
                     private _settings: ImmutableCompilationSettings = ImmutableCompilationSettings.defaultSettings()) {
             this.semanticInfoChain = new SemanticInfoChain(this, logger);
+        }
+
+        public getSemanticInfoChain() {
+            return this.semanticInfoChain;
         }
 
         public compilationSettings(): ImmutableCompilationSettings {
@@ -159,20 +341,24 @@ module TypeScript {
             this.semanticInfoChain.invalidate();
         }
 
-        public addFile(fileName: string,
+        public addOrUpdateFile(document: Document): void {
+            // TODO: TypeScript.sourceCharactersCompiled += document. scriptSnapshot.getLength();
+            // Note: the semantic info chain will recognize that this is a replacement of an
+            // existing script, and will handle it appropriately.
+            this.semanticInfoChain.addDocument(document);
+        }
+
+        public addFile(
+            fileName: string,
             scriptSnapshot: IScriptSnapshot,
             byteOrderMark: ByteOrderMark,
             version: string,
             isOpen: boolean,
-            referencedFiles: string[] = []): void {
+            referencedFiles: string[]= []): void {
 
             fileName = TypeScript.switchToForwardSlashes(fileName);
-
-            TypeScript.sourceCharactersCompiled += scriptSnapshot.getLength();
-
-            var document = Document.create(this, this.semanticInfoChain, fileName, scriptSnapshot, byteOrderMark, version, isOpen, referencedFiles);
-
-            this.semanticInfoChain.addDocument(document);
+            var document = Document.create(this.compilationSettings(), fileName, scriptSnapshot, byteOrderMark, version, isOpen, referencedFiles);
+            this.addOrUpdateFile(document);
         }
 
         public updateFile(fileName: string, scriptSnapshot: IScriptSnapshot, version: string, isOpen: boolean, textChangeRange: TextChangeRange): void {
@@ -183,7 +369,7 @@ module TypeScript {
 
             // Note: the semantic info chain will recognize that this is a replacement of an
             // existing script, and will handle it appropriately.
-            this.semanticInfoChain.addDocument(updatedDocument);
+            this.addOrUpdateFile(updatedDocument);
         }
 
         public removeFile(fileName: string): void {
@@ -226,7 +412,7 @@ module TypeScript {
                 for (var i = 0, n = fileNames.length; i < n; i++) {
                     var document = this.getDocument(fileNames[i]);
 
-                    if (document.isExternalModule()) {
+                    if (document.syntaxTree().isExternalModule()) {
                         // Dynamic module never contributes to the single file
                         continue;
                     }
@@ -291,6 +477,7 @@ module TypeScript {
             onSingleFileEmitComplete: (files: OutputFile) => void,
             sharedEmitter: DeclarationEmitter): DeclarationEmitter {
 
+            var start = new Date().getTime();
             if (this._shouldEmitDeclarations(document)) {
                 if (document.emitToOwnOutputFile()) {
                     var singleEmitter = this.emitDocumentDeclarationsWorker(document, emitOptions);
@@ -304,12 +491,12 @@ module TypeScript {
                 }
             }
 
+            declarationEmitTime += new Date().getTime() - start;
             return sharedEmitter;
         }
 
         // Will not throw exceptions.
         public emitAllDeclarations(resolvePath: (path: string) => string): EmitOutput {
-            var start = new Date().getTime();
             var emitOutput = new EmitOutput();
 
             var emitOptions = new EmitOptions(this, resolvePath);
@@ -333,8 +520,6 @@ module TypeScript {
             if (sharedEmitter) {
                 emitOutput.outputFiles.push(sharedEmitter.getOutputFile());
             }
-
-            declarationEmitTime += new Date().getTime() - start;
 
             return emitOutput;
         }
@@ -424,8 +609,10 @@ module TypeScript {
             onSingleFileEmitComplete: (files: OutputFile[]) => void,
             sharedEmitter: Emitter): Emitter {
 
+            var start = new Date().getTime();
+
             // Emitting module or multiple files, always goes to single file
-                if (this._shouldEmit(document)) {
+            if (this._shouldEmit(document)) {
                 if (document.emitToOwnOutputFile()) {
                     // We're outputting to mulitple files.  We don't want to reuse an emitter in that case.
                     var singleEmitter = this.emitDocumentWorker(document, emitOptions);
@@ -440,12 +627,12 @@ module TypeScript {
                 }
             }
 
+            emitTime += new Date().getTime() - start;
             return sharedEmitter;
         }
 
         // Will not throw exceptions.
         public emitAll(resolvePath: (path: string) => string): EmitOutput {
-            var start = new Date().getTime();
             var emitOutput = new EmitOutput();
 
             var emitOptions = new EmitOptions(this, resolvePath);
@@ -472,7 +659,6 @@ module TypeScript {
                 emitOutput.outputFiles.push.apply(emitOutput.outputFiles, sharedEmitter.getOutputFiles());
             }
 
-            emitTime += new Date().getTime() - start;
             return emitOutput;
         }
 
@@ -682,8 +868,8 @@ module TypeScript {
                                 if (callResolutionResults.actualParametersContextTypeSymbols) {
                                     var argExpression = path[i + 3];
                                     if (argExpression) {
-                                        for (var j = 0, m = callExpression.argumentList.arguments.nonSeparatorCount(); j < m; j++) {
-                                            if (callExpression.argumentList.arguments.nonSeparatorAt(j) === argExpression) {
+                                        for (var j = 0, m = callExpression.argumentList.arguments.length; j < m; j++) {
+                                            if (callExpression.argumentList.arguments[j] === argExpression) {
                                                 var callContextualType = callResolutionResults.actualParametersContextTypeSymbols[j];
                                                 if (callContextualType) {
                                                     contextualType = callContextualType;
@@ -736,8 +922,8 @@ module TypeScript {
                                 var contextualType: PullTypeSymbol = null;
                                 var memberDecls = objectLiteralExpression.propertyAssignments;
                                 if (memberDecls && objectLiteralResolutionContext.membersContextTypeSymbols) {
-                                    for (var j = 0, m = memberDecls.nonSeparatorCount(); j < m; j++) {
-                                        if (memberDecls.nonSeparatorAt(j) === memeberAST) {
+                                    for (var j = 0, m = memberDecls.length; j < m; j++) {
+                                        if (memberDecls[j] === memeberAST) {
                                             var memberContextualType = objectLiteralResolutionContext.membersContextTypeSymbols[j];
                                             if (memberContextualType) {
                                                 contextualType = memberContextualType;
@@ -1046,12 +1232,13 @@ module TypeScript {
                 return null;
             }
 
-            var astForDeclContext = this.extractResolutionContextFromAST(resolver, astForDecl, this.getDocument(astForDecl.fileName()), /*propagateContextualTypes*/ true);
+            var astForDeclContext = this.extractResolutionContextFromAST(
+                resolver, astForDecl, this.getDocument(syntaxTree(astForDecl).fileName()), /*propagateContextualTypes*/ true);
             if (!astForDeclContext) {
                 return null;
             }
 
-            var symbol = decl.getSymbol();
+            var symbol = decl.getSymbol(this.semanticInfoChain);
             resolver.resolveDeclaredSymbol(symbol, context.resolutionContext);
             symbol.setUnresolved();
 

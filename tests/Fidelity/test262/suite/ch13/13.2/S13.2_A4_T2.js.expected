@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1859,
         "fullWidth": 1859,
         "width": 1182,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -124,7 +120,7 @@
                                 "width": 6,
                                 "text": "__gunc",
                                 "value": "__gunc",
-                                "valueText": "__gunc",
+                                "valueText": "___gunc",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -420,7 +416,7 @@
                                 "width": 6,
                                 "text": "__gunc",
                                 "value": "__gunc",
-                                "valueText": "__gunc"
+                                "valueText": "___gunc"
                             },
                             "dotToken": {
                                 "kind": "DotToken",
@@ -680,7 +676,7 @@
                                                         "width": 6,
                                                         "text": "__gunc",
                                                         "value": "__gunc",
-                                                        "valueText": "__gunc"
+                                                        "valueText": "___gunc"
                                                     },
                                                     "dotToken": {
                                                         "kind": "DotToken",
@@ -780,7 +776,6 @@
                 "end": 1303,
                 "fullWidth": 348,
                 "width": 175,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 956,
@@ -881,7 +876,6 @@
                     "end": 1171,
                     "fullWidth": 39,
                     "width": 39,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 1132,
@@ -890,7 +884,6 @@
                         "end": 1160,
                         "fullWidth": 29,
                         "width": 28,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "MemberAccessExpression",
                             "fullStart": 1132,
@@ -909,7 +902,7 @@
                                 "width": 6,
                                 "text": "__gunc",
                                 "value": "__gunc",
-                                "valueText": "__gunc"
+                                "valueText": "___gunc"
                             },
                             "dotToken": {
                                 "kind": "DotToken",
@@ -959,6 +952,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -1001,7 +995,7 @@
                         "width": 6,
                         "text": "__gunc",
                         "value": "__gunc",
-                        "valueText": "__gunc"
+                        "valueText": "___gunc"
                     }
                 },
                 "closeParenToken": {
@@ -1033,7 +1027,6 @@
                     "end": 1303,
                     "fullWidth": 131,
                     "width": 130,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 1173,
@@ -1065,7 +1058,6 @@
                             "end": 1301,
                             "fullWidth": 127,
                             "width": 125,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "InvocationExpression",
                                 "fullStart": 1175,
@@ -1074,7 +1066,6 @@
                                 "end": 1300,
                                 "fullWidth": 125,
                                 "width": 124,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "IdentifierName",
                                     "fullStart": 1175,
@@ -1104,7 +1095,6 @@
                                     "end": 1300,
                                     "fullWidth": 118,
                                     "width": 118,
-                                    "isIncrementallyUnusable": true,
                                     "openParenToken": {
                                         "kind": "OpenParenToken",
                                         "fullStart": 1182,
@@ -1126,7 +1116,6 @@
                                             "end": 1299,
                                             "fullWidth": 116,
                                             "width": 116,
-                                            "isIncrementallyUnusable": true,
                                             "left": {
                                                 "kind": "StringLiteral",
                                                 "fullStart": 1183,
@@ -1159,7 +1148,6 @@
                                                 "end": 1299,
                                                 "fullWidth": 28,
                                                 "width": 28,
-                                                "isIncrementallyUnusable": true,
                                                 "expression": {
                                                     "kind": "MemberAccessExpression",
                                                     "fullStart": 1271,
@@ -1178,7 +1166,7 @@
                                                         "width": 6,
                                                         "text": "__gunc",
                                                         "value": "__gunc",
-                                                        "valueText": "__gunc"
+                                                        "valueText": "___gunc"
                                                     },
                                                     "dotToken": {
                                                         "kind": "DotToken",
@@ -1227,7 +1215,8 @@
                                                     "width": 11,
                                                     "text": "constructor",
                                                     "value": "constructor",
-                                                    "valueText": "constructor"
+                                                    "valueText": "constructor",
+                                                    "isKeywordConvertedToIdentifier": true
                                                 }
                                             }
                                         }
@@ -1386,7 +1375,7 @@
                                 "width": 25,
                                 "text": "__constructor_was__enumed",
                                 "value": "__constructor_was__enumed",
-                                "valueText": "__constructor_was__enumed"
+                                "valueText": "___constructor_was__enumed"
                             }
                         }
                     ]
@@ -1475,7 +1464,7 @@
                     "width": 6,
                     "text": "__prop",
                     "value": "__prop",
-                    "valueText": "__prop",
+                    "valueText": "___prop",
                     "hasTrailingTrivia": true,
                     "trailingTrivia": [
                         {
@@ -1525,7 +1514,7 @@
                         "width": 6,
                         "text": "__gunc",
                         "value": "__gunc",
-                        "valueText": "__gunc"
+                        "valueText": "___gunc"
                     },
                     "dotToken": {
                         "kind": "DotToken",
@@ -1663,7 +1652,7 @@
                                     "width": 6,
                                     "text": "__prop",
                                     "value": "__prop",
-                                    "valueText": "__prop",
+                                    "valueText": "___prop",
                                     "hasTrailingTrivia": true,
                                     "trailingTrivia": [
                                         {
@@ -1756,7 +1745,7 @@
                                         "width": 25,
                                         "text": "__constructor_was__enumed",
                                         "value": "__constructor_was__enumed",
-                                        "valueText": "__constructor_was__enumed",
+                                        "valueText": "___constructor_was__enumed",
                                         "hasLeadingTrivia": true,
                                         "hasTrailingTrivia": true,
                                         "leadingTrivia": [
@@ -1945,7 +1934,7 @@
                     "width": 25,
                     "text": "__constructor_was__enumed",
                     "value": "__constructor_was__enumed",
-                    "valueText": "__constructor_was__enumed"
+                    "valueText": "___constructor_was__enumed"
                 },
                 "closeParenToken": {
                     "kind": "CloseParenToken",
@@ -2099,7 +2088,7 @@
                                                 "width": 25,
                                                 "text": "__constructor_was__enumed",
                                                 "value": "__constructor_was__enumed",
-                                                "valueText": "__constructor_was__enumed"
+                                                "valueText": "___constructor_was__enumed"
                                             }
                                         }
                                     ],

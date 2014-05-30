@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 860,
         "fullWidth": 860,
         "width": 395,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -124,7 +120,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj",
+                                "valueText": "___obj",
                                 "hasTrailingTrivia": true,
                                 "trailingTrivia": [
                                     {
@@ -573,7 +569,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj"
+                                "valueText": "___obj"
                             },
                             "dotToken": {
                                 "kind": "DotToken",
@@ -944,7 +940,6 @@
                 "end": 663,
                 "fullWidth": 66,
                 "width": 64,
-                "isIncrementallyUnusable": true,
                 "ifKeyword": {
                     "kind": "IfKeyword",
                     "fullStart": 598,
@@ -996,7 +991,6 @@
                     "end": 643,
                     "fullWidth": 40,
                     "width": 40,
-                    "isIncrementallyUnusable": true,
                     "left": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 603,
@@ -1005,7 +999,6 @@
                         "end": 620,
                         "fullWidth": 18,
                         "width": 17,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "IdentifierName",
                             "fullStart": 603,
@@ -1016,7 +1009,7 @@
                             "width": 5,
                             "text": "__obj",
                             "value": "__obj",
-                            "valueText": "__obj"
+                            "valueText": "___obj"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -1041,6 +1034,7 @@
                             "text": "constructor",
                             "value": "constructor",
                             "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true,
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {
@@ -1081,7 +1075,6 @@
                         "end": 643,
                         "fullWidth": 18,
                         "width": 18,
-                        "isIncrementallyUnusable": true,
                         "expression": {
                             "kind": "IdentifierName",
                             "fullStart": 625,
@@ -1116,7 +1109,8 @@
                             "width": 11,
                             "text": "constructor",
                             "value": "constructor",
-                            "valueText": "constructor"
+                            "valueText": "constructor",
+                            "isKeywordConvertedToIdentifier": true
                         }
                     }
                 },
@@ -1382,7 +1376,7 @@
                             "width": 5,
                             "text": "__obj",
                             "value": "__obj",
-                            "valueText": "__obj"
+                            "valueText": "___obj"
                         },
                         "dotToken": {
                             "kind": "DotToken",
@@ -1761,7 +1755,7 @@
                                 "width": 5,
                                 "text": "__obj",
                                 "value": "__obj",
-                                "valueText": "__obj"
+                                "valueText": "___obj"
                             },
                             "dotToken": {
                                 "kind": "DotToken",
@@ -2225,7 +2219,7 @@
                             "width": 5,
                             "text": "__obj",
                             "value": "__obj",
-                            "valueText": "__obj",
+                            "valueText": "___obj",
                             "hasTrailingTrivia": true,
                             "trailingTrivia": [
                                 {

@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 29,
@@ -108,7 +105,6 @@
                         "end": 29,
                         "fullWidth": 13,
                         "width": 13,
-                        "isIncrementallyUnusable": true,
                         "modifiers": [
                             {
                                 "kind": "StaticKeyword",
@@ -140,7 +136,6 @@
                             "end": 29,
                             "fullWidth": 6,
                             "width": 6,
-                            "isIncrementallyUnusable": true,
                             "propertyName": {
                                 "kind": "IdentifierName",
                                 "fullStart": 23,
@@ -151,18 +146,9 @@
                                 "width": 6,
                                 "text": "public",
                                 "value": "public",
-                                "valueText": "public"
+                                "valueText": "public",
+                                "isKeywordConvertedToIdentifier": true
                             }
-                        },
-                        "semicolonToken": {
-                            "kind": "SemicolonToken",
-                            "fullStart": 29,
-                            "fullEnd": 29,
-                            "start": 29,
-                            "end": 29,
-                            "fullWidth": 0,
-                            "width": 0,
-                            "text": ""
                         }
                     }
                 ],

@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 50,
         "fullWidth": 50,
         "width": 50,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ImportDeclaration",
@@ -87,7 +83,7 @@
                     ]
                 },
                 "moduleReference": {
-                    "kind": "Last",
+                    "kind": "ModuleNameModuleReference",
                     "fullStart": 20,
                     "fullEnd": 49,
                     "start": 20,

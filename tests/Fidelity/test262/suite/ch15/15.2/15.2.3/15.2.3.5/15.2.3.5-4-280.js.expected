@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 1040,
         "fullWidth": 1040,
         "width": 430,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "FunctionDeclaration",
@@ -22,7 +18,6 @@
                 "end": 1014,
                 "fullWidth": 1016,
                 "width": 404,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "functionKeyword": {
                     "kind": "FunctionKeyword",
@@ -206,7 +201,6 @@
                     "end": 1014,
                     "fullWidth": 386,
                     "width": 384,
-                    "isIncrementallyUnusable": true,
                     "openBraceToken": {
                         "kind": "OpenBraceToken",
                         "fullStart": 630,
@@ -550,7 +544,6 @@
                             "end": 765,
                             "fullWidth": 80,
                             "width": 70,
-                            "isIncrementallyUnusable": true,
                             "expression": {
                                 "kind": "AssignmentExpression",
                                 "fullStart": 687,
@@ -559,7 +552,6 @@
                                 "end": 764,
                                 "fullWidth": 77,
                                 "width": 69,
-                                "isIncrementallyUnusable": true,
                                 "left": {
                                     "kind": "MemberAccessExpression",
                                     "fullStart": 687,
@@ -568,7 +560,6 @@
                                     "end": 705,
                                     "fullWidth": 19,
                                     "width": 10,
-                                    "isIncrementallyUnusable": true,
                                     "expression": {
                                         "kind": "IdentifierName",
                                         "fullStart": 687,
@@ -613,6 +604,7 @@
                                         "text": "set",
                                         "value": "set",
                                         "valueText": "set",
+                                        "isKeywordConvertedToIdentifier": true,
                                         "hasTrailingTrivia": true,
                                         "trailingTrivia": [
                                             {

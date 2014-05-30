@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 40,
         "fullWidth": 40,
         "width": 40,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ClassDeclaration",
@@ -22,7 +18,6 @@
                 "end": 38,
                 "fullWidth": 40,
                 "width": 38,
-                "isIncrementallyUnusable": true,
                 "modifiers": [
                     {
                         "kind": "ExportKeyword",
@@ -126,7 +121,6 @@
                         "end": 35,
                         "fullWidth": 13,
                         "width": 6,
-                        "isIncrementallyUnusable": true,
                         "modifiers": [],
                         "variableDeclarator": {
                             "kind": "VariableDeclarator",
@@ -136,7 +130,6 @@
                             "end": 35,
                             "fullWidth": 13,
                             "width": 6,
-                            "isIncrementallyUnusable": true,
                             "propertyName": {
                                 "kind": "IdentifierName",
                                 "fullStart": 24,
@@ -148,6 +141,7 @@
                                 "text": "public",
                                 "value": "public",
                                 "valueText": "public",
+                                "isKeywordConvertedToIdentifier": true,
                                 "hasLeadingTrivia": true,
                                 "hasTrailingTrivia": true,
                                 "hasTrailingNewLine": true,
@@ -168,16 +162,6 @@
                                     }
                                 ]
                             }
-                        },
-                        "semicolonToken": {
-                            "kind": "SemicolonToken",
-                            "fullStart": 37,
-                            "fullEnd": 37,
-                            "start": 37,
-                            "end": 37,
-                            "fullWidth": 0,
-                            "width": 0,
-                            "text": ""
                         }
                     }
                 ],

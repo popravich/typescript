@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 18,
@@ -19,7 +16,6 @@
         "end": 24,
         "fullWidth": 24,
         "width": 24,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "InterfaceDeclaration",
@@ -132,40 +128,42 @@
                                     }
                                 ]
                             },
-                            "parameter": {
-                                "kind": "Parameter",
-                                "fullStart": 18,
-                                "fullEnd": 20,
-                                "start": 18,
-                                "end": 20,
-                                "fullWidth": 2,
-                                "width": 2,
-                                "modifiers": [],
-                                "identifier": {
-                                    "kind": "IdentifierName",
+                            "parameters": [
+                                {
+                                    "kind": "Parameter",
                                     "fullStart": 18,
-                                    "fullEnd": 19,
-                                    "start": 18,
-                                    "end": 19,
-                                    "fullWidth": 1,
-                                    "width": 1,
-                                    "text": "a",
-                                    "value": "a",
-                                    "valueText": "a"
-                                },
-                                "questionToken": {
-                                    "kind": "QuestionToken",
-                                    "fullStart": 19,
                                     "fullEnd": 20,
-                                    "start": 19,
+                                    "start": 18,
                                     "end": 20,
-                                    "fullWidth": 1,
-                                    "width": 1,
-                                    "text": "?",
-                                    "value": "?",
-                                    "valueText": "?"
+                                    "fullWidth": 2,
+                                    "width": 2,
+                                    "modifiers": [],
+                                    "identifier": {
+                                        "kind": "IdentifierName",
+                                        "fullStart": 18,
+                                        "fullEnd": 19,
+                                        "start": 18,
+                                        "end": 19,
+                                        "fullWidth": 1,
+                                        "width": 1,
+                                        "text": "a",
+                                        "value": "a",
+                                        "valueText": "a"
+                                    },
+                                    "questionToken": {
+                                        "kind": "QuestionToken",
+                                        "fullStart": 19,
+                                        "fullEnd": 20,
+                                        "start": 19,
+                                        "end": 20,
+                                        "fullWidth": 1,
+                                        "width": 1,
+                                        "text": "?",
+                                        "value": "?",
+                                        "valueText": "?"
+                                    }
                                 }
-                            },
+                            ],
                             "closeBracketToken": {
                                 "kind": "CloseBracketToken",
                                 "fullStart": 20,

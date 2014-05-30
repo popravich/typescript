@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 726,
         "fullWidth": 726,
         "width": 160,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -263,7 +259,6 @@
                 "end": 663,
                 "fullWidth": 86,
                 "width": 84,
-                "isIncrementallyUnusable": true,
                 "expression": {
                     "kind": "InvocationExpression",
                     "fullStart": 579,
@@ -272,7 +267,6 @@
                     "end": 662,
                     "fullWidth": 83,
                     "width": 83,
-                    "isIncrementallyUnusable": true,
                     "expression": {
                         "kind": "MemberAccessExpression",
                         "fullStart": 579,
@@ -326,7 +320,6 @@
                         "end": 662,
                         "fullWidth": 62,
                         "width": 62,
-                        "isIncrementallyUnusable": true,
                         "openParenToken": {
                             "kind": "OpenParenToken",
                             "fullStart": 600,
@@ -414,7 +407,6 @@
                                 "end": 661,
                                 "fullWidth": 50,
                                 "width": 50,
-                                "isIncrementallyUnusable": true,
                                 "openBraceToken": {
                                     "kind": "OpenBraceToken",
                                     "fullStart": 611,
@@ -445,7 +437,6 @@
                                         "end": 659,
                                         "fullWidth": 47,
                                         "width": 46,
-                                        "isIncrementallyUnusable": true,
                                         "propertyName": {
                                             "kind": "IdentifierName",
                                             "fullStart": 613,
@@ -456,7 +447,8 @@
                                             "width": 3,
                                             "text": "get",
                                             "value": "get",
-                                            "valueText": "get"
+                                            "valueText": "get",
+                                            "isKeywordConvertedToIdentifier": true
                                         },
                                         "colonToken": {
                                             "kind": "ColonToken",

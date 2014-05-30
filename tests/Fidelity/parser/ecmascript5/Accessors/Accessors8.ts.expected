@@ -1,14 +1,11 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
-            "start": 10,
+            "start": 14,
             "length": 3,
-            "diagnosticCode": "'set' accessor must have one and only one parameter."
+            "diagnosticCode": "'set' accessor must have exactly one parameter."
         }
     ],
     "sourceUnit": {
@@ -19,7 +16,6 @@
         "end": 25,
         "fullWidth": 25,
         "width": 25,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
@@ -29,7 +25,6 @@
                 "end": 25,
                 "fullWidth": 25,
                 "width": 25,
-                "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "variableDeclaration": {
                     "kind": "VariableDeclaration",
@@ -191,47 +186,56 @@
                                                 "value": "foo",
                                                 "valueText": "foo"
                                             },
-                                            "parameterList": {
-                                                "kind": "ParameterList",
+                                            "callSignature": {
+                                                "kind": "CallSignature",
                                                 "fullStart": 17,
                                                 "fullEnd": 20,
                                                 "start": 17,
                                                 "end": 19,
                                                 "fullWidth": 3,
                                                 "width": 2,
-                                                "openParenToken": {
-                                                    "kind": "OpenParenToken",
+                                                "parameterList": {
+                                                    "kind": "ParameterList",
                                                     "fullStart": 17,
-                                                    "fullEnd": 18,
-                                                    "start": 17,
-                                                    "end": 18,
-                                                    "fullWidth": 1,
-                                                    "width": 1,
-                                                    "text": "(",
-                                                    "value": "(",
-                                                    "valueText": "("
-                                                },
-                                                "parameters": [],
-                                                "closeParenToken": {
-                                                    "kind": "CloseParenToken",
-                                                    "fullStart": 18,
                                                     "fullEnd": 20,
-                                                    "start": 18,
+                                                    "start": 17,
                                                     "end": 19,
-                                                    "fullWidth": 2,
-                                                    "width": 1,
-                                                    "text": ")",
-                                                    "value": ")",
-                                                    "valueText": ")",
-                                                    "hasTrailingTrivia": true,
-                                                    "trailingTrivia": [
-                                                        {
-                                                            "kind": "WhitespaceTrivia",
-                                                            "fullStart": 19,
-                                                            "fullEnd": 20,
-                                                            "text": " "
-                                                        }
-                                                    ]
+                                                    "fullWidth": 3,
+                                                    "width": 2,
+                                                    "openParenToken": {
+                                                        "kind": "OpenParenToken",
+                                                        "fullStart": 17,
+                                                        "fullEnd": 18,
+                                                        "start": 17,
+                                                        "end": 18,
+                                                        "fullWidth": 1,
+                                                        "width": 1,
+                                                        "text": "(",
+                                                        "value": "(",
+                                                        "valueText": "("
+                                                    },
+                                                    "parameters": [],
+                                                    "closeParenToken": {
+                                                        "kind": "CloseParenToken",
+                                                        "fullStart": 18,
+                                                        "fullEnd": 20,
+                                                        "start": 18,
+                                                        "end": 19,
+                                                        "fullWidth": 2,
+                                                        "width": 1,
+                                                        "text": ")",
+                                                        "value": ")",
+                                                        "valueText": ")",
+                                                        "hasTrailingTrivia": true,
+                                                        "trailingTrivia": [
+                                                            {
+                                                                "kind": "WhitespaceTrivia",
+                                                                "fullStart": 19,
+                                                                "fullEnd": 20,
+                                                                "text": " "
+                                                            }
+                                                        ]
+                                                    }
                                                 }
                                             },
                                             "block": {
@@ -304,16 +308,6 @@
                             }
                         }
                     ]
-                },
-                "semicolonToken": {
-                    "kind": "SemicolonToken",
-                    "fullStart": 25,
-                    "fullEnd": 25,
-                    "start": 25,
-                    "end": 25,
-                    "fullWidth": 0,
-                    "width": 0,
-                    "text": ""
                 }
             }
         ],

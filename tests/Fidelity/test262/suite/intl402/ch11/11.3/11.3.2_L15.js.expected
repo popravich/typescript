@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
@@ -12,7 +9,6 @@
         "end": 538,
         "fullWidth": 538,
         "width": 152,
-        "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "ExpressionStatement",
@@ -174,7 +170,6 @@
                 "end": 536,
                 "fullWidth": 117,
                 "width": 115,
-                "isIncrementallyUnusable": true,
                 "expression": {
                     "kind": "InvocationExpression",
                     "fullStart": 420,
@@ -183,7 +178,6 @@
                     "end": 535,
                     "fullWidth": 115,
                     "width": 114,
-                    "isIncrementallyUnusable": true,
                     "expression": {
                         "kind": "IdentifierName",
                         "fullStart": 420,
@@ -214,7 +208,6 @@
                         "end": 535,
                         "fullWidth": 97,
                         "width": 97,
-                        "isIncrementallyUnusable": true,
                         "openParenToken": {
                             "kind": "OpenParenToken",
                             "fullStart": 438,
@@ -236,7 +229,6 @@
                                 "end": 513,
                                 "fullWidth": 75,
                                 "width": 74,
-                                "isIncrementallyUnusable": true,
                                 "expression": {
                                     "kind": "InvocationExpression",
                                     "fullStart": 439,
@@ -460,6 +452,7 @@
                                     "text": "get",
                                     "value": "get",
                                     "valueText": "get",
+                                    "isKeywordConvertedToIdentifier": true,
                                     "hasTrailingTrivia": true,
                                     "trailingTrivia": [
                                         {

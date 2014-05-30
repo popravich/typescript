@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 module TypeScript.Services {
     export class OutliningElementsCollector extends TypeScript.DepthLimitedWalker {
@@ -34,7 +34,7 @@ module TypeScript.Services {
         }
 
         public visitInterfaceDeclaration(node: TypeScript.InterfaceDeclarationSyntax): void {
-            this.addOutlineRange(node, node.body, node.body);
+            this.addOutlineRange(node, node.body.openBraceToken, node.body.closeBraceToken);
             super.visitInterfaceDeclaration(node);
         }
 
@@ -89,16 +89,16 @@ module TypeScript.Services {
             this.inObjectLiteralExpression = savedInObjectLiteralExpression;
         }
 
-        private addOutlineRange(node: TypeScript.SyntaxNode, startElement: TypeScript.ISyntaxNodeOrToken, endElement: TypeScript.ISyntaxNodeOrToken) {
-            if (startElement && endElement && !startElement.isShared() && !endElement.isShared()) {
+        private addOutlineRange(node: TypeScript.ISyntaxNode, startElement: TypeScript.ISyntaxNodeOrToken, endElement: TypeScript.ISyntaxNodeOrToken) {
+            if (startElement && endElement && !isShared(startElement) && !isShared(endElement)) {
                 // Compute the position
-                var startElementFirstToken = startElement.firstToken();
-                var startElementPreviousToken = startElementFirstToken.previousToken();
-                
+                var startElementFirstToken = firstToken(startElement);
+                var startElementPreviousToken = previousToken(startElementFirstToken);
+
                 // Push the new range
                 this.elements.push(new OutliningSpan(
-                    /*textSpan:*/ TextSpan.fromBounds(startElementPreviousToken.end(), endElement.end()),
-                    /*hintSpan:*/ TextSpan.fromBounds(node.start(), node.end()),
+                    /*textSpan:*/ TextSpan.fromBounds(end(startElementPreviousToken), end(endElement)),
+                    /*hintSpan:*/ TextSpan.fromBounds(start(node), end(node)),
                     /*bannerText:*/ "...",
                     /*autoCollapse:*/ false));
             }
@@ -106,7 +106,7 @@ module TypeScript.Services {
 
         public static collectElements(node: TypeScript.SourceUnitSyntax): OutliningSpan[] {
             var collector = new OutliningElementsCollector();
-            node.accept(collector);
+            visitNodeOrToken(collector, node);
             return collector.elements;
         }
     }

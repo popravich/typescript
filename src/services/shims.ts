@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-///<reference path='typescriptServices.ts' />
+///<reference path='references.ts' />
 
 module TypeScript.Services {
 
@@ -54,6 +54,7 @@ module TypeScript.Services {
         getParentDirectory(path: string): string;
         getDiagnosticsObject(): TypeScript.Services.ILanguageServicesDiagnostics;
         getLocalizedDiagnosticMessages(): string;
+        getCancellationToken(): TypeScript.ICancellationToken
     }
 
     //
@@ -255,6 +256,10 @@ module TypeScript.Services {
             }
         }
 
+        public getCancellationToken(): ICancellationToken {
+            return this.shimHost.getCancellationToken();
+        }
+
         // IReferenceResolverHost methods
         public resolveRelativePath(path: string, directory: string): string {
             return this.shimHost.resolveRelativePath(path, directory);
@@ -295,6 +300,9 @@ module TypeScript.Services {
             return JSON.stringify({ result: result });
         }
         catch (err) {
+            if (err instanceof OperationCanceledException) {
+                return JSON.stringify({ canceled: true });
+            }
             TypeScript.Services.logInternalError(logger, err);
             err.description = actionDescription;
             return JSON.stringify({ error: err });
@@ -320,6 +328,7 @@ module TypeScript.Services {
         // some external native objects holds onto us (e.g. Com/Interop).
         public dispose(dummy: any): void {
             this.logger.log("dispose()");
+            this.languageService.dispose();
             this.languageService = null;
 
             // force a GC

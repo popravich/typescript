@@ -1,9 +1,6 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "parseOptions": {
-        "allowAutomaticSemicolonInsertion": true
-    },
     "diagnostics": [
         {
             "start": 14,
@@ -41,7 +38,6 @@
                     "end": 13,
                     "fullWidth": 14,
                     "width": 13,
-                    "isIncrementallyUnusable": true,
                     "expression": {
                         "kind": "IdentifierName",
                         "fullStart": 0,
@@ -52,7 +48,8 @@
                         "width": 6,
                         "text": "module",
                         "value": "module",
-                        "valueText": "module"
+                        "valueText": "module",
+                        "isKeywordConvertedToIdentifier": true
                     },
                     "dotToken": {
                         "kind": "DotToken",
@@ -77,6 +74,7 @@
                         "text": "module",
                         "value": "module",
                         "valueText": "module",
+                        "isKeywordConvertedToIdentifier": true,
                         "hasTrailingTrivia": true,
                         "trailingTrivia": [
                             {
