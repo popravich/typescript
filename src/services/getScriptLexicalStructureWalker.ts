@@ -110,23 +110,29 @@ module TypeScript.Services {
             // First, add any spans in the source to the target.
             target.spans.push.apply(target.spans, source.spans);
 
-            // Next, recursively merge or add any children in the source as appropriate.
-            outer:
-            for (var i = 0, n = source.childItems.length; i < n; i++) {
-                var sourceChild = source.childItems[i];
-
-                for (var j = 0, m = target.childItems.length; j < m; j++) {
-                    var targetChild = target.childItems[j];
-
-                    if (targetChild.text === sourceChild.text && targetChild.kind === sourceChild.kind) {
-                        // Found a match.  merge them.
-                        this.merge(targetChild, sourceChild);
-                        continue outer;
-                    }
+            if (source.childItems) {
+                if (!target.childItems) {
+                    target.childItems = [];
                 }
 
-                // Didn't find a match, just add this child to the list.
-                target.childItems.push(sourceChild);
+                // Next, recursively merge or add any children in the source as appropriate.
+                outer:
+                for (var i = 0, n = source.childItems.length; i < n; i++) {
+                    var sourceChild = source.childItems[i];
+
+                    for (var j = 0, m = target.childItems.length; j < m; j++) {
+                        var targetChild = target.childItems[j];
+
+                        if (targetChild.text === sourceChild.text && targetChild.kind === sourceChild.kind) {
+                            // Found a match.  merge them.
+                            this.merge(targetChild, sourceChild);
+                            continue outer;
+                        }
+                    }
+
+                    // Didn't find a match, just add this child to the list.
+                    target.childItems.push(sourceChild);
+                }
             }
         }
 
