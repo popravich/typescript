@@ -28,12 +28,17 @@
 ////}
 ////function bar() {
 ////}
-
+debugger;
 goTo.marker("file1");
 verify.getScriptLexicalStructureListCount(0);
 
 goTo.marker("file2");
-verify.getScriptLexicalStructureListCount(1);
+verify.getScriptLexicalStructureListContains("<global>", "module");
+verify.getScriptLexicalStructureListContains("x", "var");
+verify.getScriptLexicalStructureListCount(2);
 
 goTo.marker("file3");
-verify.getScriptLexicalStructureListCount(2);
+verify.getScriptLexicalStructureListContains("<global>", "module");
+verify.getScriptLexicalStructureListContains("foo", "function");
+verify.getScriptLexicalStructureListContains("bar", "function");
+verify.getScriptLexicalStructureListCount(3);

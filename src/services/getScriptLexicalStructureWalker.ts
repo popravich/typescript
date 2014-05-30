@@ -41,8 +41,8 @@ module TypeScript.Services {
                 if (node.kind() === SyntaxKind.FunctionDeclaration) {
                     childNodes.push(node);
                 }
-                else if (node.kind() === SyntaxKind.VariableDeclaration) {
-                    var variableDeclaration = <VariableDeclarationSyntax>node;
+                else if (node.kind() === SyntaxKind.VariableStatement) {
+                    var variableDeclaration = (<VariableStatementSyntax>node).variableDeclaration;
                     childNodes.push.apply(childNodes, variableDeclaration.variableDeclarators.toNonSeparatorArray());
                 }
             }
