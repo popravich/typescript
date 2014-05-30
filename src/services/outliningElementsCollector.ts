@@ -92,7 +92,7 @@ module TypeScript.Services {
         private addOutlineRange(node: TypeScript.ISyntaxNode, startElement: TypeScript.ISyntaxNodeOrToken, endElement: TypeScript.ISyntaxNodeOrToken) {
             if (startElement && endElement && !isShared(startElement) && !isShared(endElement)) {
                 // Compute the position
-                var startElementFirstToken = firstToken(startElement);
+                var startElementFirstToken = isToken(startElement) ? <ISyntaxToken>startElement : firstToken(startElement);
                 var startElementPreviousToken = previousToken(startElementFirstToken);
 
                 // Push the new range
