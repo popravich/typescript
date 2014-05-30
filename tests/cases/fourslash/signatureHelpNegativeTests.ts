@@ -5,7 +5,7 @@
 //////inside a comment foo(/*insideComment*/
 ////cl/*invalidContext*/ass InvalidSignatureHelpLocation { }
 ////InvalidSignatureHelpLocation(/*validContext*/);
-
+debugger;
 goTo.marker('insideComment');
 verify.not.signatureHelpPresent();
 
@@ -13,4 +13,4 @@ goTo.marker('invalidContext');
 verify.not.signatureHelpPresent();
 
 goTo.marker('validContext');
-verify.signatureHelpPresent();
+verify.not.signatureHelpPresent();
