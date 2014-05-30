@@ -91,8 +91,8 @@ module TypeScript.Services {
 
                         var itemWithSameName = keyToItem[key];
                         if (itemWithSameName) {
-                            // We had an item with the same name.  Add our spans to its list of spans.
-                            itemWithSameName.spans.push.apply(itemWithSameName.spans, item.spans);
+                            // We had an item with the same name.  Merge these items together.
+                            this.merge(itemWithSameName, item);
                         }
                         else {
                             keyToItem[key] = item;
@@ -103,6 +103,30 @@ module TypeScript.Services {
             }
 
             return items;
+        }
+
+        private merge(target: NavigationBarItem, source: NavigationBarItem) {
+            // First, add any spans in the source to the target.
+            target.spans.push.apply(target.spans, source.spans);
+
+            // Next, recursively merge or add any children in the source as appropriate.
+            outer:
+            for (var i = 0, n = source.childItems.length; i < n; i++) {
+                var sourceChild = source.childItems[i];
+
+                for (var j = 0, m = target.childItems.length; j < m; j++) {
+                    var targetChild = target.childItems[j];
+
+                    if (targetChild.text === sourceChild.text && targetChild.kind === sourceChild.kind) {
+                        // Found a match.  merge them.
+                        this.merge(targetChild, sourceChild);
+                        continue outer;
+                    }
+                }
+
+                // Didn't find a match, just add this child to the list.
+                target.childItems.push(sourceChild);
+            }
         }
 
         private createChildItem(node: SyntaxNode): NavigationBarItem {
