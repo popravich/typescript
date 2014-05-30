@@ -1503,10 +1503,23 @@ module FourSlash {
             this.taoInvalidReason = 'verifyNavigationItemsListContains impossible';
 
             var items = this.languageService.getNavigationBarItems(this.activeFile.fileName);
-            var actual = (items && items.length) || 0;
+            var actual = this.getNavigationBarItemsCount(items);
+
             if (expected != actual) {
                 throw new Error('verifyGetScriptLexicalStructureListCount failed - found: ' + actual + ' navigation items, expected: ' + expected + '.');
             }
+        }
+
+        private getNavigationBarItemsCount(items: TypeScript.Services.NavigationBarItem[]) {
+            var result = 0;
+            if (items) {
+                for (var i = 0, n = items.length; i < n; i++) {
+                    result++;
+                    result += this.getNavigationBarItemsCount(items[i].childItems);
+                }
+            }
+
+            return result;
         }
 
         public verifGetScriptLexicalStructureListContains(
@@ -1521,16 +1534,29 @@ module FourSlash {
                 throw new Error('verifyGetScriptLexicalStructureListContains failed - found 0 navigation items, expected at least one.');
             }
 
-            for (var i = 0; i < items.length; i++) {
-                var item = items[i];
-                if (item && item.text === name && item.kind === kind) {
-                    return;
-                }
+            if (this.navigationBarItemsContains(items, name, kind)) {
+                return;
             }
-
 
             var missingItem = { name: name, kind: kind };
             throw new Error('verifyGetScriptLexicalStructureListContains failed - could not find the item: ' + JSON.stringify(missingItem) + ' in the returned list: (' + JSON.stringify(items) + ')');
+        }
+
+        private navigationBarItemsContains(items: TypeScript.Services.NavigationBarItem[], name: string, kind: string) {
+            if (items) {
+                for (var i = 0; i < items.length; i++) {
+                    var item = items[i];
+                    if (item && item.text === name && item.kind === kind) {
+                        return true;
+                    }
+
+                    if (this.navigationBarItemsContains(item.childItems, name, kind)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public printNavigationItems(searchValue: string) {
