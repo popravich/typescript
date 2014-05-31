@@ -1,5 +1,5 @@
-
 ///<reference path='references.ts' />
+
 module TypeScript.Services {
     export class NavigationBarItemGetter {
         private hasGlobalNode = false;
@@ -9,7 +9,7 @@ module TypeScript.Services {
 
             var current = node.parent;
             while (current != null) {
-                if (current.kind() == SyntaxKind.ModuleDeclaration) {
+                if (current.kind() == SyntaxKind.ModuleDeclaration || current.kind() === SyntaxKind.FunctionDeclaration) {
                     indent++;
                 }
 
@@ -64,17 +64,33 @@ module TypeScript.Services {
             for (var i = 0, n = nodes.length; i < n; i++) {
                 var node = nodes[i];
                 switch (node.kind()) {
-                    case SyntaxKind.ModuleDeclaration:
                     case SyntaxKind.ClassDeclaration:
                     case SyntaxKind.EnumDeclaration:
                     case SyntaxKind.InterfaceDeclaration:
-                        topLevelNodes.push(<SyntaxNode>node);
-                }
+                        topLevelNodes.push(node);
+                        break;
 
-                if (node.kind() === SyntaxKind.ModuleDeclaration) {
-                    this.addTopLevelNodes((<ModuleDeclarationSyntax>node).moduleElements, topLevelNodes);
+                    case SyntaxKind.ModuleDeclaration:
+                        var moduleDeclaration = <ModuleDeclarationSyntax>node;
+                        topLevelNodes.push(node);
+                        this.addTopLevelNodes(moduleDeclaration.moduleElements, topLevelNodes);
+                        break;
+
+                    case SyntaxKind.FunctionDeclaration:
+                        var functionDeclaration = <FunctionDeclarationSyntax>node;
+                        if (this.isTopLevelFunctionDeclaration(functionDeclaration)) {
+                            topLevelNodes.push(node);
+                            this.addTopLevelNodes(functionDeclaration.block.statements, topLevelNodes);
+                        }
+                        break;
                 }
             }
+        }
+
+        public isTopLevelFunctionDeclaration(functionDeclaration: FunctionDeclarationSyntax) {
+            // A function declaration is 'top level' if it contains any function declarations 
+            // within it.
+            return functionDeclaration.block && ArrayUtilities.any(functionDeclaration.block.statements, s => s.kind() === SyntaxKind.FunctionDeclaration);
         }
 
         private getItemsWorker(getNodes: () => ISyntaxNode[], createItem: (n: ISyntaxNode) => NavigationBarItem): NavigationBarItem[] {
@@ -183,7 +199,10 @@ module TypeScript.Services {
 
                 case SyntaxKind.FunctionDeclaration:
                     var functionDeclaration = <FunctionDeclarationSyntax>node;
-                    return new NavigationBarItem(functionDeclaration.identifier.text(), ScriptElementKind.functionElement, this.getKindModifiers(functionDeclaration.modifiers), [TextSpan.fromBounds(start(node), end(node))]);
+                    if (!this.isTopLevelFunctionDeclaration(functionDeclaration)) {
+                        return new NavigationBarItem(functionDeclaration.identifier.text(), ScriptElementKind.functionElement, this.getKindModifiers(functionDeclaration.modifiers), [TextSpan.fromBounds(start(node), end(node))]);
+                    }
+                    break;
 
                 case SyntaxKind.MemberVariableDeclaration:
                     var memberVariableDeclaration = <MemberVariableDeclarationSyntax>node;
@@ -217,6 +236,9 @@ module TypeScript.Services {
 
                 case SyntaxKind.ModuleDeclaration:
                     return this.createModuleItem(<ModuleDeclarationSyntax>node);
+
+                case SyntaxKind.FunctionDeclaration:
+                    return this.createFunctionItem(<FunctionDeclarationSyntax>node);
             }
 
             return null;
@@ -253,6 +275,17 @@ module TypeScript.Services {
 
             return new NavigationBarItem(moduleNames.join("."),
                 ScriptElementKind.moduleElement,
+                this.getKindModifiers(node.modifiers),
+                [TextSpan.fromBounds(start(node), end(node))],
+                childItems,
+                this.getIndent(node));
+        }
+
+        private createFunctionItem(node: FunctionDeclarationSyntax) {
+            var childItems = this.getItemsWorker(() => node.block.statements, n => this.createChildItem(n));
+
+            return new NavigationBarItem(node.identifier.text(),
+                ScriptElementKind.functionElement,
                 this.getKindModifiers(node.modifiers),
                 [TextSpan.fromBounds(start(node), end(node))],
                 childItems,
