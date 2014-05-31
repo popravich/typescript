@@ -280,6 +280,8 @@ module TypeScript.Services {
 
             // Add the constructor parameters in as children of hte class (for property parameters).
             if (constructor) {
+                // Make sure we copy the array first.  We don't want to accidently mutate the class node.
+                nodes = nodes.slice(0);
                 nodes.push.apply(nodes, constructor.callSignature.parameterList.parameters);
             }
 
