@@ -702,13 +702,13 @@ module TypeScript.Parser {
 
             sourceUnit = <SourceUnitSyntax>addSkippedTokensBeforeNode(sourceUnit, skippedTokens);
 
-            //if (Debug.shouldAssert(AssertionLevel.Aggressive)) {
+            if (Debug.shouldAssert(AssertionLevel.Aggressive)) {
                 Debug.assert(fullWidth(sourceUnit) === source.text.length(), "Parsed source's full width doesn't match text's length.");
 
-                //if (Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
+                if (Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
                     Debug.assert(fullText(sourceUnit, source.text) === source.text.substr(0, source.text.length()), "Parsed source's text doesn't match passed in text.");
-                //}
-            //}
+                }
+            }
 
             return sourceUnit;
         }
