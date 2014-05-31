@@ -267,6 +267,9 @@ module TypeScript.IncrementalParser {
                     Debug.assert(token.fullWidth() > 0, "Should never be returning an empty token from incremental parser source.");
                     // Make sure the token's position/text is correct.
                     updateTokens(token);
+
+                    Debug.assert(token.fullStart() === absolutePosition(), "Token was not set to the right position!");
+                    Debug.assert(absolutePosition() <= text.length(), "We've moved past the length of the text!");
                     return token;
                 }
             }
@@ -515,6 +518,7 @@ module TypeScript.IncrementalParser {
                 //    // change range starts.  Thus, we don't need to call 'skipPastChanges'.
                 //    Debug.assert(absolutePosition() < _changeRange.span().start());
                 //}
+                Debug.assert(absolutePosition() <= text.length(), "Position is past the length of the text!");
             }
             else {
                 // the token came from the new text.  That means the normal source moved forward,
@@ -539,6 +543,8 @@ module TypeScript.IncrementalParser {
                         _changeRange = null;
                     }
                 }
+
+                Debug.assert(absolutePosition() <= text.length(), "Position is past the length of the text!");
             }
         }
 

@@ -108,17 +108,18 @@ module TypeScript {
                 var oldText = this.scriptSnapshot;
                 var newText = scriptSnapshot;
 
-                TypeScript.Debug.assert((oldText.getLength() - textChangeRange.span().length() + textChangeRange.newLength()) === newText.getLength());
+                TypeScript.Debug.assert((oldText.getLength() - textChangeRange.span().length() + textChangeRange.newLength()) === newText.getLength(),
+                    "TextChangeRange data was not consistent with before/after lengths of text.");
 
-                if (Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
+                //if (Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
                     var oldTextPrefix = oldText.getText(0, textChangeRange.span().start());
                     var newTextPrefix = newText.getText(0, textChangeRange.span().start());
-                    TypeScript.Debug.assert(oldTextPrefix === newTextPrefix);
+                    TypeScript.Debug.assert(oldTextPrefix === newTextPrefix, "Prefixes of texts were not consistent.");
 
                     var oldTextSuffix = oldText.getText(textChangeRange.span().end(), oldText.getLength());
                     var newTextSuffix = newText.getText(textChangeRange.newSpan().end(), newText.getLength());
-                    TypeScript.Debug.assert(oldTextSuffix === newTextSuffix);
-                }
+                    TypeScript.Debug.assert(oldTextSuffix === newTextSuffix, "Suffixes of texts were not consistent.");
+                //}
             }
 
             var text = SimpleText.fromScriptSnapshot(scriptSnapshot);

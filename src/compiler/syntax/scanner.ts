@@ -484,8 +484,8 @@ module TypeScript.Scanner {
         }
 
         function reset(_text: ISimpleText, _start: number, _end: number) {
-            Debug.assert(_start <= _text.length());
-            Debug.assert(_end <= _text.length());
+            Debug.assert(_start <= _text.length(), "Token's start was not within the bounds of text: " + _start + " - [0, " + _text.length() + ")");
+            Debug.assert(_end <= _text.length(), "Token's end was not within the bounds of text: " + _end + " - [0, " + _text.length() + ")");
 
             if (!str || text !== _text) {
                 text = _text;
@@ -1759,6 +1759,7 @@ module TypeScript.Scanner {
         }
 
         function resetToPosition(absolutePosition: number): void {
+            Debug.assert(absolutePosition <= text.length(), "Trying to set the position outside the bounds of the text!");
             _absolutePosition = absolutePosition;
 
             // First, remove any diagnostics that came after this position.
