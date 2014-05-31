@@ -435,5 +435,7 @@ module TypeScript {
     "'{0}', which lacks 'get' accessor and parameter type annotation on 'set' accessor, implicitly has an 'any' type.": { "code": 7016, "category": DiagnosticCategory.Error },
     "Index signature of object type implicitly has an 'any' type.": { "code": 7017, "category": DiagnosticCategory.Error },
     "Object literal's property '{0}' implicitly has an 'any' type from widening.": { "code": 7018, "category": DiagnosticCategory.Error },
+    "You must rename an identifier.": { "code": 8000, "category": DiagnosticCategory.Error },
+    "You cannot rename this element.": { "code": 8001, "category": DiagnosticCategory.Error },
   };
 }

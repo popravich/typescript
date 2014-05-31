@@ -150,6 +150,7 @@ module TypeScript {
         }
 
         var diagnosticMessageText: string = LocalizedDiagnosticMessages ? LocalizedDiagnosticMessages[diagnosticKey] : diagnosticKey;
+        diagnosticMessageText = diagnosticMessageText || diagnosticKey;
         Debug.assert(diagnosticMessageText !== undefined && diagnosticMessageText !== null);
 
         var actualCount = args ? args.length : 0;
