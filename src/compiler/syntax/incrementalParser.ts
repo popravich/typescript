@@ -264,6 +264,7 @@ module TypeScript.IncrementalParser {
             if (canReadFromOldSourceUnit()) {
                 var token = tryGetTokenFromOldSourceUnit();
                 if (token !== null) {
+                    Debug.assert(token.fullWidth() > 0, "Should never be returning an empty token from incremental parser source.");
                     // Make sure the token's position/text is correct.
                     updateTokens(token);
                     return token;
