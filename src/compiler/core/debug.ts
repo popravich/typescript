@@ -9,6 +9,7 @@ module TypeScript {
 
     export class Debug {
         private static currentAssertionLevel = AssertionLevel.Normal;
+        
         public static shouldAssert(level: AssertionLevel): boolean {
             return this.currentAssertionLevel >= level;
         }
