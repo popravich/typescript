@@ -82,7 +82,8 @@ module TypeScript.Services {
             }
 
             var result = new ClassificationResult();
-            this.scanner = Scanner.createScanner(TypeScript.LanguageVersion.EcmaScript5, TypeScript.SimpleText.fromString(text), this.reportDiagnostic);
+            var simpleText = TypeScript.SimpleText.fromString(text);
+            this.scanner = Scanner.createScanner(TypeScript.LanguageVersion.EcmaScript5, simpleText, this.reportDiagnostic);
 
             var lastTokenKind = TypeScript.SyntaxKind.None;
             var token: ISyntaxToken = null;
@@ -92,7 +93,7 @@ module TypeScript.Services {
                 token = this.scanner.scan(!noRegexTable[lastTokenKind]);
                 lastTokenKind = token.kind();
 
-                this.processToken(text, offset, token, result);
+                this.processToken(text, simpleText, offset, token, result);
             }
             while (token.kind() !== SyntaxKind.EndOfFileToken);
 
@@ -100,10 +101,10 @@ module TypeScript.Services {
             return result;
         }
 
-        private processToken(text: string, offset: number, token: TypeScript.ISyntaxToken, result: ClassificationResult): void {
-            this.processTriviaList(text, offset, token.leadingTrivia(), result);
+        private processToken(text: string, simpleText: ISimpleText, offset: number, token: TypeScript.ISyntaxToken, result: ClassificationResult): void {
+            this.processTriviaList(text, offset, token.leadingTrivia(simpleText), result);
             this.addResult(text, offset, result, width(token), token.kind());
-            this.processTriviaList(text, offset, token.trailingTrivia(), result);
+            this.processTriviaList(text, offset, token.trailingTrivia(simpleText), result);
 
             if (fullEnd(token) >= text.length) {
                 // We're at the end.
