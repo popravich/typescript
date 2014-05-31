@@ -2,14 +2,15 @@
 
 module TypeScript {
     export class SyntaxUtilities {
-        public static isLastTokenOnLine(token: ISyntaxToken, lineMap: LineMap): boolean {
-            var _nextToken = nextToken(token);
+        public static isLastTokenOnLine(token: ISyntaxToken, text: ISimpleText): boolean {
+            var _nextToken = nextToken(token, text);
             if (_nextToken === null) {
                 return true;
             }
 
-            var tokenLine = lineMap.getLineNumberFromPosition(end(token));
-            var nextTokenLine = lineMap.getLineNumberFromPosition(start(_nextToken));
+            var lineMap = text.lineMap();
+            var tokenLine = lineMap.getLineNumberFromPosition(end(token, text));
+            var nextTokenLine = lineMap.getLineNumberFromPosition(start(_nextToken, text));
 
             return tokenLine !== nextTokenLine;
         }

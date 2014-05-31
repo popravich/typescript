@@ -365,7 +365,7 @@ module TypeScript.ASTHelpers {
         }
     }
 
-    export function preComments(element: ISyntaxElement): Comment[]{
+    export function preComments(element: ISyntaxElement, text: ISimpleText): Comment[]{
         if (element) {
             switch (element.kind()) {
                 case SyntaxKind.VariableStatement:
@@ -392,18 +392,18 @@ module TypeScript.ASTHelpers {
                 case SyntaxKind.MethodSignature:
                 case SyntaxKind.FunctionPropertyAssignment:
                 case SyntaxKind.Parameter:
-                    return convertNodeLeadingComments(element);
+                    return convertNodeLeadingComments(element, text);
             }
         }
 
         return null;
     }
 
-    export function postComments(element: ISyntaxElement, lineMap: LineMap): Comment[] {
+    export function postComments(element: ISyntaxElement, text: ISimpleText): Comment[] {
         if (element) {
             switch (element.kind()) {
                 case SyntaxKind.ExpressionStatement:
-                    return convertNodeTrailingComments(element, lineMap, /*allowWithNewLine:*/ true);
+                    return convertNodeTrailingComments(element, text, /*allowWithNewLine:*/ true);
                 case SyntaxKind.VariableStatement:
                 case SyntaxKind.ClassDeclaration:
                 case SyntaxKind.ImportDeclaration:
@@ -427,52 +427,52 @@ module TypeScript.ASTHelpers {
                 case SyntaxKind.MethodSignature:
                 case SyntaxKind.FunctionPropertyAssignment:
                 case SyntaxKind.Parameter:
-                    return convertNodeTrailingComments(element, lineMap);
+                    return convertNodeTrailingComments(element, text);
             }
         }
 
         return null;
     }
 
-    function convertNodeTrailingComments(node: ISyntaxElement, lineMap: LineMap, allowWithNewLine = false): Comment[]{
+    function convertNodeTrailingComments(node: ISyntaxElement, text: ISimpleText, allowWithNewLine = false): Comment[]{
         // Bail out quickly before doing any expensive math computation.
         var _lastToken = lastToken(node);
         if (_lastToken === null || !_lastToken.hasTrailingTrivia()) {
             return null;
         }
 
-        if (!allowWithNewLine && SyntaxUtilities.isLastTokenOnLine(_lastToken, lineMap)) {
+        if (!allowWithNewLine && SyntaxUtilities.isLastTokenOnLine(_lastToken, text)) {
             return null;
         }
 
-        return convertComments(_lastToken.trailingTrivia(), fullStart(node) + fullWidth(node) - _lastToken.trailingTriviaWidth());
+        return convertComments(_lastToken.trailingTrivia(text), fullStart(node) + fullWidth(node) - _lastToken.trailingTriviaWidth(text));
     }
 
-    function convertNodeLeadingComments(element: ISyntaxElement): Comment[]{
+    function convertNodeLeadingComments(element: ISyntaxElement, text: ISimpleText): Comment[]{
         if (element) {
-            return convertTokenLeadingComments(firstToken(element));
+            return convertTokenLeadingComments(firstToken(element), text);
         }
 
         return null;
     }
 
-    export function convertTokenLeadingComments(token: ISyntaxToken): Comment[]{
+    export function convertTokenLeadingComments(token: ISyntaxToken, text: ISimpleText): Comment[]{
         if (token === null) {
             return null;
         }
 
         return token.hasLeadingTrivia()
-            ? convertComments(token.leadingTrivia(), token.fullStart())
+            ? convertComments(token.leadingTrivia(text), token.fullStart())
             : null;
     }
 
-    export function convertTokenTrailingComments(token: ISyntaxToken): Comment[] {
+    export function convertTokenTrailingComments(token: ISyntaxToken, text: ISimpleText): Comment[] {
         if (token === null) {
             return null;
         }
 
         return token.hasTrailingTrivia()
-            ? convertComments(token.trailingTrivia(), fullEnd(token) - token.trailingTriviaWidth())
+            ? convertComments(token.trailingTrivia(text), fullEnd(token) - token.trailingTriviaWidth(text))
             : null;
     }
 
@@ -500,33 +500,33 @@ module TypeScript.ASTHelpers {
         return comment;
     }
 
-    export function docComments(ast: ISyntaxElement): Comment[] {
+    export function docComments(ast: ISyntaxElement, text: ISimpleText): Comment[] {
         if (isDeclarationAST(ast)) {
             var comments: Comment[] = null;
 
             if (ast.kind() === SyntaxKind.VariableDeclarator) {
                 // Get the doc comments for a variable off of the variable statement.  That's what
                 // they'll be attached to in the tree.
-                comments = TypeScript.ASTHelpers.preComments(getVariableStatement(<VariableDeclaratorSyntax>ast));
+                comments = TypeScript.ASTHelpers.preComments(getVariableStatement(<VariableDeclaratorSyntax>ast), text);
             }
             else if (ast.kind() === SyntaxKind.Parameter) {
                 // First check if the parameter was written like so:
                 //      (
                 //          /** blah */ a,
                 //          /** blah */ b);
-                comments = TypeScript.ASTHelpers.preComments(ast);
+                comments = TypeScript.ASTHelpers.preComments(ast, text);
                 if (!comments) {
                     // Now check if it was written like so:
                     //      (/** blah */ a, /** blah */ b);
                     // In this case, the comment will belong to the preceding token.
                     var previousToken = findToken(syntaxTree(ast).sourceUnit(), firstToken(ast).fullStart() - 1);
                     if (previousToken && (previousToken.kind() === SyntaxKind.OpenParenToken || previousToken.kind() === SyntaxKind.CommaToken)) {
-                        comments = convertTokenTrailingComments(previousToken);
+                        comments = convertTokenTrailingComments(previousToken, text);
                     }
                 }
             }
             else {
-                comments = TypeScript.ASTHelpers.preComments(ast);
+                comments = TypeScript.ASTHelpers.preComments(ast, text);
             }
 
             if (comments && comments.length > 0) {

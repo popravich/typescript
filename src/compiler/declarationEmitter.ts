@@ -289,13 +289,17 @@ module TypeScript {
             }
         }
 
+        private text() {
+            return this.document.syntaxTree().text;
+        }
+
         private emitDeclarationComments(ast: ISyntaxElement, endLine?: boolean): void;
         private emitDeclarationComments(astOrSymbol: any, endLine = true) {
             if (this.emitOptions.compilationSettings().removeComments()) {
                 return;
             }
 
-            var declComments: Comment[] = astOrSymbol.docComments ? astOrSymbol.docComments() : ASTHelpers.docComments(astOrSymbol);
+            var declComments: Comment[] = astOrSymbol.docComments ? astOrSymbol.docComments() : ASTHelpers.docComments(astOrSymbol, this.text());
             this.writeDeclarationComments(declComments, endLine);
         }
 
@@ -762,10 +766,10 @@ module TypeScript {
 
             var comments: Comment[] = [];
             if (accessors.getter) {
-                comments = comments.concat(ASTHelpers.docComments(accessors.getter));
+                comments = comments.concat(ASTHelpers.docComments(accessors.getter, this.text()));
             }
             if (accessors.setter) {
-                comments = comments.concat(ASTHelpers.docComments(accessors.setter));
+                comments = comments.concat(ASTHelpers.docComments(accessors.setter, this.text()));
             }
 
             this.writeDeclarationComments(comments);

@@ -2,8 +2,8 @@
 
 module TypeScript {
     export interface ISyntaxToken extends ISyntaxNodeOrToken, INameSyntax, IPrimaryExpressionSyntax {
-        // Adjusts the full start and text of this token.  Should only be called by the parser.
-        setTextAndFullStart(text: ISimpleText, fullStart: number): void;
+        // Adjusts the full start of this token.  Should only be called by the parser.
+        setFullStart(fullStart: number): void;
 
         // The absolute start of this element, including the leading trivia.
         fullStart(): number;
@@ -13,18 +13,18 @@ module TypeScript {
 
         // Text for this token, not including leading or trailing trivia.
         text(): string;
-        fullText(): string;
+        fullText(text?: ISimpleText): string;
 
         hasLeadingTrivia(): boolean;
         hasTrailingTrivia(): boolean;
 
         hasSkippedToken(): boolean;
 
-        leadingTrivia(): ISyntaxTriviaList;
-        trailingTrivia(): ISyntaxTriviaList;
+        leadingTrivia(text?: ISimpleText): ISyntaxTriviaList;
+        trailingTrivia(text?: ISimpleText): ISyntaxTriviaList;
 
-        leadingTriviaWidth(): number;
-        trailingTriviaWidth(): number;
+        leadingTriviaWidth(text?: ISimpleText): number;
+        trailingTriviaWidth(text?: ISimpleText): number;
 
         // True if this was a keyword that the parser converted to an identifier.  i.e. if you have
         //      x.public
@@ -261,20 +261,20 @@ module TypeScript {
 }
 
 module TypeScript.Syntax {
-    export function realizeToken(token: ISyntaxToken): ISyntaxToken {
-        return new RealizedToken(token.fullStart(), token.kind(), token.isKeywordConvertedToIdentifier(), token.leadingTrivia(), token.text(), token.trailingTrivia());
+    export function realizeToken(token: ISyntaxToken, text: ISimpleText): ISyntaxToken {
+        return new RealizedToken(token.fullStart(), token.kind(), token.isKeywordConvertedToIdentifier(), token.leadingTrivia(text), token.text(), token.trailingTrivia(text));
     }
     
     export function convertKeywordToIdentifier(token: ISyntaxToken): ISyntaxToken {
         return new ConvertedKeywordToken(token);
     }
 
-    export function withLeadingTrivia(token: ISyntaxToken, leadingTrivia: ISyntaxTriviaList): ISyntaxToken {
-        return new RealizedToken(token.fullStart(), token.kind(), token.isKeywordConvertedToIdentifier(), leadingTrivia, token.text(), token.trailingTrivia());
+    export function withLeadingTrivia(token: ISyntaxToken, leadingTrivia: ISyntaxTriviaList, text: ISimpleText): ISyntaxToken {
+        return new RealizedToken(token.fullStart(), token.kind(), token.isKeywordConvertedToIdentifier(), leadingTrivia, token.text(), token.trailingTrivia(text));
     }
 
-    export function withTrailingTrivia(token: ISyntaxToken, trailingTrivia: ISyntaxTriviaList): ISyntaxToken {
-        return new RealizedToken(token.fullStart(), token.kind(), token.isKeywordConvertedToIdentifier(), token.leadingTrivia(), token.text(), trailingTrivia);
+    export function withTrailingTrivia(token: ISyntaxToken, trailingTrivia: ISyntaxTriviaList, text: ISimpleText): ISyntaxToken {
+        return new RealizedToken(token.fullStart(), token.kind(), token.isKeywordConvertedToIdentifier(), token.leadingTrivia(text), token.text(), trailingTrivia);
     }
 
     export function emptyToken(kind: SyntaxKind): ISyntaxToken {
@@ -287,9 +287,8 @@ module TypeScript.Syntax {
         constructor(private _kind: SyntaxKind) {
         }
 
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
+        public setFullStart(fullStart: number): void {
             // An empty token is always at the -1 position.
-            // An empty token has no need to point at an underlying text.
         }
 
         public kind(): SyntaxKind {
@@ -424,8 +423,7 @@ module TypeScript.Syntax {
             }
         }
 
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            // realized token has no need to hold onto the text.
+        public setFullStart(fullStart: number): void {
             this._fullStart = fullStart;
         }
 
@@ -460,14 +458,6 @@ module TypeScript.Syntax {
 
         public leadingTrivia(): ISyntaxTriviaList { return this._leadingTrivia; }
         public trailingTrivia(): ISyntaxTriviaList { return this._trailingTrivia; }
-
-        public withLeadingTrivia(leadingTrivia: ISyntaxTriviaList): ISyntaxToken {
-            return new RealizedToken(this._fullStart, this.kind(), this._isKeywordConvertedToIdentifier, leadingTrivia, this._text, this._trailingTrivia);
-        }
-
-        public withTrailingTrivia(trailingTrivia: ISyntaxTriviaList): ISyntaxToken {
-            return new RealizedToken(this._fullStart, this.kind(), this._isKeywordConvertedToIdentifier, this._leadingTrivia, this._text, trailingTrivia);
-        }
     }
 
     class ConvertedKeywordToken implements ISyntaxToken {
@@ -480,8 +470,8 @@ module TypeScript.Syntax {
             return SyntaxKind.IdentifierName;
         }
 
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            this.underlyingToken.setTextAndFullStart(text, fullStart);
+        public setFullStart(fullStart: number): void {
+            this.underlyingToken.setFullStart(fullStart);
         }
 
         public fullStart(): number {
@@ -496,8 +486,14 @@ module TypeScript.Syntax {
             return this.underlyingToken.text();
         }
 
-        public fullText(): string {
-            return this.underlyingToken.fullText();
+        private syntaxTreeText(text: ISimpleText) {
+            var result = text || syntaxTree(this).text;
+            Debug.assert(result);
+            return result;
+        }
+
+        public fullText(text?: ISimpleText): string {
+            return this.underlyingToken.fullText(this.syntaxTreeText(text));
         }
 
         public hasLeadingTrivia(): boolean {
@@ -512,24 +508,24 @@ module TypeScript.Syntax {
             return this.underlyingToken.hasSkippedToken();
         }
 
-        public leadingTrivia(): ISyntaxTriviaList {
-            var result = this.underlyingToken.leadingTrivia();
+        public leadingTrivia(text?: ISimpleText): ISyntaxTriviaList {
+            var result = this.underlyingToken.leadingTrivia(this.syntaxTreeText(text));
             result.parent = this;
             return result;
         }
 
-        public trailingTrivia(): ISyntaxTriviaList {
-            var result = this.underlyingToken.trailingTrivia();
+        public trailingTrivia(text?: ISimpleText): ISyntaxTriviaList {
+            var result = this.underlyingToken.trailingTrivia(this.syntaxTreeText(text));
             result.parent = this;
             return result;
         }
 
-        public leadingTriviaWidth(): number {
-            return this.underlyingToken.leadingTriviaWidth();
+        public leadingTriviaWidth(text?: ISimpleText): number {
+            return this.underlyingToken.leadingTriviaWidth(this.syntaxTreeText(text));
         }
 
-        public trailingTriviaWidth(): number {
-            return this.underlyingToken.trailingTriviaWidth();
+        public trailingTriviaWidth(text?: ISimpleText): number {
+            return this.underlyingToken.trailingTriviaWidth(this.syntaxTreeText(text));
         }
 
         public isKeywordConvertedToIdentifier(): boolean {

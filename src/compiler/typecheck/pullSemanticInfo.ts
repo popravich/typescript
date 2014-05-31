@@ -235,8 +235,9 @@ module TypeScript {
             // If we're currently searching the file that includes the decl we don't want to go 
             // past, then we have to stop searching at the position of that decl.  Otherwise, we
             // search the entire file.
+            var _syntaxTree = syntaxTree(topLevelDecl.ast());
             var doNotGoPastThisPosition = doNotGoPastThisDecl && doNotGoPastThisDecl.fileName() === topLevelDecl.fileName()
-                ? start(doNotGoPastThisDecl.ast())
+                ? start(doNotGoPastThisDecl.ast(), _syntaxTree.text)
                 : -1
 
             var foundDecls = topLevelDecl.searchChildDecls(name, kind);
@@ -247,7 +248,7 @@ module TypeScript {
                 // This decl was at or past the stopping point.  Don't search any further.
                 if (doNotGoPastThisPosition !== -1 &&
                     foundDecl.ast() &&
-                    start(foundDecl.ast()) > doNotGoPastThisPosition) {
+                    start(foundDecl.ast(), _syntaxTree.text) > doNotGoPastThisPosition) {
 
                     break;
                 }
@@ -656,7 +657,7 @@ module TypeScript {
 
         public diagnosticFromAST(ast: ISyntaxElement, diagnosticKey: string, _arguments: any[] = null): Diagnostic {
             var syntaxTree = TypeScript.syntaxTree(ast);
-            return new Diagnostic(syntaxTree.fileName(), syntaxTree.lineMap(), start(ast), width(ast), diagnosticKey, _arguments);
+            return new Diagnostic(syntaxTree.fileName(), syntaxTree.lineMap(), start(ast, syntaxTree.text), width(ast, syntaxTree.text), diagnosticKey, _arguments);
         }
 
         public diagnosticFromDecl(decl: PullDecl, diagnosticKey: string, _arguments: any[]= null): Diagnostic {
@@ -665,7 +666,7 @@ module TypeScript {
 
         public locationFromAST(ast: ISyntaxElement): Location {
             var syntaxTree = TypeScript.syntaxTree(ast);
-            return new Location(syntaxTree.fileName(), syntaxTree.lineMap(), start(ast), width(ast));
+            return new Location(syntaxTree.fileName(), syntaxTree.lineMap(), start(ast, syntaxTree.text), width(ast, syntaxTree.text));
         }
 
         public duplicateIdentifierDiagnosticFromAST(ast: ISyntaxElement, identifier: string): Diagnostic {

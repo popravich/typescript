@@ -70,14 +70,14 @@ module TypeScript.Syntax {
     }
 
     class SkippedTokenTrivia extends AbstractTrivia {
-        constructor(private _skippedToken: ISyntaxToken) {
+        constructor(private _skippedToken: ISyntaxToken, private _fullText: string) {
             super(SyntaxKind.SkippedTokenTrivia);
 
             _skippedToken.parent = <ISyntaxElement><any>this;
         }
 
         public clone(): ISyntaxTrivia {
-            return new SkippedTokenTrivia(this._skippedToken.clone());
+            return new SkippedTokenTrivia(this._skippedToken.clone(), this._fullText);
         }
 
         public fullStart(): number {
@@ -89,7 +89,7 @@ module TypeScript.Syntax {
         }
 
         public fullText(): string {
-            return this.skippedToken().fullText();
+            return this._fullText;
         }
 
         public skippedToken(): ISyntaxToken {
@@ -127,11 +127,11 @@ module TypeScript.Syntax {
         return new DeferredTrivia(kind, text, fullStart, fullWidth);
     }
 
-    export function skippedTokenTrivia(token: ISyntaxToken): ISyntaxTrivia {
+    export function skippedTokenTrivia(token: ISyntaxToken, text: ISimpleText): ISyntaxTrivia {
         Debug.assert(!token.hasLeadingTrivia(), "Token cannot have leading trivia.");
         Debug.assert(!token.hasTrailingTrivia(), "Token cannot have trailing trivia.");
         Debug.assert(token.fullWidth() > 0, "Token must not be missing.");
-        return new SkippedTokenTrivia(token);
+        return new SkippedTokenTrivia(token, token.fullText(text));
     }
 
     // Breaks a multiline trivia up into individual line components.  If the trivia doesn't span

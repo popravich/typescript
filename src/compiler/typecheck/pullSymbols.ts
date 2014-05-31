@@ -775,11 +775,11 @@ module TypeScript {
             if (ast) {
                 var enclosingModuleDeclaration = ASTHelpers.getModuleDeclarationFromNameAST(ast);
                 if (ASTHelpers.isLastNameOfModule(enclosingModuleDeclaration, ast)) {
-                    return ASTHelpers.docComments(enclosingModuleDeclaration);
+                    return ASTHelpers.docComments(enclosingModuleDeclaration, syntaxTree(ast).text);
                 }
 
                 if (ast.kind() !== TypeScript.SyntaxKind.ModuleDeclaration || decl.kind !== TypeScript.PullElementKind.Variable) {
-                    return ASTHelpers.docComments(ast);
+                    return ASTHelpers.docComments(ast, syntaxTree(ast).text);
                 }
             }
 

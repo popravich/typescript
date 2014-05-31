@@ -237,10 +237,9 @@ module TypeScript.IncrementalParser {
             var tokenWasMoved = isPastChangeRange() && fullStart(nodeOrToken) !== position;
 
             if (tokenWasMoved) {
-                setTokenTextAndFullStartWalker.text = text;
-                setTokenTextAndFullStartWalker.position = position;
+                setTokenFullStartWalker.position = position;
 
-                visitNodeOrToken(setTokenTextAndFullStartWalker, nodeOrToken);
+                visitNodeOrToken(setTokenFullStartWalker, nodeOrToken);
             }
         }
 
@@ -839,19 +838,18 @@ module TypeScript.IncrementalParser {
     // A simple walker we use to hit all the tokens of a node and update their positions when they
     // are reused in a different location because of an incremental parse.
 
-    class SetTokenTextAndFullStartWalker extends SyntaxWalker {
+    class SetTokenFullStartWalker extends SyntaxWalker {
         public position: number;
-        public text: ISimpleText;
 
         public visitToken(token: ISyntaxToken): void {
             var position = this.position;
-            token.setTextAndFullStart(this.text, position);
+            token.setFullStart(position);
 
             this.position = position + token.fullWidth();
         }
     }
 
-    var setTokenTextAndFullStartWalker = new SetTokenTextAndFullStartWalker();
+    var setTokenFullStartWalker = new SetTokenFullStartWalker();
 
     export function parse(oldSyntaxTree: SyntaxTree, textChangeRange: TextChangeRange, newText: ISimpleText): SyntaxTree {
         Debug.assert(oldSyntaxTree.isConcrete(), "Can only incrementally parse a concrete syntax tree.");
