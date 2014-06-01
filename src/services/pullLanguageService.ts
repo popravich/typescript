@@ -856,7 +856,6 @@ module TypeScript.Services {
         // Return array of NavigateToItems in which each item has matched name with searchValue. If none is found, return an empty array.
         // The function will search all files (both close and open) in the solutions. SearchValue can be either one search term or multiple terms separated by comma.
         public getNavigateToItems(searchValue: string): NavigateToItem[] {
-
             Debug.assert(searchValue !== null && searchValue !== undefined, "The searchValue argument was not supplied or null");
             // Split search value in terms array
             var terms = searchValue.split(" ");
@@ -870,7 +869,7 @@ module TypeScript.Services {
             for (var i = 0, n = fileNames.length; i < n; i++) {
                 var fileName = fileNames[i];
                 var declaration = this.compiler.getCachedTopLevelDeclaration(fileName);
-                this.findSearchValueInPullDecl(fileName, [declaration], items, searchTerms);
+                this.findSearchValueInPullDecl(fileName, [declaration], /*onlyFunctions:*/ false, items, searchTerms);
             }
             return items;
         }
@@ -896,47 +895,20 @@ module TypeScript.Services {
         //        searchRegExpTerms: array of regular expressions in which each expression corresponding to each item in the searchTerms array.
         //        parentName: a name of the parent of declarations array.
         //        parentKindName: a kind of parent in string format.
-        private findSearchValueInPullDecl(fileName: string, declarations: TypeScript.PullDecl[], results: NavigateToItem[],
+        private findSearchValueInPullDecl(fileName: string, declarations: TypeScript.PullDecl[], onlyFunctions: boolean, results: NavigateToItem[],
             searchTerms: { caseSensitive: boolean; term: string }[], parentName?: string, parentkindName?: string): void {
-            var item: NavigateToItem;
-            var declaration: TypeScript.PullDecl;
-            var declName: string;
-            var kindName: string;
-            var matchKind: string;
-            var fullName: string;
 
             for (var i = 0, declLength = declarations.length; i < declLength; ++i) {
-                declaration = declarations[i];
-                declName = declaration.getDisplayName();
-                kindName = this.mapPullElementKind(declaration.kind);
-                matchKind = null;
+                var declaration = declarations[i];
 
-                for (var j = 0, termsLength = searchTerms.length; j < termsLength; ++j) {
-                    var searchTerm = searchTerms[j];
-                    var declNameToSearch = searchTerm.caseSensitive ? declName : declName.toLocaleLowerCase();
-                    // in case of case-insensitive search searchTerm.term will already be lower-cased
-                    var index = declNameToSearch.indexOf(searchTerm.term);
+                if (this.shouldIncludeDeclarationInNavigationItems(declaration, onlyFunctions)) {
+                    var declName = declaration.getDisplayName();
+                    var matchKind = this.getMatchKind(searchTerms, declName);
 
-                    if (index !== -1) {
-                        if (index === 0) {
-                            // here we know that match occur at the beginning of the string.
-                            // if search term and declName has the same length - we have an exact match, otherwise declName have longer length and this will be prefix match
-                            matchKind = declName.length === searchTerm.term.length ? MatchKind.exact : MatchKind.prefix;
-                        }
-                        else {
-                            // declName have longer length and the match doesn't occur at the beginning of the string; so we must have substring match
-                            matchKind = MatchKind.subString;
-                        }
-                    }
-                }
-
-                // if there is a match and the match should be included into NavigateToItem array, 
-                // create corresponding NavigateToItem and add it into results array
-                if (this.shouldIncludeDeclarationInNavigationItems(declaration)) {
-                    fullName = parentName ? parentName + "." + declName : declName;
-                    var ast = declaration.ast();
                     if (matchKind) {
-                        item = new NavigateToItem();
+                        var ast = declaration.ast();
+
+                        var item = new NavigateToItem();
                         item.name = declName;
                         item.matchKind = matchKind;
                         item.kind = this.mapPullElementKind(declaration.kind);
@@ -948,10 +920,45 @@ module TypeScript.Services {
                         results.push(item);
                     }
                 }
+
                 if (this.isContainerDeclaration(declaration)) {
-                    this.findSearchValueInPullDecl(fileName, declaration.getChildDecls(), results, searchTerms, fullName, kindName);
+                    var declName = declaration.getDisplayName();
+                    var fullName = parentName ? parentName + "." + declName : declName;
+
+                    this.findSearchValueInPullDecl(
+                        fileName, declaration.getChildDecls(), /*onlyFunctions:*/ declaration.kind === PullElementKind.Function,
+                        results, searchTerms, fullName, this.mapPullElementKind(declaration.kind));
                 }
             }
+        }
+
+        private getMatchKind(searchTerms: { caseSensitive: boolean; term: string }[], declName: string) {
+            var matchKind: MatchKind = null;
+
+            for (var j = 0, termsLength = searchTerms.length; j < termsLength; ++j) {
+                var searchTerm = searchTerms[j];
+                var declNameToSearch = searchTerm.caseSensitive ? declName : declName.toLocaleLowerCase();
+                // in case of case-insensitive search searchTerm.term will already be lower-cased
+                var index = declNameToSearch.indexOf(searchTerm.term);
+                if (index < 0) {
+                    // Didn't match.
+                    return null;
+                }
+
+                var termKind = MatchKind.substring
+                if (index === 0) {
+                    // here we know that match occur at the beginning of the string.
+                    // if search term and declName has the same length - we have an exact match, otherwise declName have longer length and this will be prefix match
+                    termKind = declName.length === searchTerm.term.length ? MatchKind.exact : MatchKind.prefix;
+                }
+
+                // Update our match kind if we don't have one, or if this match is better.
+                if (matchKind === null || termKind < matchKind) {
+                    matchKind = termKind;
+                }
+            }
+
+            return matchKind === null ? null : MatchKind[matchKind];
         }
 
         // Return ScriptElementKind in string of a given declaration.
@@ -993,13 +1000,22 @@ module TypeScript.Services {
                 case TypeScript.PullElementKind.DynamicModule:
                 case TypeScript.PullElementKind.Enum:
                     return true;
+                case TypeScript.PullElementKind.Function:
+                    // A function declaration with nested functions is similar to a class.  In that
+                    // case, we want to consider the function to be a container, and we do want to
+                    // search inside of it.
+                    return ArrayUtilities.any(declaration.getChildDecls(), d => d.kind === PullElementKind.Function);
             }
 
             return false;
         }
 
         // Return true if the declaration should havce corresponding NavigateToItem and false otherwise.
-        private shouldIncludeDeclarationInNavigationItems(declaration: TypeScript.PullDecl): boolean {
+        private shouldIncludeDeclarationInNavigationItems(declaration: TypeScript.PullDecl, onlyFunctions: boolean): boolean {
+            if (onlyFunctions) {
+                return declaration.kind === PullElementKind.Function;
+            }
+
             switch (declaration.kind) {
                 case TypeScript.PullElementKind.Script:
                     // Do not include the script item
@@ -1013,19 +1029,11 @@ module TypeScript.Services {
                         TypeScript.PullElementFlags.Enum)) === 0;
                 case TypeScript.PullElementKind.EnumMember:
                     return true;
-                case TypeScript.PullElementKind.FunctionExpression:
-                case TypeScript.PullElementKind.Function:
-                    // Ignore anonomus functions
-                    return declaration.name !== "";
                 case TypeScript.PullElementKind.ConstructorMethod:
                     return false;
             }
 
-            if (this.isContainerDeclaration(declaration)) {
-                return true;
-            }
-
-            return true;
+            return this.isContainerDeclaration(declaration);
         }
 
         public getSyntacticDiagnostics(fileName: string): TypeScript.Diagnostic[] {

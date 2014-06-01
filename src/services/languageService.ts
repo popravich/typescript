@@ -377,11 +377,12 @@ module TypeScript.Services {
         static staticModifier = "static";
     }
 
-    export class MatchKind {
-        static none: string = null;
-        static exact = "exact";
-        static subString = "substring";
-        static prefix = "prefix";
+    export enum MatchKind {
+        // Ordered from best match to worst.  We'll always return the most optimistic result.
+        exact,
+        prefix,
+        substring,
+        regular
     }
 
     export class DiagnosticCategory {
