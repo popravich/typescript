@@ -175,56 +175,50 @@ module TypeScript.Scanner {
     var triviaScanner = createScannerInternal(LanguageVersion.EcmaScript5, SimpleText.fromString(""), () => { });
 
     interface IScannerToken extends ISyntaxToken { 
-        _text: ISimpleText;
     }
 
-    function fillSizeInfo(token: IScannerToken): void {
+    function fillSizeInfo(token: IScannerToken, text: ISimpleText): void {
         if (lastTokenInfoTokenID !== syntaxID(token)) {
-            triviaScanner.fillTokenInfo(token, lastTokenInfo);
+            triviaScanner.fillTokenInfo(token, text, lastTokenInfo);
             lastTokenInfoTokenID = syntaxID(token);
         }
     }
 
-    function fullText(token: IScannerToken): string {
-        return token._text.substr(token.fullStart(), token.fullWidth());
+    function fullText(token: IScannerToken, text: ISimpleText): string {
+        return text.substr(token.fullStart(), token.fullWidth());
     }
 
-    function text(token: IScannerToken): string {
-        fillSizeInfo(token);
-        return token._text.substr(token.fullStart() + lastTokenInfo.leadingTriviaWidth, lastTokenInfo.width);
-    }
-
-    function leadingTrivia(token: IScannerToken): ISyntaxTriviaList {
+    function leadingTrivia(token: IScannerToken, text: ISimpleText): ISyntaxTriviaList {
         if (!token.hasLeadingTrivia()) {
             return Syntax.emptyTriviaList;
         }
 
-        return triviaScanner.scanTrivia(token, /*isTrailing:*/ false);
+        return triviaScanner.scanTrivia(token, text, /*isTrailing:*/ false);
     }
 
-    function trailingTrivia(token: IScannerToken): ISyntaxTriviaList {
+    function trailingTrivia(token: IScannerToken, text: ISimpleText): ISyntaxTriviaList {
         if (!token.hasTrailingTrivia()) {
             return Syntax.emptyTriviaList;
         }
 
-        return triviaScanner.scanTrivia(token, /*isTrailing:*/ true);
+        return triviaScanner.scanTrivia(token, text, /*isTrailing:*/ true);
     }
 
-    function leadingTriviaWidth(token: IScannerToken): number {
+    function leadingTriviaWidth(token: IScannerToken, text: ISimpleText): number {
         if (!token.hasLeadingTrivia()) {
             return 0;
         }
 
-        fillSizeInfo(token);
+        fillSizeInfo(token, text);
         return lastTokenInfo.leadingTriviaWidth;
     }
 
-    function trailingTriviaWidth(token: IScannerToken): number {
+    function trailingTriviaWidth(token: IScannerToken, text: ISimpleText): number {
         if (!token.hasTrailingTrivia()) {
             return 0;
         }
 
-        fillSizeInfo(token);
+        fillSizeInfo(token, text);
         return token.fullWidth() - lastTokenInfo.leadingTriviaWidth - lastTokenInfo.width;
     }
 
@@ -237,42 +231,13 @@ module TypeScript.Scanner {
         return false;
     }
 
-    class IdentifierWithSingleTrailingSpace implements ISyntaxToken {
-        public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
-
-        constructor(public _text: ISimpleText, private _fullStart: number, private _fullWidth: number) {
-        }
-
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            this._text = text;
-            this._fullStart = fullStart;
-        }
-
-        public isIncrementallyUnusable(): boolean { return false; }
-        public isKeywordConvertedToIdentifier(): boolean { return false; }
-        public hasSkippedToken(): boolean { return false; }
-        public fullText(): string { return this._text.substr(this.fullStart(), this.fullWidth()); }
-        public text(): string { return this._text.substr(this.fullStart(), this.fullWidth() - 1); }
-        public leadingTrivia(): ISyntaxTriviaList { return Syntax.emptyTriviaList; }
-        public trailingTrivia(): ISyntaxTriviaList { return triviaScanner.scanTrivia(this, /*isTrailing:*/ true); }
-        public leadingTriviaWidth(): number { return 0; }
-        public trailingTriviaWidth(): number { return 1; }
-
-        public kind(): SyntaxKind { return SyntaxKind.IdentifierName; }
-        public fullWidth(): number { return this._fullWidth; }
-        public fullStart(): number { return this._fullStart; }
-        public hasLeadingTrivia(): boolean { return false; }
-        public hasTrailingTrivia(): boolean { return true; }
-        public clone(): ISyntaxToken { return new IdentifierWithSingleTrailingSpace(this._text, this._fullStart, this._fullWidth); }
-    }
-
     class FixedWidthTokenWithNoTrivia implements ISyntaxToken {
         public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
 
         constructor(private _packedData: number) {
         }
 
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
+        public setFullStart(fullStart: number): void {
             this._packedData = fixedWidthTokenPackData(fullStart, this.kind());
         }
 
@@ -294,156 +259,58 @@ module TypeScript.Scanner {
         public clone(): ISyntaxToken { return new FixedWidthTokenWithNoTrivia(this._packedData); }
     }
 
-    class SmallScannerTokenWithNoTrivia implements ISyntaxToken {
-        public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
-
-        constructor(public _text: ISimpleText, private _packedData: number) {
-        }
-
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            this._text = text;
-
-            this._packedData = smallTokenPackData(fullStart, this.fullWidth(), this.kind());
-        }
-
-        public isIncrementallyUnusable(): boolean { return tokenIsIncrementallyUnusable(this); }
-        public isKeywordConvertedToIdentifier(): boolean { return false; }
-        public hasSkippedToken(): boolean { return false; }
-        public fullText(): string { return fullText(this); }
-        public text(): string { return text(this); }
-        public leadingTrivia(): ISyntaxTriviaList { return leadingTrivia(this); }
-        public trailingTrivia(): ISyntaxTriviaList { return trailingTrivia(this); }
-        public leadingTriviaWidth(): number { return leadingTriviaWidth(this); }
-        public trailingTriviaWidth(): number { return trailingTriviaWidth(this); }
-
-        public kind(): SyntaxKind { return this._packedData & ScannerConstants.KindMask; }
-        public fullWidth(): number { return smallTokenUnpackFullWidth(this._packedData); }
-        public fullStart(): number { return smallTokenUnpackFullStart(this._packedData); }
-        public hasLeadingTrivia(): boolean { return false; }
-        public hasTrailingTrivia(): boolean { return false; }
-        public clone(): ISyntaxToken { return new SmallScannerTokenWithNoTrivia(this._text, this._packedData); }
-    }
-
-    class SmallScannerTokenWithLeadingTrivia implements ISyntaxToken {
-        public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
-
-        constructor(public _text: ISimpleText, private _packedData: number) {
-        }
-
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            this._text = text;
-
-            this._packedData = smallTokenPackData(fullStart, this.fullWidth(), this.kind());
-        }
-
-        public isIncrementallyUnusable(): boolean { return tokenIsIncrementallyUnusable(this); }
-        public isKeywordConvertedToIdentifier(): boolean { return false; }
-        public hasSkippedToken(): boolean { return false; }
-        public fullText(): string { return fullText(this); }
-        public text(): string { return text(this); }
-        public leadingTrivia(): ISyntaxTriviaList { return leadingTrivia(this); }
-        public trailingTrivia(): ISyntaxTriviaList { return trailingTrivia(this); }
-        public leadingTriviaWidth(): number { return leadingTriviaWidth(this); }
-        public trailingTriviaWidth(): number { return trailingTriviaWidth(this); }
-
-        public kind(): SyntaxKind { return this._packedData & ScannerConstants.KindMask; }
-        public fullWidth(): number { return smallTokenUnpackFullWidth(this._packedData); }
-        public fullStart(): number { return smallTokenUnpackFullStart(this._packedData); }
-        public hasLeadingTrivia(): boolean { return true; }
-        public hasTrailingTrivia(): boolean { return false; }
-        public clone(): ISyntaxToken { return new SmallScannerTokenWithLeadingTrivia(this._text, this._packedData); }
-    }
-
-    class SmallScannerTokenWithTrailingTrivia implements ISyntaxToken {
-        public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
-
-        constructor(public _text: ISimpleText, private _packedData: number) {
-        }
-
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            this._text = text;
-
-            this._packedData = smallTokenPackData(fullStart, this.fullWidth(), this.kind());
-        }
-
-        public isIncrementallyUnusable(): boolean { return tokenIsIncrementallyUnusable(this); }
-        public isKeywordConvertedToIdentifier(): boolean { return false; }
-        public hasSkippedToken(): boolean { return false; }
-        public fullText(): string { return fullText(this); }
-        public text(): string { return text(this); }
-        public leadingTrivia(): ISyntaxTriviaList { return leadingTrivia(this); }
-        public trailingTrivia(): ISyntaxTriviaList { return trailingTrivia(this); }
-        public leadingTriviaWidth(): number { return leadingTriviaWidth(this); }
-        public trailingTriviaWidth(): number { return trailingTriviaWidth(this); }
-
-        public kind(): SyntaxKind { return this._packedData & ScannerConstants.KindMask; }
-        public fullWidth(): number { return smallTokenUnpackFullWidth(this._packedData); }
-        public fullStart(): number { return smallTokenUnpackFullStart(this._packedData); }
-        public hasLeadingTrivia(): boolean { return false; }
-        public hasTrailingTrivia(): boolean { return true; }
-        public clone(): ISyntaxToken { return new SmallScannerTokenWithTrailingTrivia(this._text, this._packedData); }
-    }
-
-    class SmallScannerTokenWithLeadingAndTrailingTrivia implements ISyntaxToken {
-        public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
-
-        constructor(public _text: ISimpleText, private _packedData: number) {
-        }
-
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            this._text = text;
-
-            this._packedData = smallTokenPackData(fullStart, this.fullWidth(), this.kind());
-        }
-
-        public isIncrementallyUnusable(): boolean { return tokenIsIncrementallyUnusable(this); }
-        public isKeywordConvertedToIdentifier(): boolean { return false; }
-        public hasSkippedToken(): boolean { return false; }
-        public fullText(): string { return fullText(this); }
-        public text(): string { return text(this); }
-        public leadingTrivia(): ISyntaxTriviaList { return leadingTrivia(this); }
-        public trailingTrivia(): ISyntaxTriviaList { return trailingTrivia(this); }
-        public leadingTriviaWidth(): number { return leadingTriviaWidth(this); }
-        public trailingTriviaWidth(): number { return trailingTriviaWidth(this); }
-
-        public kind(): SyntaxKind { return this._packedData & ScannerConstants.KindMask; }
-        public fullWidth(): number { return smallTokenUnpackFullWidth(this._packedData); }
-        public fullStart(): number { return smallTokenUnpackFullStart(this._packedData); }
-        public hasLeadingTrivia(): boolean { return true; }
-        public hasTrailingTrivia(): boolean { return true; }
-        public clone(): ISyntaxToken { return new SmallScannerTokenWithLeadingAndTrailingTrivia(this._text, this._packedData); }
-    }
-
     class LargeScannerToken implements ISyntaxToken {
         public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any; public _typeBrand: any;
 
-        constructor(public _text: ISimpleText, private _packedFullStartAndInfo: number, private _packedFullWidthAndKind: number) {
+        private cachedText: string;
+        constructor(private _packedFullStartAndInfo: number, private _packedFullWidthAndKind: number, cachedText: string) {
+            if (cachedText !== undefined) {
+                this.cachedText = cachedText;
+            }
         }
 
-        public setTextAndFullStart(text: ISimpleText, fullStart: number): void {
-            this._text = text;
-
+        public setFullStart(fullStart: number): void {
             this._packedFullStartAndInfo = largeTokenPackFullStartAndInfo(fullStart,
                 largeTokenUnpackHasLeadingTriviaInfo(this._packedFullStartAndInfo),
                 largeTokenUnpackHasTrailingTriviaInfo(this._packedFullStartAndInfo));
         }
 
+        private syntaxTreeText(text: ISimpleText) { 
+            var result = text || syntaxTree(this).text;
+            Debug.assert(result);
+            return result;
+        }
+
         public isIncrementallyUnusable(): boolean           { return tokenIsIncrementallyUnusable(this); }
         public isKeywordConvertedToIdentifier(): boolean    { return false; }
         public hasSkippedToken(): boolean                   { return false; }
-        public fullText(): string                           { return fullText(this); }
-        public text(): string                               { return text(this); }
-        public leadingTrivia(): ISyntaxTriviaList           { return leadingTrivia(this); }
-        public trailingTrivia(): ISyntaxTriviaList          { return trailingTrivia(this); }
-        public leadingTriviaWidth(): number                 { return leadingTriviaWidth(this); }
-        public trailingTriviaWidth(): number                { return trailingTriviaWidth(this); }
+
+        public fullText(text?: ISimpleText): string {
+            return fullText(this, this.syntaxTreeText(text));
+        }
+
+        public text(): string {
+            var cachedText = this.cachedText;
+            return cachedText !== undefined ? cachedText : SyntaxFacts.getText(this.kind());
+        }
+
+        public leadingTrivia(text?: ISimpleText): ISyntaxTriviaList           { return leadingTrivia(this, this.syntaxTreeText(text)); }
+        public trailingTrivia(text?: ISimpleText): ISyntaxTriviaList          { return trailingTrivia(this, this.syntaxTreeText(text)); }
+
+        public leadingTriviaWidth(text?: ISimpleText): number {
+            return leadingTriviaWidth(this, this.syntaxTreeText(text));
+        }
+
+        public trailingTriviaWidth(text?: ISimpleText): number {
+            return trailingTriviaWidth(this, this.syntaxTreeText(text));
+        }
 
         public kind(): SyntaxKind { return this._packedFullWidthAndKind & ScannerConstants.KindMask; }
         public fullWidth(): number { return largeTokenUnpackFullWidth(this._packedFullWidthAndKind); }
         public fullStart(): number { return largeTokenUnpackFullStart(this._packedFullStartAndInfo); }
         public hasLeadingTrivia(): boolean { return largeTokenUnpackHasLeadingTriviaInfo(this._packedFullStartAndInfo) !== 0; }
         public hasTrailingTrivia(): boolean { return largeTokenUnpackHasTrailingTriviaInfo(this._packedFullStartAndInfo) !== 0; }
-        public clone(): ISyntaxToken { return new LargeScannerToken(this._text, this._packedFullStartAndInfo, this._packedFullWidthAndKind); }
+        public clone(): ISyntaxToken { return new LargeScannerToken(this._packedFullStartAndInfo, this._packedFullWidthAndKind, this.cachedText); }
     }
 
     export interface DiagnosticCallback {
@@ -456,8 +323,8 @@ module TypeScript.Scanner {
     }
 
     interface IScannerInternal extends IScanner {
-        fillTokenInfo(token: IScannerToken, tokenInfo: TokenInfo): void;
-        scanTrivia(token: IScannerToken, isTrailing: boolean): ISyntaxTriviaList;
+        fillTokenInfo(token: IScannerToken, text: ISimpleText, tokenInfo: TokenInfo): void;
+        scanTrivia(token: IScannerToken, text: ISimpleText, isTrailing: boolean): ISyntaxTriviaList;
     }
 
     export interface IScanner {
@@ -499,55 +366,49 @@ module TypeScript.Scanner {
 
         function scan(allowContextualToken: boolean): ISyntaxToken {
             var fullStart = index;
-            var hasLeadingTrivia = scanTriviaInfo(/*isTrailing: */ false);
+            var leadingTriviaInfo = scanTriviaInfo(/*isTrailing: */ false);
 
             var start = index;
             var kindAndIsVariableWidth = scanSyntaxKind(allowContextualToken);
 
-            var kind = kindAndIsVariableWidth & ScannerConstants.KindMask;
-
             var end = index;
-            var hasTrailingTrivia = scanTriviaInfo(/*isTrailing: */true);
+            var trailingTriviaInfo = scanTriviaInfo(/*isTrailing: */true);
 
             var fullWidth = index - fullStart;
 
             // If we have no trivia, and we are a fixed width token kind, and our size isn't too 
             // large, and we're a real fixed width token (and not something like "\u0076ar").
-            if (!hasLeadingTrivia && !hasTrailingTrivia &&
-                kind >= SyntaxKind.FirstFixedWidth && kind <= SyntaxKind.LastFixedWidth &&
+            var kind = kindAndIsVariableWidth & ScannerConstants.KindMask;
+            var isFixedWidth = kind >= SyntaxKind.FirstFixedWidth && kind <= SyntaxKind.LastFixedWidth &&
+                ((kindAndIsVariableWidth & ScannerConstants.IsVariableWidthMask) === 0);
+
+            if (isFixedWidth &&
+                leadingTriviaInfo === 0 && trailingTriviaInfo === 0 &&
                 fullStart <= ScannerConstants.FixedWidthTokenMaxFullStart &&
                 (kindAndIsVariableWidth & ScannerConstants.IsVariableWidthMask) === 0) {
 
                 return new FixedWidthTokenWithNoTrivia((fullStart << ScannerConstants.FixedWidthTokenFullStartShift) | kind);
             }
-            else if (fullStart <= ScannerConstants.SmallTokenMaxFullStart && fullWidth <= ScannerConstants.SmallTokenMaxFullWidth) {
-                var packedData = (fullStart << ScannerConstants.SmallTokenFullStartShift) |
-                    (fullWidth << ScannerConstants.SmallTokenFullWidthShift) |
-                    kind;
-
-                var constructor: new(text: ISimpleText, data: number) => ISyntaxToken = hasLeadingTrivia
-                    ? hasTrailingTrivia ? SmallScannerTokenWithLeadingAndTrailingTrivia : SmallScannerTokenWithLeadingTrivia
-                    : hasTrailingTrivia ? SmallScannerTokenWithTrailingTrivia : SmallScannerTokenWithNoTrivia;
-
-                return new constructor(text, packedData);
-            }
             else {
-                // inline the packing logic for perf.
+                // inline the packing logic for perf.  
                 var packedFullStartAndTriviaInfo = (fullStart << ScannerConstants.LargeTokenFullStartShift) |
-                    (hasLeadingTrivia ? ScannerConstants.LargeTokenLeadingTriviaBitMask : 0) |
-                    (hasTrailingTrivia ? ScannerConstants.LargeTokenTrailingTriviaBitMask : 0);
+                    leadingTriviaInfo | (trailingTriviaInfo << 1);
 
                 var packedFullWidthAndKind = (fullWidth << ScannerConstants.LargeTokenFullWidthShift) | kind;
-                return new LargeScannerToken(text, packedFullStartAndTriviaInfo, packedFullWidthAndKind);
+                var cachedText = isFixedWidth ? undefined : text.substr(start, end - start);
+                return new LargeScannerToken(packedFullStartAndTriviaInfo, packedFullWidthAndKind, cachedText);
             }
         }
 
-        function scanTrivia(parent: IScannerToken, isTrailing: boolean): ISyntaxTriviaList {
+        function scanTrivia(parent: IScannerToken, text: ISimpleText, isTrailing: boolean): ISyntaxTriviaList {
+            var tokenFullStart = parent.fullStart();
+            var tokenStart = tokenFullStart + leadingTriviaWidth(parent, text)
+
             if (isTrailing) {
-                reset(parent._text, TypeScript.end(parent), fullEnd(parent));
+                reset(text, tokenStart + parent.text().length, tokenFullStart + parent.fullWidth());
             }
             else {
-                reset(parent._text, parent.fullStart(), TypeScript.start(parent));
+                reset(text, tokenFullStart, tokenStart);
             }
             // Debug.assert(length > 0);
 
@@ -628,9 +489,11 @@ module TypeScript.Scanner {
             }
         }
 
-        function scanTriviaInfo(isTrailing: boolean): boolean {
+        // Returns 0 if there was no trivia, or 1 if there was trivia.  Returned as an int instead 
+        // of a boolean because we'll need a numerical value later on to store in our tokens.
+        function scanTriviaInfo(isTrailing: boolean): number {
             // Keep this exactly in sync with scanTrivia
-            var result = false;
+            var result = 0;
             var _end = end;
 
             while (index < _end) {
@@ -642,7 +505,7 @@ module TypeScript.Scanner {
                     case CharacterCodes.verticalTab:
                     case CharacterCodes.formFeed:
                         index++;
-                        result = true;
+                        result = 1;
                         continue;
 
                     case CharacterCodes.carriageReturn:
@@ -657,23 +520,23 @@ module TypeScript.Scanner {
                         // trivia (including newlines) up to the first token we see.  If we're 
                         // consuming trailing trivia, then we break after the first newline we see.
                         if (isTrailing) {
-                            return true;
+                            return 1;
                         }
 
-                        result = true;
+                        result = 1;
                         continue;
 
                     case CharacterCodes.slash:
                         if ((index + 1) < _end) {
                             var ch2 = str.charCodeAt(index + 1);
                             if (ch2 === CharacterCodes.slash) {
-                                result = true;
+                                result = 1;
                                 skipSingleLineCommentTrivia();
                                 continue;
                             }
 
                             if (ch2 === CharacterCodes.asterisk) {
-                                result = true;
+                                result = 1;
                                 skipMultiLineCommentTrivia();
                                 continue;
                             }
@@ -684,7 +547,7 @@ module TypeScript.Scanner {
 
                     default:
                         if (ch > CharacterCodes.maxAsciiCharacter && slowScanTriviaInfo(ch)) {
-                            result = true;
+                            result = 1;
                             continue;
                         }
 
@@ -1559,10 +1422,10 @@ module TypeScript.Scanner {
             return intChar;
         }
 
-        function fillTokenInfo(token: IScannerToken, tokenInfo: TokenInfo): void {
+        function fillTokenInfo(token: IScannerToken, text: ISimpleText, tokenInfo: TokenInfo): void {
             var fullStart = token.fullStart();
             var fullEnd = fullStart + token.fullWidth();
-            reset(token._text, fullStart, fullEnd);
+            reset(text, fullStart, fullEnd);
 
             var leadingTriviaInfo = scanTriviaInfo(/*isTrailing: */ false);
 
@@ -1723,7 +1586,7 @@ module TypeScript.Scanner {
 
             _tokenDiagnostics.push(lastDiagnostic);
             lastDiagnostic = null;
-            return Syntax.realizeToken(token);
+            return Syntax.realizeToken(token, text);
         }
 
         function peekToken(n: number): ISyntaxToken {

@@ -23,7 +23,7 @@ module TypeScript.Services.Formatting {
         private _snapshot: ITextSnapshot;
         private _lastTriviaWasNewLine: boolean;
         private _indentationNodeContextPool: IndentationNodeContextPool;
-        private _lineMap: LineMap;
+        private _text: ISimpleText;
 
         constructor(textSpan: TextSpan, sourceUnit: SourceUnitSyntax, snapshot: ITextSnapshot, indentFirstToken: boolean, public options: FormattingOptions) {
             super();
@@ -32,7 +32,7 @@ module TypeScript.Services.Formatting {
             this._indentationNodeContextPool = new IndentationNodeContextPool();
 
             this._textSpan = textSpan;
-            this._lineMap = sourceUnit.syntaxTree.lineMap();
+            this._text = sourceUnit.syntaxTree.text;
             this._snapshot = snapshot;
             this._parent = this._indentationNodeContextPool.getNode(null, sourceUnit, 0, 0, 0);
 
@@ -256,7 +256,7 @@ module TypeScript.Services.Formatting {
 
                 case SyntaxKind.IfStatement:
                     if (parent.kind() === SyntaxKind.ElseClause &&
-                        !SyntaxUtilities.isLastTokenOnLine((<ElseClauseSyntax>parentNode).elseKeyword, this._lineMap)) {
+                        !SyntaxUtilities.isLastTokenOnLine((<ElseClauseSyntax>parentNode).elseKeyword, this._text)) {
                         // This is an else if statement with the if on the same line as the else, do not indent the if statmement.
                         // Note: Children indentation has already been set by the parent if statement, so no need to increment
                         indentationAmount = parentIndentationAmount;

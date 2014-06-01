@@ -514,6 +514,10 @@ module TypeScript {
             }
         }
 
+        private text(): ISimpleText {
+            return this.document.syntaxTree().text;
+        }
+
         public emitComments(ast: ISyntaxElement, pre: boolean, onlyPinnedOrTripleSlashComments: boolean = false) {
             // Emitting the comments for the exprssion inside an arrow function is handled specially
             // in emitFunctionBodyStatements.  We don't want to emit those comments a second time.
@@ -524,7 +528,7 @@ module TypeScript {
             }
 
             if (pre) {
-                var preComments = TypeScript.ASTHelpers.preComments(ast);
+                var preComments = TypeScript.ASTHelpers.preComments(ast, this.text());
 
                 if (preComments && ast === this.detachedCommentsElement) {
                     // We're emitting the comments for the first script element.  Skip any 
@@ -543,7 +547,7 @@ module TypeScript {
                 this.emitCommentsArray(preComments, /*trailing:*/ false);
             }
             else {
-                this.emitCommentsArray(ASTHelpers.postComments(ast, this.document.lineMap()), /*trailing:*/ true);
+                this.emitCommentsArray(ASTHelpers.postComments(ast, this.text()), /*trailing:*/ true);
             }
         }
 
@@ -681,7 +685,7 @@ module TypeScript {
 
         private emitParameterList(list: ParameterListSyntax): void {
             this.writeToken(list.openParenToken);
-            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(list.openParenToken), /*trailing:*/ true, /*noLeadingSpace:*/ true);
+            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(list.openParenToken, this.text()), /*trailing:*/ true, /*noLeadingSpace:*/ true);
             this.emitFunctionParameters(list.parameters, list.parameters);
             this.writeToken(list.closeParenToken);
         }
@@ -705,7 +709,7 @@ module TypeScript {
                     if (i < (printLen - 1)) {
                         this.writeToOutput(", ");
                         if (parameters) {
-                            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(parameters.separatorAt(i)), /*trailing:*/ true, /*noLeadingSpace:*/ true);
+                            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(parameters.separatorAt(i), this.text()), /*trailing:*/ true, /*noLeadingSpace:*/ true);
                         }
                     }
                 }
@@ -744,7 +748,7 @@ module TypeScript {
 
             if (block) {
                 this.emitList(block.statements);
-                this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(block.closeBraceToken), /*trailing:*/ false);
+                this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(block.closeBraceToken, this.text()), /*trailing:*/ false);
             }
             else {
                 // Copy any comments before the body of the arrow function to the return statement.
@@ -763,11 +767,11 @@ module TypeScript {
                 //bodyExpression.setPostComments(null);
 
                 this.emitIndent();
-                this.emitCommentsArray(ASTHelpers.preComments(bodyExpression), /*trailing:*/ false);
+                this.emitCommentsArray(ASTHelpers.preComments(bodyExpression, this.text()), /*trailing:*/ false);
                 this.writeToOutput("return ");
                 this.emit(bodyExpression);
                 this.writeLineToOutput(";");
-                this.emitCommentsArray(ASTHelpers.preComments(bodyExpression), /*trailing:*/ true);
+                this.emitCommentsArray(ASTHelpers.preComments(bodyExpression, this.text()), /*trailing:*/ true);
 
                 //bodyExpression.setPreComments(preComments);
                 //bodyExpression.setPostComments(postComments);
@@ -1356,7 +1360,7 @@ module TypeScript {
             }
 
             this.emitConstructorStatements(funcDecl);
-            this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(funcDecl.block.closeBraceToken), /*trailing:*/ false);
+            this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(funcDecl.block.closeBraceToken, this.text()), /*trailing:*/ false);
 
             this.indenter.decreaseIndent();
             this.emitIndent();
@@ -1896,7 +1900,8 @@ module TypeScript {
 
         private recordSourceMappingStart(ast: ISyntaxElement) {
             if (this.sourceMapper && ASTHelpers.isValidAstNode(ast)) {
-                this.recordSourceMappingSpanStart(ast, start(ast), end(ast));
+                var text = this.text();
+                this.recordSourceMappingSpanStart(ast, start(ast, text), end(ast, text));
             }
         }
 
@@ -1939,7 +1944,8 @@ module TypeScript {
 
         private recordSourceMappingEnd(ast: ISyntaxElement) {
             if (this.sourceMapper && ASTHelpers.isValidAstNode(ast)) {
-                this.recordSourceMappingSpanEnd(ast, start(ast), end(ast));
+                var text = this.text();
+                this.recordSourceMappingSpanEnd(ast, start(ast, text), end(ast, text));
             }
         }
 
@@ -2031,7 +2037,8 @@ module TypeScript {
 
             // If the first element isn't on hte same line as the parent node, then we need to 
             // start with a newline.
-            var startLine = preserveNewLines && !this.isOnSameLine(end(parent), end(list[0]));
+            var text = this.text();
+            var startLine = preserveNewLines && !this.isOnSameLine(end(parent, text), end(list[0], text));
 
             if (preserveNewLines) {
                 // Any elements on a new line will have to be indented.
@@ -2057,7 +2064,7 @@ module TypeScript {
                     // If the next element start on a different line than this element ended on, 
                     // then we want to start on a newline.  Emit the comma with a newline.  
                     // Otherwise, emit the comma with the space.
-                    startLine = preserveNewLines && !this.isOnSameLine(end(emitNode), start(list[i + 1]));
+                    startLine = preserveNewLines && !this.isOnSameLine(end(emitNode, text), start(list[i + 1], text));
                     if (startLine) {
                         this.writeLineToOutput(",");
                     }
@@ -2076,7 +2083,7 @@ module TypeScript {
             // after the last element and emit our indent so the list's terminator will be
             // on the right line.  Otherwise, emit the buffer string between the last value
             // and the terminator.
-            if (preserveNewLines && !this.isOnSameLine(end(parent), end(list[list.length - 1]))) {
+            if (preserveNewLines && !this.isOnSameLine(end(parent, text), end(list[list.length - 1], text))) {
                 this.writeLineToOutput("");
                 this.emitIndent();
             }
@@ -2153,13 +2160,14 @@ module TypeScript {
                 return;
             }
 
-            if (start(node1) === -1 || end(node1) === -1 || start(node2) === -1 || end(node2) === -1) {
+            var text = this.text();
+            if (start(node1, text) === -1 || end(node1, text) === -1 || start(node2, text) === -1 || end(node2, text) === -1) {
                 return;
             }
 
             var lineMap = this.document.lineMap();
-            var node1EndLine = lineMap.getLineNumberFromPosition(end(node1));
-            var node2StartLine = lineMap.getLineNumberFromPosition(start(node2));
+            var node1EndLine = lineMap.getLineNumberFromPosition(end(node1, text));
+            var node2StartLine = lineMap.getLineNumberFromPosition(start(node2, text));
 
             if ((node2StartLine - node1EndLine) > 1) {
                 this.writeLineToOutput("", /*force:*/ true);
@@ -2170,7 +2178,8 @@ module TypeScript {
         // between them, and there is a blank line after the last one and the node they're attached 
         // to.
         private getDetachedComments(element: ISyntaxElement): Comment[] {
-            var preComments = TypeScript.ASTHelpers.preComments(element);
+            var text = this.text();
+            var preComments = TypeScript.ASTHelpers.preComments(element, text);
             if (preComments) {
                 var lineMap = this.document.lineMap();
 
@@ -2200,7 +2209,7 @@ module TypeScript {
                 // sure there is at least one blank line between it and the node.  If not, it's not
                 // a copyright header.
                 var lastCommentLine = lineMap.getLineNumberFromPosition(ArrayUtilities.last(detachedComments).end());
-                var astLine = lineMap.getLineNumberFromPosition(start(element));
+                var astLine = lineMap.getLineNumberFromPosition(start(element, text));
                 if (astLine >= lastCommentLine + 2) {
                     return detachedComments;
                 }
@@ -2828,7 +2837,7 @@ module TypeScript {
             else {
                 this.recordSourceMappingStart(parenthesizedExpression);
                 this.writeToken(parenthesizedExpression.openParenToken);
-                this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(parenthesizedExpression.openParenToken), /*trailing:*/ false);
+                this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(parenthesizedExpression.openParenToken, this.text()), /*trailing:*/ false);
                 this.emit(parenthesizedExpression.expression);
                 this.writeToken(parenthesizedExpression.closeParenToken);
                 this.recordSourceMappingEnd(parenthesizedExpression);
@@ -3035,7 +3044,7 @@ module TypeScript {
 
             this.writeToken(property.colonToken);
             this.writeToOutput(" ");
-            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(property.colonToken), /*trailing:*/ true, /*noLeadingSpace:*/ true);
+            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(property.colonToken, this.text()), /*trailing:*/ true, /*noLeadingSpace:*/ true);
 
             this.emit(property.expression);
             this.recordSourceMappingEnd(property);
@@ -3136,7 +3145,7 @@ module TypeScript {
             if (block.statements) {
                 this.emitList(block.statements);
             }
-            this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(block.closeBraceToken), /*trailing:*/ false);
+            this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(block.closeBraceToken, this.text()), /*trailing:*/ false);
             this.indenter.decreaseIndent();
             this.emitIndent();
             this.writeToken(block.closeBraceToken);
@@ -3332,12 +3341,13 @@ module TypeScript {
         }
 
         private emitSwitchClauseBody(colonToken: ISyntaxToken, body: IStatementSyntax[]): void {
+            var text = this.text();
             if (body.length === 1 && childAt(body, 0).kind() === SyntaxKind.Block) {
                 // The case statement was written with curly braces, so emit it with the appropriate formatting
                 this.emit(childAt(body, 0));
                 this.writeLineToOutput("");
             }
-            else if (body.length === 1 && this.isOnSameLine(end(colonToken), start(body[0]))) {
+            else if (body.length === 1 && this.isOnSameLine(end(colonToken, text), start(body[0], text))) {
                 this.writeToOutput(" ");
                 this.emit(childAt(body, 0));
                 this.writeLineToOutput("");
@@ -3412,7 +3422,7 @@ module TypeScript {
             this.writeToOutput(" ");
             this.writeToken(clause.equalsToken);
             this.writeToOutput(" ");
-            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(clause.equalsToken), /*trailing:*/ true, /*noLeadingSpace:*/ true);
+            this.emitCommentsArray(ASTHelpers.convertTokenTrailingComments(clause.equalsToken, this.text()), /*trailing:*/ true, /*noLeadingSpace:*/ true);
 
             this.emit(clause.value);
         }
@@ -3431,7 +3441,7 @@ module TypeScript {
         }
 
         public shouldEmitFunctionDeclaration(declaration: FunctionDeclarationSyntax): boolean {
-            return ASTHelpers.preComments(declaration) !== null || (!hasModifier(declaration.modifiers, PullElementFlags.Ambient) && declaration.block !== null);
+            return ASTHelpers.preComments(declaration, this.text()) !== null || (!hasModifier(declaration.modifiers, PullElementFlags.Ambient) && declaration.block !== null);
         }
 
         public emitFunctionDeclaration(declaration: FunctionDeclarationSyntax): void {
@@ -3450,12 +3460,12 @@ module TypeScript {
                 this.emitScriptElements(sourceUnit);
                 this.popDecl(pullDecl);
 
-                this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(sourceUnit.endOfFileToken), /*trailing:*/ false);
+                this.emitCommentsArray(ASTHelpers.convertTokenLeadingComments(sourceUnit.endOfFileToken, this.text()), /*trailing:*/ false);
             }
         }
 
         public shouldEmitEnumDeclaration(declaration: EnumDeclarationSyntax): boolean {
-            return ASTHelpers.preComments(declaration) !== null || !ASTHelpers.enumIsElided(declaration);
+            return ASTHelpers.preComments(declaration, this.text()) !== null || !ASTHelpers.enumIsElided(declaration);
         }
 
         public emitEnumDeclaration(declaration: EnumDeclarationSyntax): void {
@@ -3470,7 +3480,7 @@ module TypeScript {
         }
 
         public shouldEmitModuleDeclaration(declaration: ModuleDeclarationSyntax): boolean {
-            return ASTHelpers.preComments(declaration) !== null || !ASTHelpers.moduleIsElided(declaration);
+            return ASTHelpers.preComments(declaration, this.text()) !== null || !ASTHelpers.moduleIsElided(declaration);
         }
 
         private emitModuleDeclaration(declaration: ModuleDeclarationSyntax): void {
@@ -3483,7 +3493,7 @@ module TypeScript {
         }
 
         public shouldEmitClassDeclaration(declaration: ClassDeclarationSyntax): boolean {
-            return ASTHelpers.preComments(declaration) !== null || !hasModifier(declaration.modifiers, PullElementFlags.Ambient);
+            return ASTHelpers.preComments(declaration, this.text()) !== null || !hasModifier(declaration.modifiers, PullElementFlags.Ambient);
         }
 
         public emitClassDeclaration(declaration: ClassDeclarationSyntax): void {
@@ -3496,7 +3506,7 @@ module TypeScript {
         }
 
         public shouldEmitInterfaceDeclaration(declaration: InterfaceDeclarationSyntax): boolean {
-            return ASTHelpers.preComments(declaration) !== null;
+            return ASTHelpers.preComments(declaration, this.text()) !== null;
         }
 
         public emitInterfaceDeclaration(declaration: InterfaceDeclarationSyntax): void {
@@ -3512,7 +3522,7 @@ module TypeScript {
         }
 
         public shouldEmitVariableStatement(statement: VariableStatementSyntax): boolean {
-            return ASTHelpers.preComments(statement) !== null || this.isNotAmbientOrHasInitializer(statement);
+            return ASTHelpers.preComments(statement, this.text()) !== null || this.isNotAmbientOrHasInitializer(statement);
         }
 
         public emitVariableStatement(statement: VariableStatementSyntax): void {

@@ -31,7 +31,7 @@ class PositionValidatingWalker extends TypeScript.SyntaxWalker {
     }
 }
 
-function tokenToJSON(token: TypeScript.ISyntaxToken): any {
+function tokenToJSON(token: TypeScript.ISyntaxToken, text: TypeScript.ISimpleText): any {
     if (token === null) {
         return null;
     }
@@ -48,8 +48,8 @@ function tokenToJSON(token: TypeScript.ISyntaxToken): any {
     result.fullStart = token.fullStart();
     result.fullEnd = TypeScript.fullEnd(token);
 
-    result.start = TypeScript.start(token);
-    result.end = TypeScript.end(token);
+    result.start = TypeScript.start(token, text);
+    result.end = TypeScript.end(token, text);
 
     result.fullWidth = token.fullWidth();
     result.width = TypeScript.width(token);
@@ -69,7 +69,7 @@ function tokenToJSON(token: TypeScript.ISyntaxToken): any {
     if (token.hasLeadingTrivia()) {
         result.hasLeadingTrivia = true;
 
-        var leadingTrivia = token.leadingTrivia();
+        var leadingTrivia = token.leadingTrivia(text);
 
         if (leadingTrivia.hasComment()) {
             result.hasLeadingComment = true;
@@ -88,7 +88,7 @@ function tokenToJSON(token: TypeScript.ISyntaxToken): any {
     if (token.hasTrailingTrivia()) {
         result.hasTrailingTrivia = true;
 
-        var trailingTrivia = token.trailingTrivia();
+        var trailingTrivia = token.trailingTrivia(text);
 
         if (trailingTrivia.hasComment()) {
             result.hasTrailingComment = true;
@@ -104,27 +104,27 @@ function tokenToJSON(token: TypeScript.ISyntaxToken): any {
     }
 
     if (leadingTrivia) {
-        result.leadingTrivia = triviaListToJSON(leadingTrivia);
+        result.leadingTrivia = triviaListToJSON(leadingTrivia, text);
     }
 
     if (trailingTrivia) {
-        result.trailingTrivia = triviaListToJSON(trailingTrivia);
+        result.trailingTrivia = triviaListToJSON(trailingTrivia, text);
     }
 
     return result;
 }
 
-function triviaListToJSON(trivia: TypeScript.ISyntaxTriviaList): any {
+function triviaListToJSON(trivia: TypeScript.ISyntaxTriviaList, text: TypeScript.ISimpleText): any {
     var result: any[] = [];
 
     for (var i = 0, n = trivia.count(); i < n; i++) {
-        result.push(triviaToJSON(trivia.syntaxTriviaAt(i)));
+        result.push(triviaToJSON(trivia.syntaxTriviaAt(i), text));
     }
 
     return result;
 }
 
-function triviaToJSON(trivia: TypeScript.ISyntaxTrivia): any {
+function triviaToJSON(trivia: TypeScript.ISyntaxTrivia, text: TypeScript.ISimpleText): any {
     var result: any = {};
 
     for (var name in TypeScript.SyntaxKind) {
@@ -135,7 +135,7 @@ function triviaToJSON(trivia: TypeScript.ISyntaxTrivia): any {
     }
 
     if (trivia.isSkippedToken()) {
-        result.skippedToken = tokenToJSON(trivia.skippedToken());
+        result.skippedToken = tokenToJSON(trivia.skippedToken(), text);
     }
     else {
         result.fullStart = trivia.fullStart();
@@ -146,7 +146,7 @@ function triviaToJSON(trivia: TypeScript.ISyntaxTrivia): any {
     return result;
 }
 
-function nodeToJSON(node: TypeScript.ISyntaxNode): any {
+function nodeToJSON(node: TypeScript.ISyntaxNode, text: TypeScript.ISimpleText): any {
     var result: any = {}
 
     for (var name in TypeScript.SyntaxKind) {
@@ -180,7 +180,7 @@ function nodeToJSON(node: TypeScript.ISyntaxNode): any {
         if (value) {
             for (var name in node) {
                 if (value === thisAsIndexable[name]) {
-                    result[name] = elementToJSON(value);
+                    result[name] = elementToJSON(value, text);
                     break;
                 }
             }
@@ -190,21 +190,21 @@ function nodeToJSON(node: TypeScript.ISyntaxNode): any {
     return result;
 }
 
-function elementToJSON(element: TypeScript.ISyntaxElement): any {
+function elementToJSON(element: TypeScript.ISyntaxElement, text: TypeScript.ISimpleText): any {
     if (TypeScript.isToken(element)) {
-        return tokenToJSON(<TypeScript.ISyntaxToken>element);
+        return tokenToJSON(<TypeScript.ISyntaxToken>element, text);
     }
     else if (TypeScript.isList(element) || TypeScript.isSeparatedList(element)) {
         var result: any[] = [];
 
         for (var i = 0, n = TypeScript.childCount(element); i < n; i++) {
-            result.push(elementToJSON(TypeScript.childAt(element, i)));
+            result.push(elementToJSON(TypeScript.childAt(element, i), text));
         }
 
         return result;
     }
     else {
-        return nodeToJSON(<TypeScript.ISyntaxNode>element);
+        return nodeToJSON(<TypeScript.ISyntaxNode>element, text);
     }
 }
 
@@ -218,7 +218,7 @@ function syntaxTreeToJSON(tree: TypeScript.SyntaxTree): any {
         result.diagnostics = tree.diagnostics();
     }
 
-    result.sourceUnit = elementToJSON(tree.sourceUnit());
+    result.sourceUnit = elementToJSON(tree.sourceUnit(), tree.text);
     result.lineMap = tree.lineMap();
 
     return result;
@@ -718,19 +718,19 @@ class Program {
                 TypeScript.Debug.assert(token.fullWidth() > 0);
             }
 
-            tokens[i] = tokenToJSON(token);
-            tokensOnLeft[i] = tokenToJSON(tokenOnLeft);
+            tokens[i] = tokenToJSON(token, text);
+            tokensOnLeft[i] = tokenToJSON(tokenOnLeft, text);
         }
 
         var positionedToken = TypeScript.findToken(sourceUnit, 0);
         while (positionedToken !== null) {
-            leftToRight.push(tokenToJSON(positionedToken));
+            leftToRight.push(tokenToJSON(positionedToken, text));
             positionedToken = TypeScript.nextToken(positionedToken);
         }
 
         positionedToken = TypeScript.findToken(sourceUnit, contents.length);
         while (positionedToken !== null) {
-            rightToLeft.push(tokenToJSON(positionedToken));
+            rightToLeft.push(tokenToJSON(positionedToken, text));
             positionedToken = TypeScript.previousToken(positionedToken);
         }
 
@@ -760,7 +760,7 @@ class Program {
 
         while (true) {
             var token = scanner.scan(/*allowRegularExpression:*/ false);
-            tokens.push(tokenToJSON(token));
+            tokens.push(tokenToJSON(token, text));
 
             if (token.kind() === TypeScript.SyntaxKind.EndOfFileToken) {
                 break;
@@ -792,7 +792,7 @@ class Program {
 
         while (true) {
             var token = scanner.scan(/*allowRegularExpression:*/ false);
-            jsonTokens.push(tokenToJSON(token));
+            jsonTokens.push(tokenToJSON(token, text));
             tokens.push(token);
 
             TypeScript.Debug.assert(position === token.fullStart());
@@ -804,7 +804,7 @@ class Program {
         }
 
         if (verify) {
-            var tokenText = TypeScript.ArrayUtilities.select(tokens, t => t.fullText()).join("");
+            var tokenText = TypeScript.ArrayUtilities.select(tokens, t => t.fullText(text)).join("");
 
             if (tokenText !== contents) {
                 throw new Error("Token invariant broken!");

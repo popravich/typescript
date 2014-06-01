@@ -2,6 +2,7 @@
 class TypeWriterWalker extends TypeScript.SyntaxWalker {
     private document: TypeScript.Document;
     private syntaxTree: TypeScript.SyntaxTree;
+    private text: TypeScript.ISimpleText;
     private currentPosition = 0;
 
     public results: {
@@ -17,6 +18,7 @@ class TypeWriterWalker extends TypeScript.SyntaxWalker {
 
         this.document = compiler.getDocument(filename);
         this.syntaxTree = this.document.syntaxTree();
+        this.text = this.syntaxTree.text;
     }
 
     public run() {
@@ -160,6 +162,6 @@ class TypeWriterWalker extends TypeScript.SyntaxWalker {
 
     public log(node: TypeScript.ISyntaxNodeOrToken) {
         var pos = this.document.lineMap().getLineAndCharacterFromPosition(TypeScript.fullStart(node));
-        this.results.push({ line: pos.line(), column: pos.character(), syntaxKind: TypeScript.SyntaxKind[node.kind()], identifierName: TypeScript.fullText(node).trim(), type: this.getTypeOfElement(node) });
+        this.results.push({ line: pos.line(), column: pos.character(), syntaxKind: TypeScript.SyntaxKind[node.kind()], identifierName: TypeScript.fullText(node, this.text).trim(), type: this.getTypeOfElement(node) });
     }
 }

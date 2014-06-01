@@ -86,7 +86,7 @@ module TypeScript {
             // map so they don't have to be recomputed.
             var sourceUnit = this.sourceUnit();
             var firstToken = firstSyntaxTreeToken(this);
-            var leadingTrivia = firstToken.leadingTrivia();
+            var leadingTrivia = firstToken.leadingTrivia(this.text);
 
             this._isExternalModule = externalModuleIndicatorSpanWorker(this, firstToken) !== null;
 
@@ -138,15 +138,17 @@ module TypeScript {
         private inBlock: boolean = false;
         private inObjectLiteralExpression: boolean = false;
         private currentConstructor: ConstructorDeclarationSyntax = null;
+        private text: ISimpleText;
 
         constructor(private syntaxTree: SyntaxTree,
                     private diagnostics: Diagnostic[]) {
             super();
+            this.text = syntaxTree.text;
         }
 
         private pushDiagnostic(element: ISyntaxElement, diagnosticKey: string, args: any[] = null): void {
             this.diagnostics.push(new Diagnostic(
-                this.syntaxTree.fileName(), this.syntaxTree.lineMap(), start(element), width(element), diagnosticKey, args));
+                this.syntaxTree.fileName(), this.syntaxTree.lineMap(), start(element, this.text), width(element), diagnosticKey, args));
         }
 
         public visitCatchClause(node: CatchClauseSyntax): void {
@@ -1448,7 +1450,7 @@ module TypeScript {
     }
 
     export function externalModuleIndicatorSpanWorker(syntaxTree: SyntaxTree, firstToken: ISyntaxToken) {
-        var leadingTrivia = firstToken.leadingTrivia();
+        var leadingTrivia = firstToken.leadingTrivia(syntaxTree.text);
         return implicitImportSpan(leadingTrivia) || topLevelImportOrExportSpan(syntaxTree.sourceUnit());
     }
 

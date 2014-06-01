@@ -473,18 +473,18 @@ module TypeScript.Parser {
 
             // They wanted something specific, just report that that token was missing.
             if (SyntaxFacts.isAnyKeyword(expectedKind) || SyntaxFacts.isAnyPunctuation(expectedKind)) {
-                return new Diagnostic(fileName, source.text.lineMap(), start(token), width(token), DiagnosticCode._0_expected, [SyntaxFacts.getText(expectedKind)]);
+                return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), DiagnosticCode._0_expected, [SyntaxFacts.getText(expectedKind)]);
             }
             else {
                 // They wanted an identifier.
 
                 // If the user supplied a keyword, give them a specialized message.
                 if (actual !== null && SyntaxFacts.isAnyKeyword(actual.kind())) {
-                    return new Diagnostic(fileName, source.text.lineMap(), start(token), width(token), DiagnosticCode.Identifier_expected_0_is_a_keyword, [SyntaxFacts.getText(actual.kind())]);
+                    return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), DiagnosticCode.Identifier_expected_0_is_a_keyword, [SyntaxFacts.getText(actual.kind())]);
                 }
                 else {
                     // Otherwise just report that an identifier was expected.
-                    return new Diagnostic(fileName, source.text.lineMap(), start(token), width(token), DiagnosticCode.Identifier_expected, null);
+                    return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), DiagnosticCode.Identifier_expected, null);
                 }
             }
         }
@@ -619,14 +619,14 @@ module TypeScript.Parser {
                 addSkippedTokenToTriviaArray(leadingTrivia, skippedToken);
             }
 
-            addTriviaTo(token.leadingTrivia(), leadingTrivia);
+            addTriviaTo(token.leadingTrivia(source.text), leadingTrivia);
 
-            var updatedToken = Syntax.withLeadingTrivia(token, Syntax.triviaList(leadingTrivia));
+            var updatedToken = Syntax.withLeadingTrivia(token, Syntax.triviaList(leadingTrivia), source.text);
 
             // We've prepending this token with new leading trivia.  This means the full start of
             // the token is not where the scanner originally thought it was, but is instead at the
             // start of the first skipped token.
-            updatedToken.setTextAndFullStart(source.text, skippedTokens[0].fullStart());
+            updatedToken.setFullStart(skippedTokens[0].fullStart());
 
             // Don't need this array anymore.  Give it back so we can reuse it.
             returnArray(skippedTokens);
@@ -641,7 +641,7 @@ module TypeScript.Parser {
                 return token;
             }
 
-            var trailingTrivia = token.trailingTrivia().toArray();
+            var trailingTrivia = token.trailingTrivia(source.text).toArray();
 
             for (var i = 0, n = skippedTokens.length; i < n; i++) {
                 addSkippedTokenToTriviaArray(trailingTrivia, skippedTokens[i]);
@@ -649,34 +649,34 @@ module TypeScript.Parser {
 
             // Don't need this array anymore.  Give it back so we can reuse it.
             returnArray(skippedTokens);
-            return Syntax.withTrailingTrivia(token, Syntax.triviaList(trailingTrivia));
+            return Syntax.withTrailingTrivia(token, Syntax.triviaList(trailingTrivia), source.text);
         }
 
         function addSkippedTokenAfterToken(token: ISyntaxToken, skippedToken: ISyntaxToken): ISyntaxToken {
             // Debug.assert(token.fullWidth() > 0);
-            var trailingTrivia = token.trailingTrivia().toArray();
+            var trailingTrivia = token.trailingTrivia(source.text).toArray();
             addSkippedTokenToTriviaArray(trailingTrivia, skippedToken);
 
-            return Syntax.withTrailingTrivia(token, Syntax.triviaList(trailingTrivia));
+            return Syntax.withTrailingTrivia(token, Syntax.triviaList(trailingTrivia), source.text);
         }
 
         function addSkippedTokenToTriviaArray(array: ISyntaxTrivia[], skippedToken: ISyntaxToken): void {
             // Debug.assert(skippedToken.text().length > 0);
 
             // first, add the leading trivia of the skipped token to the array
-            addTriviaTo(skippedToken.leadingTrivia(), array);
+            addTriviaTo(skippedToken.leadingTrivia(source.text), array);
 
             // now, add the text of the token as skipped text to the trivia array.
-            var trimmedToken = Syntax.withTrailingTrivia(Syntax.withLeadingTrivia(skippedToken, Syntax.emptyTriviaList), Syntax.emptyTriviaList);
+            var trimmedToken = Syntax.withTrailingTrivia(Syntax.withLeadingTrivia(skippedToken, Syntax.emptyTriviaList, source.text), Syntax.emptyTriviaList, source.text);
 
             // Because we removed the leading trivia from the skipped token, the full start of the
             // trimmed token is the start of the skipped token.
-            trimmedToken.setTextAndFullStart(source.text, start(skippedToken));
+            trimmedToken.setFullStart(start(skippedToken, source.text));
 
-            array.push(Syntax.skippedTokenTrivia(trimmedToken));
+            array.push(Syntax.skippedTokenTrivia(trimmedToken, source.text));
 
             // Finally, add the trailing trivia of the skipped token to the trivia array.
-            addTriviaTo(skippedToken.trailingTrivia(), array);
+            addTriviaTo(skippedToken.trailingTrivia(source.text), array);
         }
 
         function addTriviaTo(list: ISyntaxTriviaList, array: ISyntaxTrivia[]): void {
@@ -949,7 +949,7 @@ module TypeScript.Parser {
                 previousTokenHasTrailingNewLine(_currentToken)) {
 
                 var token1 = peekToken(1);
-                if (!existsNewLineBetweenTokens(_currentToken, token1, source.text.lineMap()) &&
+                if (!existsNewLineBetweenTokens(_currentToken, token1, source.text) &&
                     SyntaxFacts.isIdentifierNameOrAnyKeyword(token1)) {
 
                     return createMissingToken(SyntaxKind.IdentifierName, _currentToken);
@@ -1383,7 +1383,7 @@ module TypeScript.Parser {
                     // 
                     // Detect if the user is typing this and attempt recovery.
                     var diagnostic = new Diagnostic(fileName, source.text.lineMap(),
-                        start(token0), width(token0), DiagnosticCode.Unexpected_token_0_expected, [SyntaxFacts.getText(SyntaxKind.OpenBraceToken)]);
+                        start(token0, source.text), width(token0), DiagnosticCode.Unexpected_token_0_expected, [SyntaxFacts.getText(SyntaxKind.OpenBraceToken)]);
                     addDiagnostic(diagnostic);
 
                     consumeToken(token0);
@@ -1591,7 +1591,7 @@ module TypeScript.Parser {
             //
             // Then we *should* parse it as a property name, as ASI takes effect here.
             if (isModifier(_currentToken)) {
-                if (!existsNewLineBetweenTokens(_currentToken, peekToken(1), source.text.lineMap()) &&
+                if (!existsNewLineBetweenTokens(_currentToken, peekToken(1), source.text) &&
                     isPropertyName(peekToken(1), inErrorRecovery)) {
 
                     return false;
@@ -2837,7 +2837,7 @@ module TypeScript.Parser {
                 // as an arithmetic expression.
                 if (isDot) {
                     // A parameter list must follow a generic type argument list.
-                    var diagnostic = new Diagnostic(fileName, source.text.lineMap(), start(token0), width(token0),
+                    var diagnostic = new Diagnostic(fileName, source.text.lineMap(), start(token0, source.text), width(token0),
                         DiagnosticCode.A_parameter_list_must_follow_a_generic_type_argument_list_expected, null);
                     addDiagnostic(diagnostic);
 
@@ -2894,9 +2894,9 @@ module TypeScript.Parser {
             // It's not uncommon for a user to write: "new Type[]".  Check for that common pattern
             // and report a better error message.
             if (inObjectCreation && currentToken().kind() === SyntaxKind.CloseBracketToken) {
-                var start = TypeScript.start(openBracketToken);
-                var end = TypeScript.end(currentToken());
-                var diagnostic = new Diagnostic(fileName, source.text.lineMap(), start, end - start,
+                var errorStart = start(openBracketToken, source.text);
+                var errorEnd = end(currentToken(), source.text);
+                var diagnostic = new Diagnostic(fileName, source.text.lineMap(), errorStart, errorEnd - errorStart,
                     DiagnosticCode.new_T_cannot_be_used_to_create_an_array_Use_new_Array_T_instead, null);
                 addDiagnostic(diagnostic);
 
@@ -3958,7 +3958,7 @@ module TypeScript.Parser {
             var token = currentToken();
 
             var diagnostic = new Diagnostic(fileName, source.text.lineMap(),
-                start(token), width(token), DiagnosticCode.Unexpected_token_0_expected, [getExpectedListElementType(listType)]);
+                start(token, source.text), width(token), DiagnosticCode.Unexpected_token_0_expected, [getExpectedListElementType(listType)]);
             addDiagnostic(diagnostic);
         }
 
