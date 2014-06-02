@@ -1064,7 +1064,7 @@ module TypeScript {
 
         private typeCheckSourceUnit(sourceUnit: SourceUnitSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(sourceUnit, context);
-            this.checkFunctionOverloadChain(sourceUnit, sourceUnit.moduleElements);
+            this.checkFunctionOverloadChains(sourceUnit, sourceUnit.moduleElements);
 
             this.resolveAST(sourceUnit.moduleElements, /*isContextuallyTyped:*/ false, context);
 
@@ -1258,7 +1258,7 @@ module TypeScript {
             }
             else {
                 if (!SyntaxUtilities.containsToken(ast.modifiers, SyntaxKind.DeclareKeyword)) {
-                    this.checkFunctionOverloadChain(ast, ast.moduleElements);
+                    this.checkFunctionOverloadChains(ast, ast.moduleElements);
                 }
 
                 var moduleNames = ASTHelpers.getModuleNames(ast.name);
@@ -1648,6 +1648,8 @@ module TypeScript {
 
         private typeCheckClassDeclaration(classDeclAST: ClassDeclarationSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(classDeclAST, context);
+
+            this.checkClassOverloadChains(classDeclAST);
 
             var classDecl: PullDecl = this.semanticInfoChain.getDeclForAST(classDeclAST);
             var classDeclSymbol = <PullTypeSymbol>classDecl.getSymbol(this.semanticInfoChain);
@@ -5253,7 +5255,7 @@ module TypeScript {
             if (this.canTypeCheckAST(ast, context)) {
                 this.setTypeChecked(ast, context);
 
-                this.checkFunctionOverloadChain(ast, ast.statements);
+                this.checkFunctionOverloadChains(ast, ast.statements);
                 this.resolveAST(ast.statements, /*isContextuallyTyped*/ false, context);
             }
 
@@ -13556,7 +13558,7 @@ module TypeScript {
             return instantiatedSignatureOrSignatureWithSubstitution;
         }
 
-        private checkFunctionOverloadChain(parent: ISyntaxNode, moduleElements: IModuleElementSyntax[]): boolean {
+        private checkFunctionOverloadChains(parent: ISyntaxNode, moduleElements: IModuleElementSyntax[]): void {
             var decl = this.getEnclosingDeclForAST(parent);
             if (!hasFlag(decl.flags, PullElementFlags.Ambient)) {
                 var inFunctionOverloadChain = false;
@@ -13569,14 +13571,14 @@ module TypeScript {
                     if (inFunctionOverloadChain) {
                         if (moduleElement.kind() !== SyntaxKind.FunctionDeclaration) {
                             this.semanticInfoChain.addDiagnosticFromAST(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
-                            return true;
+                            return;
                         }
 
                         var functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
                         if (tokenValueText(functionDeclaration.identifier) !== functionOverloadChainName) {
                             this.semanticInfoChain.addDiagnosticFromAST(functionDeclaration.identifier,
                                 DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
-                            return true;
+                            return;
                         }
                     }
 
@@ -13589,7 +13591,7 @@ module TypeScript {
                             if (inFunctionOverloadChain) {
                                 if (lastElement) {
                                     this.semanticInfoChain.addDiagnosticFromAST(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
-                                    return true;
+                                    return;
                                 }
                                 else {
                                     // We're a function without a body, and there's another element 
@@ -13604,7 +13606,7 @@ module TypeScript {
                                             nextFunction.block === null) {
 
                                             this.semanticInfoChain.addDiagnosticFromAST(functionDeclaration.identifier, DiagnosticCode.Function_implementation_expected);
-                                            return true;
+                                            return;
                                         }
                                     }
                                 }
@@ -13617,8 +13619,92 @@ module TypeScript {
                     }
                 }
             }
+        }
 
-            return false;
+        private checkClassOverloadChains(node: ClassDeclarationSyntax): void {
+            var decl = this.getEnclosingDeclForAST(node);
+            if (!hasFlag(decl.flags, PullElementFlags.Ambient) && !SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword)) {
+                var inFunctionOverloadChain = false;
+                var inConstructorOverloadChain = false;
+
+                var functionOverloadChainName: string = null;
+                var isInStaticOverloadChain: boolean = null;
+                var memberFunctionDeclaration: MemberFunctionDeclarationSyntax = null;
+
+                for (var i = 0, n = node.classElements.length; i < n; i++) {
+                    var classElement = node.classElements[i];
+                    var lastElement = i === (n - 1);
+                    var isStaticOverload: boolean = null;
+
+                    if (inFunctionOverloadChain) {
+                        if (classElement.kind() !== SyntaxKind.MemberFunctionDeclaration) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
+                            return;
+                        }
+
+                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
+                        if (tokenValueText(memberFunctionDeclaration.propertyName) !== functionOverloadChainName) {
+                            this.semanticInfoChain.addDiagnosticFromAST(memberFunctionDeclaration.propertyName,
+                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
+                            return;
+                        }
+
+                        isStaticOverload = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
+                        if (isStaticOverload !== isInStaticOverloadChain) {
+                            var diagnostic = isInStaticOverloadChain ? DiagnosticCode.Function_overload_must_be_static : DiagnosticCode.Function_overload_must_not_be_static;
+                            this.semanticInfoChain.addDiagnosticFromAST(memberFunctionDeclaration.propertyName, diagnostic);
+                            return;
+                        }
+                    }
+                    else if (inConstructorOverloadChain) {
+                        if (classElement.kind() !== SyntaxKind.ConstructorDeclaration) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
+                            return;
+                        }
+                    }
+
+                    if (classElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
+                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
+
+                        inFunctionOverloadChain = memberFunctionDeclaration.block === null;
+                        functionOverloadChainName = tokenValueText(memberFunctionDeclaration.propertyName);
+                        isInStaticOverloadChain = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
+
+                        if (inFunctionOverloadChain) {
+                            if (lastElement) {
+                                this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
+                                return;
+                            }
+                            else {
+                                // We're a function without a body, and there's another element 
+                                // after us.  If it's another overload that doesn't have a body,
+                                // then report an error that we're missing an implementation here.
+
+                                var nextElement = childAt(node.classElements, i + 1);
+                                if (nextElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
+                                    var nextMemberFunction = <MemberFunctionDeclarationSyntax>nextElement;
+
+                                    if (tokenValueText(nextMemberFunction.propertyName) !== functionOverloadChainName &&
+                                        nextMemberFunction.block === null) {
+
+                                        this.semanticInfoChain.addDiagnosticFromAST(memberFunctionDeclaration.propertyName, DiagnosticCode.Function_implementation_expected);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (classElement.kind() === SyntaxKind.ConstructorDeclaration) {
+                        var constructorDeclaration = <ConstructorDeclarationSyntax>classElement;
+
+                        inConstructorOverloadChain = constructorDeclaration.block === null;
+                        if (lastElement && inConstructorOverloadChain) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
+                            return;
+                        }
+                    }
+                }
+            }
         }
     }
 

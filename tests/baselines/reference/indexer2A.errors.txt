@@ -1,4 +1,4 @@
-==== tests/cases/compiler/indexer2A.ts (4 errors) ====
+==== tests/cases/compiler/indexer2A.ts (5 errors) ====
     class IHeapObjectProperty { }
     class IDirectChildrenMap {
         // Decided to enforce a semicolon after declarations
@@ -12,5 +12,7 @@
 !!! indexer2A.ts(5,23): error TS1008: Unexpected token; 'constructor, function, accessor or variable' expected.
                                                ~
 !!! indexer2A.ts(5,44): error TS1005: '=' expected.
+         ~~~~~~~~
+!!! indexer2A.ts(5,6): error TS2238: Function implementation expected.
     }
     var directChildrenMap = <IDirectChildrenMap>{}; 

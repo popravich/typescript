@@ -466,93 +466,6 @@ module TypeScript {
             }
         }
 
-        private checkClassOverloads(node: ClassDeclarationSyntax): boolean {
-            if (!this.inAmbientDeclaration && !SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword)) {
-                var inFunctionOverloadChain = false;
-                var inConstructorOverloadChain = false;
-
-                var functionOverloadChainName: string = null;
-                var isInStaticOverloadChain: boolean = null;
-                var memberFunctionDeclaration: MemberFunctionDeclarationSyntax = null;
-
-                for (var i = 0, n = node.classElements.length; i < n; i++) {
-                    var classElement = node.classElements[i];
-                    var lastElement = i === (n - 1);
-                    var isStaticOverload: boolean = null;
-
-                    if (inFunctionOverloadChain) {
-                        if (classElement.kind() !== SyntaxKind.MemberFunctionDeclaration) {
-                            this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
-                            return true;
-                        }
-
-                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
-                        if (tokenValueText(memberFunctionDeclaration.propertyName) !== functionOverloadChainName) {
-                            this.pushDiagnostic(memberFunctionDeclaration.propertyName,
-                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
-                            return true;
-                        }
-
-                        isStaticOverload = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
-                        if (isStaticOverload !== isInStaticOverloadChain) {
-                            var diagnostic = isInStaticOverloadChain ? DiagnosticCode.Function_overload_must_be_static : DiagnosticCode.Function_overload_must_not_be_static;
-                            this.pushDiagnostic(memberFunctionDeclaration.propertyName, diagnostic);
-                            return true;
-                        }
-                    }
-                    else if (inConstructorOverloadChain) {
-                        if (classElement.kind() !== SyntaxKind.ConstructorDeclaration) {
-                            this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
-                            return true;
-                        }
-                    }
-
-                    if (classElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
-                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
-
-                        inFunctionOverloadChain = memberFunctionDeclaration.block === null;
-                        functionOverloadChainName = tokenValueText(memberFunctionDeclaration.propertyName);
-                        isInStaticOverloadChain = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
-
-                        if (inFunctionOverloadChain) {
-                            if (lastElement) {
-                                this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
-                                return true;
-                            }
-                            else {
-                                // We're a function without a body, and there's another element 
-                                // after us.  If it's another overload that doesn't have a body,
-                                // then report an error that we're missing an implementation here.
-
-                                var nextElement = childAt(node.classElements, i + 1);
-                            if (nextElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
-                                    var nextMemberFunction = <MemberFunctionDeclarationSyntax>nextElement;
-
-                                    if (tokenValueText(nextMemberFunction.propertyName) !== functionOverloadChainName &&
-                                        nextMemberFunction.block === null) {
-
-                                        this.pushDiagnostic(memberFunctionDeclaration.propertyName, DiagnosticCode.Function_implementation_expected);
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (classElement.kind() === SyntaxKind.ConstructorDeclaration) {
-                        var constructorDeclaration = <ConstructorDeclarationSyntax>classElement;
-
-                        inConstructorOverloadChain = constructorDeclaration.block === null;
-                        if (lastElement && inConstructorOverloadChain) {
-                            this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
         private checkForReservedName(parent: ISyntaxElement, name: ISyntaxToken, diagnosticKey: string): boolean {
             switch (tokenValueText(name)) {
                 case "any":
@@ -572,8 +485,7 @@ module TypeScript {
                 this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
-                this.checkClassDeclarationHeritageClauses(node) ||
-                this.checkClassOverloads(node)) {
+                this.checkClassDeclarationHeritageClauses(node)) {
 
                 return;
             }
