@@ -1064,6 +1064,7 @@ module TypeScript {
 
         private typeCheckSourceUnit(sourceUnit: SourceUnitSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(sourceUnit, context);
+            this.checkForMultipleExportAssignments(sourceUnit.moduleElements);
             this.checkFunctionOverloadChains(sourceUnit, sourceUnit.moduleElements);
 
             this.resolveAST(sourceUnit.moduleElements, /*isContextuallyTyped:*/ false, context);
@@ -1255,6 +1256,8 @@ module TypeScript {
         }
 
         private typeCheckModuleDeclaration(ast: ModuleDeclarationSyntax, context: PullTypeResolutionContext): void {
+            this.checkForMultipleExportAssignments(ast.moduleElements);
+
             if (ast.stringLiteral) {
                 this.typeCheckSingleModuleDeclaration(ast, ast.stringLiteral, context);
             }
@@ -13712,7 +13715,7 @@ module TypeScript {
             }
         }
 
-        private checkForReservedName(parent: ISyntaxElement, name: ISyntaxToken, diagnosticKey: string): boolean {
+        private checkForReservedName(parent: ISyntaxElement, name: ISyntaxToken, diagnosticKey: string): void {
             switch (tokenValueText(name)) {
                 case "any":
                 case "number":
@@ -13720,10 +13723,20 @@ module TypeScript {
                 case "string":
                 case "void":
                     this.semanticInfoChain.addDiagnosticFromAST(name, diagnosticKey, [tokenValueText(name)]);
-                    return true;
             }
+        }
 
-            return false;
+        private checkForMultipleExportAssignments(moduleElements: IModuleElementSyntax[]): void {
+            var seenExportAssignment = false;
+            for (var i = 0, n = moduleElements.length; i < n; i++) {
+                var child = moduleElements[i];
+                if (child.kind() === SyntaxKind.ExportAssignment) {
+                    if (seenExportAssignment) {
+                        this.semanticInfoChain.addDiagnosticFromAST(child, DiagnosticCode.A_module_cannot_have_multiple_export_assignments);
+                    }
+                    seenExportAssignment = true;
+                }
+            }
         }
     }
 

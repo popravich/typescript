@@ -861,8 +861,7 @@ module TypeScript {
                 this.checkForRequiredDeclareModifier(node, node.stringLiteral ? node.stringLiteral : firstToken(node.name), node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
                 this.checkForDisallowedImportDeclaration(node) ||
-                this.checkForDisallowedExports(node, node.moduleElements) ||
-                this.checkForMultipleExportAssignments(node, node.moduleElements)) {
+                this.checkForDisallowedExports(node, node.moduleElements)) {
 
                 return;
             }
@@ -910,23 +909,6 @@ module TypeScript {
             }
 
             return false;
-        }
-
-        private checkForMultipleExportAssignments(node: ISyntaxElement, moduleElements: IModuleElementSyntax[]): boolean {
-            var seenExportAssignment = false;
-            var errorFound = false;
-            for (var i = 0, n = moduleElements.length; i < n; i++) {
-                var child = moduleElements[i];
-                if (child.kind() === SyntaxKind.ExportAssignment) {
-                    if (seenExportAssignment) {
-                        this.pushDiagnostic(child, DiagnosticCode.A_module_cannot_have_multiple_export_assignments);
-                        errorFound = true;
-                    }
-                    seenExportAssignment = true;
-                }
-            }
-
-            return errorFound;
         }
 
         private checkForDisallowedExportAssignment(node: ModuleDeclarationSyntax): boolean {
@@ -1249,9 +1231,7 @@ module TypeScript {
         }
 
         public visitSourceUnit(node: SourceUnitSyntax): void {
-            if (this.checkForDisallowedExports(node, node.moduleElements) ||
-                this.checkForMultipleExportAssignments(node, node.moduleElements)) {
-                
+            if (this.checkForDisallowedExports(node, node.moduleElements)) {
                 return;
             }
 

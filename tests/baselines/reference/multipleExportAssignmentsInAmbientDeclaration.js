@@ -1,0 +1,1 @@
+//// [multipleExportAssignmentsInAmbientDeclaration.js]
