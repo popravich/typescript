@@ -1159,6 +1159,32 @@ module TypeScript {
             super.visitBinaryExpression(node);
         }
 
+        public visitPrefixUnaryExpression(node: PrefixUnaryExpressionSyntax): void {
+            if (parsedInStrictMode(node) && this.isPreIncrementOrDecrementExpression(node) && this.isEvalOrArguments(node.operand)) {
+                this.pushDiagnostic(node.operatorToken, DiagnosticCode.Invalid_use_of_0_in_strict_mode, [this.getEvalOrArguments(node.operand)]);
+            }
+
+            super.visitPrefixUnaryExpression(node);
+        }
+
+        public visitPostfixUnaryExpression(node: PostfixUnaryExpressionSyntax): void {
+            if (parsedInStrictMode(node) && this.isEvalOrArguments(node.operand)) {
+                this.pushDiagnostic(node.operatorToken, DiagnosticCode.Invalid_use_of_0_in_strict_mode, [this.getEvalOrArguments(node.operand)]);
+            }
+
+            super.visitPostfixUnaryExpression(node);
+        }
+
+        private isPreIncrementOrDecrementExpression(node: PrefixUnaryExpressionSyntax) {
+            switch (node.kind()) {
+                case SyntaxKind.PreDecrementExpression:
+                case SyntaxKind.PreIncrementExpression:
+                    return true;
+            }
+
+            return false;
+        }
+
         private isIllegalAssignment(node: BinaryExpressionSyntax): boolean {
             if (parsedInStrictMode(node) && SyntaxFacts.isAssignmentOperatorToken(node.operatorToken.kind()) && this.isEvalOrArguments(node.left)) {
                 this.pushDiagnostic(node.operatorToken, DiagnosticCode.Invalid_use_of_0_in_strict_mode, [this.getEvalOrArguments(node.left)]);
