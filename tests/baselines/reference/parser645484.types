@@ -1,0 +1,7 @@
+=== tests/cases/compiler/parser645484.ts ===
+var c : {
+>c : { new?(): any; }
+
+    new?(): any;
+>new : () => any
+}

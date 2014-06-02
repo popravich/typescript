@@ -1,0 +1,10 @@
+=== tests/cases/compiler/parserInterfaceKeywordInEnum1.ts ===
+"use strict";
+
+enum Bar {
+>Bar : Bar
+
+    interface,
+>interface : Bar
+}
+

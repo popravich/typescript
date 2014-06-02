@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserInterfaceDeclaration1.ts (2 errors) ====
+    interface I extends A extends B {
+                          ~~~~~~~~~
+!!! parserInterfaceDeclaration1.ts(1,23): error TS1024: 'extends' clause already seen.
+                        ~
+!!! parserInterfaceDeclaration1.ts(1,21): error TS2095: Cannot find name 'A'.
+    }

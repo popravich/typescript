@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserNoASIOnCallAfterFunctionExpression1.ts (3 errors) ====
+    var x = function () { }
+            ~~~~~~~~~~~~~~~
+!!! parserNoASIOnCallAfterFunctionExpression1.ts(1,9): error TS2081: Supplied parameters do not match any signature of call target.
+            ~~~~~~~~~~~~~~~
+!!! parserNoASIOnCallAfterFunctionExpression1.ts(1,9): error TS2087: Could not select overload for 'call' expression.
+    (<any>window).foo;
+          ~~~~~~
+!!! parserNoASIOnCallAfterFunctionExpression1.ts(2,7): error TS2095: Cannot find name 'window'.
+    

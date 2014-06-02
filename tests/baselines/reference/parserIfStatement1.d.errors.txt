@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserIfStatement1.d.ts (2 errors) ====
+    if (foo) {
+    ~~
+!!! parserIfStatement1.d.ts(1,1): error TS1036: Statements are not allowed in ambient contexts.
+        ~~~
+!!! parserIfStatement1.d.ts(1,5): error TS2095: Cannot find name 'foo'.
+    }

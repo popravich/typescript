@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parserCommaInTypeMemberList2.ts (3 errors) ====
+    var s = $.extend< { workItem: any }, { workItem: any, width: string }>({ workItem: this._workItem }, {});
+                                                        ~
+!!! parserCommaInTypeMemberList2.ts(1,53): error TS1005: ';' expected.
+            ~
+!!! parserCommaInTypeMemberList2.ts(1,9): error TS2095: Cannot find name '$'.
+              ~~~~~~
+!!! parserCommaInTypeMemberList2.ts(1,11): error TS2158: Untyped function calls may not accept type arguments.
+    

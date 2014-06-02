@@ -1,0 +1,7 @@
+=== tests/cases/compiler/parserMethodSignature2.ts ===
+interface I {
+>I : I
+
+  B?();
+>B : () => any
+}

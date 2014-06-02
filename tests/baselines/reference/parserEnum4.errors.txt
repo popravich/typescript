@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserEnum4.ts (1 errors) ====
+    
+    
+        export enum SignatureFlags {
+            ,
+            ~
+!!! parserEnum4.ts(4,9): error TS1008: Unexpected token; 'identifier' expected.
+        }

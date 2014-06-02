@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parser645086_1.ts (3 errors) ====
+    var v = /[]/]/
+                ~
+!!! parser645086_1.ts(1,13): error TS1005: ',' expected.
+                 ~
+!!! parser645086_1.ts(1,14): error TS1008: Unexpected token; 'identifier' expected.
+                  
+!!! parser645086_1.ts(1,15): error TS1003: Identifier expected.

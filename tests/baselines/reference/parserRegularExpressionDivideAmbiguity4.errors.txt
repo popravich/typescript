@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserRegularExpressionDivideAmbiguity4.ts (3 errors) ====
+    foo(/notregexp);
+        ~
+!!! parserRegularExpressionDivideAmbiguity4.ts(1,5): error TS1003: Identifier expected.
+    ~~~
+!!! parserRegularExpressionDivideAmbiguity4.ts(1,1): error TS2095: Cannot find name 'foo'.
+         ~~~~~~~~~
+!!! parserRegularExpressionDivideAmbiguity4.ts(1,6): error TS2095: Cannot find name 'notregexp'.

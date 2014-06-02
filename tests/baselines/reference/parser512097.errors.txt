@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parser512097.ts (2 errors) ====
+    var tt = { aa; } // After this point, no useful parsing occurs in the entire file
+                 ~
+!!! parser512097.ts(1,14): error TS1005: ':' expected.
+                   ~
+!!! parser512097.ts(1,16): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+    
+    if (true) {
+    }

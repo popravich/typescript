@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserWhileStatement1.d.ts (2 errors) ====
+    while (e) {
+    ~~~~~
+!!! parserWhileStatement1.d.ts(1,1): error TS1036: Statements are not allowed in ambient contexts.
+           ~
+!!! parserWhileStatement1.d.ts(1,8): error TS2095: Cannot find name 'e'.
+    }

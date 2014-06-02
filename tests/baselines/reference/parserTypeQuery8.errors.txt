@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserTypeQuery8.ts (4 errors) ====
+    var v: typeof A<B>
+                   ~
+!!! parserTypeQuery8.ts(1,16): error TS1005: '=' expected.
+                      
+!!! parserTypeQuery8.ts(1,19): error TS1003: Identifier expected.
+                  ~
+!!! parserTypeQuery8.ts(1,15): error TS2095: Cannot find name 'A'.
+                    ~
+!!! parserTypeQuery8.ts(1,17): error TS2095: Cannot find name 'B'.

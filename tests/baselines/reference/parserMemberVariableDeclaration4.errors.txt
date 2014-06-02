@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserMemberVariableDeclaration4.ts (1 errors) ====
+    class C {
+      export Foo;
+      ~~~~~~
+!!! parserMemberVariableDeclaration4.ts(2,3): error TS1031: 'export' modifier cannot appear on a class element.
+    }

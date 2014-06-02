@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserForInStatement7.ts (2 errors) ====
+    for (var a: number = 1, b: string = "" in X) {
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!!! parserForInStatement7.ts(1,6): error TS1091: Only a single variable declaration is allowed in a 'for...in' statement.
+                                              ~
+!!! parserForInStatement7.ts(1,43): error TS2095: Cannot find name 'X'.
+    }

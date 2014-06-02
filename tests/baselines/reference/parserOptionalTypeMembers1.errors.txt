@@ -1,0 +1,17 @@
+==== tests/cases/compiler/parserOptionalTypeMembers1.ts (4 errors) ====
+    interface PropertyDescriptor {
+        configurable?: boolean;
+        ~~~~~~~~~~~~
+!!! parserOptionalTypeMembers1.ts(2,5): error TS2000: Duplicate identifier 'configurable'.
+        enumerable?: boolean;
+        ~~~~~~~~~~
+!!! parserOptionalTypeMembers1.ts(3,5): error TS2000: Duplicate identifier 'enumerable'.
+        value?: any;
+        ~~~~~
+!!! parserOptionalTypeMembers1.ts(4,5): error TS2000: Duplicate identifier 'value'.
+        writable?: boolean;
+        ~~~~~~~~
+!!! parserOptionalTypeMembers1.ts(5,5): error TS2000: Duplicate identifier 'writable'.
+        get?(): any;
+        set?(v: any): void;
+    }

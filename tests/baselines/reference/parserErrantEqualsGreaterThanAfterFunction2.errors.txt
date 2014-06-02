@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserErrantEqualsGreaterThanAfterFunction2.ts (4 errors) ====
+    function f(p: A) => p;
+                     ~~
+!!! parserErrantEqualsGreaterThanAfterFunction2.ts(1,18): error TS1008: Unexpected token; '{' expected.
+                        ~
+!!! parserErrantEqualsGreaterThanAfterFunction2.ts(1,21): error TS1005: '{' expected.
+                          
+!!! parserErrantEqualsGreaterThanAfterFunction2.ts(1,23): error TS1005: '}' expected.
+                  ~
+!!! parserErrantEqualsGreaterThanAfterFunction2.ts(1,15): error TS2095: Cannot find name 'A'.

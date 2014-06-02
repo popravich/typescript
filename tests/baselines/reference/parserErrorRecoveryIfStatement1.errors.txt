@@ -1,0 +1,12 @@
+==== tests/cases/compiler/parserErrorRecoveryIfStatement1.ts (1 errors) ====
+    class Foo {
+      f1() {
+        if (
+      }
+      ~
+!!! parserErrorRecoveryIfStatement1.ts(4,3): error TS1003: Identifier expected.
+      f2() {
+      }
+      f3() {
+      }
+    }

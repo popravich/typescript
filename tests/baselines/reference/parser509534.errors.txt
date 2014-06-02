@@ -1,0 +1,17 @@
+==== tests/cases/compiler/parser509534.ts (2 errors) ====
+    "use strict";
+    var config = require("../config");
+                 ~~~~~~~
+!!! parser509534.ts(2,14): error TS2095: Cannot find name 'require'.
+    module.exports.route = function (server) {
+    ~~~~~~
+!!! parser509534.ts(3,1): error TS2095: Cannot find name 'module'.
+     
+     // General Login Page
+     server.get(config.env.siteRoot + "/auth/login", function (req, res, next) {
+      
+      // TODO Should render login page that shows auth options
+      req.redirect("/auth/live");
+     });
+    }
+    

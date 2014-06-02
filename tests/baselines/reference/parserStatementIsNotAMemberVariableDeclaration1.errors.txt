@@ -1,0 +1,13 @@
+==== tests/cases/compiler/parserStatementIsNotAMemberVariableDeclaration1.ts (1 errors) ====
+    return {
+    
+      "set": function (key, value) {
+    
+        // 'private' should not be considered a member variable here.
+        private[key] = value;
+        ~~~~~~~
+!!! parserStatementIsNotAMemberVariableDeclaration1.ts(6,5): error TS2095: Cannot find name 'private'.
+    
+      }
+    
+    };

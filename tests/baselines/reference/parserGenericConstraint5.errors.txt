@@ -1,0 +1,5 @@
+==== tests/cases/compiler/parserGenericConstraint5.ts (1 errors) ====
+    class C<T extends List<List<T>> > {
+                      ~~~~
+!!! parserGenericConstraint5.ts(1,19): error TS2095: Cannot find name 'List'.
+    }

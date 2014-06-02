@@ -1,0 +1,4 @@
+==== tests/cases/compiler/parserAccessors3.ts (1 errors) ====
+    var v = { get Foo() { } };
+                  ~~~
+!!! parserAccessors3.ts(1,15): error TS2126: Getters must return a value.

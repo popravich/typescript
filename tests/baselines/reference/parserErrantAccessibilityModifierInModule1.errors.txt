@@ -1,0 +1,12 @@
+==== tests/cases/compiler/parserErrantAccessibilityModifierInModule1.ts (3 errors) ====
+    module M {
+        var x=10;  // variable local to this module body
+        private y=x;  // property visible only in module
+        ~~~~~~~
+!!! parserErrantAccessibilityModifierInModule1.ts(3,5): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+                ~
+!!! parserErrantAccessibilityModifierInModule1.ts(3,13): error TS2095: Cannot find name 'y'.
+        export var z=y;  // property visible to any code
+                     ~
+!!! parserErrantAccessibilityModifierInModule1.ts(4,18): error TS2095: Cannot find name 'y'.
+    }

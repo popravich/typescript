@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserParameterList16.ts (2 errors) ====
+    class C {
+       foo(a = 4);
+       ~~~~~~~~~~~
+!!! parserParameterList16.ts(2,4): error TS2149: Overload signature is not compatible with function definition:
+!!! 	Call signature expects 1 or fewer parameters.
+           ~~~~~
+!!! parserParameterList16.ts(2,8): error TS2174: A parameter initializer is only allowed in a function or constructor implementation.
+       foo(a, b) { }
+    }

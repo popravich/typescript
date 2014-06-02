@@ -1,0 +1,8 @@
+=== tests/cases/compiler/parserAccessors2.ts ===
+class C {
+>C : C
+
+    set Foo(a) { }
+>Foo : any
+>a : any
+}

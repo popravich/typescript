@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parser585151.ts (2 errors) ====
+    class Foo2 {
+      var icecream = "chocolate";
+      ~~~
+!!! parser585151.ts(2,3): error TS1008: Unexpected token; 'constructor, function, accessor or variable' expected.
+    }
+    ~
+!!! parser585151.ts(3,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+    

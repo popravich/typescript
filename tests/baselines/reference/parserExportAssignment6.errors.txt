@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserExportAssignment6.ts (1 errors) ====
+    declare module "M" {
+        export = A;
+        ~~~~~~~~~~~
+!!! parserExportAssignment6.ts(2,5): error TS2095: Cannot find name 'A'.
+    }

@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserSkippedTokens20.ts (4 errors) ====
+    var v: X<T \
+               ~
+!!! parserSkippedTokens20.ts(1,12): error TS1001: Unexpected character "\".
+               ~
+!!! parserSkippedTokens20.ts(1,12): error TS1005: ',' expected.
+                
+!!! parserSkippedTokens20.ts(1,13): error TS1005: '>' expected.
+           ~
+!!! parserSkippedTokens20.ts(1,8): error TS2095: Cannot find name 'X'.

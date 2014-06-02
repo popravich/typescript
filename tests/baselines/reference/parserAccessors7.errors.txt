@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserAccessors7.ts (2 errors) ====
+    var v = { get foo(v: number) { } };
+                  ~~~
+!!! parserAccessors7.ts(1,15): error TS1054: 'get' accessor cannot have parameters.
+                  ~~~
+!!! parserAccessors7.ts(1,15): error TS2126: Getters must return a value.

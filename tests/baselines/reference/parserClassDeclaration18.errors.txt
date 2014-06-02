@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserClassDeclaration18.ts (1 errors) ====
+    declare class FooBase {
+        constructor(s: string);
+        constructor(n: number);
+        constructor(x: any) {
+                            ~
+!!! parserClassDeclaration18.ts(4,25): error TS1037: A function implementation cannot be declared in an ambient context.
+        }
+        bar1():void;
+    }

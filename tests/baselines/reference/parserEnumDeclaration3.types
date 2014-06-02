@@ -1,0 +1,7 @@
+=== tests/cases/compiler/parserEnumDeclaration3.ts ===
+declare enum E {
+>E : E
+
+  A = 1
+>A : E
+}

@@ -1,0 +1,10 @@
+=== tests/cases/compiler/scannerEnum1.ts ===
+    export enum CodeGenTarget {
+>CodeGenTarget : CodeGenTarget
+
+        ES3 = 0,
+>ES3 : CodeGenTarget
+
+        ES5 = 1,
+>ES5 : CodeGenTarget
+    }

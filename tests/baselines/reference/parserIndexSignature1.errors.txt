@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserIndexSignature1.ts (1 errors) ====
+    interface I {
+      [...a]
+       ~~~~
+!!! parserIndexSignature1.ts(2,4): error TS1017: Index signatures cannot have rest parameters.
+    }

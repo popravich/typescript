@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserIndexSignature6.ts (1 errors) ====
+    interface I {
+      [a:boolean]
+       ~~~~~~~~~
+!!! parserIndexSignature6.ts(2,4): error TS1023: Index signature parameter type must be 'string' or 'number'.
+    }

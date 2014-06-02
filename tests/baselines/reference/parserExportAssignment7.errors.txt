@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parserExportAssignment7.ts (2 errors) ====
+    export class C {
+    }
+    
+    export = B;
+    ~~~~~~~~~~~
+!!! parserExportAssignment7.ts(4,1): error TS2095: Cannot find name 'B'.
+    ~~~~~~~~~~~
+!!! parserExportAssignment7.ts(4,1): error TS2245: Export assignment not allowed in module with exported element.

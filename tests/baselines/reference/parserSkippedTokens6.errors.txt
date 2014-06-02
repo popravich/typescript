@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserSkippedTokens6.ts (2 errors) ====
+    /*foo*/ \
+            ~
+!!! parserSkippedTokens6.ts(1,9): error TS1001: Unexpected character "\".
+            ~
+!!! parserSkippedTokens6.ts(1,9): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.

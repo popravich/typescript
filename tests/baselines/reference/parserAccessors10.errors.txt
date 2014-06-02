@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserAccessors10.ts (2 errors) ====
+    var v = {
+      public get foo() { }
+      ~~~~~~
+!!! parserAccessors10.ts(2,3): error TS1055: Modifiers cannot appear here.
+                 ~~~
+!!! parserAccessors10.ts(2,14): error TS2126: Getters must return a value.
+    };

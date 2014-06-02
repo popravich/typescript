@@ -1,0 +1,7 @@
+=== tests/cases/compiler/parserAccessors4.ts ===
+var v = { set Foo(a) { } };
+>v : { Foo: any; }
+>{ set Foo(a) { } } : { Foo: any; }
+>Foo : any
+>a : any
+

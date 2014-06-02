@@ -1,0 +1,14 @@
+==== tests/cases/compiler/parserErrorRecoveryIfStatement3.ts (2 errors) ====
+    class Foo {
+      f1() {
+        if (a.b
+            ~
+!!! parserErrorRecoveryIfStatement3.ts(3,9): error TS2095: Cannot find name 'a'.
+      }
+      ~
+!!! parserErrorRecoveryIfStatement3.ts(4,3): error TS1005: ')' expected.
+      f2() {
+      }
+      f3() {
+      }
+    }

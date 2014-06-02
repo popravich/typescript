@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserMemberAccessAfterPostfixExpression1.ts (3 errors) ====
+    a--.toString()
+       ~
+!!! parserMemberAccessAfterPostfixExpression1.ts(1,4): error TS1005: ';' expected.
+    ~
+!!! parserMemberAccessAfterPostfixExpression1.ts(1,1): error TS2095: Cannot find name 'a'.
+        ~~~~~~~~
+!!! parserMemberAccessAfterPostfixExpression1.ts(1,5): error TS2095: Cannot find name 'toString'.

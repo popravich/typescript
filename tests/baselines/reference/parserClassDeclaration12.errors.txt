@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserClassDeclaration12.ts (1 errors) ====
+    class C {
+       constructor();
+       ~~~~~~~~~~~~~~
+!!! parserClassDeclaration12.ts(2,4): error TS2149: Overload signature is not compatible with function definition:
+!!! 	Call signature expects 0 or fewer parameters.
+       constructor(a) { }
+    }

@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserAccessors6.ts (1 errors) ====
+    declare class C {
+      set foo(v) { }
+      ~~~~~~~~~~~~~~
+!!! parserAccessors6.ts(2,3): error TS1086: Accessors are not allowed in ambient contexts.
+    }

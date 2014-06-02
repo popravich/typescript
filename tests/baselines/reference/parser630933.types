@@ -1,0 +1,11 @@
+=== tests/cases/compiler/parser630933.ts ===
+var a = "Hello";
+>a : string
+
+var b = a.match(/\/ver=([^/]+)/);
+>b : string[]
+>a.match(/\/ver=([^/]+)/) : string[]
+>a.match : { (regexp: string): string[]; (regexp: RegExp): string[]; }
+>a : string
+>match : { (regexp: string): string[]; (regexp: RegExp): string[]; }
+

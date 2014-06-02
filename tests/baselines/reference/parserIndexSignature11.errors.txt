@@ -1,0 +1,14 @@
+==== tests/cases/compiler/parserIndexSignature11.ts (4 errors) ====
+    interface I {
+            [p];
+             ~
+!!! parserIndexSignature11.ts(2,10): error TS1022: Index signature parameter must have a type annotation.
+            [p1: string];
+            ~~~~~~~~~~~~
+!!! parserIndexSignature11.ts(3,9): error TS1021: Index signature must have a type annotation.
+            [p2: string, p3: number];
+            ~
+!!! parserIndexSignature11.ts(4,9): error TS1095: Index signature must have exactly one parameter.
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+!!! parserIndexSignature11.ts(4,9): error TS2232: Duplicate string index signature.
+    }

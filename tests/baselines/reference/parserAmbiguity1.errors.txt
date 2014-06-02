@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserAmbiguity1.ts (2 errors) ====
+    f(g<A, B>(7));
+    ~
+!!! parserAmbiguity1.ts(1,1): error TS2095: Cannot find name 'f'.
+      ~
+!!! parserAmbiguity1.ts(1,3): error TS2095: Cannot find name 'g'.

@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserInvalidIdentifiersInVariableStatements1.ts (2 errors) ====
+    var export;
+        ~~~~~~
+!!! parserInvalidIdentifiersInVariableStatements1.ts(1,5): error TS1008: Unexpected token; 'identifier' expected.
+    var foo;
+    var class;
+        ~~~~~
+!!! parserInvalidIdentifiersInVariableStatements1.ts(3,5): error TS1008: Unexpected token; 'identifier' expected.
+    var bar;
+    

@@ -1,0 +1,4 @@
+==== tests/cases/compiler/parserInExpression1.ts (1 errors) ====
+    console.log("a" in { "a": true });
+    ~~~~~~~
+!!! parserInExpression1.ts(1,1): error TS2095: Cannot find name 'console'.

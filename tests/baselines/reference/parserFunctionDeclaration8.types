@@ -1,0 +1,7 @@
+=== tests/cases/compiler/parserFunctionDeclaration8.ts ===
+declare module M {
+>M : M
+
+   function foo();
+>foo : typeof foo
+}

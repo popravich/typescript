@@ -1,0 +1,1 @@
+//// [parserExportAssignment2.js]

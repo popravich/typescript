@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserErrorRecovery_ExtendsOrImplementsClause2.ts (2 errors) ====
+    class C extends A, {
+                     ~
+!!! parserErrorRecovery_ExtendsOrImplementsClause2.ts(1,18): error TS1009: Trailing separator not allowed.
+                    ~
+!!! parserErrorRecovery_ExtendsOrImplementsClause2.ts(1,17): error TS2095: Cannot find name 'A'.
+    }

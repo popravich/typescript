@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserUnfinishedTypeNameBeforeKeyword1.ts (1 errors) ====
+    var x: TypeModule1.
+    module TypeModule2 {
+    ~~~~~~
+!!! parserUnfinishedTypeNameBeforeKeyword1.ts(2,1): error TS1006: Identifier expected; 'module' is a keyword.
+    }
+    

@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parserClassDeclaration4.ts (3 errors) ====
+    class C extends A implements B extends C {
+                                   ~~~~~~~~~
+!!! parserClassDeclaration4.ts(1,32): error TS1024: 'extends' clause already seen.
+                    ~
+!!! parserClassDeclaration4.ts(1,17): error TS2095: Cannot find name 'A'.
+                                 ~
+!!! parserClassDeclaration4.ts(1,30): error TS2095: Cannot find name 'B'.
+    }

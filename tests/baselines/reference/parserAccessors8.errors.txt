@@ -1,0 +1,4 @@
+==== tests/cases/compiler/parserAccessors8.ts (1 errors) ====
+    var v = { set foo() { } }
+                  ~~~
+!!! parserAccessors8.ts(1,15): error TS1049: 'set' accessor must have exactly one parameter.

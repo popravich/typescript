@@ -1,0 +1,13 @@
+==== tests/cases/compiler/parserErrorRecovery_ModuleElement1.ts (4 errors) ====
+    return foo;
+           ~~~
+!!! parserErrorRecovery_ModuleElement1.ts(1,8): error TS2095: Cannot find name 'foo'.
+    }
+    ~
+!!! parserErrorRecovery_ModuleElement1.ts(2,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+    return bar;
+           ~~~
+!!! parserErrorRecovery_ModuleElement1.ts(3,8): error TS2095: Cannot find name 'bar'.
+    }
+    ~
+!!! parserErrorRecovery_ModuleElement1.ts(4,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.

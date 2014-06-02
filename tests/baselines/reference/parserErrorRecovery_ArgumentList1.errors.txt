@@ -1,0 +1,11 @@
+==== tests/cases/compiler/parserErrorRecovery_ArgumentList1.ts (3 errors) ====
+    function foo() {
+       bar(
+       ~~~
+!!! parserErrorRecovery_ArgumentList1.ts(2,4): error TS2095: Cannot find name 'bar'.
+       return x;
+       ~~~~~~
+!!! parserErrorRecovery_ArgumentList1.ts(3,4): error TS1008: Unexpected token; 'expression' expected.
+              ~
+!!! parserErrorRecovery_ArgumentList1.ts(3,11): error TS2095: Cannot find name 'x'.
+    }

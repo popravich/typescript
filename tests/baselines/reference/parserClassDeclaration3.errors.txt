@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parserClassDeclaration3.ts (3 errors) ====
+    class C implements A extends B {
+                         ~~~~~~~~~
+!!! parserClassDeclaration3.ts(1,22): error TS1025: 'extends' clause must precede 'implements' clause.
+                       ~
+!!! parserClassDeclaration3.ts(1,20): error TS2095: Cannot find name 'A'.
+                                 ~
+!!! parserClassDeclaration3.ts(1,30): error TS2095: Cannot find name 'B'.
+    }

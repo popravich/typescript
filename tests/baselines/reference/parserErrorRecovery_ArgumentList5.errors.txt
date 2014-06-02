@@ -1,0 +1,11 @@
+==== tests/cases/compiler/parserErrorRecovery_ArgumentList5.ts (3 errors) ====
+    function foo() {
+       bar(a,)
+            ~
+!!! parserErrorRecovery_ArgumentList5.ts(2,9): error TS1009: Trailing separator not allowed.
+       ~~~
+!!! parserErrorRecovery_ArgumentList5.ts(2,4): error TS2095: Cannot find name 'bar'.
+           ~
+!!! parserErrorRecovery_ArgumentList5.ts(2,8): error TS2095: Cannot find name 'a'.
+       return;
+    }

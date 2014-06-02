@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserConstructorDeclaration9.ts (1 errors) ====
+    class C {
+      constructor<T>() { }
+                 ~~~
+!!! parserConstructorDeclaration9.ts(2,14): error TS1091: Type parameters cannot appear on a constructor declaration.
+    }

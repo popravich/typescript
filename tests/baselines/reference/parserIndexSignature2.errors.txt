@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserIndexSignature2.ts (2 errors) ====
+    interface I {
+      [public a]
+       ~~~~~~~~
+!!! parserIndexSignature2.ts(2,4): error TS1018: Index signature parameter cannot have accessibility modifiers.
+       ~~~~~~
+!!! parserIndexSignature2.ts(2,4): error TS2246: A parameter property is only allowed in a constructor implementation.
+    }

@@ -1,0 +1,8 @@
+=== tests/cases/compiler/parserMemberAccessorDeclaration4.ts ===
+class C {
+>C : C
+
+  set a(i) { }
+>a : any
+>i : any
+}

@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserIndexSignature4.ts (2 errors) ====
+    interface I {
+      [a = 0]
+       ~~~~~
+!!! parserIndexSignature4.ts(2,4): error TS1020: Index signature parameter cannot have an initializer.
+       ~~~~~
+!!! parserIndexSignature4.ts(2,4): error TS2174: A parameter initializer is only allowed in a function or constructor implementation.
+    }
