@@ -1150,6 +1150,37 @@ module TypeScript {
 
             return false;
         }
+
+        public visitBinaryExpression(node: BinaryExpressionSyntax): void {
+            if (this.isIllegalAssignment(node)) {
+                return;
+            }
+
+            super.visitBinaryExpression(node);
+        }
+
+        private isIllegalAssignment(node: BinaryExpressionSyntax): boolean {
+            if (parsedInStrictMode(node) && SyntaxFacts.isAssignmentOperatorToken(node.operatorToken.kind()) && this.isEvalOrArguments(node.left)) {
+                this.pushDiagnostic(node.operatorToken, DiagnosticCode.Invalid_use_of_0_in_strict_mode, [this.getEvalOrArguments(node.left)]);
+            }
+
+            return false;
+        }
+
+        private getEvalOrArguments(expr: IExpressionSyntax): string {
+            if (expr.kind() === SyntaxKind.IdentifierName) {
+                var text = tokenValueText(<ISyntaxToken>expr);
+                if (text === "eval" || text === "arguments") {
+                    return text;
+                }
+            }
+
+            return null;
+        }
+
+        private isEvalOrArguments(expr: IExpressionSyntax): boolean {
+            return this.getEvalOrArguments(expr) !== null;
+        }
     }
 
     function firstSyntaxTreeToken(syntaxTree: SyntaxTree) {

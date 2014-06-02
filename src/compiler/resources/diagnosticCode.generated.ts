@@ -84,6 +84,7 @@ module TypeScript {
         _0_list_cannot_be_empty: "'{0}' list cannot be empty.",
         variable_declaration: "variable declaration",
         type_argument: "type argument",
+        Invalid_use_of_0_in_strict_mode: "Invalid use of '{0}' in strict mode.",
         Duplicate_identifier_0: "Duplicate identifier '{0}'.",
         The_name_0_does_not_exist_in_the_current_scope: "The name '{0}' does not exist in the current scope.",
         The_name_0_does_not_refer_to_a_value: "The name '{0}' does not refer to a value.",

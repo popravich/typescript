@@ -2468,7 +2468,7 @@ module TypeScript.Parser {
                 var operatorToken = currentOperatorToken();
 
                 // Check for recursive assignment expressions.
-                if (isAssignmentOperatorToken(operatorToken.kind())) {
+                if (SyntaxFacts.isAssignmentOperatorToken(operatorToken.kind())) {
                     return new syntaxFactory.BinaryExpressionSyntax(parseNodeData, leftOperand, consumeToken(operatorToken), 
                         tryParseAssignmentExpressionOrHigher(/*force:*/ true, allowIn));
                 }
@@ -2476,27 +2476,6 @@ module TypeScript.Parser {
 
             // It wasn't an assignment or a lambda.  This is a conditional expression:
             return parseConditionalExpressionRest(allowIn, leftOperand);
-        }
-
-        function isAssignmentOperatorToken(tokenKind: SyntaxKind): boolean {
-            switch (tokenKind) {
-                case SyntaxKind.BarEqualsToken:
-                case SyntaxKind.AmpersandEqualsToken:
-                case SyntaxKind.CaretEqualsToken:
-                case SyntaxKind.LessThanLessThanEqualsToken:
-                case SyntaxKind.GreaterThanGreaterThanEqualsToken:
-                case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                case SyntaxKind.PlusEqualsToken:
-                case SyntaxKind.MinusEqualsToken:
-                case SyntaxKind.AsteriskEqualsToken:
-                case SyntaxKind.SlashEqualsToken:
-                case SyntaxKind.PercentEqualsToken:
-                case SyntaxKind.EqualsToken:
-                    return true;
-
-                default:
-                    return false;
-            }
         }
 
         function tryParseAnyArrowFunctionExpression(_currentToken: ISyntaxToken): IExpressionSyntax {
@@ -2573,7 +2552,7 @@ module TypeScript.Parser {
                 // respectively in parseAssignmentExpression and parseExpression.
                 if (!SyntaxFacts.isBinaryExpressionOperatorToken(tokenKind) ||
                     tokenKind === SyntaxKind.CommaToken ||
-                    isAssignmentOperatorToken(tokenKind)) {
+                    SyntaxFacts.isAssignmentOperatorToken(tokenKind)) {
 
                     break;
                 }

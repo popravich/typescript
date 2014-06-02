@@ -85,6 +85,7 @@ module TypeScript {
     "'{0}' list cannot be empty.": { "code": 1096, "category": DiagnosticCategory.Error },
     "variable declaration": { "code": 1097, "category": DiagnosticCategory.NoPrefix },
     "type argument": { "code": 1098, "category": DiagnosticCategory.NoPrefix },
+    "Invalid use of '{0}' in strict mode.": { "code": 1099, "category": DiagnosticCategory.Error },
     "Duplicate identifier '{0}'.": { "code": 2000, "category": DiagnosticCategory.Error },
     "The name '{0}' does not exist in the current scope.": { "code": 2001, "category": DiagnosticCategory.Error },
     "The name '{0}' does not refer to a value.": { "code": 2002, "category": DiagnosticCategory.Error },
