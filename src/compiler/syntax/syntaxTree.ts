@@ -466,7 +466,7 @@ module TypeScript {
             }
         }
 
-        private checkFunctionOverloads(node: ISyntaxElement, moduleElements: IModuleElementSyntax[]): boolean {
+        private checkFunctionOverloads(moduleElements: IModuleElementSyntax[]): boolean {
             if (!this.inAmbientDeclaration && !this.syntaxTree.isDeclaration()) {
                 var inFunctionOverloadChain = false;
                 var functionOverloadChainName: string = null;
@@ -1036,7 +1036,7 @@ module TypeScript {
                 return;
             }
 
-            if (!SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword) && this.checkFunctionOverloads(node, node.moduleElements)) {
+            if (!SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword) && this.checkFunctionOverloads(node.moduleElements)) {
                 return;
             }
 
@@ -1122,7 +1122,7 @@ module TypeScript {
                 return;
             }
 
-            if (this.checkFunctionOverloads(node, node.statements)) {
+            if (this.checkFunctionOverloads(node.statements)) {
                 return;
             }
 
@@ -1426,7 +1426,7 @@ module TypeScript {
         }
 
         public visitSourceUnit(node: SourceUnitSyntax): void {
-            if (this.checkFunctionOverloads(node, node.moduleElements) ||
+            if (this.checkFunctionOverloads(node.moduleElements) ||
                 this.checkForDisallowedExports(node, node.moduleElements) ||
                 this.checkForMultipleExportAssignments(node, node.moduleElements)) {
                 
