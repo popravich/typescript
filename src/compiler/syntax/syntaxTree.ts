@@ -466,23 +466,8 @@ module TypeScript {
             }
         }
 
-        private checkForReservedName(parent: ISyntaxElement, name: ISyntaxToken, diagnosticKey: string): boolean {
-            switch (tokenValueText(name)) {
-                case "any":
-                case "number":
-                case "boolean":
-                case "string":
-                case "void":
-                    this.pushDiagnostic(name, diagnosticKey, [tokenValueText(name)]);
-                    return true;
-            }
-
-            return false;
-        }
-
         public visitClassDeclaration(node: ClassDeclarationSyntax): void {
-            if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Class_name_cannot_be_0) ||
-                this.checkForDisallowedDeclareModifier(node.modifiers) ||
+            if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
                 this.checkClassDeclarationHeritageClauses(node)) {
@@ -537,8 +522,7 @@ module TypeScript {
         }
 
         public visitInterfaceDeclaration(node: InterfaceDeclarationSyntax): void {
-            if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Interface_name_cannot_be_0) ||
-                this.checkInterfaceModifiers(node.modifiers) ||
+            if (this.checkInterfaceModifiers(node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
                 this.checkInterfaceDeclarationHeritageClauses(node)) {
 
@@ -734,8 +718,7 @@ module TypeScript {
         }
 
         public visitEnumDeclaration(node: EnumDeclarationSyntax): void {
-            if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Enum_name_cannot_be_0) ||
-                this.checkForDisallowedDeclareModifier(node.modifiers) ||
+            if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers),
                 this.checkEnumElements(node)) {

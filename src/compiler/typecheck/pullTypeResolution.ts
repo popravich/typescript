@@ -1117,6 +1117,8 @@ module TypeScript {
         private typeCheckEnumDeclaration(ast: EnumDeclarationSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(ast, context);
 
+            this.checkForReservedName(ast, ast.identifier, DiagnosticCode.Enum_name_cannot_be_0);
+
             this.resolveAST(ast.enumElements, false, context);
             var containerDecl = this.semanticInfoChain.getDeclForAST(ast);
             this.validateVariableDeclarationGroups(containerDecl, context);
@@ -1649,6 +1651,7 @@ module TypeScript {
         private typeCheckClassDeclaration(classDeclAST: ClassDeclarationSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(classDeclAST, context);
 
+            this.checkForReservedName(classDeclAST, classDeclAST.identifier, DiagnosticCode.Class_name_cannot_be_0);
             this.checkClassOverloadChains(classDeclAST);
 
             var classDecl: PullDecl = this.semanticInfoChain.getDeclForAST(classDeclAST);
@@ -1711,6 +1714,8 @@ module TypeScript {
 
         private typeCheckInterfaceDeclaration(interfaceDeclAST: InterfaceDeclarationSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(interfaceDeclAST, context);
+
+            this.checkForReservedName(interfaceDeclAST, interfaceDeclAST.identifier, DiagnosticCode.Interface_name_cannot_be_0);
 
             var interfaceDecl = this.semanticInfoChain.getDeclForAST(interfaceDeclAST);
             var interfaceDeclSymbol = <PullTypeSymbol>interfaceDecl.getSymbol(this.semanticInfoChain);
@@ -13705,6 +13710,20 @@ module TypeScript {
                     }
                 }
             }
+        }
+
+        private checkForReservedName(parent: ISyntaxElement, name: ISyntaxToken, diagnosticKey: string): boolean {
+            switch (tokenValueText(name)) {
+                case "any":
+                case "number":
+                case "boolean":
+                case "string":
+                case "void":
+                    this.semanticInfoChain.addDiagnosticFromAST(name, diagnosticKey, [tokenValueText(name)]);
+                    return true;
+            }
+
+            return false;
         }
     }
 

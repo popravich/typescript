@@ -1,0 +1,1 @@
+//// [InterfaceDeclaration8.js]

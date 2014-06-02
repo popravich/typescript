@@ -1,4 +1,4 @@
-//// [primitiveTypeAsClassName.js]
+//// [ClassDeclaration24.js]
 var any = (function () {
     function any() {
     }
