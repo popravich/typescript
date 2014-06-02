@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserStrictMode8.ts (1 errors) ====
+    "use strict";
+    function eval() {
+             ~~~~
+!!! parserStrictMode8.ts(2,10): error TS1099: Invalid use of 'eval' in strict mode.
+    }

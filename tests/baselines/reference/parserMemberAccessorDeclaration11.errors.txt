@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserMemberAccessorDeclaration11.ts (2 errors) ====
+    class C {
+        declare get Foo() { }
+        ~~~~~~~
+!!! parserMemberAccessorDeclaration11.ts(2,5): error TS1031: 'declare' modifier cannot appear on a class element.
+                    ~~~
+!!! parserMemberAccessorDeclaration11.ts(2,17): error TS2126: Getters must return a value.
+    }

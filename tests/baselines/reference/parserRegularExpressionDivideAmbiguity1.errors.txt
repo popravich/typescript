@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserRegularExpressionDivideAmbiguity1.ts (2 errors) ====
+    1
+    /notregexp/a.foo();
+     ~~~~~~~~~
+!!! parserRegularExpressionDivideAmbiguity1.ts(2,2): error TS2095: Cannot find name 'notregexp'.
+               ~
+!!! parserRegularExpressionDivideAmbiguity1.ts(2,12): error TS2095: Cannot find name 'a'.

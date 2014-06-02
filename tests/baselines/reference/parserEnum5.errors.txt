@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserEnum5.ts (3 errors) ====
+    enum E2 { a, }
+    enum E3 { a: 1, }
+               ~
+!!! parserEnum5.ts(2,12): error TS1005: ',' expected.
+    enum E1 { a, b: 1, c, d: 2 = 3 }
+                  ~
+!!! parserEnum5.ts(3,15): error TS1005: ',' expected.
+                           ~
+!!! parserEnum5.ts(3,24): error TS1005: ',' expected.

@@ -1,0 +1,11 @@
+=== tests/cases/compiler/parserModifierOnPropertySignature2.ts ===
+interface Foo{
+>Foo : Foo
+
+    public
+>public : any
+
+    biz;
+>biz : any
+}
+

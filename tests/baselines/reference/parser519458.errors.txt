@@ -1,0 +1,11 @@
+==== tests/cases/compiler/parser519458.ts (4 errors) ====
+    import rect = module("rect"); var bar = new rect.Rect();
+                        ~
+!!! parser519458.ts(1,21): error TS1005: ';' expected.
+    ~~~~~~~~~~~~~~~~~~~~
+!!! parser519458.ts(1,1): error TS2072: Module cannot be aliased to a non-module type.
+                  ~~~~~~
+!!! parser519458.ts(1,15): error TS2179: Unable to resolve module reference 'module'.
+                                                ~~~~
+!!! parser519458.ts(1,45): error TS2095: Cannot find name 'rect'.
+    

@@ -1,0 +1,5 @@
+==== tests/cases/compiler/parserErrorRecovery_ParameterList4.ts (1 errors) ====
+    function f(a,|) {
+                 ~
+!!! parserErrorRecovery_ParameterList4.ts(1,14): error TS1008: Unexpected token; 'parameter' expected.
+    }

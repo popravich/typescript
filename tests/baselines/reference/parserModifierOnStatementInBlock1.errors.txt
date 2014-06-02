@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserModifierOnStatementInBlock1.ts (1 errors) ====
+    export function foo() {
+       export var x = this;
+       ~~~~~~
+!!! parserModifierOnStatementInBlock1.ts(2,4): error TS1055: Modifiers cannot appear here.
+    }
+    

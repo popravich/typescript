@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserErrorRecovery_Block1.ts (1 errors) ====
+    function f() {
+        1 + 
+        return;
+        ~~~~~~
+!!! parserErrorRecovery_Block1.ts(3,5): error TS1006: Identifier expected; 'return' is a keyword.
+    }

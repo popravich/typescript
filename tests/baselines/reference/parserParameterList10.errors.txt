@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserParameterList10.ts (1 errors) ====
+    class C {
+       foo(...bar = 0) { }
+           ~~~~~~~~~~
+!!! parserParameterList10.ts(2,8): error TS1048: A rest parameter cannot have an initializer.
+    }

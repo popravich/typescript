@@ -1,0 +1,8 @@
+=== tests/cases/compiler/parserAccessibilityAfterStatic11.ts ===
+class Outer
+>Outer : Outer
+{
+static public() {}
+>public : () => void
+}
+

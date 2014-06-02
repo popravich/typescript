@@ -1,0 +1,19 @@
+==== tests/cases/compiler/parserMissingLambdaOpenBrace1.ts (5 errors) ====
+    class C {
+        where(filter: Iterator<T, boolean>): Query<T> {
+                      ~~~~~~~~
+!!! parserMissingLambdaOpenBrace1.ts(2,19): error TS2095: Cannot find name 'Iterator'.
+                                             ~~~~~
+!!! parserMissingLambdaOpenBrace1.ts(2,42): error TS2095: Cannot find name 'Query'.
+            return fromDoWhile(test =>
+                   ~~~~~~~~~~~
+!!! parserMissingLambdaOpenBrace1.ts(3,16): error TS2095: Cannot find name 'fromDoWhile'.
+                var index = 0;
+                ~~~
+!!! parserMissingLambdaOpenBrace1.ts(4,13): error TS1005: '{' expected.
+                return this.doWhile((item, i) => filter(item, i) ? test(item, index++) : true);
+                            ~~~~~~~
+!!! parserMissingLambdaOpenBrace1.ts(5,25): error TS2094: Property 'doWhile' does not exist on value of type 'C'.
+            });
+        }
+    }

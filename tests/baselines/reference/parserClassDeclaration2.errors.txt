@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserClassDeclaration2.ts (2 errors) ====
+    class C implements A implements B {
+                         ~~~~~~~~~~~~
+!!! parserClassDeclaration2.ts(1,22): error TS1027: 'implements' clause already seen.
+                       ~
+!!! parserClassDeclaration2.ts(1,20): error TS2095: Cannot find name 'A'.
+    }

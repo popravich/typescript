@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserMemberAccessorDeclaration12.ts (2 errors) ====
+    class C {
+       get Foo(a: number) { }
+           ~~~
+!!! parserMemberAccessorDeclaration12.ts(2,8): error TS1054: 'get' accessor cannot have parameters.
+           ~~~
+!!! parserMemberAccessorDeclaration12.ts(2,8): error TS2126: Getters must return a value.
+    }

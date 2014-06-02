@@ -1,0 +1,5 @@
+==== tests/cases/compiler/parserFunctionDeclaration2.ts (1 errors) ====
+    declare function Foo() {
+                           ~
+!!! parserFunctionDeclaration2.ts(1,24): error TS1037: A function implementation cannot be declared in an ambient context.
+    }

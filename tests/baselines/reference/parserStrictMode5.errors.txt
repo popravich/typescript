@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserStrictMode5.ts (2 errors) ====
+    "use strict";
+    eval += 1;
+         ~~
+!!! parserStrictMode5.ts(2,6): error TS1099: Invalid use of 'eval' in strict mode.
+    ~~~~
+!!! parserStrictMode5.ts(2,1): error TS2111: Invalid '+' expression - types not known to support the addition operator.

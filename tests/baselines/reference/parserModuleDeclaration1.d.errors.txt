@@ -1,0 +1,5 @@
+==== tests/cases/compiler/parserModuleDeclaration1.d.ts (1 errors) ====
+    module "Foo" {
+           ~~~~~
+!!! parserModuleDeclaration1.d.ts(1,8): error TS1046: A 'declare' modifier is required for a top level declaration in a .d.ts file.
+    }

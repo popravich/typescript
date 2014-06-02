@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserWithStatement1.d.ts (2 errors) ====
+    with (foo) {
+    ~~~~
+!!! parserWithStatement1.d.ts(1,1): error TS1036: Statements are not allowed in ambient contexts.
+          ~~~
+!!! parserWithStatement1.d.ts(1,7): error TS2135: All symbols within a with block will be resolved to 'any'.
+    }

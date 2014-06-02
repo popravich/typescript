@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserMemberAccessorDeclaration1.ts (1 errors) ====
+    class C {
+      get a() { }
+          ~
+!!! parserMemberAccessorDeclaration1.ts(2,7): error TS2126: Getters must return a value.
+    }

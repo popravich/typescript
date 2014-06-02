@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parserConstructorDeclaration8.ts (2 errors) ====
+    class C {
+      // Not a constructor
+      public constructor;
+                        ~
+!!! parserConstructorDeclaration8.ts(3,21): error TS1005: '(' expected.
+      ~~~~~~
+!!! parserConstructorDeclaration8.ts(3,3): error TS2240: Constructor implementation expected.
+    }

@@ -1,0 +1,14 @@
+==== tests/cases/compiler/parserVariableDeclaration1.ts (4 errors) ====
+    
+            var selection = a, 
+                      ~
+!!! parserVariableDeclaration1.ts(2,19): error TS2095: Cannot find name 'a'.
+                position = b,
+                  ~
+!!! parserVariableDeclaration1.ts(3,15): error TS2095: Cannot find name 'b'.
+                model = c,
+               ~
+!!! parserVariableDeclaration1.ts(4,12): error TS2095: Cannot find name 'c'.
+                support = d;
+                 ~
+!!! parserVariableDeclaration1.ts(5,14): error TS2095: Cannot find name 'd'.

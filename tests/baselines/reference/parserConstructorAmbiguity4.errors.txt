@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserConstructorAmbiguity4.ts (3 errors) ====
+    new Date<A ? B : C
+             ~
+!!! parserConstructorAmbiguity4.ts(1,10): error TS2095: Cannot find name 'A'.
+                 ~
+!!! parserConstructorAmbiguity4.ts(1,14): error TS2095: Cannot find name 'B'.
+                     ~
+!!! parserConstructorAmbiguity4.ts(1,18): error TS2095: Cannot find name 'C'.

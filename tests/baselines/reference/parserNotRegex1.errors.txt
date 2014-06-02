@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserNotRegex1.ts (1 errors) ====
+      if (a.indexOf(-(4/3)))      // We should not get a regex here becuase of the / in the comment.
+          ~
+!!! parserNotRegex1.ts(1,7): error TS2095: Cannot find name 'a'.
+      {
+        return true;
+      }

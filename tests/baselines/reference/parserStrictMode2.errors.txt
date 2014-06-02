@@ -1,0 +1,16 @@
+==== tests/cases/compiler/parserStrictMode2.ts (5 errors) ====
+    "use strict";
+    foo1();
+    ~~~~
+!!! parserStrictMode2.ts(2,1): error TS2095: Cannot find name 'foo1'.
+    foo1();
+    ~~~~
+!!! parserStrictMode2.ts(3,1): error TS2095: Cannot find name 'foo1'.
+    foo1();
+    ~~~~
+!!! parserStrictMode2.ts(4,1): error TS2095: Cannot find name 'foo1'.
+    static();
+    ~~~~~~
+!!! parserStrictMode2.ts(5,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+           ~
+!!! parserStrictMode2.ts(5,8): error TS1003: Identifier expected.

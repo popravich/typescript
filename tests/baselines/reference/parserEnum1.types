@@ -1,0 +1,20 @@
+=== tests/cases/compiler/parserEnum1.ts ===
+
+
+    export enum SignatureFlags {
+>SignatureFlags : SignatureFlags
+
+        None = 0,
+>None : SignatureFlags
+
+        IsIndexer = 1,
+>IsIndexer : SignatureFlags
+
+        IsStringIndexer = 1 << 1,
+>IsStringIndexer : SignatureFlags
+>1 << 1 : number
+
+        IsNumberIndexer = 1 << 2,
+>IsNumberIndexer : SignatureFlags
+>1 << 2 : number
+    }

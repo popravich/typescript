@@ -1,0 +1,22 @@
+=== tests/cases/compiler/parserModuleDeclaration11.ts ===
+declare module string {
+>string : string
+
+    interface X { }
+>X : X
+
+    export function foo(s: string);
+>foo : typeof foo
+>s : string
+}
+string.foo("abc");
+>string.foo("abc") : any
+>string.foo : typeof string.foo
+>string : typeof string
+>foo : typeof string.foo
+
+var x: string.X;
+>x : string.X
+>string : string
+>X : string.X
+

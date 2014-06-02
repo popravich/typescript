@@ -161,7 +161,10 @@ class TypeWriterWalker extends TypeScript.SyntaxWalker {
     }
 
     public log(node: TypeScript.ISyntaxNodeOrToken) {
-        var pos = this.document.lineMap().getLineAndCharacterFromPosition(TypeScript.fullStart(node));
-        this.results.push({ line: pos.line(), column: pos.character(), syntaxKind: TypeScript.SyntaxKind[node.kind()], identifierName: TypeScript.fullText(node, this.text).trim(), type: this.getTypeOfElement(node) });
+        var _fullStart = TypeScript.fullStart(node);
+        if (_fullStart >= 0) {
+            var pos = this.document.lineMap().getLineAndCharacterFromPosition(_fullStart);
+            this.results.push({ line: pos.line(), column: pos.character(), syntaxKind: TypeScript.SyntaxKind[node.kind()], identifierName: TypeScript.fullText(node, this.text).trim(), type: this.getTypeOfElement(node) });
+        }
     }
 }

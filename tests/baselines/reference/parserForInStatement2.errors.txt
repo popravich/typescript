@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserForInStatement2.ts (2 errors) ====
+    for (var in X) {
+         ~~~
+!!! parserForInStatement2.ts(1,6): error TS1096: 'variable declaration' list cannot be empty.
+                ~
+!!! parserForInStatement2.ts(1,13): error TS2095: Cannot find name 'X'.
+    }

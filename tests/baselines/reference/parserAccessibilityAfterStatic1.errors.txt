@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserAccessibilityAfterStatic1.ts (1 errors) ====
+    class Outer
+    {
+    static public intI: number;
+           ~~~~~~
+!!! parserAccessibilityAfterStatic1.ts(3,8): error TS1029: 'public' modifier must precede 'static' modifier.
+    }
+    

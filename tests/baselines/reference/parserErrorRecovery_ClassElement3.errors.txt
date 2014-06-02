@@ -1,0 +1,14 @@
+==== tests/cases/compiler/parserErrorRecovery_ClassElement3.ts (3 errors) ====
+    module M {
+       |
+       ~
+!!! parserErrorRecovery_ClassElement3.ts(2,4): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+       class C {
+       }
+       |
+       ~
+!!! parserErrorRecovery_ClassElement3.ts(5,4): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+       enum E {
+       }
+        
+!!! parserErrorRecovery_ClassElement3.ts(7,5): error TS1005: '}' expected.

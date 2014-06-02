@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserRegularExpression5.ts (2 errors) ====
+    if (a) / (\\ ? | & ) rct = j / .test(c.href);
+        ~
+!!! parserRegularExpression5.ts(1,5): error TS2095: Cannot find name 'a'.
+                                         ~
+!!! parserRegularExpression5.ts(1,38): error TS2095: Cannot find name 'c'.

@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parser509693.ts (2 errors) ====
+    if (!module.exports) module.exports = "";
+         ~~~~~~
+!!! parser509693.ts(1,6): error TS2095: Cannot find name 'module'.
+                         ~~~~~~
+!!! parser509693.ts(1,22): error TS2095: Cannot find name 'module'.

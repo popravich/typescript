@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parser509630.ts (1 errors) ====
+    class Type {
+        public examples = [ // typing here
+    }
+    ~
+!!! parser509630.ts(3,1): error TS1008: Unexpected token; 'expression' expected.
+    class Any extends Type {
+    }
+    

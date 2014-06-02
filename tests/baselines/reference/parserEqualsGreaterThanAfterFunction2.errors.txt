@@ -1,0 +1,12 @@
+==== tests/cases/compiler/parserEqualsGreaterThanAfterFunction2.ts (5 errors) ====
+    function (a => b;
+             ~
+!!! parserEqualsGreaterThanAfterFunction2.ts(1,10): error TS1003: Identifier expected.
+                ~~
+!!! parserEqualsGreaterThanAfterFunction2.ts(1,13): error TS1005: ')' expected.
+                   ~
+!!! parserEqualsGreaterThanAfterFunction2.ts(1,16): error TS1005: '{' expected.
+                     
+!!! parserEqualsGreaterThanAfterFunction2.ts(1,18): error TS1005: '}' expected.
+                   ~
+!!! parserEqualsGreaterThanAfterFunction2.ts(1,16): error TS2095: Cannot find name 'b'.

@@ -1,0 +1,17 @@
+==== tests/cases/compiler/scannerStringLiterals.ts (2 errors) ====
+    ""
+    " "
+    "a"
+    "'"
+    '"'
+    "\""
+    '\u2192\   '
+    "Legal line continuation \
+    "
+    "Should error because of newline.
+                                     
+    "Should error because of end of file.
+    
+!!! scannerStringLiterals.ts(10,34): error TS1002: Missing close quote character.
+                                         
+!!! scannerStringLiterals.ts(11,38): error TS1002: Missing close quote character.

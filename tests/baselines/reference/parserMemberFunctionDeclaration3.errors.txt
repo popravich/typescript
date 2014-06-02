@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserMemberFunctionDeclaration3.ts (1 errors) ====
+    class C {
+        static public Foo() { }
+               ~~~~~~
+!!! parserMemberFunctionDeclaration3.ts(2,12): error TS1029: 'public' modifier must precede 'static' modifier.
+    }

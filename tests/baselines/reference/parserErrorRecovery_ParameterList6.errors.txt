@@ -1,0 +1,14 @@
+==== tests/cases/compiler/parserErrorRecovery_ParameterList6.ts (5 errors) ====
+    class Foo {
+        public banana (x: break) { }
+                          ~~~~~
+!!! parserErrorRecovery_ParameterList6.ts(2,23): error TS1006: Identifier expected; 'break' is a keyword.
+                               ~
+!!! parserErrorRecovery_ParameterList6.ts(2,28): error TS1005: ';' expected.
+        ~~~~~~
+!!! parserErrorRecovery_ParameterList6.ts(2,5): error TS2238: Function implementation expected.
+                          ~~~~~
+!!! parserErrorRecovery_ParameterList6.ts(2,23): error TS2202: 'break' statement can only be used within an enclosing iteration or switch statement.
+    }
+    ~
+!!! parserErrorRecovery_ParameterList6.ts(3,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.

@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parserStrictMode7.ts (3 errors) ====
+    "use strict";
+    ++eval;
+    ~~
+!!! parserStrictMode7.ts(2,1): error TS1099: Invalid use of 'eval' in strict mode.
+      ~~~~
+!!! parserStrictMode7.ts(2,3): error TS2114: An arithmetic operand must be of type 'any', 'number' or an enum type.
+      ~~~~
+!!! parserStrictMode7.ts(2,3): error TS2139: The operand of an increment or decrement operator must be a variable, property or indexer.

@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserSetAccessorWithTypeAnnotation1.ts (1 errors) ====
+    class C {
+       set foo(v): number {
+                 ~~~~~~~~
+!!! parserSetAccessorWithTypeAnnotation1.ts(2,14): error TS1094: Type annotation cannot appear on a 'set' accessor.
+       }
+    }

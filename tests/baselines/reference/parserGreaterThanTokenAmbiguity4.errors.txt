@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserGreaterThanTokenAmbiguity4.ts (2 errors) ====
+    1 >
+    ~~~
+    > 2;
+    ~
+!!! parserGreaterThanTokenAmbiguity4.ts(2,1): error TS1003: Identifier expected.
+    ~~~
+!!! parserGreaterThanTokenAmbiguity4.ts(1,1): error TS2009: Operator '>' cannot be applied to types 'boolean' and 'number'.

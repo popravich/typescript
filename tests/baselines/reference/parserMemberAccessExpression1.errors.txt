@@ -1,0 +1,22 @@
+==== tests/cases/compiler/parserMemberAccessExpression1.ts (8 errors) ====
+    Foo<T>();
+    ~~~
+!!! parserMemberAccessExpression1.ts(1,1): error TS2095: Cannot find name 'Foo'.
+    Foo.Bar<T>();
+    ~~~
+!!! parserMemberAccessExpression1.ts(2,1): error TS2095: Cannot find name 'Foo'.
+        ~~~
+!!! parserMemberAccessExpression1.ts(2,5): error TS2158: Untyped function calls may not accept type arguments.
+    Foo<T>.Bar();
+          ~
+!!! parserMemberAccessExpression1.ts(3,7): error TS2069: A parameter list must follow a generic type argument list. '(' expected.
+    ~~~
+!!! parserMemberAccessExpression1.ts(3,1): error TS2095: Cannot find name 'Foo'.
+    Foo<T>.Bar<T>();
+          ~
+!!! parserMemberAccessExpression1.ts(4,7): error TS2069: A parameter list must follow a generic type argument list. '(' expected.
+    ~~~
+!!! parserMemberAccessExpression1.ts(4,1): error TS2095: Cannot find name 'Foo'.
+           ~~~
+!!! parserMemberAccessExpression1.ts(4,8): error TS2158: Untyped function calls may not accept type arguments.
+    

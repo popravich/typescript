@@ -1,0 +1,9 @@
+=== tests/cases/compiler/parserClassDeclaration19.ts ===
+class C {
+>C : C
+
+    foo();
+>foo : { (): any; }
+
+    "foo"() { }
+}

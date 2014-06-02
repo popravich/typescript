@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserStrictMode4.ts (2 errors) ====
+    "use strict";
+    arguments = 1;
+              ~
+!!! parserStrictMode4.ts(2,11): error TS1099: Invalid use of 'arguments' in strict mode.
+    ~~~~~~~~~
+!!! parserStrictMode4.ts(2,1): error TS2095: Cannot find name 'arguments'.

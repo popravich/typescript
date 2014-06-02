@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserStrictMode6-negative.ts (2 errors) ====
+    eval++;
+    ~~~~
+!!! parserStrictMode6-negative.ts(1,1): error TS2114: An arithmetic operand must be of type 'any', 'number' or an enum type.
+    ~~~~
+!!! parserStrictMode6-negative.ts(1,1): error TS2139: The operand of an increment or decrement operator must be a variable, property or indexer.

@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserMemberAccessorDeclaration13.ts (1 errors) ====
+    class C {
+       set Foo() { }
+           ~~~
+!!! parserMemberAccessorDeclaration13.ts(2,8): error TS1049: 'set' accessor must have exactly one parameter.
+    }

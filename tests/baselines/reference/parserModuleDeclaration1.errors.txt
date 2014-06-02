@@ -1,0 +1,5 @@
+==== tests/cases/compiler/parserModuleDeclaration1.ts (1 errors) ====
+    module "Foo" {
+           ~~~~~
+!!! parserModuleDeclaration1.ts(1,8): error TS1035: Only ambient modules can use quoted names.
+    }

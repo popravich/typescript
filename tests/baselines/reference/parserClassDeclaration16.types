@@ -1,0 +1,10 @@
+=== tests/cases/compiler/parserClassDeclaration16.ts ===
+class C {
+>C : C
+
+   foo();
+>foo : { (): any; }
+
+   foo() { }
+>foo : { (): any; }
+}

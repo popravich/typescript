@@ -1,0 +1,22 @@
+==== tests/cases/compiler/parserMemberFunctionDeclarationAmbiguities1.ts (4 errors) ====
+    class C {
+      public() {}
+      static() {}
+    
+      public public() {}
+      ~~~~~~~~~~~~~~~~~~
+!!! parserMemberFunctionDeclarationAmbiguities1.ts(5,3): error TS2237: Duplicate function implementation.
+      public static() {}
+      ~~~~~~~~~~~~~~~~~~
+!!! parserMemberFunctionDeclarationAmbiguities1.ts(6,3): error TS2237: Duplicate function implementation.
+    
+      public static public() {}
+      public static static() {}
+      
+      static public() {}
+      ~~~~~~~~~~~~~~~~~~
+!!! parserMemberFunctionDeclarationAmbiguities1.ts(11,3): error TS2237: Duplicate function implementation.
+      static static() {}
+      ~~~~~~~~~~~~~~~~~~
+!!! parserMemberFunctionDeclarationAmbiguities1.ts(12,3): error TS2237: Duplicate function implementation.
+    }

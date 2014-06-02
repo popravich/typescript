@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserSuperExpression3.ts (1 errors) ====
+    class C {
+      M() {
+        this.super<T>(0);
+             ~~~~~
+!!! parserSuperExpression3.ts(3,10): error TS2094: Property 'super' does not exist on value of type 'C'.
+      }
+    }

@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserMemberAccessOffOfGenericType1.ts (2 errors) ====
+    var v = List<number>.makeChild();
+                        ~
+!!! parserMemberAccessOffOfGenericType1.ts(1,21): error TS2069: A parameter list must follow a generic type argument list. '(' expected.
+            ~~~~
+!!! parserMemberAccessOffOfGenericType1.ts(1,9): error TS2095: Cannot find name 'List'.

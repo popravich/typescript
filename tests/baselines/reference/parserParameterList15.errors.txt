@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserParameterList15.ts (2 errors) ====
+    function foo(a = 4);
+    ~~~~~~~~~~~~~~~~~~~~
+!!! parserParameterList15.ts(1,1): error TS2149: Overload signature is not compatible with function definition:
+!!! 	Call signature expects 1 or fewer parameters.
+                 ~~~~~
+!!! parserParameterList15.ts(1,14): error TS2174: A parameter initializer is only allowed in a function or constructor implementation.
+    function foo(a, b) {}

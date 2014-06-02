@@ -1,0 +1,7 @@
+=== tests/cases/compiler/parserFunctionDeclaration5.ts ===
+function foo();
+>foo : typeof foo
+
+function foo() { }
+>foo : typeof foo
+

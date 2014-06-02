@@ -1,0 +1,1 @@
+//// [parserInterfaceDeclaration8.js]

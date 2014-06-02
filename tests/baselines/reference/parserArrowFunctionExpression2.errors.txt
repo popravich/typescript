@@ -1,0 +1,8 @@
+==== tests/cases/compiler/parserArrowFunctionExpression2.ts (3 errors) ====
+    a = () => { } || a
+                  ~~
+!!! parserArrowFunctionExpression2.ts(1,15): error TS1005: ';' expected.
+    ~
+!!! parserArrowFunctionExpression2.ts(1,1): error TS2095: Cannot find name 'a'.
+                     ~
+!!! parserArrowFunctionExpression2.ts(1,18): error TS2095: Cannot find name 'a'.

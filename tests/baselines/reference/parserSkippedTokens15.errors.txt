@@ -1,0 +1,13 @@
+==== tests/cases/compiler/parserSkippedTokens15.ts (4 errors) ====
+    /*existing trivia*/
+    \
+    ~
+!!! parserSkippedTokens15.ts(2,1): error TS1001: Unexpected character "\".
+    ~
+!!! parserSkippedTokens15.ts(2,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+    \
+    ~
+!!! parserSkippedTokens15.ts(3,1): error TS1001: Unexpected character "\".
+    ~
+!!! parserSkippedTokens15.ts(3,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+    ;

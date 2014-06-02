@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserConstructorDeclaration10.ts (1 errors) ====
+    class C {
+      constructor(): number { }
+                   ~~~~~~~~
+!!! parserConstructorDeclaration10.ts(2,16): error TS1092: Type annotation cannot appear on a constructor declaration.
+    }

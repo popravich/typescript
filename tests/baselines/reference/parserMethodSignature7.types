@@ -1,0 +1,7 @@
+=== tests/cases/compiler/parserMethodSignature7.ts ===
+interface I {
+>I : I
+
+  "G"<T>();
+>T : T
+}

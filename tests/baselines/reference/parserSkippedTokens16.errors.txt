@@ -1,0 +1,29 @@
+==== tests/cases/compiler/parserSkippedTokens16.ts (10 errors) ====
+    foo(): Bar { }
+         ~
+!!! parserSkippedTokens16.ts(1,6): error TS1005: ';' expected.
+               ~
+!!! parserSkippedTokens16.ts(1,12): error TS1005: ';' expected.
+    ~~~
+!!! parserSkippedTokens16.ts(1,1): error TS2095: Cannot find name 'foo'.
+           ~~~
+!!! parserSkippedTokens16.ts(1,8): error TS2095: Cannot find name 'Bar'.
+    function Foo      () #   { }
+                         ~
+!!! parserSkippedTokens16.ts(2,22): error TS1001: Unexpected character "#".
+                         ~
+!!! parserSkippedTokens16.ts(2,22): error TS1005: ';' expected.
+                             ~
+!!! parserSkippedTokens16.ts(2,26): error TS2238: Function implementation expected.
+    4+:5
+      ~
+!!! parserSkippedTokens16.ts(3,3): error TS1003: Identifier expected.
+    module M {
+    function a(
+        : T) { }
+        ~
+!!! parserSkippedTokens16.ts(6,5): error TS1008: Unexpected token; 'parameter' expected.
+    }
+    var x       =
+                 
+!!! parserSkippedTokens16.ts(8,14): error TS1003: Identifier expected.

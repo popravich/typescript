@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parserMemberAccessorDeclaration17.ts (1 errors) ====
+    class C {
+       set Foo(a?: number) { }
+               ~~~~~~~~~~
+!!! parserMemberAccessorDeclaration17.ts(2,12): error TS1051: 'set' accessor parameter cannot be optional.
+    }

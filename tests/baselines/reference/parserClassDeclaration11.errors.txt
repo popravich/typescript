@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserClassDeclaration11.ts (1 errors) ====
+    class C {
+       constructor();
+       foo() { }
+       ~~~
+!!! parserClassDeclaration11.ts(3,4): error TS2240: Constructor implementation expected.
+    }

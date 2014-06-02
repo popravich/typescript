@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserArgumentList1.ts (2 errors) ====
+    export function removeClass (node:HTMLElement, className:string) {
+                                      ~~~~~~~~~~~
+!!! parserArgumentList1.ts(1,35): error TS2095: Cannot find name 'HTMLElement'.
+        node.className = node.className.replace(_classNameRegexp(className), function (everything, leftDelimiter, name, rightDelimiter) {
+                                             ~~~~~~~~~~~~~~~~
+!!! parserArgumentList1.ts(2,42): error TS2095: Cannot find name '_classNameRegexp'.
+            return leftDelimiter.length + rightDelimiter.length === 2 ? ' ' : '';
+        });
+    }

@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserFunctionDeclaration6.ts (1 errors) ====
+    {
+        function foo();
+        function bar() { }
+                 ~~~
+!!! parserFunctionDeclaration6.ts(3,14): error TS2239: Function overload name must be 'foo'.
+    }

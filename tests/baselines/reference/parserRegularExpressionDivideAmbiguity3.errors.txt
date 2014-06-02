@@ -1,0 +1,4 @@
+==== tests/cases/compiler/parserRegularExpressionDivideAmbiguity3.ts (1 errors) ====
+    if (1) /regexp/a.foo();
+                     ~~~
+!!! parserRegularExpressionDivideAmbiguity3.ts(1,18): error TS2094: Property 'foo' does not exist on value of type 'RegExp'.

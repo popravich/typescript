@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserKeywordsAsIdentifierName2.ts (2 errors) ====
+    // 'public' shoudl be marked unusable because it has a trailing /*
+    a.public /*
+               
+!!! parserKeywordsAsIdentifierName2.ts(2,12): error TS1010: '*/' expected.
+    ~
+!!! parserKeywordsAsIdentifierName2.ts(2,1): error TS2095: Cannot find name 'a'.

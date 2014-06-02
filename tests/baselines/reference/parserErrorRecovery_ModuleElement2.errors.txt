@@ -1,0 +1,15 @@
+==== tests/cases/compiler/parserErrorRecovery_ModuleElement2.ts (3 errors) ====
+    function foo() {
+    }
+    
+    function foo() {
+             ~~~
+!!! parserErrorRecovery_ModuleElement2.ts(4,10): error TS2237: Duplicate function implementation.
+    }
+    
+    )
+    ~
+!!! parserErrorRecovery_ModuleElement2.ts(7,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.
+    )
+    ~
+!!! parserErrorRecovery_ModuleElement2.ts(8,1): error TS1008: Unexpected token; 'module, class, interface, enum, import or statement' expected.

@@ -1,0 +1,7 @@
+==== tests/cases/compiler/parserModifierOnPropertySignature1.ts (1 errors) ====
+    interface Foo{
+        public biz;
+        ~~~~~~
+!!! parserModifierOnPropertySignature1.ts(2,5): error TS1008: Unexpected token; 'call, construct, index, property or function signature' expected.
+    }
+    

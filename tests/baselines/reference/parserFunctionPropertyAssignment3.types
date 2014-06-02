@@ -1,0 +1,5 @@
+=== tests/cases/compiler/parserFunctionPropertyAssignment3.ts ===
+var v = { "foo"() { } };
+>v : { "foo"(): void; }
+>{ "foo"() { } } : { "foo"(): void; }
+

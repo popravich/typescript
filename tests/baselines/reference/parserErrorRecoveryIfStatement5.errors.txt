@@ -1,0 +1,22 @@
+==== tests/cases/compiler/parserErrorRecoveryIfStatement5.ts (6 errors) ====
+    class Foo {
+      f1() {
+        if (a.b) {
+            ~
+!!! parserErrorRecoveryIfStatement5.ts(3,9): error TS2095: Cannot find name 'a'.
+      }
+      f2() {
+           ~
+!!! parserErrorRecoveryIfStatement5.ts(5,8): error TS1005: ';' expected.
+      ~~
+!!! parserErrorRecoveryIfStatement5.ts(5,3): error TS2095: Cannot find name 'f2'.
+      }
+      f3() {
+           ~
+!!! parserErrorRecoveryIfStatement5.ts(7,8): error TS1005: ';' expected.
+      ~~
+!!! parserErrorRecoveryIfStatement5.ts(7,3): error TS2095: Cannot find name 'f3'.
+      }
+    }
+     
+!!! parserErrorRecoveryIfStatement5.ts(9,2): error TS1005: '}' expected.

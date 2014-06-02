@@ -1,0 +1,10 @@
+==== tests/cases/compiler/parserSuperExpression2.ts (2 errors) ====
+    class C {
+      M() {
+        super<T>(0);
+             ~
+!!! parserSuperExpression2.ts(3,10): error TS1005: '.' expected.
+        ~~~~~
+!!! parserSuperExpression2.ts(3,5): error TS2158: Untyped function calls may not accept type arguments.
+      }
+    }
