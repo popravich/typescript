@@ -19,10 +19,9 @@
 ////{| "itemName": "point", "kind": "var", "parentName": "", "matchKind": "exact"  |}var point = new Shapes.Point();
 
 //// Testing for exact matching of navigationItems
-var searchValue = "origin distance point distFromZero";
 
 test.markers().forEach((marker) => {
     if (marker.data) {
-        verify.navigationItemsListContains(marker.data.itemName, marker.data.kind, searchValue, marker.data.matchKind, marker.fileName, marker.data.parentName);
+        verify.navigationItemsListContains(marker.data.itemName, marker.data.kind, marker.data.itemName, marker.data.matchKind, marker.fileName, marker.data.parentName);
     }
 });

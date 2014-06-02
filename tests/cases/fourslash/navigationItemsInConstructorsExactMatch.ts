@@ -10,6 +10,3 @@
 var searchValue = "search";
 verify.navigationItemsListContains("search1", "property", searchValue, "prefix");
 verify.navigationItemsListContains("search2", "property", searchValue, "prefix");
-
-// There should be not be any other results
-verify.navigationItemsListCount(2, searchValue, "exact");

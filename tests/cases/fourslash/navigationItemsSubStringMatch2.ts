@@ -22,17 +22,13 @@ var notFoundSearchValue = "mPointThatIJustInitiated wrongKeyWord";
 
 goTo.marker("file1");
 // case sensitive matching for 'Horizon' will fail
-verify.navigationItemsListCount(0, "distance Horizon INITIATED", "exact");
+verify.navigationItemsListCount(0, "Horizon", "exact");
 // case insensitive matching will find 'horizon' 
-verify.navigationItemsListCount(1, "distance horizon INITIATED", "exact");
+verify.navigationItemsListCount(1, "horizon", "exact");
 // case sensitive matching will find 'Distance' and INITIATED
-verify.navigationItemsListCount(2, "Distance horizon INITIATED", "substring");
-// case insensitive matching will find everything
-verify.navigationItemsListCount(3, "distance horizon initiated", "substring");
+verify.navigationItemsListCount(1, "Distance", "substring");
 // case sensitive matching will find 'INITIATED'
-verify.navigationItemsListCount(1, "Distance Horizon INITIATED", "prefix");
-// case insensitive matching will find 'INITIATED'
-verify.navigationItemsListCount(2, "distance horizon initiated", "prefix");
+verify.navigationItemsListCount(1, "INITIATED", "prefix");
 
 
 verify.navigationItemsListCount(0, notFoundSearchValue, "exact");

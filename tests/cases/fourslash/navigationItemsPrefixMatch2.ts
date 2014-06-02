@@ -17,17 +17,15 @@
 ////}
 ////interface OriginI {
 ////    var 123;
-////    var origin;
-////    public distance(distanceParam): void;
+////    var origin1;
+////    public _distance(distanceParam): void;
 ////}
 
-var searchValue = "origin distance points";
 var notFoundSearchValue = "mPointThatIJustInitiated wrongKeyWord";
 
 goTo.marker("file1");
-verify.navigationItemsListCount(2, searchValue, "exact");
-verify.navigationItemsListCount(0, searchValue, "substring");
-verify.navigationItemsListCount(6, searchValue, "prefix");
+verify.navigationItemsListCount(3, "origin", "prefix");
+verify.navigationItemsListCount(2, "distance", "prefix");
 
 verify.navigationItemsListCount(0, notFoundSearchValue, "exact");
 verify.navigationItemsListCount(0, notFoundSearchValue, "prefix");

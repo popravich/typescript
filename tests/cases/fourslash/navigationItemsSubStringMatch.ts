@@ -1,10 +1,10 @@
 /// <reference path="fourslash.ts"/>
 
 /////// Module
-////{| "itemName": "Shapes", "kind": "module", "parentName": "", "matchKind": "prefix" |}module Shapes {
+////{| "itemName": "Shapes", "kind": "module", "parentName": "", "matchKind": "substring" |}module Shapes {
 ////
 ////    // Class
-////    {| "itemName": "Point", "kind": "class", "parentName": "Shapes", "matchKind": "exact" |}export class Point {
+////    {| "itemName": "Point", "kind": "class", "parentName": "Shapes", "matchKind": "substring" |}export class Point {
 ////        // Instance member
 ////        {| "itemName": "originPointAttheHorizon", "kind": "property", "parentName": "Shapes.Point", "matchKind": "substring"|}private originPointAttheHorizon = 0.0;
 ////
@@ -18,10 +18,11 @@
 ////{| "itemName": "myPointThatIJustInitiated", "kind": "var", "parentName": "", "matchKind": "substring"|}var myPointThatIJustInitiated = new Shapes.Point();
 
 //// Testing for substring matching of navigationItems
-var searchValue = "FromOrigin horizon INITIATED Shape Point";
+//var searchValue = "FromOrigin horizon INITIATED Shape Point";
 
 test.markers().forEach((marker) => {
     if (marker.data) {
-        verify.navigationItemsListContains(marker.data.itemName, marker.data.kind, searchValue, marker.data.matchKind, marker.fileName, marker.data.parentName);
+        var name = marker.data.itemName;
+        verify.navigationItemsListContains(name, marker.data.kind, name.substr(1), marker.data.matchKind, marker.fileName, marker.data.parentName);
     }
 });

@@ -922,7 +922,7 @@ module TypeScript.Services {
                 }
 
                 if (this.isContainerDeclaration(declaration)) {
-                    var declName = declaration.getDisplayName();
+                    var declName = declaration.kind === PullElementKind.Script ? undefined : declaration.getDisplayName();
                     var fullName = parentName ? parentName + "." + declName : declName;
 
                     this.findSearchValueInPullDecl(
@@ -1028,6 +1028,10 @@ module TypeScript.Services {
                         TypeScript.PullElementFlags.InitializedDynamicModule |
                         TypeScript.PullElementFlags.Enum)) === 0;
                 case TypeScript.PullElementKind.EnumMember:
+                case TypeScript.PullElementKind.Function:
+                case TypeScript.PullElementKind.Method:
+                case TypeScript.PullElementKind.GetAccessor:
+                case TypeScript.PullElementKind.SetAccessor:
                     return true;
                 case TypeScript.PullElementKind.ConstructorMethod:
                     return false;

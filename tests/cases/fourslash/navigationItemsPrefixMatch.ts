@@ -19,10 +19,11 @@
 ////{| "itemName": "pointsSquareBox", "kind": "var", "parentName": "", "matchKind": "prefix"  |}var pointsSquareBox = new Shapes.Point();
 
 //// Testing for exact matching of navigationItems
-var searchValue = "origin distance points shape";
+// var searchValue = "origin distance points shape";
 
 test.markers().forEach((marker) => {
     if (marker.data) {
-        verify.navigationItemsListContains(marker.data.itemName, marker.data.kind, searchValue, marker.data.matchKind, marker.fileName, marker.data.parentName);
+        var itemName = marker.data.itemName;
+        verify.navigationItemsListContains(itemName, marker.data.kind, itemName.substr(0, itemName.length - 1), marker.data.matchKind, marker.fileName, marker.data.parentName);
     }
 });
