@@ -256,4 +256,25 @@ module TypeScript.SyntaxFacts {
             default:                                                return SyntaxKind.None;
         }
     }
+
+    export function isAssignmentOperatorToken(tokenKind: SyntaxKind): boolean {
+        switch (tokenKind) {
+            case SyntaxKind.BarEqualsToken:
+            case SyntaxKind.AmpersandEqualsToken:
+            case SyntaxKind.CaretEqualsToken:
+            case SyntaxKind.LessThanLessThanEqualsToken:
+            case SyntaxKind.GreaterThanGreaterThanEqualsToken:
+            case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+            case SyntaxKind.PlusEqualsToken:
+            case SyntaxKind.MinusEqualsToken:
+            case SyntaxKind.AsteriskEqualsToken:
+            case SyntaxKind.SlashEqualsToken:
+            case SyntaxKind.PercentEqualsToken:
+            case SyntaxKind.EqualsToken:
+                return true;
+
+            default:
+                return false;
+        }
+    }
 }
