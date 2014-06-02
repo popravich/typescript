@@ -1,0 +1,1 @@
+//// [parameterPropertyInConstructor1.js]

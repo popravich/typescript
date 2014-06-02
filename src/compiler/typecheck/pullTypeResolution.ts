@@ -2394,6 +2394,8 @@ module TypeScript {
                 context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(argDeclAST, DiagnosticCode.A_parameter_initializer_is_only_allowed_in_a_function_or_constructor_implementation));
             }
 
+            this.typeCheckParameterModifiers(argDeclAST, context);
+
             paramSymbol.setResolved();
         }
 
@@ -2503,6 +2505,7 @@ module TypeScript {
 
             if (canTypeCheckAST) {
                 this.checkNameForCompilerGeneratedDeclarationCollision(argDeclAST, /*isDeclaration*/ true, argDeclAST.identifier, context);
+                this.typeCheckParameterModifiers(argDeclAST, context);
             }
 
             paramSymbol.setResolved();
@@ -3188,13 +3191,47 @@ module TypeScript {
                 varDecl, ASTHelpers.getVariableDeclaratorModifiers(varDecl), varDecl.propertyName, ASTHelpers.getType(varDecl), varDecl.equalsValueClause, context);
         }
 
+        private getContainingConstructorDeclaration(parameter: ParameterSyntax): ConstructorDeclarationSyntax {
+            var current: ISyntaxElement = parameter;
+            while (current.kind() !== SyntaxKind.ConstructorDeclaration) {
+                current = current.parent;
+            }
+
+            return <ConstructorDeclarationSyntax>current;
+        }
+
         private typeCheckParameter(parameter: ParameterSyntax, context: PullTypeResolutionContext) {
             this.typeCheckVariableDeclaratorOrParameterOrEnumElement(
                 parameter, parameter.modifiers, parameter.identifier, ASTHelpers.getType(parameter), parameter.equalsValueClause, context);
         }
 
+        private typeCheckParameterModifiers(parameter: ParameterSyntax, context: PullTypeResolutionContext) {
+            if (parameter.modifiers.length) {
+                var parameterDecl = this.semanticInfoChain.getDeclForAST(parameter);
+                var isConstructorParam = hasFlag(parameterDecl.flags, PullElementFlags.ConstructorParameter);
+
+                var inAmbientDeclaration = hasFlag(parameterDecl.getParentDecl().flags, PullElementFlags.Ambient);
+
+                if (!inAmbientDeclaration && isConstructorParam) {
+                    var constructorDeclaration = <ConstructorDeclarationSyntax>this.getContainingConstructorDeclaration(parameter);
+                    if (!constructorDeclaration.block) {
+                        context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(
+                            parameter.modifiers[0], DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation));
+                    }
+                }
+                else {
+                    context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(
+                        parameter.modifiers[0], DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation));
+                }
+            }
+        }
+
         private typeCheckVariableDeclaratorOrParameterOrEnumElement(varDeclOrParameter: ISyntaxElement, modifiers: ISyntaxToken[], name: ISyntaxToken, typeExpr: ITypeSyntax, init: EqualsValueClauseSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(varDeclOrParameter, context);
+
+            if (varDeclOrParameter.kind() === SyntaxKind.Parameter) {
+                this.typeCheckParameterModifiers(<ParameterSyntax>varDeclOrParameter, context);
+            }
 
             var hasTypeExpr = typeExpr !== null || varDeclOrParameter.kind() === SyntaxKind.EnumElement;
             var enclosingDecl = this.getEnclosingDeclForAST(varDeclOrParameter);

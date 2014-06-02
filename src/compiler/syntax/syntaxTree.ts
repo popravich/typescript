@@ -137,7 +137,6 @@ module TypeScript {
         private inAmbientDeclaration: boolean = false;
         private inBlock: boolean = false;
         private inObjectLiteralExpression: boolean = false;
-        private currentConstructor: ConstructorDeclarationSyntax = null;
         private text: ISimpleText;
 
         constructor(private syntaxTree: SyntaxTree,
@@ -242,24 +241,12 @@ module TypeScript {
 
         private checkParameterAccessibilityModifier(parameterList: ParameterListSyntax, modifier: ISyntaxToken, modifierIndex: number): boolean {
             if (modifier.kind() !== SyntaxKind.PublicKeyword && modifier.kind() !== SyntaxKind.PrivateKeyword) {
-                this.pushDiagnostic(modifier,
-                    DiagnosticCode._0_modifier_cannot_appear_on_a_parameter, [modifier.text()]);
+                this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_cannot_appear_on_a_parameter, [modifier.text()]);
                 return true;
             }
             else {
                 if (modifierIndex > 0) {
                     this.pushDiagnostic(modifier, DiagnosticCode.Accessibility_modifier_already_seen);
-                    return true;
-                }
-
-                if (!this.inAmbientDeclaration && this.currentConstructor && !this.currentConstructor.block && this.currentConstructor.callSignature.parameterList === parameterList) {
-                    this.pushDiagnostic(modifier,
-                        DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
-                    return true;
-                }
-                else if (this.inAmbientDeclaration || this.currentConstructor === null || this.currentConstructor.callSignature.parameterList !== parameterList) {
-                    this.pushDiagnostic(modifier,
-                        DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
                     return true;
                 }
             }
@@ -1168,10 +1155,7 @@ module TypeScript {
                 return;
             }
 
-            var savedCurrentConstructor = this.currentConstructor;
-            this.currentConstructor = node;
             super.visitConstructorDeclaration(node);
-            this.currentConstructor = savedCurrentConstructor;
         }
 
         private checkConstructorModifiers(modifiers: ISyntaxToken[]): boolean {
