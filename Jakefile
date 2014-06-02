@@ -221,6 +221,7 @@ var harnessSources = [
 	path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
 	path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
 	path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/sourceMapperExtensionsTests.ts"),
 ];
 
 var libraryFiles = [

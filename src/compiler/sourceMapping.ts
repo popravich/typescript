@@ -47,8 +47,23 @@ module TypeScript {
         }
     }
 
+    interface SourceMap {
+        version: number;
+        file: string;
+        sourceRoot?: string;
+        sources: string[];
+        names?: string[];
+        mappings: string;
+
+        // extensions for media types
+        x_ms_mediaTypes?: string[];
+        x_ms_sourceMediaTypes?: number[];
+    }
+
     export class SourceMapper {
         static MapFileExtension = ".map";
+
+        private static _defaultDocumentMediaType: string[];
 
         private jsFileName: string;
         private sourceMapPath: string;
@@ -78,13 +93,22 @@ module TypeScript {
             this.setNewSourceFile(document, emitOptions);
         }
 
+        // The media type to use for the media type extension
+        static defaultDocumentMediaType(): string[] {
+            if (!SourceMapper._defaultDocumentMediaType) {
+                SourceMapper._defaultDocumentMediaType = ["application/x.typescript;version=" + TypeScript.version];
+            }
+
+            return SourceMapper._defaultDocumentMediaType;
+        }
+
         public getOutputFile(): OutputFile {
             var result = this.sourceMapOut.getOutputFile();
             result.sourceMapEntries = this.sourceMapEntries;
 
             return result;
         }
-
+        
         public increaseMappingLevel(ast: IASTSpan) {
             this.mappingLevel.push(ast);
         }
@@ -251,18 +275,32 @@ module TypeScript {
                 recordSourceMappingSiblings(this.allSourceMappings[sourceIndex]);
             }
 
-            // Write the actual map file
-            this.sourceMapOut.Write(JSON.stringify({
+            var sourceMap: SourceMap = {
                 version: 3,
                 file: this.jsFileName,
                 sourceRoot: this.sourceRoot,
                 sources: this.tsFilePaths,
                 names: this.names,
                 mappings: mappingsString
-            }));
+            };
+            
+            // add source-map extensions
+            this.addExtensions(sourceMap);
+
+            // Write the actual map file
+            this.sourceMapOut.Write(JSON.stringify(sourceMap));
 
             // Closing files could result in exceptions, report them if they occur
             this.sourceMapOut.Close();
+        }
+
+        private addExtensions(sourceMap: SourceMap): void {
+            this.addMediaTypeExtension(sourceMap);
+        }
+
+        private addMediaTypeExtension(sourceMap: SourceMap): void {
+            // emit the media types
+            sourceMap.x_ms_mediaTypes = SourceMapper.defaultDocumentMediaType();
         }
     }
 }

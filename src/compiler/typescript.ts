@@ -20,7 +20,7 @@ if (Error) (<any>Error).stackTraceLimit = 1000;
 module TypeScript {
 
     declare var IO: any;
-
+    export var version = "1.0.3.0";
     export var fileResolutionTime = 0;
     export var fileResolutionIOTime = 0;
     export var fileResolutionScanImportsTime = 0;
