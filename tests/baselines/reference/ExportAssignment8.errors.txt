@@ -1,0 +1,9 @@
+==== tests/cases/compiler/ExportAssignment8.ts (2 errors) ====
+    export = B;
+    ~~~~~~~~~~~
+!!! ExportAssignment8.ts(1,1): error TS2095: Cannot find name 'B'.
+    ~~~~~~~~~~~
+!!! ExportAssignment8.ts(1,1): error TS2245: Export assignment not allowed in module with exported element.
+    
+    export class C {
+    }
