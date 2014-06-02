@@ -3,20 +3,20 @@
     
     class any { }
           ~~~
-!!! objectTypesWithPredefinedTypesAsName.ts(3,7): error TS1057: Class name cannot be 'any'.
+!!! objectTypesWithPredefinedTypesAsName.ts(3,7): error TS2241: Class name cannot be 'any'.
     
     class number { }
           ~~~~~~
-!!! objectTypesWithPredefinedTypesAsName.ts(5,7): error TS1057: Class name cannot be 'number'.
+!!! objectTypesWithPredefinedTypesAsName.ts(5,7): error TS2241: Class name cannot be 'number'.
     
     class boolean { }
           ~~~~~~~
-!!! objectTypesWithPredefinedTypesAsName.ts(7,7): error TS1057: Class name cannot be 'boolean'.
+!!! objectTypesWithPredefinedTypesAsName.ts(7,7): error TS2241: Class name cannot be 'boolean'.
     class bool { } // not a predefined type anymore
     
     class string { }
           ~~~~~~
-!!! objectTypesWithPredefinedTypesAsName.ts(10,7): error TS1057: Class name cannot be 'string'.
+!!! objectTypesWithPredefinedTypesAsName.ts(10,7): error TS2241: Class name cannot be 'string'.
     
     
     

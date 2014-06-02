@@ -1064,6 +1064,9 @@ module TypeScript {
 
         private typeCheckSourceUnit(sourceUnit: SourceUnitSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(sourceUnit, context);
+            this.checkForDisallowedExports(sourceUnit.moduleElements);
+            this.checkForMultipleExportAssignments(sourceUnit.moduleElements);
+            this.checkFunctionOverloadChains(sourceUnit, sourceUnit.moduleElements);
 
             this.resolveAST(sourceUnit.moduleElements, /*isContextuallyTyped:*/ false, context);
 
@@ -1115,6 +1118,8 @@ module TypeScript {
 
         private typeCheckEnumDeclaration(ast: EnumDeclarationSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(ast, context);
+
+            this.checkForReservedName(ast, ast.identifier, DiagnosticCode.Enum_name_cannot_be_0);
 
             this.resolveAST(ast.enumElements, false, context);
             var containerDecl = this.semanticInfoChain.getDeclForAST(ast);
@@ -1252,10 +1257,17 @@ module TypeScript {
         }
 
         private typeCheckModuleDeclaration(ast: ModuleDeclarationSyntax, context: PullTypeResolutionContext): void {
+            this.checkForDisallowedExports(ast.moduleElements);
+            this.checkForMultipleExportAssignments(ast.moduleElements);
+
             if (ast.stringLiteral) {
                 this.typeCheckSingleModuleDeclaration(ast, ast.stringLiteral, context);
             }
             else {
+                if (!SyntaxUtilities.containsToken(ast.modifiers, SyntaxKind.DeclareKeyword)) {
+                    this.checkFunctionOverloadChains(ast, ast.moduleElements);
+                }
+
                 var moduleNames = ASTHelpers.getModuleNames(ast.name);
                 for (var i = 0, n = moduleNames.length; i < n; i++) {
                     this.typeCheckSingleModuleDeclaration(ast, moduleNames[i], context);
@@ -1644,6 +1656,9 @@ module TypeScript {
         private typeCheckClassDeclaration(classDeclAST: ClassDeclarationSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(classDeclAST, context);
 
+            this.checkForReservedName(classDeclAST, classDeclAST.identifier, DiagnosticCode.Class_name_cannot_be_0);
+            this.checkClassOverloadChains(classDeclAST);
+
             var classDecl: PullDecl = this.semanticInfoChain.getDeclForAST(classDeclAST);
             var classDeclSymbol = <PullTypeSymbol>classDecl.getSymbol(this.semanticInfoChain);
 
@@ -1704,6 +1719,8 @@ module TypeScript {
 
         private typeCheckInterfaceDeclaration(interfaceDeclAST: InterfaceDeclarationSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(interfaceDeclAST, context);
+
+            this.checkForReservedName(interfaceDeclAST, interfaceDeclAST.identifier, DiagnosticCode.Interface_name_cannot_be_0);
 
             var interfaceDecl = this.semanticInfoChain.getDeclForAST(interfaceDeclAST);
             var interfaceDeclSymbol = <PullTypeSymbol>interfaceDecl.getSymbol(this.semanticInfoChain);
@@ -2377,6 +2394,8 @@ module TypeScript {
                 context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(argDeclAST, DiagnosticCode.A_parameter_initializer_is_only_allowed_in_a_function_or_constructor_implementation));
             }
 
+            this.typeCheckParameterModifiers(argDeclAST, context);
+
             paramSymbol.setResolved();
         }
 
@@ -2486,6 +2505,7 @@ module TypeScript {
 
             if (canTypeCheckAST) {
                 this.checkNameForCompilerGeneratedDeclarationCollision(argDeclAST, /*isDeclaration*/ true, argDeclAST.identifier, context);
+                this.typeCheckParameterModifiers(argDeclAST, context);
             }
 
             paramSymbol.setResolved();
@@ -3171,13 +3191,47 @@ module TypeScript {
                 varDecl, ASTHelpers.getVariableDeclaratorModifiers(varDecl), varDecl.propertyName, ASTHelpers.getType(varDecl), varDecl.equalsValueClause, context);
         }
 
+        private getContainingConstructorDeclaration(parameter: ParameterSyntax): ConstructorDeclarationSyntax {
+            var current: ISyntaxElement = parameter;
+            while (current.kind() !== SyntaxKind.ConstructorDeclaration) {
+                current = current.parent;
+            }
+
+            return <ConstructorDeclarationSyntax>current;
+        }
+
         private typeCheckParameter(parameter: ParameterSyntax, context: PullTypeResolutionContext) {
             this.typeCheckVariableDeclaratorOrParameterOrEnumElement(
                 parameter, parameter.modifiers, parameter.identifier, ASTHelpers.getType(parameter), parameter.equalsValueClause, context);
         }
 
+        private typeCheckParameterModifiers(parameter: ParameterSyntax, context: PullTypeResolutionContext) {
+            if (parameter.modifiers.length) {
+                var parameterDecl = this.semanticInfoChain.getDeclForAST(parameter);
+                var isConstructorParam = hasFlag(parameterDecl.flags, PullElementFlags.ConstructorParameter);
+
+                var inAmbientDeclaration = hasFlag(parameterDecl.getParentDecl().flags, PullElementFlags.Ambient);
+
+                if (!inAmbientDeclaration && isConstructorParam) {
+                    var constructorDeclaration = <ConstructorDeclarationSyntax>this.getContainingConstructorDeclaration(parameter);
+                    if (!constructorDeclaration.block) {
+                        context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(
+                            parameter.modifiers[0], DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation));
+                    }
+                }
+                else {
+                    context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(
+                        parameter.modifiers[0], DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation));
+                }
+            }
+        }
+
         private typeCheckVariableDeclaratorOrParameterOrEnumElement(varDeclOrParameter: ISyntaxElement, modifiers: ISyntaxToken[], name: ISyntaxToken, typeExpr: ITypeSyntax, init: EqualsValueClauseSyntax, context: PullTypeResolutionContext) {
             this.setTypeChecked(varDeclOrParameter, context);
+
+            if (varDeclOrParameter.kind() === SyntaxKind.Parameter) {
+                this.typeCheckParameterModifiers(<ParameterSyntax>varDeclOrParameter, context);
+            }
 
             var hasTypeExpr = typeExpr !== null || varDeclOrParameter.kind() === SyntaxKind.EnumElement;
             var enclosingDecl = this.getEnclosingDeclForAST(varDeclOrParameter);
@@ -5247,6 +5301,8 @@ module TypeScript {
         private resolveBlock(ast: BlockSyntax, context: PullTypeResolutionContext): PullSymbol {
             if (this.canTypeCheckAST(ast, context)) {
                 this.setTypeChecked(ast, context);
+
+                this.checkFunctionOverloadChains(ast, ast.statements);
                 this.resolveAST(ast.statements, /*isContextuallyTyped*/ false, context);
             }
 
@@ -13547,6 +13603,202 @@ module TypeScript {
             }
 
             return instantiatedSignatureOrSignatureWithSubstitution;
+        }
+
+        private checkFunctionOverloadChains(parent: ISyntaxNode, moduleElements: IModuleElementSyntax[]): void {
+            var decl = this.getEnclosingDeclForAST(parent);
+            if (!hasFlag(decl.flags, PullElementFlags.Ambient)) {
+                var inFunctionOverloadChain = false;
+                var functionOverloadChainName: string = null;
+
+                for (var i = 0, n = moduleElements.length; i < n; i++) {
+                    var moduleElement = moduleElements[i];
+                    var lastElement = i === (n - 1);
+
+                    if (inFunctionOverloadChain) {
+                        if (moduleElement.kind() !== SyntaxKind.FunctionDeclaration) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
+                            return;
+                        }
+
+                        var functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
+                        if (tokenValueText(functionDeclaration.identifier) !== functionOverloadChainName) {
+                            this.semanticInfoChain.addDiagnosticFromAST(functionDeclaration.identifier,
+                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
+                            return;
+                        }
+                    }
+
+                    if (moduleElement.kind() === SyntaxKind.FunctionDeclaration) {
+                        functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
+                        if (!SyntaxUtilities.containsToken(functionDeclaration.modifiers, SyntaxKind.DeclareKeyword)) {
+                            inFunctionOverloadChain = functionDeclaration.block === null;
+                            functionOverloadChainName = tokenValueText(functionDeclaration.identifier);
+
+                            if (inFunctionOverloadChain) {
+                                if (lastElement) {
+                                    this.semanticInfoChain.addDiagnosticFromAST(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
+                                    return;
+                                }
+                                else {
+                                    // We're a function without a body, and there's another element 
+                                    // after us.  If it's another overload that doesn't have a body,
+                                    // then report an error that we're missing an implementation here.
+
+                                    var nextElement = childAt(moduleElements, i + 1);
+                                    if (nextElement.kind() === SyntaxKind.FunctionDeclaration) {
+                                        var nextFunction = <FunctionDeclarationSyntax>nextElement;
+
+                                        if (tokenValueText(nextFunction.identifier) !== functionOverloadChainName &&
+                                            nextFunction.block === null) {
+
+                                            this.semanticInfoChain.addDiagnosticFromAST(functionDeclaration.identifier, DiagnosticCode.Function_implementation_expected);
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            inFunctionOverloadChain = false;
+                            functionOverloadChainName = "";
+                        }
+                    }
+                }
+            }
+        }
+
+        private checkClassOverloadChains(node: ClassDeclarationSyntax): void {
+            var decl = this.getEnclosingDeclForAST(node);
+            if (!hasFlag(decl.flags, PullElementFlags.Ambient) && !SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword)) {
+                var inFunctionOverloadChain = false;
+                var inConstructorOverloadChain = false;
+
+                var functionOverloadChainName: string = null;
+                var isInStaticOverloadChain: boolean = null;
+                var memberFunctionDeclaration: MemberFunctionDeclarationSyntax = null;
+
+                for (var i = 0, n = node.classElements.length; i < n; i++) {
+                    var classElement = node.classElements[i];
+                    var lastElement = i === (n - 1);
+                    var isStaticOverload: boolean = null;
+
+                    if (inFunctionOverloadChain) {
+                        if (classElement.kind() !== SyntaxKind.MemberFunctionDeclaration) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
+                            return;
+                        }
+
+                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
+                        if (tokenValueText(memberFunctionDeclaration.propertyName) !== functionOverloadChainName) {
+                            this.semanticInfoChain.addDiagnosticFromAST(memberFunctionDeclaration.propertyName,
+                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
+                            return;
+                        }
+
+                        isStaticOverload = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
+                        if (isStaticOverload !== isInStaticOverloadChain) {
+                            var diagnostic = isInStaticOverloadChain ? DiagnosticCode.Function_overload_must_be_static : DiagnosticCode.Function_overload_must_not_be_static;
+                            this.semanticInfoChain.addDiagnosticFromAST(memberFunctionDeclaration.propertyName, diagnostic);
+                            return;
+                        }
+                    }
+                    else if (inConstructorOverloadChain) {
+                        if (classElement.kind() !== SyntaxKind.ConstructorDeclaration) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
+                            return;
+                        }
+                    }
+
+                    if (classElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
+                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
+
+                        inFunctionOverloadChain = memberFunctionDeclaration.block === null;
+                        functionOverloadChainName = tokenValueText(memberFunctionDeclaration.propertyName);
+                        isInStaticOverloadChain = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
+
+                        if (inFunctionOverloadChain) {
+                            if (lastElement) {
+                                this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
+                                return;
+                            }
+                            else {
+                                // We're a function without a body, and there's another element 
+                                // after us.  If it's another overload that doesn't have a body,
+                                // then report an error that we're missing an implementation here.
+
+                                var nextElement = childAt(node.classElements, i + 1);
+                                if (nextElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
+                                    var nextMemberFunction = <MemberFunctionDeclarationSyntax>nextElement;
+
+                                    if (tokenValueText(nextMemberFunction.propertyName) !== functionOverloadChainName &&
+                                        nextMemberFunction.block === null) {
+
+                                        this.semanticInfoChain.addDiagnosticFromAST(memberFunctionDeclaration.propertyName, DiagnosticCode.Function_implementation_expected);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (classElement.kind() === SyntaxKind.ConstructorDeclaration) {
+                        var constructorDeclaration = <ConstructorDeclarationSyntax>classElement;
+
+                        inConstructorOverloadChain = constructorDeclaration.block === null;
+                        if (lastElement && inConstructorOverloadChain) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        private checkForReservedName(parent: ISyntaxElement, name: ISyntaxToken, diagnosticKey: string): void {
+            switch (tokenValueText(name)) {
+                case "any":
+                case "number":
+                case "boolean":
+                case "string":
+                case "void":
+                    this.semanticInfoChain.addDiagnosticFromAST(name, diagnosticKey, [tokenValueText(name)]);
+            }
+        }
+
+        private checkForMultipleExportAssignments(moduleElements: IModuleElementSyntax[]): void {
+            var seenExportAssignment = false;
+            for (var i = 0, n = moduleElements.length; i < n; i++) {
+                var child = moduleElements[i];
+                if (child.kind() === SyntaxKind.ExportAssignment) {
+                    if (seenExportAssignment) {
+                        this.semanticInfoChain.addDiagnosticFromAST(child, DiagnosticCode.A_module_cannot_have_multiple_export_assignments);
+                    }
+                    seenExportAssignment = true;
+                }
+            }
+        }
+
+        private checkForDisallowedExports(moduleElements: IModuleElementSyntax[]): void {
+            var seenExportedElement = false;
+            for (var i = 0, n = moduleElements.length; i < n; i++) {
+                var child = moduleElements[i];
+
+                if (SyntaxUtilities.hasExportKeyword(child)) {
+                    seenExportedElement = true;
+                    break;
+                }
+            }
+
+            if (seenExportedElement) {
+                for (var i = 0, n = moduleElements.length; i < n; i++) {
+                    var child = moduleElements[i];
+
+                    if (child.kind() === SyntaxKind.ExportAssignment) {
+                        this.semanticInfoChain.addDiagnosticFromAST(child, DiagnosticCode.Export_assignment_not_allowed_in_module_with_exported_element);
+                        return;
+                    }
+                }
+            }
         }
     }
 

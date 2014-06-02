@@ -1,0 +1,1 @@
+//// [primitiveTypeAsInterfaceName.js]

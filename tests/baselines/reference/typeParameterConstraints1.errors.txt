@@ -1,4 +1,4 @@
-==== tests/cases/compiler/typeParameterConstraints1.ts (22 errors) ====
+==== tests/cases/compiler/typeParameterConstraints1.ts (23 errors) ====
     function foo1<T extends any>(test: T) { }
     function foo2<T extends number>(test: T) { }
     function foo3<T extends string>(test: T) { }
@@ -15,6 +15,8 @@
 !!! typeParameterConstraints1.ts(8,33): error TS1005: ')' expected.
                                        ~
 !!! typeParameterConstraints1.ts(8,36): error TS1005: ';' expected.
+                            ~~
+!!! typeParameterConstraints1.ts(8,25): error TS2238: Function implementation expected.
                                 ~~~~
 !!! typeParameterConstraints1.ts(8,29): error TS2095: Cannot find name 'test'.
                                       ~

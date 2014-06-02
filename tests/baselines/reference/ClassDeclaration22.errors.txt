@@ -1,0 +1,7 @@
+==== tests/cases/compiler/ClassDeclaration22.ts (1 errors) ====
+    class C {
+        "foo"();
+        "bar"() { }
+        ~~~~~
+!!! ClassDeclaration22.ts(3,5): error TS2239: Function overload name must be 'foo'.
+    }

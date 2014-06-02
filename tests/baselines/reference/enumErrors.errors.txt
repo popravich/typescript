@@ -2,24 +2,24 @@
     // Enum named with PredefinedTypes
     enum any { }
          ~~~
-!!! enumErrors.ts(2,6): error TS1059: Enum name cannot be 'any'.
-         ~~~
 !!! enumErrors.ts(2,6): error TS2000: Duplicate identifier 'any'.
+         ~~~
+!!! enumErrors.ts(2,6): error TS2243: Enum name cannot be 'any'.
     enum number { }
          ~~~~~~
-!!! enumErrors.ts(3,6): error TS1059: Enum name cannot be 'number'.
-         ~~~~~~
 !!! enumErrors.ts(3,6): error TS2000: Duplicate identifier 'number'.
+         ~~~~~~
+!!! enumErrors.ts(3,6): error TS2243: Enum name cannot be 'number'.
     enum string { }
          ~~~~~~
-!!! enumErrors.ts(4,6): error TS1059: Enum name cannot be 'string'.
-         ~~~~~~
 !!! enumErrors.ts(4,6): error TS2000: Duplicate identifier 'string'.
+         ~~~~~~
+!!! enumErrors.ts(4,6): error TS2243: Enum name cannot be 'string'.
     enum boolean { }
          ~~~~~~~
-!!! enumErrors.ts(5,6): error TS1059: Enum name cannot be 'boolean'.
-         ~~~~~~~
 !!! enumErrors.ts(5,6): error TS2000: Duplicate identifier 'boolean'.
+         ~~~~~~~
+!!! enumErrors.ts(5,6): error TS2243: Enum name cannot be 'boolean'.
     
     // Enum with computed member initializer of type Number
     enum E5 {

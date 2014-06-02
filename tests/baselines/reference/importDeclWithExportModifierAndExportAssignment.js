@@ -1,0 +1,1 @@
+//// [importDeclWithExportModifierAndExportAssignment.js]

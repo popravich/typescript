@@ -137,7 +137,6 @@ module TypeScript {
         private inAmbientDeclaration: boolean = false;
         private inBlock: boolean = false;
         private inObjectLiteralExpression: boolean = false;
-        private currentConstructor: ConstructorDeclarationSyntax = null;
         private text: ISimpleText;
 
         constructor(private syntaxTree: SyntaxTree,
@@ -153,8 +152,7 @@ module TypeScript {
 
         public visitCatchClause(node: CatchClauseSyntax): void {
             if (node.typeAnnotation) {
-                this.pushDiagnostic(node.typeAnnotation,
-                    DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
+                this.pushDiagnostic(node.typeAnnotation, DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
             }
 
             super.visitCatchClause(node);
@@ -169,23 +167,17 @@ module TypeScript {
 
                 if (parameter.dotDotDotToken) {
                     if (i !== (parameterCount - 1)) {
-                        this.pushDiagnostic(
-                            parameter,
-                            DiagnosticCode.A_rest_parameter_must_be_last_in_a_parameter_list);
+                        this.pushDiagnostic(parameter, DiagnosticCode.A_rest_parameter_must_be_last_in_a_parameter_list);
                         return true;
                     }
 
                     if (parameter.questionToken) {
-                        this.pushDiagnostic(
-                            parameter,
-                            DiagnosticCode.A_rest_parameter_cannot_be_optional);
+                        this.pushDiagnostic(parameter, DiagnosticCode.A_rest_parameter_cannot_be_optional);
                         return true;
                     }
 
                     if (parameter.equalsValueClause) {
-                        this.pushDiagnostic(
-                            parameter,
-                            DiagnosticCode.A_rest_parameter_cannot_have_an_initializer);
+                        this.pushDiagnostic(parameter, DiagnosticCode.A_rest_parameter_cannot_have_an_initializer);
                         return true;
                     }
                 }
@@ -193,17 +185,13 @@ module TypeScript {
                     seenOptionalParameter = true;
 
                     if (parameter.questionToken && parameter.equalsValueClause) {
-                        this.pushDiagnostic(
-                            parameter,
-                            DiagnosticCode.Parameter_cannot_have_question_mark_and_initializer);
+                        this.pushDiagnostic(parameter, DiagnosticCode.Parameter_cannot_have_question_mark_and_initializer);
                         return true;
                     }
                 }
                 else {
                     if (seenOptionalParameter) {
-                        this.pushDiagnostic(
-                            parameter,
-                            DiagnosticCode.A_required_parameter_cannot_follow_an_optional_parameter);
+                        this.pushDiagnostic(parameter, DiagnosticCode.A_required_parameter_cannot_follow_an_optional_parameter);
                         return true;
                     }
                 }
@@ -242,24 +230,12 @@ module TypeScript {
 
         private checkParameterAccessibilityModifier(parameterList: ParameterListSyntax, modifier: ISyntaxToken, modifierIndex: number): boolean {
             if (modifier.kind() !== SyntaxKind.PublicKeyword && modifier.kind() !== SyntaxKind.PrivateKeyword) {
-                this.pushDiagnostic(modifier,
-                    DiagnosticCode._0_modifier_cannot_appear_on_a_parameter, [modifier.text()]);
+                this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_cannot_appear_on_a_parameter, [modifier.text()]);
                 return true;
             }
             else {
                 if (modifierIndex > 0) {
                     this.pushDiagnostic(modifier, DiagnosticCode.Accessibility_modifier_already_seen);
-                    return true;
-                }
-
-                if (!this.inAmbientDeclaration && this.currentConstructor && !this.currentConstructor.block && this.currentConstructor.callSignature.parameterList === parameterList) {
-                    this.pushDiagnostic(modifier,
-                        DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
-                    return true;
-                }
-                else if (this.inAmbientDeclaration || this.currentConstructor === null || this.currentConstructor.callSignature.parameterList !== parameterList) {
-                    this.pushDiagnostic(modifier,
-                        DiagnosticCode.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
                     return true;
                 }
             }
@@ -285,9 +261,7 @@ module TypeScript {
                 return false;
             }
 
-
             this.pushDiagnostic(reportToken, DiagnosticCode._0_list_cannot_be_empty, [listKind]);
-
             return true;
         }
 
@@ -406,20 +380,17 @@ module TypeScript {
 
                 if (heritageClause.extendsOrImplementsKeyword.kind() === SyntaxKind.ExtendsKeyword) {
                     if (seenExtendsClause) {
-                        this.pushDiagnostic(heritageClause,
-                            DiagnosticCode.extends_clause_already_seen);
+                        this.pushDiagnostic(heritageClause, DiagnosticCode.extends_clause_already_seen);
                         return true;
                     }
 
                     if (seenImplementsClause) {
-                        this.pushDiagnostic(heritageClause,
-                            DiagnosticCode.extends_clause_must_precede_implements_clause);
+                        this.pushDiagnostic(heritageClause, DiagnosticCode.extends_clause_must_precede_implements_clause);
                         return true;
                     }
 
                     if (heritageClause.typeNames.length > 1) {
-                        this.pushDiagnostic(heritageClause,
-                            DiagnosticCode.Classes_can_only_extend_a_single_class);
+                        this.pushDiagnostic(heritageClause, DiagnosticCode.Classes_can_only_extend_a_single_class);
                         return true;
                     }
 
@@ -428,8 +399,7 @@ module TypeScript {
                 else {
                     Debug.assert(heritageClause.extendsOrImplementsKeyword.kind() === SyntaxKind.ImplementsKeyword);
                     if (seenImplementsClause) {
-                        this.pushDiagnostic(heritageClause,
-                            DiagnosticCode.implements_clause_already_seen);
+                        this.pushDiagnostic(heritageClause, DiagnosticCode.implements_clause_already_seen);
                         return true;
                     }
 
@@ -446,8 +416,7 @@ module TypeScript {
                 var declareToken = SyntaxUtilities.getToken(modifiers, SyntaxKind.DeclareKeyword);
 
                 if (declareToken) {
-                    this.pushDiagnostic(declareToken,
-                        DiagnosticCode.A_declare_modifier_cannot_be_used_in_an_already_ambient_context);
+                    this.pushDiagnostic(declareToken, DiagnosticCode.A_declare_modifier_cannot_be_used_in_an_already_ambient_context);
                     return true;
                 }
             }
@@ -466,178 +435,11 @@ module TypeScript {
             }
         }
 
-        private checkFunctionOverloads(node: ISyntaxElement, moduleElements: IModuleElementSyntax[]): boolean {
-            if (!this.inAmbientDeclaration && !this.syntaxTree.isDeclaration()) {
-                var inFunctionOverloadChain = false;
-                var functionOverloadChainName: string = null;
-
-                for (var i = 0, n = moduleElements.length; i < n; i++) {
-                    var moduleElement = moduleElements[i];
-                    var lastElement = i === (n - 1);
-
-                    if (inFunctionOverloadChain) {
-                        if (moduleElement.kind() !== SyntaxKind.FunctionDeclaration) {
-                            this.pushDiagnostic(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
-                            return true;
-                        }
-
-                        var functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
-                        if (tokenValueText(functionDeclaration.identifier) !== functionOverloadChainName) {
-                            this.pushDiagnostic(functionDeclaration.identifier,
-                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
-                            return true;
-                        }
-                    }
-
-                    if (moduleElement.kind() === SyntaxKind.FunctionDeclaration) {
-                        functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
-                        if (!SyntaxUtilities.containsToken(functionDeclaration.modifiers, SyntaxKind.DeclareKeyword)) {
-                            inFunctionOverloadChain = functionDeclaration.block === null;
-                            functionOverloadChainName = tokenValueText(functionDeclaration.identifier);
-
-                            if (inFunctionOverloadChain) {
-                                if (lastElement) {
-                                    this.pushDiagnostic(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
-                                    return true;
-                                }
-                                else {
-                                    // We're a function without a body, and there's another element 
-                                    // after us.  If it's another overload that doesn't have a body,
-                                    // then report an error that we're missing an implementation here.
-
-                                    var nextElement = childAt(moduleElements, i + 1);
-                                    if (nextElement.kind() === SyntaxKind.FunctionDeclaration) {
-                                        var nextFunction = <FunctionDeclarationSyntax>nextElement;
-
-                                        if (tokenValueText(nextFunction.identifier) !== functionOverloadChainName &&
-                                            nextFunction.block === null) {
-
-                                            this.pushDiagnostic(functionDeclaration.identifier, DiagnosticCode.Function_implementation_expected);
-                                            return true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else {
-                            inFunctionOverloadChain = false;
-                            functionOverloadChainName = "";
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private checkClassOverloads(node: ClassDeclarationSyntax): boolean {
-            if (!this.inAmbientDeclaration && !SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword)) {
-                var inFunctionOverloadChain = false;
-                var inConstructorOverloadChain = false;
-
-                var functionOverloadChainName: string = null;
-                var isInStaticOverloadChain: boolean = null;
-                var memberFunctionDeclaration: MemberFunctionDeclarationSyntax = null;
-
-                for (var i = 0, n = node.classElements.length; i < n; i++) {
-                    var classElement = node.classElements[i];
-                    var lastElement = i === (n - 1);
-                    var isStaticOverload: boolean = null;
-
-                    if (inFunctionOverloadChain) {
-                        if (classElement.kind() !== SyntaxKind.MemberFunctionDeclaration) {
-                            this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
-                            return true;
-                        }
-
-                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
-                        if (tokenValueText(memberFunctionDeclaration.propertyName) !== functionOverloadChainName) {
-                            this.pushDiagnostic(memberFunctionDeclaration.propertyName,
-                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
-                            return true;
-                        }
-
-                        isStaticOverload = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
-                        if (isStaticOverload !== isInStaticOverloadChain) {
-                            var diagnostic = isInStaticOverloadChain ? DiagnosticCode.Function_overload_must_be_static : DiagnosticCode.Function_overload_must_not_be_static;
-                            this.pushDiagnostic(memberFunctionDeclaration.propertyName, diagnostic);
-                            return true;
-                        }
-                    }
-                    else if (inConstructorOverloadChain) {
-                        if (classElement.kind() !== SyntaxKind.ConstructorDeclaration) {
-                            this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
-                            return true;
-                        }
-                    }
-
-                    if (classElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
-                        memberFunctionDeclaration = <MemberFunctionDeclarationSyntax>classElement;
-
-                        inFunctionOverloadChain = memberFunctionDeclaration.block === null;
-                        functionOverloadChainName = tokenValueText(memberFunctionDeclaration.propertyName);
-                        isInStaticOverloadChain = SyntaxUtilities.containsToken(memberFunctionDeclaration.modifiers, SyntaxKind.StaticKeyword);
-
-                        if (inFunctionOverloadChain) {
-                            if (lastElement) {
-                                this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Function_implementation_expected);
-                                return true;
-                            }
-                            else {
-                                // We're a function without a body, and there's another element 
-                                // after us.  If it's another overload that doesn't have a body,
-                                // then report an error that we're missing an implementation here.
-
-                                var nextElement = childAt(node.classElements, i + 1);
-                            if (nextElement.kind() === SyntaxKind.MemberFunctionDeclaration) {
-                                    var nextMemberFunction = <MemberFunctionDeclarationSyntax>nextElement;
-
-                                    if (tokenValueText(nextMemberFunction.propertyName) !== functionOverloadChainName &&
-                                        nextMemberFunction.block === null) {
-
-                                        this.pushDiagnostic(memberFunctionDeclaration.propertyName, DiagnosticCode.Function_implementation_expected);
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (classElement.kind() === SyntaxKind.ConstructorDeclaration) {
-                        var constructorDeclaration = <ConstructorDeclarationSyntax>classElement;
-
-                        inConstructorOverloadChain = constructorDeclaration.block === null;
-                        if (lastElement && inConstructorOverloadChain) {
-                            this.pushDiagnostic(firstToken(classElement), DiagnosticCode.Constructor_implementation_expected);
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private checkForReservedName(parent: ISyntaxElement, name: ISyntaxToken, diagnosticKey: string): boolean {
-            switch (tokenValueText(name)) {
-                case "any":
-                case "number":
-                case "boolean":
-                case "string":
-                case "void":
-                    this.pushDiagnostic(name, diagnosticKey, [tokenValueText(name)]);
-                    return true;
-            }
-
-            return false;
-        }
-
         public visitClassDeclaration(node: ClassDeclarationSyntax): void {
-            if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Class_name_cannot_be_0) ||
-                this.checkForDisallowedDeclareModifier(node.modifiers) ||
+            if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
-                this.checkClassDeclarationHeritageClauses(node) ||
-                this.checkClassOverloads(node)) {
+                this.checkClassDeclarationHeritageClauses(node)) {
 
                 return;
             }
@@ -657,8 +459,7 @@ module TypeScript {
 
                 if (heritageClause.extendsOrImplementsKeyword.kind() === SyntaxKind.ExtendsKeyword) {
                     if (seenExtendsClause) {
-                        this.pushDiagnostic(heritageClause,
-                            DiagnosticCode.extends_clause_already_seen);
+                        this.pushDiagnostic(heritageClause, DiagnosticCode.extends_clause_already_seen);
                         return true;
                     }
 
@@ -666,8 +467,7 @@ module TypeScript {
                 }
                 else {
                     Debug.assert(heritageClause.extendsOrImplementsKeyword.kind() === SyntaxKind.ImplementsKeyword);
-                    this.pushDiagnostic(heritageClause,
-                        DiagnosticCode.Interface_declaration_cannot_have_implements_clause);
+                    this.pushDiagnostic(heritageClause, DiagnosticCode.Interface_declaration_cannot_have_implements_clause);
                     return true;
                 }
             }
@@ -689,8 +489,7 @@ module TypeScript {
         }
 
         public visitInterfaceDeclaration(node: InterfaceDeclarationSyntax): void {
-            if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Interface_name_cannot_be_0) ||
-                this.checkInterfaceModifiers(node.modifiers) ||
+            if (this.checkInterfaceModifiers(node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
                 this.checkInterfaceDeclarationHeritageClauses(node)) {
 
@@ -710,15 +509,13 @@ module TypeScript {
                     modifier.kind() === SyntaxKind.PrivateKeyword) {
 
                     if (seenAccessibilityModifier) {
-                        this.pushDiagnostic(modifier,
-                            DiagnosticCode.Accessibility_modifier_already_seen);
+                        this.pushDiagnostic(modifier, DiagnosticCode.Accessibility_modifier_already_seen);
                         return true;
                     }
 
                     if (seenStaticModifier) {
                         var previousToken = list[i - 1];
-                        this.pushDiagnostic(modifier,
-                            DiagnosticCode._0_modifier_must_precede_1_modifier, [modifier.text(), previousToken.text()]);
+                        this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_must_precede_1_modifier, [modifier.text(), previousToken.text()]);
                         return true;
                     }
 
@@ -726,16 +523,14 @@ module TypeScript {
                 }
                 else if (modifier.kind() === SyntaxKind.StaticKeyword) {
                     if (seenStaticModifier) {
-                        this.pushDiagnostic(modifier,
-                            DiagnosticCode._0_modifier_already_seen, [modifier.text()]);
+                        this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_already_seen, [modifier.text()]);
                         return true;
                     }
 
                     seenStaticModifier = true;
                 }
                 else {
-                    this.pushDiagnostic(modifier,
-                        DiagnosticCode._0_modifier_cannot_appear_on_a_class_element, [modifier.text()]);
+                    this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_cannot_appear_on_a_class_element, [modifier.text()]);
                     return true;
                 }
             }
@@ -851,20 +646,17 @@ module TypeScript {
             var parameter = parameters[0];
 
             if (parameter.questionToken) {
-                this.pushDiagnostic(parameter,
-                    DiagnosticCode.set_accessor_parameter_cannot_be_optional);
+                this.pushDiagnostic(parameter, DiagnosticCode.set_accessor_parameter_cannot_be_optional);
                 return true;
             }
 
             if (parameter.equalsValueClause) {
-                this.pushDiagnostic(parameter,
-                    DiagnosticCode.set_accessor_parameter_cannot_have_an_initializer);
+                this.pushDiagnostic(parameter, DiagnosticCode.set_accessor_parameter_cannot_have_an_initializer);
                 return true;
             }
 
             if (parameter.dotDotDotToken) {
-                this.pushDiagnostic(parameter,
-                    DiagnosticCode.set_accessor_cannot_have_rest_parameter);
+                this.pushDiagnostic(parameter, DiagnosticCode.set_accessor_cannot_have_rest_parameter);
                 return true;
             }
 
@@ -886,8 +678,7 @@ module TypeScript {
         }
 
         public visitEnumDeclaration(node: EnumDeclarationSyntax): void {
-            if (this.checkForReservedName(node, node.identifier, DiagnosticCode.Enum_name_cannot_be_0) ||
-                this.checkForDisallowedDeclareModifier(node.modifiers) ||
+            if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.identifier, node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers),
                 this.checkEnumElements(node)) {
@@ -939,8 +730,7 @@ module TypeScript {
         public visitInvocationExpression(node: InvocationExpressionSyntax): void {
             if (node.expression.kind() === SyntaxKind.SuperKeyword &&
                 node.argumentList.typeArgumentList !== null) {
-                this.pushDiagnostic(node,
-                    DiagnosticCode.super_invocation_cannot_have_type_arguments);
+                this.pushDiagnostic(node, DiagnosticCode.super_invocation_cannot_have_type_arguments);
             }
 
             super.visitInvocationExpression(node);
@@ -955,15 +745,13 @@ module TypeScript {
                 if (modifier.kind() === SyntaxKind.PublicKeyword ||
                     modifier.kind() === SyntaxKind.PrivateKeyword ||
                     modifier.kind() === SyntaxKind.StaticKeyword) {
-                    this.pushDiagnostic(modifier,
-                        DiagnosticCode._0_modifier_cannot_appear_on_a_module_element, [modifier.text()]);
+                    this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_cannot_appear_on_a_module_element, [modifier.text()]);
                     return true;
                 }
 
                 if (modifier.kind() === SyntaxKind.DeclareKeyword) {
                     if (seenDeclareModifier) {
-                        this.pushDiagnostic(modifier,
-                            DiagnosticCode.Accessibility_modifier_already_seen);
+                        this.pushDiagnostic(modifier, DiagnosticCode.Accessibility_modifier_already_seen);
                         return;
                     }
 
@@ -971,14 +759,12 @@ module TypeScript {
                 }
                 else if (modifier.kind() === SyntaxKind.ExportKeyword) {
                     if (seenExportModifier) {
-                        this.pushDiagnostic(modifier,
-                            DiagnosticCode._0_modifier_already_seen, [modifier.text()]);
+                        this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_already_seen, [modifier.text()]);
                         return;
                     }
 
                     if (seenDeclareModifier) {
-                        this.pushDiagnostic(modifier,
-                            DiagnosticCode._0_modifier_must_precede_1_modifier,
+                        this.pushDiagnostic(modifier, DiagnosticCode._0_modifier_must_precede_1_modifier,
                             [SyntaxFacts.getText(SyntaxKind.ExportKeyword), SyntaxFacts.getText(SyntaxKind.DeclareKeyword)]);
                         return;
                     }
@@ -991,12 +777,12 @@ module TypeScript {
         }
 
         private checkForDisallowedImportDeclaration(node: ModuleDeclarationSyntax): boolean {
-            for (var i = 0, n = node.moduleElements.length; i < n; i++) {
-                var child = node.moduleElements[i];
-                if (child.kind() === SyntaxKind.ImportDeclaration) {
-                    var importDeclaration = <ImportDeclarationSyntax>child;
-                    if (importDeclaration.moduleReference.kind() === SyntaxKind.ExternalModuleReference) {
-                        if (node.stringLiteral === null) {
+            if (!node.stringLiteral) {
+                for (var i = 0, n = node.moduleElements.length; i < n; i++) {
+                    var child = node.moduleElements[i];
+                    if (child.kind() === SyntaxKind.ImportDeclaration) {
+                        var importDeclaration = <ImportDeclarationSyntax>child;
+                        if (importDeclaration.moduleReference.kind() === SyntaxKind.ExternalModuleReference) {
                             this.pushDiagnostic(importDeclaration, DiagnosticCode.Import_declarations_in_an_internal_module_cannot_reference_an_external_module);
                         }
                     }
@@ -1010,8 +796,7 @@ module TypeScript {
             var declareToken = SyntaxUtilities.getToken(modifiers, SyntaxKind.DeclareKeyword);
 
             if (declareToken) {
-                this.pushDiagnostic(declareToken,
-                    DiagnosticCode.A_declare_modifier_cannot_be_used_with_an_import_declaration);
+                this.pushDiagnostic(declareToken, DiagnosticCode.A_declare_modifier_cannot_be_used_with_an_import_declaration);
                 return true;
             }
         }
@@ -1029,28 +814,19 @@ module TypeScript {
             if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.stringLiteral ? node.stringLiteral : firstToken(node.name), node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
-                this.checkForDisallowedImportDeclaration(node) ||
-                this.checkForDisallowedExports(node, node.moduleElements) ||
-                this.checkForMultipleExportAssignments(node, node.moduleElements)) {
+                this.checkForDisallowedImportDeclaration(node)) {
 
-                return;
-            }
-
-            if (!SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword) && this.checkFunctionOverloads(node, node.moduleElements)) {
                 return;
             }
 
             if (node.stringLiteral) {
                 if (!this.inAmbientDeclaration && !SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword)) {
-                    this.pushDiagnostic(node.stringLiteral,
-                        DiagnosticCode.Only_ambient_modules_can_use_quoted_names);
+                    this.pushDiagnostic(node.stringLiteral, DiagnosticCode.Only_ambient_modules_can_use_quoted_names);
                     return;
                 }
             }
 
-            if (!node.stringLiteral &&
-                this.checkForDisallowedExportAssignment(node)) {
-
+            if (!node.stringLiteral && this.checkForDisallowedExportAssignment(node)) {
                 return;
             }
 
@@ -1060,55 +836,12 @@ module TypeScript {
             this.inAmbientDeclaration = savedInAmbientDeclaration;
         }
 
-        private checkForDisallowedExports(node: ISyntaxElement, moduleElements: IModuleElementSyntax[]): boolean {
-            var seenExportedElement = false;
-            for (var i = 0, n = moduleElements.length; i < n; i++) {
-                var child = moduleElements[i];
-
-                if (SyntaxUtilities.hasExportKeyword(child)) {
-                    seenExportedElement = true;
-                    break;
-                }
-            }
-
-            if (seenExportedElement) {
-                for (var i = 0, n = moduleElements.length; i < n; i++) {
-                    var child = moduleElements[i];
-
-                    if (child.kind() === SyntaxKind.ExportAssignment) {
-                        this.pushDiagnostic(child, DiagnosticCode.Export_assignment_not_allowed_in_module_with_exported_element);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private checkForMultipleExportAssignments(node: ISyntaxElement, moduleElements: IModuleElementSyntax[]): boolean {
-            var seenExportAssignment = false;
-            var errorFound = false;
-            for (var i = 0, n = moduleElements.length; i < n; i++) {
-                var child = moduleElements[i];
-                if (child.kind() === SyntaxKind.ExportAssignment) {
-                    if (seenExportAssignment) {
-                        this.pushDiagnostic(child, DiagnosticCode.A_module_cannot_have_multiple_export_assignments);
-                        errorFound = true;
-                    }
-                    seenExportAssignment = true;
-                }
-            }
-
-            return errorFound;
-        }
-
         private checkForDisallowedExportAssignment(node: ModuleDeclarationSyntax): boolean {
             for (var i = 0, n = node.moduleElements.length; i < n; i++) {
                 var child = node.moduleElements[i];
 
                 if (child.kind() === SyntaxKind.ExportAssignment) {
                     this.pushDiagnostic(child, DiagnosticCode.Export_assignment_cannot_be_used_in_internal_modules);
-
                     return true;
                 }
             }
@@ -1119,10 +852,6 @@ module TypeScript {
         public visitBlock(node: BlockSyntax): void {
             if (this.inAmbientDeclaration || this.syntaxTree.isDeclaration()) {
                 this.pushDiagnostic(node.openBraceToken, DiagnosticCode.A_function_implementation_cannot_be_declared_in_an_ambient_context);
-                return;
-            }
-
-            if (this.checkFunctionOverloads(node, node.statements)) {
                 return;
             }
 
@@ -1389,10 +1118,7 @@ module TypeScript {
                 return;
             }
 
-            var savedCurrentConstructor = this.currentConstructor;
-            this.currentConstructor = node;
             super.visitConstructorDeclaration(node);
-            this.currentConstructor = savedCurrentConstructor;
         }
 
         private checkConstructorModifiers(modifiers: ISyntaxToken[]): boolean {
@@ -1423,17 +1149,6 @@ module TypeScript {
             }
 
             return false;
-        }
-
-        public visitSourceUnit(node: SourceUnitSyntax): void {
-            if (this.checkFunctionOverloads(node, node.moduleElements) ||
-                this.checkForDisallowedExports(node, node.moduleElements) ||
-                this.checkForMultipleExportAssignments(node, node.moduleElements)) {
-                
-                return;
-            }
-
-            super.visitSourceUnit(node);
         }
     }
 
@@ -1498,6 +1213,6 @@ module TypeScript {
             }
         }
 
-        return null;;
+        return null;
     }
 }

@@ -12,10 +12,10 @@
     
         class C {
             constructor (public c = 10);
-                         ~~~~~~
-!!! varBlock.ts(11,22): error TS1040: A parameter property is only allowed in a constructor implementation.
                          ~~~~~~~~~~~~~
 !!! varBlock.ts(11,22): error TS2174: A parameter initializer is only allowed in a function or constructor implementation.
+                         ~~~~~~
+!!! varBlock.ts(11,22): error TS2246: A parameter property is only allowed in a constructor implementation.
         }
     }
     

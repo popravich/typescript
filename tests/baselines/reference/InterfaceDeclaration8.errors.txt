@@ -1,0 +1,7 @@
+==== tests/cases/compiler/InterfaceDeclaration8.ts (2 errors) ====
+    interface string {
+              ~~~~~~
+!!! InterfaceDeclaration8.ts(1,11): error TS2000: Duplicate identifier 'string'.
+              ~~~~~~
+!!! InterfaceDeclaration8.ts(1,11): error TS2242: Interface name cannot be 'string'.
+    }

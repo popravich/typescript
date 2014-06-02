@@ -1,10 +1,12 @@
-==== tests/cases/compiler/constructSignatureWithAccessibilityModifiersOnParameters2.ts (14 errors) ====
+==== tests/cases/compiler/constructSignatureWithAccessibilityModifiersOnParameters2.ts (15 errors) ====
     // Parameter properties are not valid in overloads of constructors
     
     class C {
         constructor(public x, private y);
                     ~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(4,17): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(4,17): error TS2246: A parameter property is only allowed in a constructor implementation.
+                              ~~~~~~~
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(4,27): error TS2246: A parameter property is only allowed in a constructor implementation.
         constructor(public x, private y) { }
                            ~
 !!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(5,24): error TS2000: Duplicate identifier 'x'.
@@ -15,7 +17,7 @@
     class C2 {
         constructor(private x);
                     ~~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(9,17): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(9,17): error TS2246: A parameter property is only allowed in a constructor implementation.
         constructor(public x) { }
                            ~
 !!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(10,24): error TS2000: Duplicate identifier 'x'.
@@ -24,42 +26,42 @@
     class C3 {
         constructor(private x);
                     ~~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(14,17): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(14,17): error TS2246: A parameter property is only allowed in a constructor implementation.
         constructor(private y) { }
     }
     
     interface I {
         new (public x);
              ~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(19,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(19,10): error TS2246: A parameter property is only allowed in a constructor implementation.
         new (public x);
              ~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(20,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(20,10): error TS2246: A parameter property is only allowed in a constructor implementation.
     }
     
     interface I2 {
         new (private x);
              ~~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(24,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(24,10): error TS2246: A parameter property is only allowed in a constructor implementation.
         new (private x);
              ~~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(25,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(25,10): error TS2246: A parameter property is only allowed in a constructor implementation.
     }
     
     var a: {
         new (public x);
              ~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(29,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(29,10): error TS2246: A parameter property is only allowed in a constructor implementation.
         new (public y);
              ~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(30,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(30,10): error TS2246: A parameter property is only allowed in a constructor implementation.
     }
     
     var b: {
         new (private x);
              ~~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(34,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(34,10): error TS2246: A parameter property is only allowed in a constructor implementation.
         new (private y);
              ~~~~~~~
-!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(35,10): error TS1040: A parameter property is only allowed in a constructor implementation.
+!!! constructSignatureWithAccessibilityModifiersOnParameters2.ts(35,10): error TS2246: A parameter property is only allowed in a constructor implementation.
     }
