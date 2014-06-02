@@ -1064,6 +1064,7 @@ module TypeScript {
 
         private typeCheckSourceUnit(sourceUnit: SourceUnitSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(sourceUnit, context);
+            this.checkFunctionOverloadChain(sourceUnit, sourceUnit.moduleElements);
 
             this.resolveAST(sourceUnit.moduleElements, /*isContextuallyTyped:*/ false, context);
 
@@ -1256,6 +1257,10 @@ module TypeScript {
                 this.typeCheckSingleModuleDeclaration(ast, ast.stringLiteral, context);
             }
             else {
+                if (!SyntaxUtilities.containsToken(ast.modifiers, SyntaxKind.DeclareKeyword)) {
+                    this.checkFunctionOverloadChain(ast, ast.moduleElements);
+                }
+
                 var moduleNames = ASTHelpers.getModuleNames(ast.name);
                 for (var i = 0, n = moduleNames.length; i < n; i++) {
                     this.typeCheckSingleModuleDeclaration(ast, moduleNames[i], context);
@@ -5247,6 +5252,8 @@ module TypeScript {
         private resolveBlock(ast: BlockSyntax, context: PullTypeResolutionContext): PullSymbol {
             if (this.canTypeCheckAST(ast, context)) {
                 this.setTypeChecked(ast, context);
+
+                this.checkFunctionOverloadChain(ast, ast.statements);
                 this.resolveAST(ast.statements, /*isContextuallyTyped*/ false, context);
             }
 
@@ -13547,6 +13554,71 @@ module TypeScript {
             }
 
             return instantiatedSignatureOrSignatureWithSubstitution;
+        }
+
+        private checkFunctionOverloadChain(parent: ISyntaxNode, moduleElements: IModuleElementSyntax[]): boolean {
+            var decl = this.getEnclosingDeclForAST(parent);
+            if (!hasFlag(decl.flags, PullElementFlags.Ambient)) {
+                var inFunctionOverloadChain = false;
+                var functionOverloadChainName: string = null;
+
+                for (var i = 0, n = moduleElements.length; i < n; i++) {
+                    var moduleElement = moduleElements[i];
+                    var lastElement = i === (n - 1);
+
+                    if (inFunctionOverloadChain) {
+                        if (moduleElement.kind() !== SyntaxKind.FunctionDeclaration) {
+                            this.semanticInfoChain.addDiagnosticFromAST(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
+                            return true;
+                        }
+
+                        var functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
+                        if (tokenValueText(functionDeclaration.identifier) !== functionOverloadChainName) {
+                            this.semanticInfoChain.addDiagnosticFromAST(functionDeclaration.identifier,
+                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
+                            return true;
+                        }
+                    }
+
+                    if (moduleElement.kind() === SyntaxKind.FunctionDeclaration) {
+                        functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
+                        if (!SyntaxUtilities.containsToken(functionDeclaration.modifiers, SyntaxKind.DeclareKeyword)) {
+                            inFunctionOverloadChain = functionDeclaration.block === null;
+                            functionOverloadChainName = tokenValueText(functionDeclaration.identifier);
+
+                            if (inFunctionOverloadChain) {
+                                if (lastElement) {
+                                    this.semanticInfoChain.addDiagnosticFromAST(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
+                                    return true;
+                                }
+                                else {
+                                    // We're a function without a body, and there's another element 
+                                    // after us.  If it's another overload that doesn't have a body,
+                                    // then report an error that we're missing an implementation here.
+
+                                    var nextElement = childAt(moduleElements, i + 1);
+                                    if (nextElement.kind() === SyntaxKind.FunctionDeclaration) {
+                                        var nextFunction = <FunctionDeclarationSyntax>nextElement;
+
+                                        if (tokenValueText(nextFunction.identifier) !== functionOverloadChainName &&
+                                            nextFunction.block === null) {
+
+                                            this.semanticInfoChain.addDiagnosticFromAST(functionDeclaration.identifier, DiagnosticCode.Function_implementation_expected);
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            inFunctionOverloadChain = false;
+                            functionOverloadChainName = "";
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 

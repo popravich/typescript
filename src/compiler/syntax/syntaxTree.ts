@@ -466,70 +466,6 @@ module TypeScript {
             }
         }
 
-        private checkFunctionOverloads(moduleElements: IModuleElementSyntax[]): boolean {
-            if (!this.inAmbientDeclaration && !this.syntaxTree.isDeclaration()) {
-                var inFunctionOverloadChain = false;
-                var functionOverloadChainName: string = null;
-
-                for (var i = 0, n = moduleElements.length; i < n; i++) {
-                    var moduleElement = moduleElements[i];
-                    var lastElement = i === (n - 1);
-
-                    if (inFunctionOverloadChain) {
-                        if (moduleElement.kind() !== SyntaxKind.FunctionDeclaration) {
-                            this.pushDiagnostic(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
-                            return true;
-                        }
-
-                        var functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
-                        if (tokenValueText(functionDeclaration.identifier) !== functionOverloadChainName) {
-                            this.pushDiagnostic(functionDeclaration.identifier,
-                                DiagnosticCode.Function_overload_name_must_be_0, [functionOverloadChainName]);
-                            return true;
-                        }
-                    }
-
-                    if (moduleElement.kind() === SyntaxKind.FunctionDeclaration) {
-                        functionDeclaration = <FunctionDeclarationSyntax>moduleElement;
-                        if (!SyntaxUtilities.containsToken(functionDeclaration.modifiers, SyntaxKind.DeclareKeyword)) {
-                            inFunctionOverloadChain = functionDeclaration.block === null;
-                            functionOverloadChainName = tokenValueText(functionDeclaration.identifier);
-
-                            if (inFunctionOverloadChain) {
-                                if (lastElement) {
-                                    this.pushDiagnostic(firstToken(moduleElement), DiagnosticCode.Function_implementation_expected);
-                                    return true;
-                                }
-                                else {
-                                    // We're a function without a body, and there's another element 
-                                    // after us.  If it's another overload that doesn't have a body,
-                                    // then report an error that we're missing an implementation here.
-
-                                    var nextElement = childAt(moduleElements, i + 1);
-                                    if (nextElement.kind() === SyntaxKind.FunctionDeclaration) {
-                                        var nextFunction = <FunctionDeclarationSyntax>nextElement;
-
-                                        if (tokenValueText(nextFunction.identifier) !== functionOverloadChainName &&
-                                            nextFunction.block === null) {
-
-                                            this.pushDiagnostic(functionDeclaration.identifier, DiagnosticCode.Function_implementation_expected);
-                                            return true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else {
-                            inFunctionOverloadChain = false;
-                            functionOverloadChainName = "";
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
         private checkClassOverloads(node: ClassDeclarationSyntax): boolean {
             if (!this.inAmbientDeclaration && !SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword)) {
                 var inFunctionOverloadChain = false;
@@ -1036,10 +972,6 @@ module TypeScript {
                 return;
             }
 
-            if (!SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword) && this.checkFunctionOverloads(node.moduleElements)) {
-                return;
-            }
-
             if (node.stringLiteral) {
                 if (!this.inAmbientDeclaration && !SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword)) {
                     this.pushDiagnostic(node.stringLiteral,
@@ -1119,10 +1051,6 @@ module TypeScript {
         public visitBlock(node: BlockSyntax): void {
             if (this.inAmbientDeclaration || this.syntaxTree.isDeclaration()) {
                 this.pushDiagnostic(node.openBraceToken, DiagnosticCode.A_function_implementation_cannot_be_declared_in_an_ambient_context);
-                return;
-            }
-
-            if (this.checkFunctionOverloads(node.statements)) {
                 return;
             }
 
@@ -1426,8 +1354,7 @@ module TypeScript {
         }
 
         public visitSourceUnit(node: SourceUnitSyntax): void {
-            if (this.checkFunctionOverloads(node.moduleElements) ||
-                this.checkForDisallowedExports(node, node.moduleElements) ||
+            if (this.checkForDisallowedExports(node, node.moduleElements) ||
                 this.checkForMultipleExportAssignments(node, node.moduleElements)) {
                 
                 return;

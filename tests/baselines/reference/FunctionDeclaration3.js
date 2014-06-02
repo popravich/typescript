@@ -1,0 +1,1 @@
+//// [FunctionDeclaration3.js]

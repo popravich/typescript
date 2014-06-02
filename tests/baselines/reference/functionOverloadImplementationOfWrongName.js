@@ -1,0 +1,3 @@
+//// [functionOverloadImplementationOfWrongName.js]
+function bar() {
+}

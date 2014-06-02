@@ -2,7 +2,7 @@
     function foo(x: { id: number; name?: string; }): void;
     foo({ id: 1234 });                 // Ok
     ~~~
-!!! assignmentCompatFunctionsWithOptionalArgs.ts(2,1): error TS1041: Function implementation expected.
+!!! assignmentCompatFunctionsWithOptionalArgs.ts(2,1): error TS2238: Function implementation expected.
     foo({ id: 1234, name: "hello" });  // Ok
     foo({ id: 1234, name: false });    // Error, name of wrong type
     ~~~
