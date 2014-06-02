@@ -151,11 +151,21 @@ module TypeScript {
         }
 
         public visitCatchClause(node: CatchClauseSyntax): void {
-            if (node.typeAnnotation) {
-                this.pushDiagnostic(node.typeAnnotation, DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
+            if (this.checkForCatchClauseTypeAnnotation(node) ||
+                this.checkForDisallowedEvalOrArguments(node, node.identifier)) {
+                return;
             }
 
             super.visitCatchClause(node);
+        }
+
+        private checkForCatchClauseTypeAnnotation(node: CatchClauseSyntax): boolean {
+            if (node.typeAnnotation) {
+                this.pushDiagnostic(node.typeAnnotation, DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
+                return true;
+            }
+
+            return false;
         }
 
         private checkParameterListOrder(node: ParameterListSyntax): boolean {
@@ -1005,11 +1015,21 @@ module TypeScript {
         }
 
         public visitWithStatement(node: WithStatementSyntax): void {
-            if (this.checkForStatementInAmbientContxt(node)) {
+            if (this.checkForStatementInAmbientContxt(node) ||
+                this.checkForWithInStrictMode(node)) {
                 return;
             }
 
             super.visitWithStatement(node);
+        }
+
+        private checkForWithInStrictMode(node: WithStatementSyntax): boolean {
+            if (parsedInStrictMode(node)) {
+                this.pushDiagnostic(firstToken(node), DiagnosticCode.with_statements_are_not_allowed_in_strict_mode);
+                return true;
+            }
+
+            return false;
         }
 
         private checkForDisallowedModifiers(parent: ISyntaxElement, modifiers: ISyntaxToken[]): boolean {
@@ -1232,9 +1252,19 @@ module TypeScript {
             return false;
         }
 
+        public visitDeleteExpression(node: DeleteExpressionSyntax): void {
+            if (parsedInStrictMode(node) && node.expression.kind() === SyntaxKind.IdentifierName) {
+                this.pushDiagnostic(firstToken(node), DiagnosticCode.delete_cannot_be_called_on_an_identifier_in_strict_mode);
+                return;
+            }
+
+            super.visitDeleteExpression(node);
+        }
+
         private isIllegalAssignment(node: BinaryExpressionSyntax): boolean {
             if (parsedInStrictMode(node) && SyntaxFacts.isAssignmentOperatorToken(node.operatorToken.kind()) && this.isEvalOrArguments(node.left)) {
                 this.pushDiagnostic(node.operatorToken, DiagnosticCode.Invalid_use_of_0_in_strict_mode, [this.getEvalOrArguments(node.left)]);
+                return true;
             }
 
             return false;
