@@ -860,8 +860,7 @@ module TypeScript {
             if (this.checkForDisallowedDeclareModifier(node.modifiers) ||
                 this.checkForRequiredDeclareModifier(node, node.stringLiteral ? node.stringLiteral : firstToken(node.name), node.modifiers) ||
                 this.checkModuleElementModifiers(node.modifiers) ||
-                this.checkForDisallowedImportDeclaration(node) ||
-                this.checkForDisallowedExports(node, node.moduleElements)) {
+                this.checkForDisallowedImportDeclaration(node)) {
 
                 return;
             }
@@ -884,31 +883,6 @@ module TypeScript {
             this.inAmbientDeclaration = this.inAmbientDeclaration || this.syntaxTree.isDeclaration() || SyntaxUtilities.containsToken(node.modifiers, SyntaxKind.DeclareKeyword);
             super.visitModuleDeclaration(node);
             this.inAmbientDeclaration = savedInAmbientDeclaration;
-        }
-
-        private checkForDisallowedExports(node: ISyntaxElement, moduleElements: IModuleElementSyntax[]): boolean {
-            var seenExportedElement = false;
-            for (var i = 0, n = moduleElements.length; i < n; i++) {
-                var child = moduleElements[i];
-
-                if (SyntaxUtilities.hasExportKeyword(child)) {
-                    seenExportedElement = true;
-                    break;
-                }
-            }
-
-            if (seenExportedElement) {
-                for (var i = 0, n = moduleElements.length; i < n; i++) {
-                    var child = moduleElements[i];
-
-                    if (child.kind() === SyntaxKind.ExportAssignment) {
-                        this.pushDiagnostic(child, DiagnosticCode.Export_assignment_not_allowed_in_module_with_exported_element);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         private checkForDisallowedExportAssignment(node: ModuleDeclarationSyntax): boolean {
@@ -1228,14 +1202,6 @@ module TypeScript {
             }
 
             return false;
-        }
-
-        public visitSourceUnit(node: SourceUnitSyntax): void {
-            if (this.checkForDisallowedExports(node, node.moduleElements)) {
-                return;
-            }
-
-            super.visitSourceUnit(node);
         }
     }
 

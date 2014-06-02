@@ -1,0 +1,1 @@
+//// [importDeclWithExportModifierAndExportAssignmentInAmbientContext.js]

@@ -1064,6 +1064,7 @@ module TypeScript {
 
         private typeCheckSourceUnit(sourceUnit: SourceUnitSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(sourceUnit, context);
+            this.checkForDisallowedExports(sourceUnit.moduleElements);
             this.checkForMultipleExportAssignments(sourceUnit.moduleElements);
             this.checkFunctionOverloadChains(sourceUnit, sourceUnit.moduleElements);
 
@@ -1256,6 +1257,7 @@ module TypeScript {
         }
 
         private typeCheckModuleDeclaration(ast: ModuleDeclarationSyntax, context: PullTypeResolutionContext): void {
+            this.checkForDisallowedExports(ast.moduleElements);
             this.checkForMultipleExportAssignments(ast.moduleElements);
 
             if (ast.stringLiteral) {
@@ -13735,6 +13737,29 @@ module TypeScript {
                         this.semanticInfoChain.addDiagnosticFromAST(child, DiagnosticCode.A_module_cannot_have_multiple_export_assignments);
                     }
                     seenExportAssignment = true;
+                }
+            }
+        }
+
+        private checkForDisallowedExports(moduleElements: IModuleElementSyntax[]): void {
+            var seenExportedElement = false;
+            for (var i = 0, n = moduleElements.length; i < n; i++) {
+                var child = moduleElements[i];
+
+                if (SyntaxUtilities.hasExportKeyword(child)) {
+                    seenExportedElement = true;
+                    break;
+                }
+            }
+
+            if (seenExportedElement) {
+                for (var i = 0, n = moduleElements.length; i < n; i++) {
+                    var child = moduleElements[i];
+
+                    if (child.kind() === SyntaxKind.ExportAssignment) {
+                        this.semanticInfoChain.addDiagnosticFromAST(child, DiagnosticCode.Export_assignment_not_allowed_in_module_with_exported_element);
+                        return;
+                    }
                 }
             }
         }
