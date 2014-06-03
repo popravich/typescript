@@ -459,8 +459,8 @@ module TypeScript.Parser {
             return eatToken(SyntaxKind.SemicolonToken);
         }
 
-        function createMissingToken(expectedKind: SyntaxKind, actual: ISyntaxToken): ISyntaxToken {
-            var diagnostic = getExpectedTokenDiagnostic(expectedKind, actual);
+        function createMissingToken(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode?: string, arguments?: any[]): ISyntaxToken {
+            var diagnostic = getExpectedTokenDiagnostic(expectedKind, actual, diagnosticCode, arguments);
             addDiagnostic(diagnostic);
 
             // The missing token will be at the full start of the current token.  That way empty tokens
@@ -468,25 +468,34 @@ module TypeScript.Parser {
             return Syntax.emptyToken(expectedKind);
         }
 
-        function getExpectedTokenDiagnostic(expectedKind: SyntaxKind, actual: ISyntaxToken): Diagnostic {
+        function getExpectedTokenDiagnostic(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode: string, arguments: any[]): Diagnostic {
             var token = currentToken();
 
-            // They wanted something specific, just report that that token was missing.
-            if (SyntaxFacts.isAnyKeyword(expectedKind) || SyntaxFacts.isAnyPunctuation(expectedKind)) {
-                return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), DiagnosticCode._0_expected, [SyntaxFacts.getText(expectedKind)]);
-            }
-            else {
-                // They wanted an identifier.
+            // If a specialized diagnostic message was provided, just use that.
+            if (!diagnosticCode) {
+                arguments = null;
 
-                // If the user supplied a keyword, give them a specialized message.
-                if (actual !== null && SyntaxFacts.isAnyKeyword(actual.kind())) {
-                    return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), DiagnosticCode.Identifier_expected_0_is_a_keyword, [SyntaxFacts.getText(actual.kind())]);
+                // They wanted something specific, just report that that token was missing.
+                if (SyntaxFacts.isAnyKeyword(expectedKind) || SyntaxFacts.isAnyPunctuation(expectedKind)) {
+                    diagnosticCode = DiagnosticCode._0_expected;
+                    arguments = [SyntaxFacts.getText(expectedKind)];
                 }
                 else {
-                    // Otherwise just report that an identifier was expected.
-                    return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), DiagnosticCode.Identifier_expected, null);
+                    // They wanted an identifier.
+
+                    // If the user supplied a keyword, give them a specialized message.
+                    if (actual !== null && SyntaxFacts.isAnyKeyword(actual.kind())) {
+                        diagnosticCode = DiagnosticCode.Identifier_expected_0_is_a_keyword;
+                        arguments = [SyntaxFacts.getText(actual.kind())];
+                    }
+                    else {
+                        // Otherwise just report that an identifier was expected.
+                        diagnosticCode = DiagnosticCode.Identifier_expected;
+                    }
                 }
             }
+
+            return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), diagnosticCode, arguments);
         }
 
         function getBinaryExpressionPrecedence(tokenKind: SyntaxKind): BinaryExpressionPrecedence {
@@ -2927,8 +2936,8 @@ module TypeScript.Parser {
                 return null;
             }
 
-            // Nothing else worked, just try to consume an identifier so we report an error.
-            return eatIdentifierToken();
+            // Nothing else worked, report an error and produce a missing token.
+            return createMissingToken(SyntaxKind.IdentifierName, _currentToken, DiagnosticCode._0_expected, [DiagnosticCode.expression]);
         }
 
         function tryReparseDivideAsRegularExpression(): IPrimaryExpressionSyntax {

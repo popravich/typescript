@@ -12,9 +12,9 @@
     ~~~
 !!! promiseChaining.ts(2,1): error TS1005: '>' expected.
        ~~~
-!!! promiseChaining.ts(2,4): error TS1003: Identifier expected.
+!!! promiseChaining.ts(2,4): error TS1005: 'expression' expected.
           ~
-!!! promiseChaining.ts(2,7): error TS1003: Identifier expected.
+!!! promiseChaining.ts(2,7): error TS1005: 'expression' expected.
     // This exhibits the bug that you see with Promise typings having generic signatures in a generic type
     
     // BUG 858876: should get a fresh type parameter which each then call
