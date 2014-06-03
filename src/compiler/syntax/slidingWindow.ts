@@ -185,9 +185,5 @@ module TypeScript {
             // try to get the next item, we'll be forced to refetch them from the underlying source.
             this.windowCount = this.currentRelativeItemIndex;
         }
-
-        public pinCount(): number {
-            return this._pinCount;
-        }
     }
 }
