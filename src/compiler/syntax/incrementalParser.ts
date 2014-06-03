@@ -62,6 +62,8 @@ module TypeScript.IncrementalParser {
         var _oldSourceUnitCursor = getSyntaxCursor();
         var oldSourceUnit = oldSyntaxTree.sourceUnit();
 
+        var _outstandingRewindPointCount = 0;
+
         // Start the cursor pointing at the first element in the source unit (if it exists).
         if (oldSourceUnit.moduleElements.length > 0) {
             _oldSourceUnitCursor.pushElement(childAt(oldSourceUnit.moduleElements, 0), /*indexInParent:*/ 0);
@@ -88,6 +90,7 @@ module TypeScript.IncrementalParser {
             _scannerParserSource.release();
             _scannerParserSource = null;
             _oldSourceUnitCursor = null;
+            _outstandingRewindPointCount = 0;
         }
 
         function extendToAffectedRange(changeRange: TextChangeRange,
@@ -158,6 +161,7 @@ module TypeScript.IncrementalParser {
 
             // Debug.assert(rewindPoint.pinCount === _oldSourceUnitCursor.pinCount());
 
+            _outstandingRewindPointCount++;
             return rewindPoint;
         }
 
@@ -184,6 +188,12 @@ module TypeScript.IncrementalParser {
             }
 
             _scannerParserSource.releaseRewindPoint(rewindPoint);
+            _outstandingRewindPointCount--;
+            Debug.assert(_outstandingRewindPointCount >= 0);
+        }
+
+        function isPinned() {
+            return _outstandingRewindPointCount > 0;
         }
 
         function canReadFromOldSourceUnit() {
@@ -204,7 +214,7 @@ module TypeScript.IncrementalParser {
             //
             // As such, the rule is simple.  We only return nodes/tokens from teh original tree if
             // we know the parser will accept and consume them and never rewind back before them.
-            if (_scannerParserSource.isPinned()) {
+            if (isPinned()) {
                 return false;
             }
 
