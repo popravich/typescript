@@ -2,7 +2,7 @@
     class C {
       get foo<T>() { }
              ~~~
-!!! parserGetAccessorWithTypeParameters1.ts(2,10): error TS1093: Type parameters cannot appear on an accessor.
+!!! parserGetAccessorWithTypeParameters1.ts(2,10): error TS1094: Type parameters cannot appear on an accessor.
           ~~~
 !!! parserGetAccessorWithTypeParameters1.ts(2,7): error TS2126: Getters must return a value.
     }

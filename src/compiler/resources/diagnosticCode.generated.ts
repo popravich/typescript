@@ -87,6 +87,7 @@ module TypeScript {
         Invalid_use_of_0_in_strict_mode: "Invalid use of '{0}' in strict mode.",
         with_statements_are_not_allowed_in_strict_mode: "'with' statements are not allowed in strict mode.",
         delete_cannot_be_called_on_an_identifier_in_strict_mode: "'delete' cannot be called on an identifier in strict mode.",
+        Invalid_left_hand_side_in_for_in_statement: "Invalid left-hand side in 'for...in' statement.",
         Duplicate_identifier_0: "Duplicate identifier '{0}'.",
         The_name_0_does_not_exist_in_the_current_scope: "The name '{0}' does not exist in the current scope.",
         The_name_0_does_not_refer_to_a_value: "The name '{0}' does not refer to a value.",
