@@ -20,10 +20,10 @@
 !!! indexSignatureTypeCheck.ts(15,6): error TS1017: Index signatures cannot have rest parameters.
         [p4: string, p5?: string];
         ~
-!!! indexSignatureTypeCheck.ts(16,5): error TS1095: Index signature must have exactly one parameter.
+!!! indexSignatureTypeCheck.ts(16,5): error TS1096: Index signature must have exactly one parameter.
         ~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! indexSignatureTypeCheck.ts(16,5): error TS2232: Duplicate string index signature.
         [p6: string, ...p7: any[]];
         ~
-!!! indexSignatureTypeCheck.ts(17,5): error TS1095: Index signature must have exactly one parameter.
+!!! indexSignatureTypeCheck.ts(17,5): error TS1096: Index signature must have exactly one parameter.
     }

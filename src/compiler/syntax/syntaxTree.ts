@@ -930,12 +930,22 @@ module TypeScript {
 
         public visitForInStatement(node: ForInStatementSyntax): void {
             if (this.checkForStatementInAmbientContxt(node) ||
-                this.checkForInStatementVariableDeclaration(node)) {
+                this.checkForInStatementVariableDeclaration(node) ||
+                this.checkForInLeftHandSideExpression(node)) {
 
                 return;
             }
 
             super.visitForInStatement(node);
+        }
+
+        private checkForInLeftHandSideExpression(node: ForInStatementSyntax): boolean {
+            if (node.left && !SyntaxUtilities.isLeftHandSizeExpression(node.left)) {
+                this.pushDiagnostic(node.left, DiagnosticCode.Invalid_left_hand_side_in_for_in_statement);
+                return true;
+            }
+
+            return false;
         }
 
         private checkForInStatementVariableDeclaration(node: ForInStatementSyntax): boolean {
