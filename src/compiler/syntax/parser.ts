@@ -372,7 +372,7 @@ module TypeScript.Parser {
 
         // This method should be called when the grammar calls for an *Identifier* and not an
         // *IdentifierName*.
-        function eatIdentifierToken(): ISyntaxToken {
+        function eatIdentifierToken(diagnosticCode?: string): ISyntaxToken {
             var token = currentToken();
             if (isIdentifier(token)) {
                 consumeToken(token);
@@ -384,7 +384,7 @@ module TypeScript.Parser {
                 return TypeScript.Syntax.convertKeywordToIdentifier(token);
             }
 
-            return createMissingToken(SyntaxKind.IdentifierName, token);
+            return createMissingToken(SyntaxKind.IdentifierName, token, diagnosticCode);
         }
 
         function previousTokenHasTrailingNewLine(token: ISyntaxToken): boolean {
@@ -459,8 +459,8 @@ module TypeScript.Parser {
             return eatToken(SyntaxKind.SemicolonToken);
         }
 
-        function createMissingToken(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode?: string, arguments?: any[]): ISyntaxToken {
-            var diagnostic = getExpectedTokenDiagnostic(expectedKind, actual, diagnosticCode, arguments);
+        function createMissingToken(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode?: string): ISyntaxToken {
+            var diagnostic = getExpectedTokenDiagnostic(expectedKind, actual, diagnosticCode);
             addDiagnostic(diagnostic);
 
             // The missing token will be at the full start of the current token.  That way empty tokens
@@ -468,17 +468,16 @@ module TypeScript.Parser {
             return Syntax.emptyToken(expectedKind);
         }
 
-        function getExpectedTokenDiagnostic(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode: string, arguments: any[]): Diagnostic {
+        function getExpectedTokenDiagnostic(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode: string): Diagnostic {
             var token = currentToken();
 
+            var args: any[] = null;
             // If a specialized diagnostic message was provided, just use that.
             if (!diagnosticCode) {
-                arguments = null;
-
                 // They wanted something specific, just report that that token was missing.
                 if (SyntaxFacts.isAnyKeyword(expectedKind) || SyntaxFacts.isAnyPunctuation(expectedKind)) {
                     diagnosticCode = DiagnosticCode._0_expected;
-                    arguments = [SyntaxFacts.getText(expectedKind)];
+                    args = [SyntaxFacts.getText(expectedKind)];
                 }
                 else {
                     // They wanted an identifier.
@@ -486,7 +485,7 @@ module TypeScript.Parser {
                     // If the user supplied a keyword, give them a specialized message.
                     if (actual !== null && SyntaxFacts.isAnyKeyword(actual.kind())) {
                         diagnosticCode = DiagnosticCode.Identifier_expected_0_is_a_keyword;
-                        arguments = [SyntaxFacts.getText(actual.kind())];
+                        args = [SyntaxFacts.getText(actual.kind())];
                     }
                     else {
                         // Otherwise just report that an identifier was expected.
@@ -495,7 +494,7 @@ module TypeScript.Parser {
                 }
             }
 
-            return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), diagnosticCode, arguments);
+            return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), diagnosticCode, args);
         }
 
         function getBinaryExpressionPrecedence(tokenKind: SyntaxKind): BinaryExpressionPrecedence {
@@ -2618,7 +2617,10 @@ module TypeScript.Parser {
             //      Literal
             //      ArrayLiteral
             //      ObjectLiteral
-            //      (Expression)             //      FunctionExpression            //      new MemberExpression Arguments?            //
+            //      (Expression) 
+            //      FunctionExpression
+            //      new MemberExpression Arguments?
+            //
             //   MemberExpression : See 11.2 
             //      PrimaryExpression 
             //      MemberExpression[Expression]
@@ -2628,7 +2630,8 @@ module TypeScript.Parser {
             //      MemberExpression 
             //      CallExpression Arguments
             //      CallExpression[Expression]
-            //      CallExpression.IdentifierName             //
+            //      CallExpression.IdentifierName 
+            //
             // Technically this is ambiguous.  i.e. CallExpression defines:
             //
             //   CallExpression:
@@ -2930,11 +2933,14 @@ module TypeScript.Parser {
                 case SyntaxKind.SlashToken:
                 case SyntaxKind.SlashEqualsToken:
                     // If we see a standalone / or /= and we're expecting a term, then try to reparse
-                    // it as a regular expression.  If we succeed, then return that.  Otherwise, fall
-                    // back and just return a missing identifier as usual.  We'll then form a binary
-                    // expression out of of the / as usual.
+                    // it as a regular expression.
                     var result = tryReparseDivideAsRegularExpression();
-                    return result || eatIdentifierToken()
+
+                    // If we get a result, then use it. Otherwise, create a missing identifier so
+                    // that parsing can continue.  Note: we do this even if 'force' is false.  That's
+                    // because we *do* want to consider a standalone / as an expression that should be
+                    // returned from tryParseExpression even when 'force' is set to false.
+                    return result || eatIdentifierToken(DiagnosticCode.Expression_expected);
             }
 
             if (!force) {
@@ -2942,7 +2948,7 @@ module TypeScript.Parser {
             }
 
             // Nothing else worked, report an error and produce a missing token.
-            return createMissingToken(SyntaxKind.IdentifierName, _currentToken, DiagnosticCode._0_expected, [DiagnosticCode.expression]);
+            return eatIdentifierToken(DiagnosticCode.Expression_expected);
         }
 
         function tryReparseDivideAsRegularExpression(): IPrimaryExpressionSyntax {
@@ -3521,7 +3527,7 @@ module TypeScript.Parser {
         }
 
         function parseType(): ITypeSyntax {
-            return tryParseType() || eatIdentifierToken();
+            return tryParseType() || eatIdentifierToken(DiagnosticCode.Type_expected);
         }
 
         function tryParseType(): ITypeSyntax {

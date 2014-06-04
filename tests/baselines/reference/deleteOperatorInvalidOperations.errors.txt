@@ -7,12 +7,12 @@
                        ~~~~~~
 !!! deleteOperatorInvalidOperations.ts(5,20): error TS1005: ',' expected.
                               ~
-!!! deleteOperatorInvalidOperations.ts(5,27): error TS1005: 'expression' expected.
+!!! deleteOperatorInvalidOperations.ts(5,27): error TS1109: Expression expected.
     
     // miss an operand
     var BOOLEAN2 = delete ;
                           ~
-!!! deleteOperatorInvalidOperations.ts(8,23): error TS1005: 'expression' expected.
+!!! deleteOperatorInvalidOperations.ts(8,23): error TS1109: Expression expected.
     
     // delete global variable s
     class testADelx {

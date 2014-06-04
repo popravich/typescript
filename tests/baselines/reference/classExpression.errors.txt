@@ -1,13 +1,13 @@
 ==== tests/cases/compiler/classExpression.ts (4 errors) ====
     var x = class C {
             ~~~~~
-!!! classExpression.ts(1,9): error TS1005: 'expression' expected.
+!!! classExpression.ts(1,9): error TS1109: Expression expected.
     }
     
     var y = {
         foo: class C2 {
              ~~~~~
-!!! classExpression.ts(5,10): error TS1005: 'expression' expected.
+!!! classExpression.ts(5,10): error TS1109: Expression expected.
         }
     }
     ~
@@ -16,6 +16,6 @@
     module M {
         var z = class C4 {
                 ~~~~~
-!!! classExpression.ts(10,13): error TS1005: 'expression' expected.
+!!! classExpression.ts(10,13): error TS1109: Expression expected.
         }
     }

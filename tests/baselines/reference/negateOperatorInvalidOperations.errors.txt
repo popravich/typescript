@@ -4,11 +4,11 @@
     // operand before -
     var NUMBER1 = var NUMBER-;  //expect error
                   ~~~
-!!! negateOperatorInvalidOperations.ts(4,15): error TS1005: 'expression' expected.
+!!! negateOperatorInvalidOperations.ts(4,15): error TS1109: Expression expected.
                             ~
 !!! negateOperatorInvalidOperations.ts(4,25): error TS1005: '=' expected.
                              ~
-!!! negateOperatorInvalidOperations.ts(4,26): error TS1005: 'expression' expected.
+!!! negateOperatorInvalidOperations.ts(4,26): error TS1109: Expression expected.
     
     // invalid expressions
     var NUMBER2 = -(null - undefined);
@@ -30,4 +30,4 @@
     // miss operand
     var NUMBER =-;
                  ~
-!!! negateOperatorInvalidOperations.ts(12,14): error TS1005: 'expression' expected.
+!!! negateOperatorInvalidOperations.ts(12,14): error TS1109: Expression expected.
