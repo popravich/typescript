@@ -2,6 +2,23 @@
 
 module TypeScript {
     export class SyntaxUtilities {
+        public static isAnyFunctionExpressionOrDeclaration(ast: ISyntaxElement): boolean {
+            switch (ast.kind()) {
+                case SyntaxKind.SimpleArrowFunctionExpression:
+                case SyntaxKind.ParenthesizedArrowFunctionExpression:
+                case SyntaxKind.FunctionExpression:
+                case SyntaxKind.FunctionDeclaration:
+                case SyntaxKind.MemberFunctionDeclaration:
+                case SyntaxKind.FunctionPropertyAssignment:
+                case SyntaxKind.ConstructorDeclaration:
+                case SyntaxKind.GetAccessor:
+                case SyntaxKind.SetAccessor:
+                    return true;
+            }
+
+            return false;
+        }
+
         public static isLastTokenOnLine(token: ISyntaxToken, text: ISimpleText): boolean {
             var _nextToken = nextToken(token, text);
             if (_nextToken === null) {

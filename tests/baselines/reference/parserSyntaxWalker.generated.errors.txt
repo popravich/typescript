@@ -1,4 +1,4 @@
-==== tests/cases/compiler/parserSyntaxWalker.generated.ts (23 errors) ====
+==== tests/cases/compiler/parserSyntaxWalker.generated.ts (22 errors) ====
     declare module "fs" {
         export class File {
             constructor(filename: string);
@@ -212,8 +212,6 @@
 !!! parserSyntaxWalker.generated.ts(183,36): error TS1005: ';' expected.
                                          ~~
 !!! parserSyntaxWalker.generated.ts(183,38): error TS1008: Unexpected token; 'statement' expected.
-                              ~~~~~~~~
-!!! parserSyntaxWalker.generated.ts(183,27): error TS2201: 'continue' statement can only be used within an enclosing iteration statement.
                 var f = true ? 1 : 0;/*? :*/   // YES :
                 i++;/*++*/
                 i--;/*--*/

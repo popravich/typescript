@@ -3558,7 +3558,7 @@ module TypeScript {
                     default:
                         // don't recurse into a function\object literal decl - we don't want to confuse a nested
                         // return type with the top-level function's return type
-                        go = !this.isAnyFunctionExpressionOrDeclaration(ast);
+                        go = !SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(ast);
                         break;
                 }
 
@@ -3730,7 +3730,7 @@ module TypeScript {
                 var foundSuperCall = false;
                 var pre = (ast: ISyntaxElement, walker: IAstWalker) => {
                     // do not dive in functions - super calls inside them are illegal and should not be considered valid search results
-                    if (this.isAnyFunctionExpressionOrDeclaration(ast)) {
+                    if (SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(ast)) {
                         walker.options.goChildren = false;
                         return;
                     }
@@ -5578,56 +5578,7 @@ module TypeScript {
         private typeCheckLabeledStatement(ast: LabeledStatementSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(ast, context);
 
-            // Note that break/continue are treated differently.  ES5 says this about a break statement:
-            // A program is considered syntactically incorrect if ...:
-            //
-            // The program contains a break statement with the optional Identifier, where Identifier 
-            // does not appear in the label set of an enclosing (but not crossing function boundaries) 
-            // **Statement.**
-            // 
-            // However, it says this about continue statements:
-            //
-            // The program contains a continue statement with the optional Identifier, where Identifier
-            // does not appear in the label set of an enclosing (but not crossing function boundaries) 
-            // **IterationStatement.**
-
-            // In other words, you can 'break' to any enclosing statement.  But you can only 'continue'
-            // to an enclosing *iteration* statement.
-            var labelIdentifier = tokenValueText(ast.identifier);
-
-            var breakableLabels = this.getEnclosingLabels(ast, /*breakable:*/ true, /*crossFunctions:*/ false);
-
-            // It is invalid to have a label enclosed in a label of the same name.
-            var matchingLabel = ArrayUtilities.firstOrDefault(breakableLabels, s => tokenValueText(s.identifier) === labelIdentifier);
-            if (matchingLabel) {
-                context.postDiagnostic(this.semanticInfoChain.duplicateIdentifierDiagnosticFromAST(
-                    ast.identifier, labelIdentifier));
-            }
-
             this.resolveAST(ast.statement, /*isContextuallyTyped*/ false, context);
-        }
-
-        private labelIsOnContinuableConstruct(statement: ISyntaxElement): boolean {
-            switch (statement.kind()) {
-                case SyntaxKind.LabeledStatement:
-                    // Labels work transitively.  i.e. if you have:
-                    //      foo:
-                    //      bar:
-                    //      while(...)
-                    //
-                    // Then both 'foo' and 'bar' are in the label set for 'while' and are thus
-                    // continuable.
-                    return this.labelIsOnContinuableConstruct((<LabeledStatementSyntax>statement).statement);
-
-                case SyntaxKind.WhileStatement:
-                case SyntaxKind.ForStatement:
-                case SyntaxKind.ForInStatement:
-                case SyntaxKind.DoStatement:
-                    return true;
-
-                default:
-                    return false;
-            }
         }
 
         private resolveContinueStatement(ast: ContinueStatementSyntax, context: PullTypeResolutionContext): PullSymbol {
@@ -5638,130 +5589,8 @@ module TypeScript {
             return this.semanticInfoChain.voidTypeSymbol;
         }
 
-        private isIterationStatement(ast: ISyntaxElement): boolean {
-            switch (ast.kind()) {
-                case SyntaxKind.ForStatement:
-                case SyntaxKind.ForInStatement:
-                case SyntaxKind.WhileStatement:
-                case SyntaxKind.DoStatement:
-                    return true;
-            }
-
-            return false;
-        }
-
-        private isAnyFunctionExpressionOrDeclaration(ast: ISyntaxElement): boolean {
-            switch (ast.kind()) {
-                case SyntaxKind.SimpleArrowFunctionExpression:
-                case SyntaxKind.ParenthesizedArrowFunctionExpression:
-                case SyntaxKind.FunctionExpression:
-                case SyntaxKind.FunctionDeclaration:
-                case SyntaxKind.MemberFunctionDeclaration:
-                case SyntaxKind.FunctionPropertyAssignment:
-                case SyntaxKind.ConstructorDeclaration:
-                case SyntaxKind.GetAccessor:
-                case SyntaxKind.SetAccessor:
-                    return true;
-            }
-
-            return false;
-        }
-
-        private inSwitchStatement(ast: ISyntaxElement): boolean {
-            while (ast) {
-                if (ast.kind() === SyntaxKind.SwitchStatement) {
-                    return true;
-                }
-
-                if (this.isAnyFunctionExpressionOrDeclaration(ast)) {
-                    return false;
-                }
-
-                ast = ast.parent;
-            }
-
-            return false;
-        }
-
-        private inIterationStatement(ast: ISyntaxElement, crossFunctions: boolean): boolean {
-            while (ast) {
-                if (this.isIterationStatement(ast)) {
-                    return true;
-                }
-
-                if (!crossFunctions && this.isAnyFunctionExpressionOrDeclaration(ast)) {
-                    return false;
-                }
-
-                ast = ast.parent;
-            }
-
-            return false;
-        }
-
-        private getEnclosingLabels(ast: ISyntaxElement, breakable: boolean, crossFunctions: boolean): LabeledStatementSyntax[] {
-            var result: LabeledStatementSyntax[] = [];
-
-            ast = ast.parent;
-            while (ast) {
-                if (ast.kind() === SyntaxKind.LabeledStatement) {
-                    var labeledStatement = <LabeledStatementSyntax>ast;
-                    if (breakable) {
-                        // Breakable labels can be placed on any construct
-                        result.push(labeledStatement);
-                    }
-                    else {
-                        // They're asking for continuable labels.  Continuable labels must be on
-                        // a loop construct.
-                        if (this.labelIsOnContinuableConstruct(labeledStatement.statement)) {
-                            result.push(labeledStatement);
-                        }
-                    }
-                }
-
-                if (!crossFunctions && this.isAnyFunctionExpressionOrDeclaration(ast)) {
-                    break;
-                }
-
-                ast = ast.parent;
-            }
-
-            return result;
-        }
-
         private typeCheckContinueStatement(ast: ContinueStatementSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(ast, context);
-
-            if (!this.inIterationStatement(ast, /*crossFunctions:*/ false)) {
-                if (this.inIterationStatement(ast, /*crossFunctions:*/ true)) {
-                    context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                        DiagnosticCode.Jump_target_cannot_cross_function_boundary));
-                }
-                else {
-                    context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                        DiagnosticCode.continue_statement_can_only_be_used_within_an_enclosing_iteration_statement));
-                }
-            }
-            else if (ast.identifier) {
-                var continuableLabels = this.getEnclosingLabels(ast, /*breakable:*/ false, /*crossFunctions:*/ false);
-
-                if (!ArrayUtilities.any(continuableLabels, s => tokenValueText(s.identifier) === tokenValueText(ast.identifier))) {
-                    // The target of the continue statement wasn't to a reachable label.
-                    //
-                    // Let hte user know, with a specialized message if the target was to an
-                    // unreachable label (as opposed to a non-existed label)
-                    var continuableLabels = this.getEnclosingLabels(ast, /*breakable:*/ false, /*crossFunctions:*/ true);
-
-                    if (ArrayUtilities.any(continuableLabels, s => tokenValueText(s.identifier) === tokenValueText(ast.identifier))) {
-                        context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                            DiagnosticCode.Jump_target_cannot_cross_function_boundary));
-                    }
-                    else {
-                        context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                            DiagnosticCode.Jump_target_not_found));
-                    }
-                }
-            }
         }
 
         private resolveBreakStatement(ast: BreakStatementSyntax, context: PullTypeResolutionContext): PullSymbol {
@@ -5774,39 +5603,6 @@ module TypeScript {
 
         private typeCheckBreakStatement(ast: BreakStatementSyntax, context: PullTypeResolutionContext): void {
             this.setTypeChecked(ast, context);
-
-            // Note: the order here is important.  If the 'break' has a target, then it can jump to
-            // any enclosing laballed statment.  If it has no target, it must be in an iteration or
-            // swtich statement.
-            if (ast.identifier) {
-                var breakableLabels = this.getEnclosingLabels(ast, /*breakable:*/ true, /*crossFunctions:*/ false);
-
-                if (!ArrayUtilities.any(breakableLabels, s => tokenValueText(s.identifier) === tokenValueText(ast.identifier))) {
-                    // The target of the continue statement wasn't to a reachable label.
-                    //
-                    // Let hte user know, with a specialized message if the target was to an
-                    // unreachable label (as opposed to a non-existed label)
-                    var breakableLabels = this.getEnclosingLabels(ast, /*breakable:*/ true, /*crossFunctions:*/ true);
-                    if (ArrayUtilities.any(breakableLabels, s => tokenValueText(s.identifier) === tokenValueText(ast.identifier))) {
-                        context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                            DiagnosticCode.Jump_target_cannot_cross_function_boundary));
-                    }
-                    else {
-                        context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                            DiagnosticCode.Jump_target_not_found));
-                    }
-                }
-            }
-            else if (!this.inIterationStatement(ast, /*crossFunctions:*/ false) && !this.inSwitchStatement(ast)) {
-                if (this.inIterationStatement(ast, /*crossFunctions:*/ true)) {
-                    context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                        DiagnosticCode.Jump_target_cannot_cross_function_boundary));
-                }
-                else {
-                    context.postDiagnostic(this.semanticInfoChain.diagnosticFromAST(ast,
-                        DiagnosticCode.break_statement_can_only_be_used_within_an_enclosing_iteration_or_switch_statement));
-                }
-            }
         }
 
         // Expression resolution
@@ -7792,7 +7588,7 @@ module TypeScript {
                         // first statement in the constructor happens in typeCheckConstructorDeclaration.
                         return;
                     }
-                    else if (this.isAnyFunctionExpressionOrDeclaration(currentDecl.ast())) {
+                    else if (SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(currentDecl.ast())) {
                         break;
                     }
                 }
@@ -12543,7 +12339,7 @@ module TypeScript {
                 if (block) {
                     var reportErrorOnReturnExpressions = (ast: ISyntaxElement, walker: IAstWalker) => {
                         var go = true;
-                        if (this.isAnyFunctionExpressionOrDeclaration(ast)) {
+                        if (SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(ast)) {
                             // don't recurse into a function decl - we don't want to confuse a nested
                             // return type with the top-level function's return type
                             go = false;

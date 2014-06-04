@@ -881,7 +881,8 @@ module TypeScript {
         }
 
         public visitBreakStatement(node: BreakStatementSyntax): void {
-            if (this.checkForStatementInAmbientContxt(node)) {
+            if (this.checkForStatementInAmbientContxt(node) ||
+                this.checkBreakStatementTarget(node)) {
                 return;
             }
 
@@ -889,11 +890,185 @@ module TypeScript {
         }
 
         public visitContinueStatement(node: ContinueStatementSyntax): void {
-            if (this.checkForStatementInAmbientContxt(node)) {
+            if (this.checkForStatementInAmbientContxt(node) ||
+                this.checkContinueStatementTarget(node)) {
                 return;
             }
 
             super.visitContinueStatement(node);
+        }
+
+        private checkBreakStatementTarget(node: BreakStatementSyntax): boolean {
+            // Invalid break statements are considered syntax errors in ES5.
+
+            // Note: the order here is important.  If the 'break' has a target, then it can jump to
+            // any enclosing laballed statment.  If it has no target, it must be in an iteration or
+            // swtich statement.
+            if (node.identifier) {
+                var breakableLabels = this.getEnclosingLabels(node, /*breakable:*/ true, /*crossFunctions:*/ false);
+
+                if (!ArrayUtilities.any(breakableLabels, s => tokenValueText(s.identifier) === tokenValueText(node.identifier))) {
+                    // The target of the continue statement wasn't to a reachable label.
+                    //
+                    // Let hte user know, with a specialized message if the target was to an
+                    // unreachable label (as opposed to a non-existed label)
+                    var breakableLabels = this.getEnclosingLabels(node, /*breakable:*/ true, /*crossFunctions:*/ true);
+                    if (ArrayUtilities.any(breakableLabels, s => tokenValueText(s.identifier) === tokenValueText(node.identifier))) {
+                        this.pushDiagnostic(node, DiagnosticCode.Jump_target_cannot_cross_function_boundary);
+                    }
+                    else {
+                        this.pushDiagnostic(node, DiagnosticCode.Jump_target_not_found);
+                    }
+
+                    return true;
+                }
+            }
+            else if (!this.inIterationStatement(node, /*crossFunctions:*/ false) && !this.inSwitchStatement(node)) {
+                if (this.inIterationStatement(node, /*crossFunctions:*/ true)) {
+                    this.pushDiagnostic(node, DiagnosticCode.Jump_target_cannot_cross_function_boundary);
+                }
+                else {
+                    this.pushDiagnostic(node, DiagnosticCode.break_statement_can_only_be_used_within_an_enclosing_iteration_or_switch_statement);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private inSwitchStatement(ast: ISyntaxElement): boolean {
+            while (ast) {
+                if (ast.kind() === SyntaxKind.SwitchStatement) {
+                    return true;
+                }
+
+                if (SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(ast)) {
+                    return false;
+                }
+
+                ast = ast.parent;
+            }
+
+            return false;
+        }
+
+        private isIterationStatement(ast: ISyntaxElement): boolean {
+            switch (ast.kind()) {
+                case SyntaxKind.ForStatement:
+                case SyntaxKind.ForInStatement:
+                case SyntaxKind.WhileStatement:
+                case SyntaxKind.DoStatement:
+                    return true;
+            }
+
+            return false;
+        }
+
+        private inIterationStatement(element: ISyntaxElement, crossFunctions: boolean): boolean {
+            while (element) {
+                if (this.isIterationStatement(element)) {
+                    return true;
+                }
+
+                if (!crossFunctions && SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(element)) {
+                    return false;
+                }
+
+                element = element.parent;
+            }
+
+            return false;
+        }
+
+        private getEnclosingLabels(element: ISyntaxElement, breakable: boolean, crossFunctions: boolean): LabeledStatementSyntax[] {
+            var result: LabeledStatementSyntax[] = [];
+
+            element = element.parent;
+            while (element) {
+                if (element.kind() === SyntaxKind.LabeledStatement) {
+                    var labeledStatement = <LabeledStatementSyntax>element;
+                    if (breakable) {
+                        // Breakable labels can be placed on any construct
+                        result.push(labeledStatement);
+                    }
+                    else {
+                        // They're asking for continuable labels.  Continuable labels must be on
+                        // a loop construct.
+                        if (this.labelIsOnContinuableConstruct(labeledStatement.statement)) {
+                            result.push(labeledStatement);
+                        }
+                    }
+                }
+
+                if (!crossFunctions && SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(element)) {
+                    break;
+                }
+
+                element = element.parent;
+            }
+
+            return result;
+        }
+
+        private labelIsOnContinuableConstruct(statement: ISyntaxElement): boolean {
+            switch (statement.kind()) {
+                case SyntaxKind.LabeledStatement:
+                    // Labels work transitively.  i.e. if you have:
+                    //      foo:
+                    //      bar:
+                    //      while(...)
+                    //
+                    // Then both 'foo' and 'bar' are in the label set for 'while' and are thus
+                    // continuable.
+                    return this.labelIsOnContinuableConstruct((<LabeledStatementSyntax>statement).statement);
+
+                case SyntaxKind.WhileStatement:
+                case SyntaxKind.ForStatement:
+                case SyntaxKind.ForInStatement:
+                case SyntaxKind.DoStatement:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private checkContinueStatementTarget(node: ContinueStatementSyntax): boolean {
+            // Invalid continue statements are considered syntax errors in ES5.
+
+            if (!this.inIterationStatement(node, /*crossFunctions:*/ false)) {
+                if (this.inIterationStatement(node, /*crossFunctions:*/ true)) {
+                    this.pushDiagnostic(node, DiagnosticCode.Jump_target_cannot_cross_function_boundary);
+                }
+                else {
+                    this.pushDiagnostic(node, DiagnosticCode.continue_statement_can_only_be_used_within_an_enclosing_iteration_statement);
+                }
+
+                return true;
+            }
+            else if (node.identifier) {
+                var continuableLabels = this.getEnclosingLabels(node, /*breakable:*/ false, /*crossFunctions:*/ false);
+
+                if (!ArrayUtilities.any(continuableLabels, s => tokenValueText(s.identifier) === tokenValueText(node.identifier))) {
+                    // The target of the continue statement wasn't to a reachable label.
+                    //
+                    // Let hte user know, with a specialized message if the target was to an
+                    // unreachable label (as opposed to a non-existed label)
+                    var continuableLabels = this.getEnclosingLabels(node, /*breakable:*/ false, /*crossFunctions:*/ true);
+
+                    if (ArrayUtilities.any(continuableLabels, s => tokenValueText(s.identifier) === tokenValueText(node.identifier))) {
+                        this.pushDiagnostic(node, DiagnosticCode.Jump_target_cannot_cross_function_boundary);
+                    }
+                    else {
+                        this.pushDiagnostic(node, DiagnosticCode.Jump_target_not_found);
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public visitDebuggerStatement(node: DebuggerStatementSyntax): void {
@@ -977,11 +1152,44 @@ module TypeScript {
         }
 
         public visitLabeledStatement(node: LabeledStatementSyntax): void {
-            if (this.checkForStatementInAmbientContxt(node)) {
+            if (this.checkForStatementInAmbientContxt(node) ||
+                this.checkForInvalidLabelIdentifier(node)) {
                 return;
             }
 
             super.visitLabeledStatement(node);
+        }
+
+        private checkForInvalidLabelIdentifier(node: LabeledStatementSyntax): boolean {
+            // Invalid break statements are considered syntax errors in ES5.
+
+            // Note that break/continue are treated differently.  ES5 says this about a break statement:
+            // A program is considered syntactically incorrect if ...:
+            //
+            // The program contains a break statement with the optional Identifier, where Identifier 
+            // does not appear in the label set of an enclosing (but not crossing function boundaries) 
+            // **Statement.**
+            // 
+            // However, it says this about continue statements:
+            //
+            // The program contains a continue statement with the optional Identifier, where Identifier
+            // does not appear in the label set of an enclosing (but not crossing function boundaries) 
+            // **IterationStatement.**
+
+            // In other words, you can 'break' to any enclosing statement.  But you can only 'continue'
+            // to an enclosing *iteration* statement.
+            var labelIdentifier = tokenValueText(node.identifier);
+
+            var breakableLabels = this.getEnclosingLabels(node, /*breakable:*/ true, /*crossFunctions:*/ false);
+
+            // It is invalid to have a label enclosed in a label of the same name.
+            var matchingLabel = ArrayUtilities.firstOrDefault(breakableLabels, s => tokenValueText(s.identifier) === labelIdentifier);
+            if (matchingLabel) {
+                this.pushDiagnostic(node.identifier, DiagnosticCode.Duplicate_identifier_0, [labelIdentifier]);
+                return true;
+            }
+
+            return false;
         }
 
         public visitReturnStatement(node: ReturnStatementSyntax): void {
