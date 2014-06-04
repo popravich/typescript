@@ -1193,11 +1193,23 @@ module TypeScript {
         }
 
         public visitReturnStatement(node: ReturnStatementSyntax): void {
-            if (this.checkForStatementInAmbientContxt(node)) {
+            if (this.checkForStatementInAmbientContxt(node) ||
+                this.checkForReturnStatementNotInFunctionBody(node)) {
                 return;
             }
 
             super.visitReturnStatement(node);
+        }
+
+        public checkForReturnStatementNotInFunctionBody(node: ReturnStatementSyntax): boolean {
+            for (var element: ISyntaxElement = node; element; element = element.parent) {
+                if (SyntaxUtilities.isAnyFunctionExpressionOrDeclaration(element)) {
+                    return false;
+                }
+            }
+
+            this.pushDiagnostic(firstToken(node), DiagnosticCode.return_statement_must_be_contained_within_a_function_body);
+            return true;
         }
 
         public visitSwitchStatement(node: SwitchStatementSyntax): void {

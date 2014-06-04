@@ -92,6 +92,7 @@ module TypeScript {
         break_statement_can_only_be_used_within_an_enclosing_iteration_or_switch_statement: "'break' statement can only be used within an enclosing iteration or switch statement.",
         Jump_target_not_found: "Jump target not found.",
         Jump_target_cannot_cross_function_boundary: "Jump target cannot cross function boundary.",
+        return_statement_must_be_contained_within_a_function_body: "'return' statement must be contained within a function body.",
         Duplicate_identifier_0: "Duplicate identifier '{0}'.",
         The_name_0_does_not_exist_in_the_current_scope: "The name '{0}' does not exist in the current scope.",
         The_name_0_does_not_refer_to_a_value: "The name '{0}' does not refer to a value.",
