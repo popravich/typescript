@@ -2608,20 +2608,31 @@ module TypeScript.Parser {
         }
 
         function tryParseMemberExpressionOrHigher(_currentToken: ISyntaxToken, force: boolean, inObjectCreation: boolean): IMemberExpressionSyntax {
-            // Note: to make our lives simpler, we merge the NewExpression production into the
-            // MemberExpression construct like so:
+            // Note: to make our lives simpler, we decompose the the NewExpression productions and
+            // place ObjectCreationExpression and FunctionExpression into PrimaryExpression.
+            // like so:
             //
+            //   PrimaryExpression : See 11.1 
+            //      this
+            //      Identifier
+            //      Literal
+            //      ArrayLiteral
+            //      ObjectLiteral
+            //      (Expression)             //      FunctionExpression            //      new MemberExpression Arguments?            //
             //   MemberExpression : See 11.2 
-            //      1) PrimaryExpression 
-            //      2) FunctionExpression
-            //      3) MemberExpression[Expression]
-            //      4) MemberExpression.IdentifierName
-            //      5) new MemberExpression Arguments?
+            //      PrimaryExpression 
+            //      MemberExpression[Expression]
+            //      MemberExpression.IdentifierName
             //
+            //   CallExpression : See 11.2 
+            //      MemberExpression 
+            //      CallExpression Arguments
+            //      CallExpression[Expression]
+            //      CallExpression.IdentifierName             //
             // Technically this is ambiguous.  i.e. CallExpression defines:
             //
             //   CallExpression:
-            //      MemberExpression Arguments
+            //      CallExpression Arguments
             // 
             // If you see: "new Foo()"
             //
@@ -2630,28 +2641,21 @@ module TypeScript.Parser {
             // the original grammar) by making sure that if we see an ObjectCreationExpression
             // we always consume arguments if they are there. So we treat "new Foo()" as an
             // object creation only, and not at all as an invocation)  Another way to think 
-            // about this is that for every "new" that we see, we will consume an argument
-            // list if it is there as part of the associated object creation node.  Any
-            // *additional* argument lists we see, will become invocation expressions.
+            // about this is that for every "new" that we see, we will consume an argument list if
+            // it is there as part of the *associated* object creation node.  Any additional
+            // argument lists we see, will become invocation expressions.
             //
-            // Also, for simplicity, we merge FunctionExpression into PrimaryExpression.  There
-            // are no other places where these expressions are referred to independently in the
-            // grammar.
+            // Because there are no other places in the grammar now that refer to FunctionExpression
+            // or ObjectCreationExpression, it is safe to push down into the PrimaryExpression
+            // production.
             //
-            // Because MemberExpression is left recursive, we need to bottom out of the recursion
-            // immediately.  The two possible bottom out states are 'new' or a primary/function
-            // expression.  So we parse those out first.
-            var expression: IMemberExpressionSyntax = null;
-            if (_currentToken.kind() === SyntaxKind.NewKeyword) {
-                expression = parseObjectCreationExpression(_currentToken);
+            // Because CallExpression and MemberExpression are left recursive, we need to bottom out
+            // of the recursion immediately.  So we parse out a primary expression to start with.
+            var expression: IMemberExpressionSyntax = tryParsePrimaryExpression(_currentToken, force);
+            if (expression === null) {
+                return null;
             }
-            else {
-                expression = tryParsePrimaryExpression(_currentToken, force);
-                if (expression === null) {
-                    return null;
-                }
-            }
-        
+
             return parseMemberExpressionRest(expression, inObjectCreation); 
         }
 
@@ -2698,7 +2702,7 @@ module TypeScript.Parser {
 
                 switch (currentTokenKind) {
                     case SyntaxKind.OpenBracketToken:
-                        expression = parseElementAccessExpression(expression, _currentToken,  inObjectCreation);
+                        expression = parseElementAccessExpression(expression, _currentToken, inObjectCreation);
                         continue;
 
                     case SyntaxKind.DotToken:
@@ -2921,6 +2925,7 @@ module TypeScript.Parser {
                 case SyntaxKind.OpenBracketToken: return parseArrayLiteralExpression(_currentToken);
                 case SyntaxKind.OpenBraceToken:   return parseObjectLiteralExpression(_currentToken);
                 case SyntaxKind.OpenParenToken:   return parseParenthesizedExpression(_currentToken);
+                case SyntaxKind.NewKeyword:       return parseObjectCreationExpression(_currentToken);
 
                 case SyntaxKind.SlashToken:
                 case SyntaxKind.SlashEqualsToken:

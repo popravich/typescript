@@ -327,7 +327,7 @@ module TypeScript {
         propertyAssignments: IPropertyAssignmentSyntax[];
         closeBraceToken: ISyntaxToken;
     }
-    export interface ObjectCreationExpressionSyntax extends ISyntaxNode, IMemberExpressionSyntax {
+    export interface ObjectCreationExpressionSyntax extends ISyntaxNode, IPrimaryExpressionSyntax {
         newKeyword: ISyntaxToken;
         expression: IMemberExpressionSyntax;
         argumentList: ArgumentListSyntax;
