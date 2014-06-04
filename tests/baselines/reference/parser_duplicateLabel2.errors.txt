@@ -1,0 +1,9 @@
+==== tests/cases/compiler/parser_duplicateLabel2.ts (1 errors) ====
+    target:
+    while (true) {
+      target:
+      ~~~~~~
+!!! parser_duplicateLabel2.ts(3,3): error TS2000: Duplicate identifier 'target'.
+      while (true) {
+      }
+    }
