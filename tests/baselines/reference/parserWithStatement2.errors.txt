@@ -1,5 +1,7 @@
-==== tests/cases/compiler/parserWithStatement2.ts (1 errors) ====
+==== tests/cases/compiler/parserWithStatement2.ts (2 errors) ====
     with (1)
           ~
 !!! parserWithStatement2.ts(1,7): error TS2135: All symbols within a with block will be resolved to 'any'.
       return;
+      ~~~~~~
+!!! parserWithStatement2.ts(2,3): error TS1108: 'return' statement must be contained within a function body.
