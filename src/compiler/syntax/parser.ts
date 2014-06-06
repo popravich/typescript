@@ -843,7 +843,7 @@ module TypeScript.Parser {
         }
 
         function parseModuleNameModuleReference(): ModuleNameModuleReferenceSyntax {
-            return new syntaxFactory.ModuleNameModuleReferenceSyntax(parseNodeData, parseName());
+            return new syntaxFactory.ModuleNameModuleReferenceSyntax(parseNodeData, parseName(/*allowIdentifierNames:*/ false));
         }
 
         function tryParseTypeArgumentList(inExpression: boolean): TypeArgumentListSyntax {
@@ -927,11 +927,11 @@ module TypeScript.Parser {
             }
         }
 
-        function parseName(): INameSyntax {
-            return tryParseName() || eatIdentifierToken();
+        function parseName(allowIdentifierName: boolean): INameSyntax {
+            return tryParseName(allowIdentifierName) || eatIdentifierToken();
         }
 
-        function eatRightSideOfName(): ISyntaxToken {
+        function eatRightSideOfName(allowIdentifierNames: boolean): ISyntaxToken {
             var _currentToken = currentToken();
 
             // Technically a keyword is valid here as all keywords are identifier names.
@@ -964,10 +964,10 @@ module TypeScript.Parser {
                 }
             }
 
-            return eatIdentifierNameToken();
+            return allowIdentifierNames ? eatIdentifierNameToken() : eatIdentifierToken();
         }
 
-        function tryParseName(): INameSyntax {
+        function tryParseName(allowIdentifierNames: boolean): INameSyntax {
             var token0 = currentToken();
             var shouldContinue = isIdentifier(token0);
             if (!shouldContinue) {
@@ -979,7 +979,7 @@ module TypeScript.Parser {
 
             while (shouldContinue && currentToken().kind() === SyntaxKind.DotToken) {
                 var dotToken = consumeToken(currentToken());
-                var identifierName = eatRightSideOfName();
+                var identifierName = eatRightSideOfName(allowIdentifierNames);
 
                 current = new syntaxFactory.QualifiedNameSyntax(parseNodeData, current, dotToken, identifierName);
                 shouldContinue = identifierName.fullWidth() > 0;
@@ -1448,7 +1448,7 @@ module TypeScript.Parser {
                 stringLiteral = eatToken(SyntaxKind.StringLiteral);
             }
             else {
-                moduleName = parseName();
+                moduleName = parseName(/*allowIdentifierNames*/ false);
             }
 
             var openBraceToken = eatToken(SyntaxKind.OpenBraceToken);
@@ -3542,7 +3542,7 @@ module TypeScript.Parser {
         }
 
         function parseTypeQuery(typeOfKeyword: ISyntaxToken): TypeQuerySyntax {
-            return new syntaxFactory.TypeQuerySyntax(parseNodeData, consumeToken(typeOfKeyword), parseName());
+            return new syntaxFactory.TypeQuerySyntax(parseNodeData, consumeToken(typeOfKeyword), parseName(/*allowIdentifierNames:*/ true));
         }
 
         function tryParseNonArrayType(): ITypeSyntax {
@@ -3571,7 +3571,7 @@ module TypeScript.Parser {
         }
 
         function tryParseNameOrGenericType(): ITypeSyntax {
-            var name = tryParseName();
+            var name = tryParseName(/*allowIdentifierNames*/ false);
             if (name === null) {
                 return null;
             }

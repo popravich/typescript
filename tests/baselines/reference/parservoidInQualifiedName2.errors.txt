@@ -1,4 +1,6 @@
-==== tests/cases/compiler/parservoidInQualifiedName2.ts (1 errors) ====
+==== tests/cases/compiler/parservoidInQualifiedName2.ts (2 errors) ====
     var v : x.void;
-            ~
-!!! parservoidInQualifiedName2.ts(1,9): error TS2095: Cannot find name 'x'.
+              ~~~~
+!!! parservoidInQualifiedName2.ts(1,11): error TS1006: Identifier expected; 'void' is a keyword.
+                  ~
+!!! parservoidInQualifiedName2.ts(1,15): error TS1109: Expression expected.
