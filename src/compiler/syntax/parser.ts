@@ -3531,11 +3531,23 @@ module TypeScript.Parser {
         }
 
         function tryParseType(): ITypeSyntax {
+            // First consume any underlying element type.
             var type = tryParseNonArrayType();
-            if (type !== null) {
-                while (currentToken().kind() === SyntaxKind.OpenBracketToken) {
-                    type = new syntaxFactory.ArrayTypeSyntax(parseNodeData, type, eatToken(SyntaxKind.OpenBracketToken), eatToken(SyntaxKind.CloseBracketToken));
+
+            // ArrayType:
+            //      ElementType   [no LineTerminator here]   [   ]
+
+            // Now, we want to keep consuming pairs of brackets, as long as the opening bracket
+            // is on the same line as the last token.
+            while (type) {
+                var _currentToken = currentToken();
+
+                if (previousTokenHasTrailingNewLine(_currentToken) ||
+                    _currentToken.kind() !== SyntaxKind.OpenBracketToken) {
+                    break;
                 }
+
+                type = new syntaxFactory.ArrayTypeSyntax(parseNodeData, type, consumeToken(_currentToken), eatToken(SyntaxKind.CloseBracketToken));
             }
 
             return type;
@@ -3576,12 +3588,18 @@ module TypeScript.Parser {
                 return null;
             }
 
-            var typeArgumentList = tryParseTypeArgumentList(/*inExpression:*/ false);
-            if (typeArgumentList === null) {
+            // TypeReference:
+            //      TypeName   [no LineTerminator here]   TypeArgumentsopt
+            //
+            // Only consume type arguments if they appear on the same line.
+            if (previousTokenHasTrailingNewLine(currentToken())) {
                 return name;
             }
 
-            return new syntaxFactory.GenericTypeSyntax(parseNodeData, name, typeArgumentList);
+            var typeArgumentList = tryParseTypeArgumentList(/*inExpression:*/ false);
+            return typeArgumentList === null
+                ? name
+                : new syntaxFactory.GenericTypeSyntax(parseNodeData, name, typeArgumentList);
         }
 
         function parseFunctionType(): FunctionTypeSyntax {

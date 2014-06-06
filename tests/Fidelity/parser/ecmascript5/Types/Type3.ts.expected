@@ -1,44 +1,34 @@
 {
     "isDeclaration": false,
     "languageVersion": "EcmaScript5",
-    "diagnostics": [
-        {
-            "start": 25,
-            "length": 1,
-            "diagnosticCode": "'{0}' expected.",
-            "arguments": [
-                "("
-            ]
-        }
-    ],
     "sourceUnit": {
         "kind": "SourceUnit",
         "fullStart": 0,
-        "fullEnd": 30,
+        "fullEnd": 39,
         "start": 0,
-        "end": 30,
-        "fullWidth": 30,
-        "width": 30,
+        "end": 39,
+        "fullWidth": 39,
+        "width": 39,
         "isIncrementallyUnusable": true,
         "moduleElements": [
             {
                 "kind": "VariableStatement",
                 "fullStart": 0,
-                "fullEnd": 30,
+                "fullEnd": 39,
                 "start": 0,
-                "end": 30,
-                "fullWidth": 30,
-                "width": 30,
+                "end": 39,
+                "fullWidth": 39,
+                "width": 39,
                 "isIncrementallyUnusable": true,
                 "modifiers": [],
                 "variableDeclaration": {
                     "kind": "VariableDeclaration",
                     "fullStart": 0,
-                    "fullEnd": 29,
+                    "fullEnd": 38,
                     "start": 0,
-                    "end": 29,
-                    "fullWidth": 29,
-                    "width": 29,
+                    "end": 38,
+                    "fullWidth": 38,
+                    "width": 38,
                     "isIncrementallyUnusable": true,
                     "varKeyword": {
                         "kind": "VarKeyword",
@@ -65,11 +55,11 @@
                         {
                             "kind": "VariableDeclarator",
                             "fullStart": 4,
-                            "fullEnd": 29,
+                            "fullEnd": 38,
                             "start": 4,
-                            "end": 29,
-                            "fullWidth": 25,
-                            "width": 25,
+                            "end": 38,
+                            "fullWidth": 34,
+                            "width": 34,
                             "isIncrementallyUnusable": true,
                             "propertyName": {
                                 "kind": "IdentifierName",
@@ -86,11 +76,11 @@
                             "typeAnnotation": {
                                 "kind": "TypeAnnotation",
                                 "fullStart": 5,
-                                "fullEnd": 29,
+                                "fullEnd": 38,
                                 "start": 5,
-                                "end": 29,
-                                "fullWidth": 24,
-                                "width": 24,
+                                "end": 38,
+                                "fullWidth": 33,
+                                "width": 33,
                                 "isIncrementallyUnusable": true,
                                 "colonToken": {
                                     "kind": "ColonToken",
@@ -116,11 +106,11 @@
                                 "type": {
                                     "kind": "ObjectType",
                                     "fullStart": 7,
-                                    "fullEnd": 29,
+                                    "fullEnd": 38,
                                     "start": 7,
-                                    "end": 29,
-                                    "fullWidth": 22,
-                                    "width": 22,
+                                    "end": 38,
+                                    "fullWidth": 31,
+                                    "width": 31,
                                     "isIncrementallyUnusable": true,
                                     "openBraceToken": {
                                         "kind": "OpenBraceToken",
@@ -240,12 +230,11 @@
                                         {
                                             "kind": "CallSignature",
                                             "fullStart": 19,
-                                            "fullEnd": 25,
+                                            "fullEnd": 37,
                                             "start": 22,
-                                            "end": 25,
-                                            "fullWidth": 6,
-                                            "width": 3,
-                                            "isIncrementallyUnusable": true,
+                                            "end": 35,
+                                            "fullWidth": 18,
+                                            "width": 13,
                                             "typeParameterList": {
                                                 "kind": "TypeParameterList",
                                                 "fullStart": 19,
@@ -292,9 +281,9 @@
                                                             "end": 24,
                                                             "fullWidth": 1,
                                                             "width": 1,
-                                                            "text": "T",
-                                                            "value": "T",
-                                                            "valueText": "T"
+                                                            "text": "A",
+                                                            "value": "A",
+                                                            "valueText": "A"
                                                         }
                                                     }
                                                 ],
@@ -313,65 +302,98 @@
                                             },
                                             "parameterList": {
                                                 "kind": "ParameterList",
-                                                "fullStart": -1,
-                                                "fullEnd": -1,
-                                                "start": -1,
-                                                "end": -1,
-                                                "fullWidth": 0,
-                                                "width": 0,
-                                                "isIncrementallyUnusable": true,
+                                                "fullStart": 25,
+                                                "fullEnd": 27,
+                                                "start": 25,
+                                                "end": 27,
+                                                "fullWidth": 2,
+                                                "width": 2,
                                                 "openParenToken": {
                                                     "kind": "OpenParenToken",
                                                     "fullStart": 25,
-                                                    "fullEnd": 25,
+                                                    "fullEnd": 26,
                                                     "start": 25,
-                                                    "end": 25,
-                                                    "fullWidth": 0,
-                                                    "width": 0,
-                                                    "text": ""
+                                                    "end": 26,
+                                                    "fullWidth": 1,
+                                                    "width": 1,
+                                                    "text": "(",
+                                                    "value": "(",
+                                                    "valueText": "("
                                                 },
                                                 "parameters": [],
                                                 "closeParenToken": {
                                                     "kind": "CloseParenToken",
-                                                    "fullStart": 25,
-                                                    "fullEnd": 25,
-                                                    "start": 25,
-                                                    "end": 25,
-                                                    "fullWidth": 0,
-                                                    "width": 0,
-                                                    "text": ""
+                                                    "fullStart": 26,
+                                                    "fullEnd": 27,
+                                                    "start": 26,
+                                                    "end": 27,
+                                                    "fullWidth": 1,
+                                                    "width": 1,
+                                                    "text": ")",
+                                                    "value": ")",
+                                                    "valueText": ")"
+                                                }
+                                            },
+                                            "typeAnnotation": {
+                                                "kind": "TypeAnnotation",
+                                                "fullStart": 27,
+                                                "fullEnd": 37,
+                                                "start": 27,
+                                                "end": 35,
+                                                "fullWidth": 10,
+                                                "width": 8,
+                                                "colonToken": {
+                                                    "kind": "ColonToken",
+                                                    "fullStart": 27,
+                                                    "fullEnd": 29,
+                                                    "start": 27,
+                                                    "end": 28,
+                                                    "fullWidth": 2,
+                                                    "width": 1,
+                                                    "text": ":",
+                                                    "value": ":",
+                                                    "valueText": ":",
+                                                    "hasTrailingTrivia": true,
+                                                    "trailingTrivia": [
+                                                        {
+                                                            "kind": "WhitespaceTrivia",
+                                                            "fullStart": 28,
+                                                            "fullEnd": 29,
+                                                            "text": " "
+                                                        }
+                                                    ]
+                                                },
+                                                "type": {
+                                                    "kind": "StringKeyword",
+                                                    "fullStart": 29,
+                                                    "fullEnd": 37,
+                                                    "start": 29,
+                                                    "end": 35,
+                                                    "fullWidth": 8,
+                                                    "width": 6,
+                                                    "text": "string",
+                                                    "value": "string",
+                                                    "valueText": "string",
+                                                    "hasTrailingTrivia": true,
+                                                    "hasTrailingNewLine": true,
+                                                    "trailingTrivia": [
+                                                        {
+                                                            "kind": "NewLineTrivia",
+                                                            "fullStart": 35,
+                                                            "fullEnd": 37,
+                                                            "text": "\r\n"
+                                                        }
+                                                    ]
                                                 }
                                             }
-                                        },
-                                        {
-                                            "kind": "SemicolonToken",
-                                            "fullStart": 25,
-                                            "fullEnd": 28,
-                                            "start": 25,
-                                            "end": 26,
-                                            "fullWidth": 3,
-                                            "width": 1,
-                                            "text": ";",
-                                            "value": ";",
-                                            "valueText": ";",
-                                            "hasTrailingTrivia": true,
-                                            "hasTrailingNewLine": true,
-                                            "trailingTrivia": [
-                                                {
-                                                    "kind": "NewLineTrivia",
-                                                    "fullStart": 26,
-                                                    "fullEnd": 28,
-                                                    "text": "\r\n"
-                                                }
-                                            ]
                                         }
                                     ],
                                     "closeBraceToken": {
                                         "kind": "CloseBraceToken",
-                                        "fullStart": 28,
-                                        "fullEnd": 29,
-                                        "start": 28,
-                                        "end": 29,
+                                        "fullStart": 37,
+                                        "fullEnd": 38,
+                                        "start": 37,
+                                        "end": 38,
                                         "fullWidth": 1,
                                         "width": 1,
                                         "text": "}",
@@ -385,10 +407,10 @@
                 },
                 "semicolonToken": {
                     "kind": "SemicolonToken",
-                    "fullStart": 29,
-                    "fullEnd": 30,
-                    "start": 29,
-                    "end": 30,
+                    "fullStart": 38,
+                    "fullEnd": 39,
+                    "start": 38,
+                    "end": 39,
                     "fullWidth": 1,
                     "width": 1,
                     "text": ";",
@@ -399,10 +421,10 @@
         ],
         "endOfFileToken": {
             "kind": "EndOfFileToken",
-            "fullStart": 30,
-            "fullEnd": 30,
-            "start": 30,
-            "end": 30,
+            "fullStart": 39,
+            "fullEnd": 39,
+            "start": 39,
+            "end": 39,
             "fullWidth": 0,
             "width": 0,
             "text": ""
@@ -413,8 +435,8 @@
             0,
             10,
             19,
-            28
+            37
         ],
-        "length": 30
+        "length": 39
     }
 }
