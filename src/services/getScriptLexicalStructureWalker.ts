@@ -308,15 +308,13 @@ module TypeScript.Services {
         }
 
         private createClassItem(node: ClassDeclarationSyntax): NavigationBarItem {
-            var nodes = node.classElements;
-            var constructor = <ConstructorDeclarationSyntax>ArrayUtilities.firstOrDefault(nodes, n => n.kind() === SyntaxKind.ConstructorDeclaration);
+            var constructor = <ConstructorDeclarationSyntax>ArrayUtilities.firstOrDefault(
+                node.classElements, n => n.kind() === SyntaxKind.ConstructorDeclaration);
 
             // Add the constructor parameters in as children of hte class (for property parameters).
-            if (constructor) {
-                // Make sure we copy the array first.  We don't want to accidently mutate the class node.
-                nodes = nodes.slice(0);
-                nodes.push.apply(nodes, constructor.callSignature.parameterList.parameters);
-            }
+            var nodes: ISyntaxNode[] = constructor
+                ? (<ISyntaxNode[]>constructor.callSignature.parameterList.parameters).concat(node.classElements)
+                : node.classElements;
 
             var childItems = this.getItemsWorker(() => nodes, n => this.createChildItem(n));
             return new NavigationBarItem(
