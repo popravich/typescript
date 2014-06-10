@@ -161,7 +161,7 @@ module TypeScript {
 
         private checkForCatchClauseTypeAnnotation(node: CatchClauseSyntax): boolean {
             if (node.typeAnnotation) {
-                this.pushDiagnostic(node.typeAnnotation, DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
+                this.pushDiagnostic(node.typeAnnotation.colonToken, DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
                 return true;
             }
 
