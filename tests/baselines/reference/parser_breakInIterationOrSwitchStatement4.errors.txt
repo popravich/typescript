@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parser_breakInIterationOrSwitchStatement4.ts (1 errors) ====
+    for (var i in something) {
+                  ~~~~~~~~~
+!!! parser_breakInIterationOrSwitchStatement4.ts(1,15): error TS2095: Cannot find name 'something'.
+      break;
+    }

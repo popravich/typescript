@@ -7,7 +7,7 @@
              ~
 !!! bitwiseNotOperatorInvalidOperations.ts(5,10): error TS1005: ',' expected.
               ~
-!!! bitwiseNotOperatorInvalidOperations.ts(5,11): error TS1005: 'expression' expected.
+!!! bitwiseNotOperatorInvalidOperations.ts(5,11): error TS1109: Expression expected.
     
     // multiple operands after ~
     var mul = ~[1, 2, "abc"], "";  //expect error
@@ -17,4 +17,4 @@
     // miss an operand
     var b =~;
             ~
-!!! bitwiseNotOperatorInvalidOperations.ts(11,9): error TS1005: 'expression' expected.
+!!! bitwiseNotOperatorInvalidOperations.ts(11,9): error TS1109: Expression expected.

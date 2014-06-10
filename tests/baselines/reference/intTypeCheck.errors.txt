@@ -121,7 +121,7 @@
     var obj8: i1 = <i1> anyVar;
     var obj9: i1 = new <i1> anyVar;
                        ~
-!!! intTypeCheck.ts(104,20): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(104,20): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(104,5): error TS2012: Type 'boolean' is not assignable to type 'i1':
 !!! 	Type 'Boolean' is missing property 'p' from type 'i1'.
@@ -155,7 +155,7 @@
     var obj19: i2 = <i2> anyVar;
     var obj20: i2 = new <i2> anyVar;
                         ~
-!!! intTypeCheck.ts(118,21): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(118,21): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(118,5): error TS2012: Type 'boolean' is not assignable to type 'i2':
 !!! 	Type 'i2' requires a call signature, but type 'Boolean' lacks one.
@@ -190,7 +190,7 @@
     var obj30: i3 = <i3> anyVar;
     var obj31: i3 = new <i3> anyVar;
                         ~
-!!! intTypeCheck.ts(132,21): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(132,21): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(132,5): error TS2012: Type 'boolean' is not assignable to type 'i3':
 !!! 	Type 'i3' requires a construct signature, but type 'Boolean' lacks one.
@@ -224,7 +224,7 @@
     var obj41: i4 = <i4> anyVar;
     var obj42: i4 = new <i4> anyVar;
                         ~
-!!! intTypeCheck.ts(146,21): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(146,21): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(146,5): error TS2012: Type 'boolean' is not assignable to type 'i4':
 !!! 	Index signatures of types 'Boolean' and 'i4' are incompatible.
@@ -261,7 +261,7 @@
     var obj52: i5 = <i5> anyVar;
     var obj53: i5 = new <i5> anyVar;
                         ~
-!!! intTypeCheck.ts(160,21): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(160,21): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(160,5): error TS2012: Type 'boolean' is not assignable to type 'i5':
 !!! 	Type 'Boolean' is missing property 'p' from type 'i5'.
@@ -298,7 +298,7 @@
     var obj63: i6 = <i6> anyVar;
     var obj64: i6 = new <i6> anyVar;
                         ~
-!!! intTypeCheck.ts(174,21): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(174,21): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(174,5): error TS2012: Type 'boolean' is not assignable to type 'i6':
 !!! 	Type 'i6' requires a call signature, but type 'Boolean' lacks one.
@@ -334,7 +334,7 @@
     var obj74: i7 = <i7> anyVar;
     var obj75: i7 = new <i7> anyVar;
                         ~
-!!! intTypeCheck.ts(188,21): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(188,21): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(188,5): error TS2012: Type 'boolean' is not assignable to type 'i7':
 !!! 	Type 'i7' requires a construct signature, but type 'Boolean' lacks one.
@@ -368,7 +368,7 @@
     var obj85: i8 = <i8> anyVar;
     var obj86: i8 = new <i8> anyVar;
                         ~
-!!! intTypeCheck.ts(202,21): error TS1005: 'expression' expected.
+!!! intTypeCheck.ts(202,21): error TS1109: Expression expected.
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !!! intTypeCheck.ts(202,5): error TS2012: Type 'boolean' is not assignable to type 'i8':
 !!! 	Index signatures of types 'Boolean' and 'i8' are incompatible.

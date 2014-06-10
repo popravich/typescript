@@ -818,11 +818,11 @@ module TypeScript.Syntax.Abstract {
             !isShared(propertyAssignments) && (propertyAssignments.parent = this);
         }
     }
-    export class ObjectCreationExpressionSyntax extends SyntaxNode implements IMemberExpressionSyntax {
+    export class ObjectCreationExpressionSyntax extends SyntaxNode implements IPrimaryExpressionSyntax {
         public newKeyword: ISyntaxToken;
         public expression: IMemberExpressionSyntax;
         public argumentList: ArgumentListSyntax;
-        public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any;
+        public _primaryExpressionBrand: any; public _memberExpressionBrand: any; public _leftHandSideExpressionBrand: any; public _postfixExpressionBrand: any; public _unaryExpressionBrand: any; public _expressionBrand: any;
         constructor(data: number, newKeyword: ISyntaxToken, expression: IMemberExpressionSyntax, argumentList: ArgumentListSyntax) {
             super(data);
             this.expression = expression,

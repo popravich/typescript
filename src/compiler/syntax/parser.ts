@@ -372,7 +372,7 @@ module TypeScript.Parser {
 
         // This method should be called when the grammar calls for an *Identifier* and not an
         // *IdentifierName*.
-        function eatIdentifierToken(): ISyntaxToken {
+        function eatIdentifierToken(diagnosticCode?: string): ISyntaxToken {
             var token = currentToken();
             if (isIdentifier(token)) {
                 consumeToken(token);
@@ -384,7 +384,7 @@ module TypeScript.Parser {
                 return TypeScript.Syntax.convertKeywordToIdentifier(token);
             }
 
-            return createMissingToken(SyntaxKind.IdentifierName, token);
+            return createMissingToken(SyntaxKind.IdentifierName, token, diagnosticCode);
         }
 
         function previousTokenHasTrailingNewLine(token: ISyntaxToken): boolean {
@@ -459,8 +459,8 @@ module TypeScript.Parser {
             return eatToken(SyntaxKind.SemicolonToken);
         }
 
-        function createMissingToken(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode?: string, arguments?: any[]): ISyntaxToken {
-            var diagnostic = getExpectedTokenDiagnostic(expectedKind, actual, diagnosticCode, arguments);
+        function createMissingToken(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode?: string): ISyntaxToken {
+            var diagnostic = getExpectedTokenDiagnostic(expectedKind, actual, diagnosticCode);
             addDiagnostic(diagnostic);
 
             // The missing token will be at the full start of the current token.  That way empty tokens
@@ -468,17 +468,16 @@ module TypeScript.Parser {
             return Syntax.emptyToken(expectedKind);
         }
 
-        function getExpectedTokenDiagnostic(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode: string, arguments: any[]): Diagnostic {
+        function getExpectedTokenDiagnostic(expectedKind: SyntaxKind, actual: ISyntaxToken, diagnosticCode: string): Diagnostic {
             var token = currentToken();
 
+            var args: any[] = null;
             // If a specialized diagnostic message was provided, just use that.
             if (!diagnosticCode) {
-                arguments = null;
-
                 // They wanted something specific, just report that that token was missing.
                 if (SyntaxFacts.isAnyKeyword(expectedKind) || SyntaxFacts.isAnyPunctuation(expectedKind)) {
                     diagnosticCode = DiagnosticCode._0_expected;
-                    arguments = [SyntaxFacts.getText(expectedKind)];
+                    args = [SyntaxFacts.getText(expectedKind)];
                 }
                 else {
                     // They wanted an identifier.
@@ -486,7 +485,7 @@ module TypeScript.Parser {
                     // If the user supplied a keyword, give them a specialized message.
                     if (actual !== null && SyntaxFacts.isAnyKeyword(actual.kind())) {
                         diagnosticCode = DiagnosticCode.Identifier_expected_0_is_a_keyword;
-                        arguments = [SyntaxFacts.getText(actual.kind())];
+                        args = [SyntaxFacts.getText(actual.kind())];
                     }
                     else {
                         // Otherwise just report that an identifier was expected.
@@ -495,7 +494,7 @@ module TypeScript.Parser {
                 }
             }
 
-            return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), diagnosticCode, arguments);
+            return new Diagnostic(fileName, source.text.lineMap(), start(token, source.text), width(token), diagnosticCode, args);
         }
 
         function getBinaryExpressionPrecedence(tokenKind: SyntaxKind): BinaryExpressionPrecedence {
@@ -844,7 +843,7 @@ module TypeScript.Parser {
         }
 
         function parseModuleNameModuleReference(): ModuleNameModuleReferenceSyntax {
-            return new syntaxFactory.ModuleNameModuleReferenceSyntax(parseNodeData, parseName());
+            return new syntaxFactory.ModuleNameModuleReferenceSyntax(parseNodeData, parseName(/*allowIdentifierNames:*/ false));
         }
 
         function tryParseTypeArgumentList(inExpression: boolean): TypeArgumentListSyntax {
@@ -928,11 +927,11 @@ module TypeScript.Parser {
             }
         }
 
-        function parseName(): INameSyntax {
-            return tryParseName() || eatIdentifierToken();
+        function parseName(allowIdentifierName: boolean): INameSyntax {
+            return tryParseName(allowIdentifierName) || eatIdentifierToken();
         }
 
-        function eatRightSideOfName(): ISyntaxToken {
+        function eatRightSideOfName(allowIdentifierNames: boolean): ISyntaxToken {
             var _currentToken = currentToken();
 
             // Technically a keyword is valid here as all keywords are identifier names.
@@ -965,10 +964,10 @@ module TypeScript.Parser {
                 }
             }
 
-            return eatIdentifierNameToken();
+            return allowIdentifierNames ? eatIdentifierNameToken() : eatIdentifierToken();
         }
 
-        function tryParseName(): INameSyntax {
+        function tryParseName(allowIdentifierNames: boolean): INameSyntax {
             var token0 = currentToken();
             var shouldContinue = isIdentifier(token0);
             if (!shouldContinue) {
@@ -980,7 +979,7 @@ module TypeScript.Parser {
 
             while (shouldContinue && currentToken().kind() === SyntaxKind.DotToken) {
                 var dotToken = consumeToken(currentToken());
-                var identifierName = eatRightSideOfName();
+                var identifierName = eatRightSideOfName(allowIdentifierNames);
 
                 current = new syntaxFactory.QualifiedNameSyntax(parseNodeData, current, dotToken, identifierName);
                 shouldContinue = identifierName.fullWidth() > 0;
@@ -1449,7 +1448,7 @@ module TypeScript.Parser {
                 stringLiteral = eatToken(SyntaxKind.StringLiteral);
             }
             else {
-                moduleName = parseName();
+                moduleName = parseName(/*allowIdentifierNames*/ false);
             }
 
             var openBraceToken = eatToken(SyntaxKind.OpenBraceToken);
@@ -2608,20 +2607,35 @@ module TypeScript.Parser {
         }
 
         function tryParseMemberExpressionOrHigher(_currentToken: ISyntaxToken, force: boolean, inObjectCreation: boolean): IMemberExpressionSyntax {
-            // Note: to make our lives simpler, we merge the NewExpression production into the
-            // MemberExpression construct like so:
+            // Note: to make our lives simpler, we decompose the the NewExpression productions and
+            // place ObjectCreationExpression and FunctionExpression into PrimaryExpression.
+            // like so:
+            //
+            //   PrimaryExpression : See 11.1 
+            //      this
+            //      Identifier
+            //      Literal
+            //      ArrayLiteral
+            //      ObjectLiteral
+            //      (Expression) 
+            //      FunctionExpression
+            //      new MemberExpression Arguments?
             //
             //   MemberExpression : See 11.2 
-            //      1) PrimaryExpression 
-            //      2) FunctionExpression
-            //      3) MemberExpression[Expression]
-            //      4) MemberExpression.IdentifierName
-            //      5) new MemberExpression Arguments?
+            //      PrimaryExpression 
+            //      MemberExpression[Expression]
+            //      MemberExpression.IdentifierName
+            //
+            //   CallExpression : See 11.2 
+            //      MemberExpression 
+            //      CallExpression Arguments
+            //      CallExpression[Expression]
+            //      CallExpression.IdentifierName 
             //
             // Technically this is ambiguous.  i.e. CallExpression defines:
             //
             //   CallExpression:
-            //      MemberExpression Arguments
+            //      CallExpression Arguments
             // 
             // If you see: "new Foo()"
             //
@@ -2630,28 +2644,21 @@ module TypeScript.Parser {
             // the original grammar) by making sure that if we see an ObjectCreationExpression
             // we always consume arguments if they are there. So we treat "new Foo()" as an
             // object creation only, and not at all as an invocation)  Another way to think 
-            // about this is that for every "new" that we see, we will consume an argument
-            // list if it is there as part of the associated object creation node.  Any
-            // *additional* argument lists we see, will become invocation expressions.
+            // about this is that for every "new" that we see, we will consume an argument list if
+            // it is there as part of the *associated* object creation node.  Any additional
+            // argument lists we see, will become invocation expressions.
             //
-            // Also, for simplicity, we merge FunctionExpression into PrimaryExpression.  There
-            // are no other places where these expressions are referred to independently in the
-            // grammar.
+            // Because there are no other places in the grammar now that refer to FunctionExpression
+            // or ObjectCreationExpression, it is safe to push down into the PrimaryExpression
+            // production.
             //
-            // Because MemberExpression is left recursive, we need to bottom out of the recursion
-            // immediately.  The two possible bottom out states are 'new' or a primary/function
-            // expression.  So we parse those out first.
-            var expression: IMemberExpressionSyntax = null;
-            if (_currentToken.kind() === SyntaxKind.NewKeyword) {
-                expression = parseObjectCreationExpression(_currentToken);
+            // Because CallExpression and MemberExpression are left recursive, we need to bottom out
+            // of the recursion immediately.  So we parse out a primary expression to start with.
+            var expression: IMemberExpressionSyntax = tryParsePrimaryExpression(_currentToken, force);
+            if (expression === null) {
+                return null;
             }
-            else {
-                expression = tryParsePrimaryExpression(_currentToken, force);
-                if (expression === null) {
-                    return null;
-                }
-            }
-        
+
             return parseMemberExpressionRest(expression, inObjectCreation); 
         }
 
@@ -2698,7 +2705,7 @@ module TypeScript.Parser {
 
                 switch (currentTokenKind) {
                     case SyntaxKind.OpenBracketToken:
-                        expression = parseElementAccessExpression(expression, _currentToken,  inObjectCreation);
+                        expression = parseElementAccessExpression(expression, _currentToken, inObjectCreation);
                         continue;
 
                     case SyntaxKind.DotToken:
@@ -2921,15 +2928,19 @@ module TypeScript.Parser {
                 case SyntaxKind.OpenBracketToken: return parseArrayLiteralExpression(_currentToken);
                 case SyntaxKind.OpenBraceToken:   return parseObjectLiteralExpression(_currentToken);
                 case SyntaxKind.OpenParenToken:   return parseParenthesizedExpression(_currentToken);
+                case SyntaxKind.NewKeyword:       return parseObjectCreationExpression(_currentToken);
 
                 case SyntaxKind.SlashToken:
                 case SyntaxKind.SlashEqualsToken:
                     // If we see a standalone / or /= and we're expecting a term, then try to reparse
-                    // it as a regular expression.  If we succeed, then return that.  Otherwise, fall
-                    // back and just return a missing identifier as usual.  We'll then form a binary
-                    // expression out of of the / as usual.
+                    // it as a regular expression.
                     var result = tryReparseDivideAsRegularExpression();
-                    return result || eatIdentifierToken()
+
+                    // If we get a result, then use it. Otherwise, create a missing identifier so
+                    // that parsing can continue.  Note: we do this even if 'force' is false.  That's
+                    // because we *do* want to consider a standalone / as an expression that should be
+                    // returned from tryParseExpression even when 'force' is set to false.
+                    return result || eatIdentifierToken(DiagnosticCode.Expression_expected);
             }
 
             if (!force) {
@@ -2937,7 +2948,7 @@ module TypeScript.Parser {
             }
 
             // Nothing else worked, report an error and produce a missing token.
-            return createMissingToken(SyntaxKind.IdentifierName, _currentToken, DiagnosticCode._0_expected, [DiagnosticCode.expression]);
+            return eatIdentifierToken(DiagnosticCode.Expression_expected);
         }
 
         function tryReparseDivideAsRegularExpression(): IPrimaryExpressionSyntax {
@@ -3516,22 +3527,34 @@ module TypeScript.Parser {
         }
 
         function parseType(): ITypeSyntax {
-            return tryParseType() || eatIdentifierToken();
+            return tryParseType() || eatIdentifierToken(DiagnosticCode.Type_expected);
         }
 
         function tryParseType(): ITypeSyntax {
+            // First consume any underlying element type.
             var type = tryParseNonArrayType();
-            if (type !== null) {
-                while (currentToken().kind() === SyntaxKind.OpenBracketToken) {
-                    type = new syntaxFactory.ArrayTypeSyntax(parseNodeData, type, eatToken(SyntaxKind.OpenBracketToken), eatToken(SyntaxKind.CloseBracketToken));
+
+            // ArrayType:
+            //      ElementType   [no LineTerminator here]   [   ]
+
+            // Now, we want to keep consuming pairs of brackets, as long as the opening bracket
+            // is on the same line as the last token.
+            while (type) {
+                var _currentToken = currentToken();
+
+                if (previousTokenHasTrailingNewLine(_currentToken) ||
+                    _currentToken.kind() !== SyntaxKind.OpenBracketToken) {
+                    break;
                 }
+
+                type = new syntaxFactory.ArrayTypeSyntax(parseNodeData, type, consumeToken(_currentToken), eatToken(SyntaxKind.CloseBracketToken));
             }
 
             return type;
         }
 
         function parseTypeQuery(typeOfKeyword: ISyntaxToken): TypeQuerySyntax {
-            return new syntaxFactory.TypeQuerySyntax(parseNodeData, consumeToken(typeOfKeyword), parseName());
+            return new syntaxFactory.TypeQuerySyntax(parseNodeData, consumeToken(typeOfKeyword), parseName(/*allowIdentifierNames:*/ true));
         }
 
         function tryParseNonArrayType(): ITypeSyntax {
@@ -3560,17 +3583,23 @@ module TypeScript.Parser {
         }
 
         function tryParseNameOrGenericType(): ITypeSyntax {
-            var name = tryParseName();
+            var name = tryParseName(/*allowIdentifierNames*/ false);
             if (name === null) {
                 return null;
             }
 
-            var typeArgumentList = tryParseTypeArgumentList(/*inExpression:*/ false);
-            if (typeArgumentList === null) {
+            // TypeReference:
+            //      TypeName   [no LineTerminator here]   TypeArgumentsopt
+            //
+            // Only consume type arguments if they appear on the same line.
+            if (previousTokenHasTrailingNewLine(currentToken())) {
                 return name;
             }
 
-            return new syntaxFactory.GenericTypeSyntax(parseNodeData, name, typeArgumentList);
+            var typeArgumentList = tryParseTypeArgumentList(/*inExpression:*/ false);
+            return typeArgumentList === null
+                ? name
+                : new syntaxFactory.GenericTypeSyntax(parseNodeData, name, typeArgumentList);
         }
 
         function parseFunctionType(): FunctionTypeSyntax {

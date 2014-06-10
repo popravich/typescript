@@ -691,7 +691,7 @@ var definitions:ITypeDefinition[] = [
     <any>{
         name: 'ObjectCreationExpressionSyntax',
         baseType: 'ISyntaxNode',
-        interfaces: ['IMemberExpressionSyntax'],
+        interfaces: ['IPrimaryExpressionSyntax'],
         children: [
             <any>{ name: 'newKeyword', isToken: true, excludeFromAST: true },
             <any>{ name: 'expression', type: 'IMemberExpressionSyntax' },

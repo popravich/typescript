@@ -161,7 +161,7 @@ module TypeScript {
 
         private checkForCatchClauseTypeAnnotation(node: CatchClauseSyntax): boolean {
             if (node.typeAnnotation) {
-                this.pushDiagnostic(node.typeAnnotation, DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
+                this.pushDiagnostic(node.typeAnnotation.colonToken, DiagnosticCode.Catch_clause_parameter_cannot_have_a_type_annotation);
                 return true;
             }
 
@@ -860,8 +860,7 @@ module TypeScript {
         }
 
         public visitBlock(node: BlockSyntax): void {
-            if (this.inAmbientDeclaration || this.syntaxTree.isDeclaration()) {
-                this.pushDiagnostic(node.openBraceToken, DiagnosticCode.A_function_implementation_cannot_be_declared_in_an_ambient_context);
+            if (this.checkForBlockInAmbientContext(node)) {
                 return;
             }
 
@@ -869,6 +868,23 @@ module TypeScript {
             this.inBlock = true;
             super.visitBlock(node);
             this.inBlock = savedInBlock;
+        }
+
+        private checkForBlockInAmbientContext(node: BlockSyntax): boolean {
+            if (this.inAmbientDeclaration || this.syntaxTree.isDeclaration()) {
+                // Provide a specialized message for a block as a statement versus the block as a 
+                // function body.
+                if (node.parent.kind() === SyntaxKind.List) {
+                    this.pushDiagnostic(firstToken(node), DiagnosticCode.Statements_are_not_allowed_in_ambient_contexts);
+                }
+                else {
+                    this.pushDiagnostic(firstToken(node), DiagnosticCode.A_function_implementation_cannot_be_declared_in_an_ambient_context);
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private checkForStatementInAmbientContxt(node: IStatementSyntax): boolean {

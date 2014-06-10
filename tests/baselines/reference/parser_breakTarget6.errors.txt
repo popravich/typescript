@@ -1,0 +1,6 @@
+==== tests/cases/compiler/parser_breakTarget6.ts (1 errors) ====
+    while (true) {
+      break target;
+      ~~~~~~~~~~~~~
+!!! parser_breakTarget6.ts(2,3): error TS1106: Jump target not found.
+    }

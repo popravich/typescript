@@ -1,0 +1,6 @@
+=== tests/cases/compiler/parserReturnStatement4.ts ===
+var v = { get foo() { return } };
+>v : { foo: void; }
+>{ get foo() { return } } : { foo: void; }
+>foo : void
+

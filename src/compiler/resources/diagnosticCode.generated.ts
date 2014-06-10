@@ -93,6 +93,8 @@ module TypeScript {
         Jump_target_not_found: "Jump target not found.",
         Jump_target_cannot_cross_function_boundary: "Jump target cannot cross function boundary.",
         return_statement_must_be_contained_within_a_function_body: "'return' statement must be contained within a function body.",
+        Expression_expected: "Expression expected.",
+        Type_expected: "Type expected.",
         Duplicate_identifier_0: "Duplicate identifier '{0}'.",
         The_name_0_does_not_exist_in_the_current_scope: "The name '{0}' does not exist in the current scope.",
         The_name_0_does_not_refer_to_a_value: "The name '{0}' does not refer to a value.",

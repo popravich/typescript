@@ -7,7 +7,7 @@
                     ~
 !!! logicalNotOperatorInvalidOperations.ts(5,17): error TS1005: ',' expected.
                      ~
-!!! logicalNotOperatorInvalidOperations.ts(5,18): error TS1005: 'expression' expected.
+!!! logicalNotOperatorInvalidOperations.ts(5,18): error TS1109: Expression expected.
     
     // miss parentheses
     var BOOLEAN2 = !b + b;
@@ -17,4 +17,4 @@
     // miss an operand
     var BOOLEAN3 =!;
                    ~
-!!! logicalNotOperatorInvalidOperations.ts(11,16): error TS1005: 'expression' expected.
+!!! logicalNotOperatorInvalidOperations.ts(11,16): error TS1109: Expression expected.
