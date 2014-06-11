@@ -12,7 +12,7 @@ module TypeScript {
         Identifier_expected_0_is_a_keyword: "Identifier expected; '{0}' is a keyword.",
         Automatic_semicolon_insertion_not_allowed: "Automatic semicolon insertion not allowed.",
         Unexpected_token_0_expected: "Unexpected token; '{0}' expected.",
-        Trailing_separator_not_allowed: "Trailing separator not allowed.",
+        Trailing_comma_not_allowed: "Trailing comma not allowed.",
         AsteriskSlash_expected: "'*/' expected.",
         public_or_private_modifier_must_precede_static: "'public' or 'private' modifier must precede 'static'.",
         Unexpected_token: "Unexpected token.",

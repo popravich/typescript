@@ -253,7 +253,7 @@ module TypeScript {
             return false;
         }
 
-        private checkForTrailingSeparator(list: ISyntaxNodeOrToken[]): boolean {
+        private checkForTrailingComma(list: ISyntaxNodeOrToken[]): boolean {
             // If we have at least one child, and we have an even number of children, then that 
             // means we have an illegal trailing separator.
             if (childCount(list) === 0 || childCount(list) % 2 === 1) {
@@ -261,7 +261,7 @@ module TypeScript {
             }
 
             var child = childAt(list, childCount(list) - 1);
-            this.pushDiagnostic(child, DiagnosticCode.Trailing_separator_not_allowed);
+            this.pushDiagnostic(child, DiagnosticCode.Trailing_comma_not_allowed);
 
             return true;
         }
@@ -278,7 +278,7 @@ module TypeScript {
         public visitParameterList(node: ParameterListSyntax): void {
             if (this.checkParameterListAcessibilityModifiers(node) ||
                 this.checkParameterListOrder(node) ||
-                this.checkForTrailingSeparator(node.parameters)) {
+                this.checkForTrailingComma(node.parameters)) {
 
                 return;
             }
@@ -287,7 +287,7 @@ module TypeScript {
         }
 
         public visitHeritageClause(node: HeritageClauseSyntax): void {
-            if (this.checkForTrailingSeparator(node.typeNames) ||
+            if (this.checkForTrailingComma(node.typeNames) ||
                 this.checkForAtLeastOneElement(node, node.typeNames, node.extendsOrImplementsKeyword, SyntaxFacts.getText(node.extendsOrImplementsKeyword.kind()))) {
                 return;
             }
@@ -296,7 +296,7 @@ module TypeScript {
         }
 
         public visitArgumentList(node: ArgumentListSyntax): void {
-            if (this.checkForTrailingSeparator(node.arguments)) {
+            if (this.checkForTrailingComma(node.arguments)) {
                 return;
             }
 
@@ -305,7 +305,7 @@ module TypeScript {
 
         public visitVariableDeclaration(node: VariableDeclarationSyntax): void {
             if (this.checkForAtLeastOneElement(node, node.variableDeclarators, node.varKeyword, getLocalizedText(DiagnosticCode.variable_declaration, null)) ||
-                this.checkForTrailingSeparator(node.variableDeclarators)) {
+                this.checkForTrailingComma(node.variableDeclarators)) {
                 return;
             }
 
@@ -313,7 +313,7 @@ module TypeScript {
         }
 
         public visitTypeArgumentList(node: TypeArgumentListSyntax): void {
-            if (this.checkForTrailingSeparator(node.typeArguments) ||
+            if (this.checkForTrailingComma(node.typeArguments) ||
                 this.checkForAtLeastOneElement(node, node.typeArguments, node.lessThanToken, getLocalizedText(DiagnosticCode.type_argument, null))) {
                 return;
             }
@@ -322,7 +322,7 @@ module TypeScript {
         }
 
         public visitTypeParameterList(node: TypeParameterListSyntax): void {
-            if (this.checkForTrailingSeparator(node.typeParameters) ||
+            if (this.checkForTrailingComma(node.typeParameters) ||
                 this.checkForAtLeastOneElement(node, node.typeParameters, node.lessThanToken, getLocalizedText(DiagnosticCode.type_parameter, null))) {
                 return;
             }
