@@ -1446,7 +1446,7 @@ module TypeScript {
         }
 
         public visitBinaryExpression(node: BinaryExpressionSyntax): void {
-            if (this.isIllegalAssignment(node)) {
+            if (this.checkIllegalAssignment(node)) {
                 return;
             }
 
@@ -1507,7 +1507,7 @@ module TypeScript {
             super.visitDeleteExpression(node);
         }
 
-        private isIllegalAssignment(node: BinaryExpressionSyntax): boolean {
+        private checkIllegalAssignment(node: BinaryExpressionSyntax): boolean {
             if (parsedInStrictMode(node) && SyntaxFacts.isAssignmentOperatorToken(node.operatorToken.kind()) && this.isEvalOrArguments(node.left)) {
                 this.pushDiagnostic(node.operatorToken, DiagnosticCode.Invalid_use_of_0_in_strict_mode, [this.getEvalOrArguments(node.left)]);
                 return true;
