@@ -42,7 +42,7 @@
     saveUserData();
     //} 
     Object.keys(userData).forEach(function (groupName) {
-        msSetImmediate(function () { populate(groupName, userData[groupName]); });
+        window.msSetImmediate(function () { populate(groupName, userData[groupName]); });
     });
 
     function populate(groupName: string, itemTitles: string[]) {
@@ -63,7 +63,7 @@
 
     function addTopicsToGroup(articles: { title: string; }[], group: Data.Group) {
         articles.forEach(function (article) {
-            msSetImmediate(function () {
+            window.msSetImmediate(function () {
                 list.push(createTopicFromTitle(article.title, group));
             });
         });
