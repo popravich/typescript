@@ -58,6 +58,9 @@ module TypeScript {
         // extensions for media types
         x_ms_mediaTypes?: string[];
         x_ms_sourceMediaTypes?: number[];
+
+        // extensions for compiler flags
+        x_ms_compilerFlags?: string;
     }
 
     export class SourceMapper {
@@ -69,6 +72,7 @@ module TypeScript {
         private sourceMapPath: string;
         private sourceMapDirectory: string;
         private sourceRoot: string;
+        private compilerFlags: string;
 
         public names: string[] = [];
 
@@ -91,6 +95,7 @@ module TypeScript {
                     resolvePath: (path: string) => string) {
             this.setSourceMapOptions(document, jsFilePath, emitOptions, resolvePath);
             this.setNewSourceFile(document, emitOptions);
+            this.setCompilerFlags(emitOptions.compilationSettings());
         }
 
         // The media type to use for the media type extension
@@ -296,11 +301,72 @@ module TypeScript {
 
         private addExtensions(sourceMap: SourceMap): void {
             this.addMediaTypeExtension(sourceMap);
+            this.addCompilerFlagsExtension(sourceMap);
         }
 
         private addMediaTypeExtension(sourceMap: SourceMap): void {
             // emit the media types
             sourceMap.x_ms_mediaTypes = SourceMapper.defaultDocumentMediaType();
+        }
+
+        private setCompilerFlags(compilationSettings: ImmutableCompilationSettings): void {
+            var compilerFlags: string[] = [];
+            if (compilationSettings.propagateEnumConstants()) {
+                compilerFlags.push("--propagateEnumConstants");
+            }
+
+            if (compilationSettings.removeComments()) {
+                compilerFlags.push("--removeComments");
+            }
+
+            if (compilationSettings.noResolve()) {
+                compilerFlags.push("--noResolve");
+            }
+
+            if (compilationSettings.noLib()) {
+                compilerFlags.push("--noLib");
+            }
+
+            switch (compilationSettings.codeGenTarget()) {
+                case LanguageVersion.EcmaScript3:
+                    compilerFlags.push("--target ES3");
+                    break;
+
+                case LanguageVersion.EcmaScript5:
+                    compilerFlags.push("--target ES5");
+                    break;
+            }
+
+            switch (compilationSettings.moduleGenTarget()) {
+                case ModuleGenTarget.Asynchronous:
+                    compilerFlags.push("--module amd");
+                    break;
+
+                case ModuleGenTarget.Synchronous:
+                    compilerFlags.push("--module commonjs");
+                    break;
+            }
+
+            if (compilationSettings.useCaseSensitiveFileResolution()) {
+                compilerFlags.push("--useCaseSensitiveFileResolution");
+            }
+
+            if (compilationSettings.noImplicitAny()) {
+                compilerFlags.push("--noImplicitAny");
+            }
+
+            var codepage = compilationSettings.codepage();
+            if (codepage) {
+                compilerFlags.push("--codepage " + codepage);
+            }
+
+            this.compilerFlags = compilerFlags.join(" ");
+        }
+
+        private addCompilerFlagsExtension(sourceMap: SourceMap): void {
+            if (this.compilerFlags) {
+                sourceMap.x_ms_compilerFlags = this.compilerFlags;
+            }
         }
     }
 }
