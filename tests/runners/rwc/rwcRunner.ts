@@ -1,317 +1,298 @@
-///<reference path='..\..\..\src\harness\harness.ts'/>
-///<reference path='..\..\..\src\harness\exec.ts'/>
-///<reference path='..\runnerBase.ts' />
-/// <reference path='..\compiler\typeWriter.ts' />
+/// <reference path='..\..\..\src\harness\harness.ts'/>
+/// <reference path='..\..\..\src\harness\exec.ts'/>
+/// <reference path='..\..\..\src\compiler\optionsParser.ts'/>
+/// <reference path='..\runnerbase.ts' />
+/// <reference path='..\compiler\syntacticCleaner.ts' />
+/// <reference path='loggedIO.ts' />
 
-interface testSpec {
-    projectName: string;    // name of the scenario
-    projectRoot: string;    // rootpath of the project
-    compileList: string[];  // files we want to compile
-    outputFile: string;     // the final output file
-    skipThisCheck?: boolean;
-    skipTypeCheck?: boolean;
-}
+module RWC {
+    class RWCEmitter implements Harness.Compiler.IEmitterIOHost {
+        public outputs: { [filename: string]: string; } = {};
 
-class RWCEmitter implements Harness.Compiler.IEmitterIOHost {
-    constructor(private fsOutput: Harness.Compiler.WriterAggregator, private fsDeclOutput: Harness.Compiler.WriterAggregator) {
-    }
-    writeFile(path: string, contents: string, writeByteOrderMark: boolean) {
-        var dts = ".d.ts";
+        constructor() { }
 
-        // Simple IO host that attempts to combine all .d.ts files into one document,
-        // and all other files into another.
-        if (path.indexOf(dts, path.length - dts.length) !== -1) {
-            this.fsDeclOutput.Write(contents);
+        writeFile(path: string, contents: string, writeByteOrderMark: boolean) {
+            if (path in this.outputs) throw new Error('Emitter attempted to write to "' + path + '" twice');
+            this.outputs[path] = contents;
         }
-        else {
-            this.fsOutput.Write(contents);
+
+        directoryExists(s: string) {
+            return false;
+        }
+        fileExists(s: string) {
+            return true;
+        }
+        resolvePath(s: string) {
+            return s;
         }
     }
-    directoryExists(s: string) {
-        return false;
+
+    class RWCReferenceResolver implements TypeScript.IReferenceResolverHost {
+        getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
+            return TypeScript.ScriptSnapshot.fromString(TypeScript.IO.readFile(fileName, null).contents);
+        }
+        resolveRelativePath(path: string, directory: string): string {
+            var unQuotedPath = TypeScript.stripStartAndEndQuotes(path);
+            var normalizedPath: string;
+
+            if (TypeScript.isRooted(unQuotedPath) || !directory) {
+                normalizedPath = unQuotedPath;
+            } else {
+                normalizedPath = TypeScript.IOUtils.combine(directory, unQuotedPath);
+            }
+
+            // get the absolute path
+            normalizedPath = this.resolvePath(normalizedPath);
+
+            // Switch to forward slashes
+            normalizedPath = switchToForwardSlashes(normalizedPath);
+
+            return normalizedPath;
+        }
+
+        resolvePath(path: string): string {
+            return TypeScript.IO.resolvePath(path);
+        }
+
+        fileExists(path: string): boolean {
+            return TypeScript.IO.fileExists(path);
+        }
+        directoryExists(path: string): boolean {
+            return TypeScript.IO.directoryExists(path);
+        }
+        getParentDirectory(path: string): string {
+            return TypeScript.IO.dirName(path);
+        }
     }
-    fileExists(s: string) {
-        return true;
+
+    function createOptionsParser(io: typeof TypeScript.IO): { parser: TypeScript.OptionsParser; settings: TypeScript.CompilationSettings } {
+
+        var optsParser = new TypeScript.OptionsParser(io, 'RWC');
+        var options = new TypeScript.CompilationSettings();
+
+        optsParser.option('out', {
+            set(f) { options.outFileOption = f; }
+        });
+        optsParser.option('outDir', {
+            set(f) { options.outDirOption = f; }
+        });
+        optsParser.flag('sourcemap', {
+            set() { options.mapSourceFiles = true; }
+        });
+        optsParser.option('mapRoot', {
+            set(f) { options.mapRoot = f; }
+        });
+        optsParser.option('sourceRoot', {
+            set(f) { options.sourceRoot = f; }
+        });
+        optsParser.flag('declaration', {
+            set() { options.generateDeclarationFiles = true; }
+        }, 'd');
+        optsParser.flag('propagateEnumConstants', {
+            set() { options.propagateEnumConstants = true; }
+        });
+        optsParser.flag('removeComments', {
+            set() { options.removeComments = true; }
+        });
+        optsParser.flag('noResolve', {
+            set() { options.noResolve = true; }
+        });
+        optsParser.flag('nolib', {
+            set() { options.noLib = true; }
+        });
+        optsParser.flag('noImplicitAny', {
+            set() { options.noImplicitAny = true; }
+        });
+        optsParser.option('target', {
+            set(t) {
+                switch (t.toLocaleLowerCase()) {
+                    case 'es3':
+                        options.codeGenTarget = TypeScript.LanguageVersion.EcmaScript3;
+                        break;
+                    case 'es5':
+                        options.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
+                        break;
+                    default:
+                        throw new Error('Unknown codegen target ' + t);
+                }
+            }
+        });
+        optsParser.option('module', {
+            set(m) {
+                switch (m.toLocaleLowerCase()) {
+                    case 'amd':
+                        options.moduleGenTarget = TypeScript.ModuleGenTarget.Asynchronous;
+                        break;
+                    case 'commonjs':
+                        options.moduleGenTarget = TypeScript.ModuleGenTarget.Synchronous;
+                        break;
+                    default:
+                        throw new Error('Unknown module target ' + m);
+                }
+            }
+        });
+
+        return { parser: optsParser, settings: options };
     }
-    resolvePath(s: string) {
-        return s;
+
+    function runWithIOLog(ioLog: IOLog, fn: () => void) {
+        var wrappedIO: PlaybackIO;
+        if ((<PlaybackIO>TypeScript.IO).endRecord === undefined) {
+            var wrappedIO = wrapIO(TypeScript.IO);
+            TypeScript.IO = wrappedIO;
+        } else {
+            wrappedIO = <PlaybackIO>TypeScript.IO;
+        }
+
+        wrappedIO.startReplayFromData(ioLog);
+        try {
+            fn();
+        } finally {
+            wrappedIO.endReplay();
+        }
     }
+
+    function collateOutputs(emitterIOHost: RWCEmitter, fnTest: (s: string) => {}, clean?: (s: string) => string) {
+        // Collect, test, and sort the filenames
+        var files: string[] = [];
+        for (var fn in emitterIOHost.outputs) {
+            if (emitterIOHost.outputs.hasOwnProperty(fn) && fnTest(fn)) {
+                files.push(fn);
+            }
+        }
+        function cleanName(fn: string) {
+            var lastSlash = TypeScript.switchToForwardSlashes(fn).lastIndexOf('/');
+            return fn.substr(lastSlash + 1);
+        }
+        files.sort((a, b) => cleanName(a).localeCompare(cleanName(b)));
+
+        // Emit them
+        var result = '';
+        files.forEach(fn => {
+            // Some extra spacing if this isn't the first file
+            if (result.length) result = result + '\r\n\r\n';
+
+            // Filename header + content
+            result = result + '/*====== ' + fn + ' ======*/\r\n';
+            if (clean) {
+                result = result + clean(emitterIOHost.outputs[fn]);
+            } else {
+                result = result + emitterIOHost.outputs[fn];
+            }
+        });
+        return result;
+    }
+
+    export function runRWCTest(jsonPath: string) {
+        var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+        var optsParser: { parser: TypeScript.OptionsParser; settings: TypeScript.CompilationSettings };
+
+        var ioLog: IOLog = JSON.parse(TypeScript.IO.readFile(jsonPath, null).contents);
+        var errors = '';
+
+        it('has parsable options', () => {
+            runWithIOLog(ioLog, () => {
+                optsParser = createOptionsParser(TypeScript.IO);
+                optsParser.parser.parse(ioLog.arguments);
+            });
+        });
+
+        var emitterIOHost = new RWCEmitter();
+        it('can compile', () => {
+            runWithIOLog(ioLog, () => {
+                harnessCompiler.reset();
+                var resolver = new TypeScript.ReferenceResolver(optsParser.parser.unnamed, new RWCReferenceResolver(), false);
+                var resolutionResult = resolver.resolveInputFiles();
+                // Uniqueify all the filenames
+                var inputList: string[] = optsParser.parser.unnamed;
+                var addFilenameIfNotPresent = (fn: string) => {
+                    if (inputList.indexOf(fn) === -1) inputList.push(fn);
+                };
+                resolutionResult.resolvedFiles.forEach(file => {
+                    file.importedFiles.forEach(addFilenameIfNotPresent);
+                    file.referencedFiles.forEach(addFilenameIfNotPresent);
+                });
+
+                harnessCompiler.reset();
+                harnessCompiler.setCompilerSettingsFromSettings(optsParser.settings);
+
+                var errors = '';
+                inputList.forEach((item: string) => {
+                    var resolvedPath = TypeScript.switchToForwardSlashes(TypeScript.IO.resolvePath(item));
+                    var content = TypeScript.IO.readFile(resolvedPath, null).contents;
+                    harnessCompiler.addInputFile({ unitName: resolvedPath, content: content });
+                });
+
+                harnessCompiler.compile();
+                var compilationErrors = harnessCompiler.reportCompilationErrors();
+
+                // Emit the results
+                harnessCompiler.emitAll(emitterIOHost);
+                harnessCompiler.emitAllDeclarations(emitterIOHost);
+
+                // Create an error baseline
+                compilationErrors.forEach(err => {
+                    errors += TypeScript.TypeScriptCompiler.getFullDiagnosticText(err, path => TypeScript.switchToForwardSlashes(path));
+                });
+            });
+        });
+
+        // Baselines
+        var baselineOpts: Harness.Baseline.BaselineOptions = { Subfolder: 'rwc' };
+
+        var baseName = /(.*)\/(.*).json/.exec(jsonPath)[2];
+
+        // Emitted JS
+        Harness.Baseline.runBaseline('has the expected emitted code', baseName + '.output.js', () => {
+            return collateOutputs(emitterIOHost, fn => fn.substr(fn.length - '.js'.length) === '.js', s => SyntacticCleaner.clean(s));
+        }, false, baselineOpts);
+
+        // Declaration files
+        Harness.Baseline.runBaseline('has the expected declaration file content', baseName + '.d.ts', () => {
+            var result = collateOutputs(emitterIOHost, fn => fn.substr(fn.length - '.d.ts'.length) === '.d.ts');
+            return result.length > 0 ? result : null;
+        }, false, baselineOpts);
+
+        // Source maps
+        Harness.Baseline.runBaseline('has the expected source maps', baseName + '.map', () => {
+            var result = collateOutputs(emitterIOHost, fn => fn.substr(fn.length - '.map'.length) === '.map');
+            return result.length > 0 ? result : null;
+        }, false, baselineOpts);
+
+        // Errors
+        Harness.Baseline.runBaseline('has the expected errors', baseName + '.errors.txt', () => {
+            return errors.length > 0 ? errors : null;
+        }, false, baselineOpts);
+
+        // TODO: Type baselines (need to refactor out from compilerRunner)
+    }
+
 }
 
 class RWCRunner extends RunnerBase {
-    constructor() { super(); }
-
     private runnerPath = "tests/runners/rwc";
     private sourcePath = "tests/cases/rwc/";
-    private outputPath = "tests/baselines/rwc/local/";
-    private referencePath = "tests/baselines/rwc/reference/";
 
-    private htmlBaselineReport = new Diff.HtmlBaselineReport('rwc-report.html');
-
-    public _getDiagnosticText(diagnostic: TypeScript.Diagnostic): string {
-        return this.removeRootPath(TypeScript.TypeScriptCompiler.getFullDiagnosticText(diagnostic, path => TypeScript.switchToForwardSlashes(path)));
-    }
-
-    private removeRootPath(path: string): string {
-        
-        var idx = path.indexOf(this.sourcePath) + this.sourcePath.length;
-        return path.substr(idx);
-    }
+    private harnessCompiler: Harness.Compiler.HarnessCompiler;
 
     /** Setup the runner's tests so that they are ready to be executed by the harness
      *  The first test should be a describe/it block that sets up the harness's compiler instance appropriately
      */
     public initializeTests(): void {
-        var testCases: any[] = [];
-        var harnessCompiler: Harness.Compiler.HarnessCompiler;
-        var fsOutput = new Harness.Compiler.WriterAggregator();
-        var fsDeclOutput = new Harness.Compiler.WriterAggregator();
-        var fsErrors = new Harness.Compiler.WriterAggregator();
-        var exec = Exec.exec;
-
         // Recreate the compiler with the default lib
         Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: false, noImplicitAny: false });
-        harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+        this.harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
 
-        // reset the report
-        this.htmlBaselineReport.reset();
-
-        // Create folders if needed
-        TypeScript.IO.createDirectory(TypeScript.IO.dirName(this.outputPath));
-        TypeScript.IO.createDirectory(this.outputPath);
-
-        var runner = this;
-
-        function runTest(spec: testSpec) {
-
-            var content = ''; // contents of the file
-            var result = '';
-            var errors = '';
-            var dtsresult = '';
-            var hasCrashed = false;
-
-            var tcSettings: Harness.TestCaseParser.CompilerSetting[] = [
-                { flag: "module", value: "commonjs" },
-                { flag: "declaration", value: "true" }
-            ];
-
-            describe("Testing a RWC project: " + spec.projectName, function () {
-                // reset compiler to initial state
-                harnessCompiler.reset();
-                harnessCompiler.setCompilerSettings(tcSettings);
-
-                fsOutput.reset();
-                fsDeclOutput.reset();
-                content = '', result = '', errors = '', dtsresult = '';
-                hasCrashed = false;
-
-                var outputJsFilename = runner.outputPath + spec.outputFile + ".js";
-                var outputErrorFilename = runner.outputPath + spec.outputFile + ".err.out";
-                var outputCrashFilename = runner.outputPath + spec.outputFile + ".crash.out";
-                var outputDeclarationFilename = runner.outputPath + spec.outputFile + ".d.ts";
-                var outputTypesFilename = runner.outputPath + spec.outputFile + ".types";
-
-                var baselineJsFilename = runner.referencePath + spec.outputFile + ".js";
-                var baselineErrorFilename = runner.referencePath + spec.outputFile + ".err.out";
-                var baselineCrashFilename = runner.referencePath + spec.outputFile + ".crash.out";
-                var baselineDeclarationFilename = runner.referencePath + spec.outputFile + ".d.ts";
-                var baselineTypesFilename = runner.referencePath + spec.outputFile + ".types";
-
-                var emitterIOHost = new RWCEmitter(fsOutput, fsDeclOutput);
-
-                it("compile it ", function () {
-                    try {
-
-                        // Compile the project
-                        spec.compileList.forEach((item: string) => {
-                            content = TypeScript.IO.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
-                            harnessCompiler.addInputFile({ unitName: spec.projectRoot + "/" + item, content: content });
-                        });
-
-                        // Resolve and compile files
-                        harnessCompiler.compile();
-                        var compilationErrors = harnessCompiler.reportCompilationErrors();
-
-                        // Emiting the results
-                        harnessCompiler.emitAll(emitterIOHost);
-                        harnessCompiler.emitAllDeclarations(emitterIOHost);
-
-                        fsOutput.Close();
-                        fsDeclOutput.Close();
-
-                        compilationErrors.forEach(err => {
-                            errors += runner._getDiagnosticText(err);
-                        });
-                        result = fsOutput.lines.join('\r\n');
-                        dtsresult = fsDeclOutput.lines.join("\r\n");
-
-                        // Delete previous results 
-                        if (TypeScript.IO.fileExists(outputJsFilename))
-                            TypeScript.IO.deleteFile(outputJsFilename);
-                        if (TypeScript.IO.fileExists(outputErrorFilename))
-                            TypeScript.IO.deleteFile(outputErrorFilename);
-                        if (TypeScript.IO.fileExists(outputDeclarationFilename))
-                            TypeScript.IO.deleteFile(outputDeclarationFilename);
-
-                        // Create the results
-                        TypeScript.IO.writeFile(outputJsFilename, result, /*codepage*/ null);
-                        TypeScript.IO.writeFile(outputErrorFilename, errors, /*codepage*/ null);
-                        TypeScript.IO.writeFile(outputDeclarationFilename, dtsresult, /* codepath */ null);
-                    } catch (e) {
-                        hasCrashed = true;
-                        var message = e.message + (e.stack ? '\r\n' + e.stack : '');
-                        TypeScript.IO.writeFile(outputCrashFilename, message, /*codepage*/ null);
-                        Harness.Assert.throwAssertError(new Error("Failed compilation"));
-                    }
-                });
-
-                it("crash check", () => {
-                    if (hasCrashed) {
-                        Harness.Assert.throwAssertError(new Error("Compiler has crashed!"));
-                    }
-                });
-
-                it("error baseline check", () => {
-                    if (!hasCrashed) {
-                        if (!TypeScript.IO.fileExists(baselineErrorFilename)) {
-                            var expected = "<no content>";
-                        } else {
-                            var expected = TypeScript.IO.readFile(baselineErrorFilename, null).contents;
-                        }
-                        // remove line sensitivity
-                        expected = expected.replace(/\r\n?/g, '\n');
-                        var actual = errors.replace(/\r\n?/g, '\n');
-
-                        if (actual !== expected) {
-                            runner.htmlBaselineReport.addDifference("error baseline check for " + spec.projectName, spec.outputFile + '.err.out', spec.outputFile + '.err.out', expected, actual, /* includeUnchangedRegions*/ false);
-
-                            var errMsg = 'The baseline file ' + spec.outputFile + '.err.out' + ' has changed. Please refer to rwc-report.html and ';
-                            errMsg += 'either fix the regression (if unintended) or update the baseline (if intended).'
-                            Harness.Assert.throwAssertError(new Error(errMsg));
-                        }
-                    }
-                });
-
-                it("codegen baseline check", () => {
-                    if (!hasCrashed) {
-                        if (!TypeScript.IO.fileExists(baselineJsFilename)) {
-                            var expected = "<no content>";
-                        } else {
-                            var expected = TypeScript.IO.readFile(baselineJsFilename, null).contents;
-                        }
-
-                        // remove line sensitivity
-                        expected = expected.replace(/\r\n?/g, '\n');
-                        var actual = result.replace(/\r\n?/g, '\n');
-                        if (actual !== expected) {
-                            runner.htmlBaselineReport.addDifference("codegen baseline check for " + spec.projectName, spec.outputFile + '.js', spec.outputFile + '.js', expected, actual, /* includeUnchangedRegions*/ false);
-
-                            var errMsg = 'The baseline file ' + spec.outputFile + '.js' + ' has changed. Please refer to rwc-report.html and ';
-                            errMsg += 'either fix the regression (if unintended) or update the baseline (if intended).'
-                            Harness.Assert.throwAssertError(new Error(errMsg));
-                        }
-                    }
-                });
-
-                it(".d.ts baseline check", () => {
-                    if (!hasCrashed) {
-                        if (!TypeScript.IO.fileExists(baselineDeclarationFilename)) {
-                            var expected = "<no content>";
-                        } else {
-                            var expected = TypeScript.IO.readFile(baselineDeclarationFilename, null).contents;
-                        }
-
-                        // remove line sensitivity
-                        expected = expected.replace(/\r\n?/g, '\n');
-                        var actual = dtsresult.replace(/\r\n?/g, '\n');
-                        if (actual !== expected) {
-                            runner.htmlBaselineReport.addDifference("codegen baseline check for " + spec.projectName, spec.outputFile + '.d.ts', spec.outputFile + '.d.ts', expected, actual, /* includeUnchangedRegions*/ false);
-
-                            var errMsg = 'The baseline file ' + spec.outputFile + '.d.ts' + ' has changed. Please refer to rwc-report.html and ';
-                            errMsg += 'either fix the regression (if unintended) or update the baseline (if intended).'
-                            Harness.Assert.throwAssertError(new Error(errMsg));
-                        }
-                    }
-                });
-
-                it("correct expression types check", () => {
-                    if (!hasCrashed && !spec.skipTypeCheck && errors.length == 0) {
-                        var compiler = new TypeScript.TypeScriptCompiler(
-                            new TypeScript.NullLogger());
-
-                        compiler.addFile('lib.d.ts', TypeScript.ScriptSnapshot.fromString(Harness.Compiler.libText),
-                            TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
-
-                        spec.compileList.forEach((item: string) => {
-                            content = TypeScript.IO.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
-                            compiler.addFile(spec.projectRoot + "/" + item, TypeScript.ScriptSnapshot.fromString(content),
-                                TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
-                        });
-
-                        spec.compileList.forEach(file => {
-                            compiler.getSemanticDiagnostics(spec.projectRoot + "/" + file);
-                        });
-
-                        var typeLines: string[] = [];
-                        spec.compileList.forEach(file => {
-                            typeLines.push('=== ' + file + ' ===');
-                            var walker = new TypeWriterWalker(spec.projectRoot + "/" + file, compiler);
-                            walker.run();
-                            walker.results.forEach(result => {
-                                var typeResult = 'Line ' + result.line + ' col ' + result.column + ' ' + result.syntaxKind + ' "' + result.identifierName + '" = ' + result.type;
-                                typeLines.push(typeResult)
-                            });
-                        });
-
-                        var typesResult = typeLines.join('\n');
-
-                        // write file for baseline updates
-                        if (TypeScript.IO.fileExists(outputTypesFilename)) {
-                            TypeScript.IO.deleteFile(outputTypesFilename);
-                        }
-                        TypeScript.IO.writeFile(outputTypesFilename, typesResult, /*codepage*/ null);
-                        
-                        if (!TypeScript.IO.fileExists(baselineTypesFilename)) {
-                            var expected = "<no content>";
-                        } else {
-                            var expected = TypeScript.IO.readFile(baselineTypesFilename, null).contents;
-                        }
-
-                        expected = expected.replace(/\r\n?/g, '\n');
-                        var actual = typesResult.replace(/\r\n?/g, '\n');
-                        if (actual !== expected) {
-                            var errMsg = 'The baseline file ' + spec.outputFile + '.types' + ' has changed. Due to the size of the generated files, '
-                            errMsg += 'use odd (or your favorite diff tool) to analyze the differences.';
-                            Harness.Assert.throwAssertError(new Error(errMsg));
-                        }
-                    }
-                });
-
-                it("_this check", () => {
-                    if (!hasCrashed && !spec.skipThisCheck) {
-                        exec("node", ["tests/runners/rwc/verifiers/globalVerifier.js", outputJsFilename], (result) => {
-                            // If there's a bug in the _this checker, just issue a 'pass'
-                            if (result.exitCode == 0) {
-                                Harness.Assert.equal(result.stderr, "");
-                                Harness.Assert.equal(result.stdout, "");
-                            } else {
-                                Harness.Assert.throwAssertError(new Error(spec.projectName + " '_this' check crashed!"));
-                            }
-                        });
-                    } 
-                });
-            });
+        // Read in and evaluate the test list
+        var testList = TypeScript.IO.dir(this.sourcePath, /.+\.json$/);
+        for (var i = 0; i < testList.length; i++) {
+            this.runTest(testList[i]);
         }
+    }
 
-        // Read in and evaluate the test list.
-        try {
-            eval(TypeScript.IO.readFile(this.runnerPath + "/TestProjectList.js", null).contents);
-        } catch (ex) {
-            Harness.Assert.throwAssertError(new Error("Could not read or evaluate TestProjectList.js!"));
-        }
-
-        for (var i = 0; i < testCases.length; i++) {
-            runTest(testCases[i]);
-        }
+    private runTest(jsonFilename: string) {
+        describe("Testing a RWC project: " + jsonFilename, () => {
+            RWC.runRWCTest(jsonFilename);
+        });
     }
 }
