@@ -1112,6 +1112,10 @@ module Harness {
                 this.compiler.setCompilationSettings(TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings));
             }
 
+            public setCompilerSettingsFromSettings(settings: TypeScript.CompilationSettings) {
+                this.compiler.setCompilationSettings(TypeScript.ImmutableCompilationSettings.fromCompilationSettings(settings));
+            }
+
             /** The compiler flags which tests are allowed to change and functions that can change them appropriately.
              *  Every flag here needs to also be present in the fileMetadataNames array in the TestCaseParser class in harness.ts. They must be all lowercase in both places.
              */
@@ -1861,14 +1865,23 @@ module Harness {
 
         export interface BaselineOptions {
             LineEndingSensitive?: boolean;
+            Subfolder?: string;
         }
 
-        function localPath(fileName: string) {
-            return Harness.userSpecifiedroot + 'tests/baselines/local/' + fileName;
+        function localPath(fileName: string, subfolder?: string) {
+            return baselinePath(fileName, 'local', subfolder);
         }
 
-        function referencePath(fileName: string) {
-            return Harness.userSpecifiedroot + 'tests/baselines/reference/' + fileName;
+        function referencePath(fileName: string, subfolder?: string) {
+            return baselinePath(fileName, 'reference', subfolder);
+        }
+
+        function baselinePath(fileName: string, type: string, subfolder?: string) {
+            if (subfolder !== undefined) {
+                return Harness.userSpecifiedroot + 'tests/baselines/' + subfolder + '/' + type + '/' + fileName;
+            } else {
+                return Harness.userSpecifiedroot + 'tests/baselines/' + type + '/' + fileName;
+            }
         }
 
         export function reset() {
@@ -1905,10 +1918,10 @@ module Harness {
             // or some real output of the function
             if (actual === undefined) {
                 // Nothing to do
-                return;
+                return { expected: null, actual: actual };
             }
 
-            var refFilename = referencePath(relativeFilename);
+            var refFilename = referencePath(relativeFilename, opts && opts.Subfolder);
 
             if (actual === null) {
                 actual = '<no content>';
@@ -1929,15 +1942,11 @@ module Harness {
             return { expected: expected, actual: actual };
         }
 
-        function writeComparison(expected: string, actual: string, relativeFilename: string, actualFilename: string, descriptionForDescribe: string) {
+        function writeComparison(expected: string, actual: string, relativeFilename: string) {
             if (expected != actual) {
-                // Overwrite & issue error
-                var errMsg = 'The baseline file ' + relativeFilename + ' has changed. Please refer to baseline-report.html and ';
+                // Issue error
+                var errMsg = 'The baseline file ' + relativeFilename + ' has changed. Please refer to "jake baseline-diff" and ';
                 errMsg += 'either fix the regression (if unintended) or run jake baseline-accept (if intended).'
-
-                var refFilename = referencePath(relativeFilename);
-                htmlBaselineReport.addDifference(descriptionForDescribe, actualFilename, refFilename, expected, actual, /*includeUnchangedRegions:*/ true);
-
                 throw new Error(errMsg);
             }
         }
@@ -1950,12 +1959,12 @@ module Harness {
             opts?: BaselineOptions) {
 
             var actual = <string>undefined;
-            var actualFilename = localPath(relativeFilename);
+            var actualFilename = localPath(relativeFilename, opts && opts.Subfolder);
 
             if (runImmediately) {
                 actual = generateActual(actualFilename, generateContent);
                 var comparison = compareToBaseline(actual, relativeFilename, opts);
-                writeComparison(comparison.expected, comparison.actual, relativeFilename, actualFilename, descriptionForDescribe);
+                writeComparison(comparison.expected, comparison.actual, relativeFilename);
             } else {
                 describe(descriptionForDescribe, () => {
                     var actual: string;
@@ -1966,7 +1975,7 @@ module Harness {
 
                     it('Matches the baseline file', () => {
                         var comparison = compareToBaseline(actual, relativeFilename, opts);
-                        writeComparison(comparison.expected, comparison.actual, relativeFilename, actualFilename, descriptionForDescribe);
+                        writeComparison(comparison.expected, comparison.actual, relativeFilename);
                     });
                 });
             }
