@@ -1090,11 +1090,11 @@ module TypeScript.Syntax.Abstract {
     }
     export class ConstraintSyntax extends SyntaxNode {
         public extendsKeyword: ISyntaxToken;
-        public type: ITypeSyntax;
-        constructor(data: number, extendsKeyword: ISyntaxToken, type: ITypeSyntax) {
+        public typeOrExpression: ISyntaxNodeOrToken;
+        constructor(data: number, extendsKeyword: ISyntaxToken, typeOrExpression: ISyntaxNodeOrToken) {
             super(data);
-            this.type = type,
-            type.parent = this;
+            this.typeOrExpression = typeOrExpression,
+            typeOrExpression.parent = this;
         }
     }
     export class SimplePropertyAssignmentSyntax extends SyntaxNode implements IPropertyAssignmentSyntax {

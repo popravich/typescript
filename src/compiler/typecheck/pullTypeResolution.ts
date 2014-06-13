@@ -3482,7 +3482,9 @@ module TypeScript {
             typeParameterSymbol.startResolving();
 
             if (typeParameterAST.constraint) {
-                var constraintTypeSymbol = this.resolveTypeReference(typeParameterAST.constraint.type, context);
+                var constraintTypeSymbol = SyntaxFacts.isType(typeParameterAST.constraint.typeOrExpression.kind())
+                    ? this.resolveTypeReference(<ITypeSyntax>typeParameterAST.constraint.typeOrExpression, context)
+                    : this.semanticInfoChain.anyTypeSymbol;
 
                 if (constraintTypeSymbol) {
                     typeParameterSymbol.setConstraint(constraintTypeSymbol);
@@ -3521,7 +3523,9 @@ module TypeScript {
                 this.setTypeChecked(constraint, context);
             }
 
-            return this.resolveTypeReference(constraint.type, context);
+            return SyntaxFacts.isType(constraint.typeOrExpression.kind())
+                ? this.resolveTypeReference(<ITypeSyntax>constraint.typeOrExpression, context)
+                : this.semanticInfoChain.anyTypeSymbol;
         }
 
         private resolveFunctionBodyReturnTypes(
@@ -13672,7 +13676,7 @@ module TypeScript {
                     break;
                 case SyntaxKind.Constraint:
                     var constraint = <ConstraintSyntax>ast.parent;
-                    if (constraint.type === ast) {
+                    if (constraint.typeOrExpression === ast) {
                         return true;
                     }
                     break;

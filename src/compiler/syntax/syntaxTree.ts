@@ -1530,6 +1530,23 @@ module TypeScript {
         private isEvalOrArguments(expr: IExpressionSyntax): boolean {
             return this.getEvalOrArguments(expr) !== null;
         }
+
+        public visitConstraint(node: ConstraintSyntax): void {
+            if (this.checkConstraintType(node)) {
+                return;
+            }
+
+            super.visitConstraint(node);
+        }
+
+        private checkConstraintType(node: ConstraintSyntax): boolean {
+            if (!SyntaxFacts.isType(node.typeOrExpression.kind())) {
+                this.pushDiagnostic(node.typeOrExpression, DiagnosticCode.Type_expected);
+                return true;
+            }
+
+            return false;
+        }
     }
 
     function firstSyntaxTreeToken(syntaxTree: SyntaxTree) {

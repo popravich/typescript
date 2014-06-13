@@ -3471,7 +3471,19 @@ module TypeScript.Parser {
                 return null;
             }
 
-            return new syntaxFactory.ConstraintSyntax(parseNodeData, eatToken(SyntaxKind.ExtendsKeyword), parseType());
+            return new syntaxFactory.ConstraintSyntax(parseNodeData, eatToken(SyntaxKind.ExtendsKeyword), parseTypeOrExpression());
+        }
+
+        function tryParseParameterList(): ParameterListSyntax {
+            if (currentToken().kind() === SyntaxKind.OpenParenToken) {
+                var token1 = peekToken(1);
+
+                if (token1.kind() === SyntaxKind.CloseParenToken || isParameterHelper(token1)) {
+                    return parseParameterList();
+                }
+            }
+
+            return null;
         }
 
         function parseParameterList(): ParameterListSyntax {
@@ -3526,6 +3538,28 @@ module TypeScript.Parser {
             }
         }
 
+        function parseTypeOrExpression(): ISyntaxNodeOrToken {
+            var result: ISyntaxNodeOrToken = tryParseType();
+            if (result) {
+                return result;
+            }
+
+            var _currentToken = currentToken();
+            if (isExpression(_currentToken)) {
+                // We parse out an expression here, but we very specifically ask for a unary 
+                // expression, and not just any expression.  That's because if we have:
+                //
+                //      <X extends "">
+                //
+                // We do not want the  >  to be consumed as part of the "" expression.  By starting
+                // at 'unary' expression and not 'binary' expression, we ensure that we don't accidently
+                // consume the >.
+                return tryParseUnaryExpressionOrHigher(_currentToken, /*force:*/ true);
+            }
+
+            return eatIdentifierToken(DiagnosticCode.Type_expected);
+        }
+
         function parseType(): ITypeSyntax {
             return tryParseType() || eatIdentifierToken(DiagnosticCode.Type_expected);
         }
@@ -3572,7 +3606,7 @@ module TypeScript.Parser {
 
                     return consumeToken(_currentToken);
                 case SyntaxKind.OpenParenToken:
-                case SyntaxKind.LessThanToken:  return parseFunctionType();
+                case SyntaxKind.LessThanToken:  return tryParseFunctionType();
                 case SyntaxKind.VoidKeyword:    return consumeToken(_currentToken);
                 case SyntaxKind.OpenBraceToken: return parseObjectType();
                 case SyntaxKind.NewKeyword:     return parseConstructorType();
@@ -3602,10 +3636,21 @@ module TypeScript.Parser {
                 : new syntaxFactory.GenericTypeSyntax(parseNodeData, name, typeArgumentList);
         }
 
-        function parseFunctionType(): FunctionTypeSyntax {
+        function tryParseFunctionType(): FunctionTypeSyntax {
+            var typeParameterList = tryParseTypeParameterList(/*requireCompleteTypeParameterList:*/ false);
+            var parameterList: ParameterListSyntax = null;
+            if (typeParameterList === null) {
+                parameterList = tryParseParameterList();
+                if (parameterList === null) {
+                    return null;
+                }
+            }
+            else {
+                parameterList = parseParameterList();
+            }
+
             return new syntaxFactory.FunctionTypeSyntax(parseNodeData,
-                tryParseTypeParameterList(/*requireCompleteTypeParameterList:*/ false),
-                parseParameterList(), eatToken(SyntaxKind.EqualsGreaterThanToken), parseType());
+                typeParameterList, parameterList, eatToken(SyntaxKind.EqualsGreaterThanToken), parseType());
         }
 
         function parseConstructorType(): ConstructorTypeSyntax {
@@ -3619,7 +3664,10 @@ module TypeScript.Parser {
                 return true;
             }
 
-            var token = currentToken();
+            return isParameterHelper(currentToken());
+        }
+
+        function isParameterHelper(token: ISyntaxToken): boolean {
             var tokenKind = token.kind();
             if (tokenKind === SyntaxKind.DotDotDotToken) {
                 return true;

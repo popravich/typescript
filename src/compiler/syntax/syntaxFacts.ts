@@ -277,4 +277,25 @@ module TypeScript.SyntaxFacts {
                 return false;
         }
     }
+
+    export function isType(kind: SyntaxKind): boolean {
+        switch (kind) {
+            case SyntaxKind.ArrayType:
+            case SyntaxKind.AnyKeyword:
+            case SyntaxKind.NumberKeyword:
+            case SyntaxKind.BooleanKeyword:
+            case SyntaxKind.StringKeyword:
+            case SyntaxKind.VoidKeyword:
+            case SyntaxKind.FunctionType:
+            case SyntaxKind.ObjectType:
+            case SyntaxKind.ConstructorType:
+            case SyntaxKind.TypeQuery:
+            case SyntaxKind.GenericType:
+            case SyntaxKind.QualifiedName:
+            case SyntaxKind.IdentifierName:
+                return true;
+        }
+
+        return false;
+    }
 }
