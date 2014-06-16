@@ -59,7 +59,7 @@ module TypeScript {
         throw new Error(errorMessage);
     }
 
-    export var Environment = (function () {
+    export var Environment: IEnvironment = (function () {
         // Create an IO object for use inside WindowsScriptHost hosts
         // Depends on WSCript and FileSystemObject
         function getWindowsScriptHostEnvironment(): IEnvironment {

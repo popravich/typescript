@@ -22,9 +22,9 @@ class UnitTestRunner extends RunnerBase {
             case UnittestTestType.LanguageService:
                 this.tests = this.enumerateFiles('tests/cases/unittests/ls');
                 break;
-            case UnittestTestType.Services:
-                this.tests = this.enumerateFiles('tests/cases/unittests/services');
-                break;
+            //case UnittestTestType.Services:
+            //    this.tests = this.enumerateFiles('tests/cases/unittests/services');
+            //    break;
             case UnittestTestType.Harness:
                 this.tests = this.enumerateFiles('tests/cases/unittests/harness');
                 break;
@@ -43,7 +43,7 @@ class UnitTestRunner extends RunnerBase {
         var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.DesignTime);
 
         var toBeAdded = this.tests.map(test => {
-            return { unitName: test, content: TypeScript.Environment.readFile(test, /*codepage:*/ null).contents }
+            return { unitName: test, content: Harness.IO.readFile(test, /*codepage:*/ null).contents }
         });
         harnessCompiler.addInputFiles(toBeAdded);
         harnessCompiler.compile({ noResolve: true });
@@ -56,34 +56,28 @@ class UnitTestRunner extends RunnerBase {
         var code = lines.join("\n")
 
         describe("Setup compiler for compiler unittests", () => {
-            Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: this.testType !== UnittestTestType.Samples, noImplicitAny: false });
+            harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: this.testType !== UnittestTestType.Samples, noImplicitAny: false });
         });
-        
-        if (typeof require !== "undefined") {
-            var vm = require('vm');
-            vm.runInNewContext(code,
-                {
-                    require: require,
-                    TypeScript: TypeScript,
-                    process: process,
-                    describe: describe,
-                    it: it,
-                    assert: Harness.Assert,
-                    Harness: Harness,
-                    IO: TypeScript.Environment,
-                    Exec: Exec,
-                    Services: TypeScript.Services,
-                    // Formatting: Formatting,
-                    Diff: Diff,
-                    FourSlash: FourSlash
-                },
-                "generated_test_code.js"
-            );
-        } else {
-            eval(code);
+
+        var nodeContext: any = undefined;
+        if (Harness.currentExecutionEnvironment == Harness.ExecutionEnvironment.Node) {
+            nodeContext = {
+                require: require,
+                TypeScript: TypeScript,
+                process: process,
+                describe: describe,
+                it: it,
+                assert: assert,
+                Harness: Harness,
+                IO: Harness.IO,
+                Exec: Exec,
+                Services: TypeScript.Services,
+                FourSlash: FourSlash
+            };
         }
+        Utils.evalFile(code, "generated_test_code.js", nodeContext);
 
         // make sure the next unittestrunner doesn't include the previous one's stuff
-        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.DesignTime);
+        harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.DesignTime);
     }
 }

@@ -36,7 +36,7 @@ class CompilerBaselineRunner extends RunnerBase {
     public checkTestCodeOutput(fileName: string) {
         // strips the fileName from the path.
         var justName = fileName.replace(/^.*[\\\/]/, '');
-        var content = TypeScript.Environment.readFile(fileName, /*codepage:*/ null).contents;
+        var content = Harness.IO.readFile(fileName, /*codepage:*/ null).contents;
         var testCaseContent = Harness.TestCaseParser.makeUnitsFromTest(content, fileName);
 
         var units = testCaseContent.testUnitData;
@@ -46,8 +46,7 @@ class CompilerBaselineRunner extends RunnerBase {
         var lastUnit = units[units.length - 1];
 
         describe('JS output and errors for ' + fileName, () => {
-            Harness.Assert.bugs(content);
-
+            //Harness.Assert.bugs(content);
             /** Compiled JavaScript emit, if any */
             var jsOutput = '';
             /** Source map content, if any */
@@ -63,7 +62,7 @@ class CompilerBaselineRunner extends RunnerBase {
                 // a fresh compiler instance for themselves and then create a fresh one for the next test. Would be nice to get dev fixes
                 // eventually to remove this limitation.
                 if (!createNewInstance && (tcSettings[i].flag == "noimplicitany" || tcSettings[i].flag === 'target')) {
-                    Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: tcSettings[i].flag == "noimplicitany" });
+                    harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: tcSettings[i].flag == "noimplicitany" });
                     harnessCompiler.setCompilerSettings(tcSettings);
                     createNewInstance = true;
                 }
@@ -74,16 +73,17 @@ class CompilerBaselineRunner extends RunnerBase {
             // otherwise, assume all files are just meant to be in the same compilation session without explicit references to one another.
             var toBeCompiled: { unitName: string; content: string }[] = [];
             var otherFiles: { unitName: string; content: string }[] = [];
-            if (/require\(/.test(lastUnit.content) || /reference\spath/.test(lastUnit.content)) {
-                toBeCompiled.push({ unitName: 'tests/cases/compiler/' + lastUnit.name, content: lastUnit.content });
+            var rootDir = 'tests/cases/compiler/';
+            if (/require\(/.test(lastUnit.content) || /reference\spath/.test(lastUnit.content)) {                
+                toBeCompiled.push({ unitName: rootDir + lastUnit.name, content: lastUnit.content });
                 units.forEach(unit => {
                     if (unit.name !== lastUnit.name) {
-                        otherFiles.push({ unitName: 'tests/cases/compiler/' + unit.name, content: unit.content });
+                        otherFiles.push({ unitName: rootDir + unit.name, content: unit.content });
                     }
                 });
             } else {
                 toBeCompiled = units.map(unit => {
-                    return { unitName: 'tests/cases/compiler/' + unit.name, content: unit.content };
+                    return { unitName: rootDir + unit.name, content: unit.content };
                 });
             }
 
@@ -91,8 +91,8 @@ class CompilerBaselineRunner extends RunnerBase {
             harnessCompiler.compileFiles(toBeCompiled, otherFiles, function (compileResult) {
                 result = compileResult;
             }, function (settings) {
-                    harnessCompiler.setCompilerSettings(tcSettings);
-                });
+                harnessCompiler.setCompilerSettings(tcSettings);
+            });
 
             // check errors
             if (this.errors) {
@@ -106,8 +106,12 @@ class CompilerBaselineRunner extends RunnerBase {
                     // 'merge' the lines of each input file with any errors associated with it
                     toBeCompiled.concat(otherFiles).forEach(inputFile => {
                         // Filter down to the errors in the file
+                        // TODO/REVIEW: this doesn't work quite right in the browser if a multi file test has files whose names are just the right length relative to one another
                         var fileErrors = result.errors.filter(e => {
                             var errFn = e.fileName();
+                            if (!errFn) {
+                                debugger;
+                            }
                             return errFn.indexOf(inputFile.unitName) === errFn.length - inputFile.unitName.length;
                         });
 
@@ -148,6 +152,7 @@ class CompilerBaselineRunner extends RunnerBase {
                                     var length = err.length() - Math.max(0, thisLineStart - err.start());
                                     // Calculate the start of the sq
                                     var squiggleStart = Math.max(0, relativeOffset);
+                                    // TODO/REVIEW: this doesn't work quite right in the browser if a multi file test has files whose names are just the right length relative to one another
                                     outputLines.push('    ' + new Array(squiggleStart + 1).join(' ') + new Array(Math.min(length, line.length - squiggleStart) + 1).join('~'));
                                     // If the error ended here, or we're at the end of the file, emit its message
                                     if ((lineIndex === lines.length - 1) || nextLineStart > (err.start() + err.length())) {
@@ -320,19 +325,18 @@ class CompilerBaselineRunner extends RunnerBase {
             }
 
             if (createNewInstance) {
-                Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: false });
+                harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: false });
                 createNewInstance = false;
             }
         });
     }
 
-    public initializeTests() {
+    public initializeTests() {       
         describe("Setup compiler for compiler baselines", () => {
-            // REVIEW: would like to use the minimal lib.d.ts but a bunch of tests need to be converted to use non-DOM APIs
-            Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: false });
+            var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+            harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: false });
             this.parseOptions();
         });
-
         if (this.tests.length === 0) {
             var testFiles = this.enumerateFiles(this.basePath, { recursive: true });
             testFiles.forEach(fn => {

@@ -18,9 +18,6 @@
 /// <reference path='harness.ts' />
 
 module FourSlash {
-
-    import assert = Harness.Assert;
-
     // Represents a parsed source file with metadata
     export interface FourSlashFile {
         // The contents of the file (with markers, etc stripped out)
@@ -209,7 +206,7 @@ module FourSlash {
 
             var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
             var inputFiles: { unitName: string; content: string }[] = [];
-            
+
             testData.files.forEach(file => {
                 var fixedPath = file.fileName.substr(file.fileName.indexOf('tests/'));
                 harnessCompiler.registerFile(fixedPath, file.content);
@@ -256,7 +253,7 @@ module FourSlash {
             this.formatCodeOptions = new TypeScript.Services.FormatCodeOptions();
 
             this.testData.files.forEach(file => {
-                var filename = file.fileName.replace(TypeScript.Environment.directoryName(file.fileName), '').substr(1);
+                var filename = file.fileName.replace(Harness.IO.directoryName(file.fileName), '').substr(1);
                 var filenameWithoutExtension = filename.substr(0, filename.lastIndexOf("."));
                 this.scenarioActions.push('<CreateFileOnDisk FileId="' + filename + '" FileNameWithoutExtension="' + filenameWithoutExtension + '" FileExtension=".ts"><![CDATA[' + file.content + ']]></CreateFileOnDisk>');
             });
@@ -302,9 +299,9 @@ module FourSlash {
         public openFile(name: string): void;
         public openFile(indexOrName: any) {
             var fileToOpen: FourSlashFile = this.findFile(indexOrName);
-            fileToOpen.fileName = switchToForwardSlashes(fileToOpen.fileName);
+            fileToOpen.fileName = Utils.switchToForwardSlashes(fileToOpen.fileName);
             this.activeFile = fileToOpen;
-            var filename = fileToOpen.fileName.replace(TypeScript.Environment.directoryName(fileToOpen.fileName), '').substr(1);
+            var filename = fileToOpen.fileName.replace(Harness.IO.directoryName(fileToOpen.fileName), '').substr(1);
             this.scenarioActions.push('<OpenFile FileName="" SrcFileId="' + filename + '" FileId="' + filename + '" />');
         }
 
@@ -393,13 +390,13 @@ module FourSlash {
 
         private printErrorLog(expectErrors: boolean, errors: TypeScript.Diagnostic[]) {
             if (expectErrors) {
-                TypeScript.Environment.standardOut.WriteLine("Expected error not found.  Error list is:");
+                Harness.IO.standardOut.WriteLine("Expected error not found.  Error list is:");
             } else {
-                TypeScript.Environment.standardOut.WriteLine("Unexpected error(s) found.  Error list is:");
+                Harness.IO.standardOut.WriteLine("Unexpected error(s) found.  Error list is:");
             }
 
             errors.forEach(function (error: TypeScript.Diagnostic) {
-                TypeScript.Environment.standardOut.WriteLine("  minChar: " + error.start() + ", limChar: " + (error.start() + error.length()) + ", message: " + error.message() + "\n");
+                Harness.IO.standardOut.WriteLine("  minChar: " + error.start() + ", limChar: " + (error.start() + error.length()) + ", message: " + error.message() + "\n");
             });
         }
 
@@ -411,7 +408,7 @@ module FourSlash {
 
             if (actual !== expected) {
                 var errorMsg = "Actual number of errors (" + actual + ") does not match expected number (" + expected + ")";
-                TypeScript.Environment.standardOut.WriteLine(errorMsg);
+                Harness.IO.standardOut.WriteLine(errorMsg);
                 throw new Error(errorMsg);
             }
         }
@@ -513,7 +510,7 @@ module FourSlash {
                 }
                 errorMsg += "]\n";
 
-                TypeScript.Environment.standardOut.WriteLine(errorMsg);
+                Harness.IO.standardOut.WriteLine(errorMsg);
                 throw new Error("Member list is not empty at Caret");
 
             }
@@ -533,7 +530,7 @@ module FourSlash {
                 }
                 errorMsg += "]\n";
 
-                TypeScript.Environment.standardOut.WriteLine(errorMsg);
+                Harness.IO.standardOut.WriteLine(errorMsg);
                 throw new Error("Completion list is not empty at Caret");
 
             }
@@ -657,29 +654,29 @@ module FourSlash {
             var actualQuickInfoKind = actualQuickInfo ? actualQuickInfo.kind : "";
             if (negative) {
                 if (expectedTypeName !== undefined) {
-                    assert.notEqual(actualQuickInfoMemberName, expectedTypeName);
+                    assert.notEqual(actualQuickInfoMemberName, expectedTypeName, "\nActual quick info member name:\n\t" + actualQuickInfoMemberName + "\nExpected value:\n\t" + expectedTypeName);
                 }
                 if (docComment != undefined) {
-                    assert.notEqual(actualQuickInfoDocComment, docComment);
+                    assert.notEqual(actualQuickInfoDocComment, docComment, "\nActual quick info doc comment:\n\t" + actualQuickInfoDocComment + "\nExpected value:\n\t" + docComment);
                 }
                 if (symbolName !== undefined) {
-                    assert.notEqual(actualQuickInfoSymbolName, symbolName);
+                    assert.notEqual(actualQuickInfoSymbolName, symbolName, "\nActual quick info symbol name:\n\t" + actualQuickInfoSymbolName + "\nExpected value:\n\t" + symbolName);
                 }
                 if (kind !== undefined) {
-                    assert.notEqual(actualQuickInfoKind, kind);
+                    assert.notEqual(actualQuickInfoKind, kind, "\nActual quick info kind:\n\t" + actualQuickInfoKind + "\nExpected value:\n\t" + kind);
                 }
             } else {
                 if (expectedTypeName !== undefined) {
-                    assert.equal(actualQuickInfoMemberName, expectedTypeName);
+                    assert.equal(actualQuickInfoMemberName, expectedTypeName, "\nActual quick info member name:\n\t" + actualQuickInfoMemberName + "\nExpected value:\n\t" + expectedTypeName);
                 }
                 if (docComment != undefined) {
-                    assert.equal(actualQuickInfoDocComment, docComment);
+                    assert.equal(actualQuickInfoDocComment, docComment, "\nActual quick info doc comment:\n\t" + actualQuickInfoDocComment + "\nExpected value:\n\t" + docComment);
                 }
                 if (symbolName !== undefined) {
-                    assert.equal(actualQuickInfoSymbolName, symbolName);
+                    assert.equal(actualQuickInfoSymbolName, symbolName, "\nActual quick info symbol name:\n\t" + actualQuickInfoSymbolName + "\nExpected value:\n\t" + symbolName);
                 }
                 if (kind !== undefined) {
-                    assert.equal(actualQuickInfoKind, kind);
+                    assert.equal(actualQuickInfoKind, kind, "\nActual quick info kind:\n\t" + actualQuickInfoKind + "\nExpected value:\n\t" + kind);
                 }
             }
         }
@@ -711,7 +708,7 @@ module FourSlash {
             this.taoInvalidReason = 'verifyCurrentParameterIsVariable NYI';
 
             var activeParameter = this.getActiveParameter();
-            assert.notNull(activeParameter.parameter);
+            assert.isNotNull(activeParameter.parameter);
             assert.equal(isVariable, activeParameter.parameter.isVariable);
         }
 
@@ -854,7 +851,7 @@ module FourSlash {
         }
 
         public printBreakpointLocation(pos: number) {
-            TypeScript.Environment.standardOut.WriteLine(this.getBreakpointStatementLocation(pos));
+            Harness.IO.standardOut.WriteLine(this.getBreakpointStatementLocation(pos));
         }
 
         public printBreakpointAtCurrentLocation() {
@@ -863,24 +860,23 @@ module FourSlash {
 
         public printCurrentParameterHelp() {
             var help = this.languageService.getSignatureAtPosition(this.activeFile.fileName, this.currentCaretPosition);
-            TypeScript.Environment.standardOut.WriteLine(JSON.stringify(help));
+            Harness.IO.standardOut.WriteLine(JSON.stringify(help));
         }
 
         public printCurrentQuickInfo() {
             var quickInfo = this.languageService.getTypeAtPosition(this.activeFile.fileName, this.currentCaretPosition);
-            TypeScript.Environment.standardOut.WriteLine(JSON.stringify(quickInfo));
+            Harness.IO.standardOut.WriteLine(JSON.stringify(quickInfo));
         }
 
         public printErrorList() {
             var syntacticErrors = this.languageService.getSyntacticDiagnostics(this.activeFile.fileName);
             var semanticErrors = this.languageService.getSemanticDiagnostics(this.activeFile.fileName);
             var errorList = syntacticErrors.concat(semanticErrors);
-            TypeScript.Environment.standardOut.WriteLine('Error list (' + errorList.length + ' errors)');
+            Harness.IO.standardOut.WriteLine('Error list (' + errorList.length + ' errors)');
 
             if (errorList.length) {
                 errorList.forEach(err => {
-                    TypeScript.Environment.standardOut.WriteLine("start: " + err.start() + ", length: " + err.length() +
-                        ", message: " + err.message());
+                    Harness.IO.standardOut.WriteLine("start: " + err.start() + ", length: " + err.length() + ", message: " + err.message());
                 });
             }
         }
@@ -889,8 +885,7 @@ module FourSlash {
             for (var i = 0; i < this.testData.files.length; i++) {
                 var file = this.testData.files[i];
                 var active = (this.activeFile === file);
-
-                TypeScript.Environment.standardOut.WriteLine('=== Script (' + file.fileName + ') ' + (active ? '(active, cursor at |)' : '') + ' ===');
+                Harness.IO.standardOut.WriteLine('=== Script (' + file.fileName + ') ' + (active ? '(active, cursor at |)' : '') + ' ===');
                 var snapshot = this.languageServiceShimHost.getScriptSnapshot(file.fileName);
                 var content = snapshot.getText(0, snapshot.getLength());
                 if (active) {
@@ -899,23 +894,23 @@ module FourSlash {
                 if (makeWhitespaceVisible) {
                     content = TestState.makeWhitespaceVisible(content);
                 }
-                TypeScript.Environment.standardOut.WriteLine(content);
+                Harness.IO.standardOut.WriteLine(content);
             }
         }
 
         public printCurrentSignatureHelp() {
             var sigHelp = this.getActiveSignatureHelp();
-            TypeScript.Environment.standardOut.WriteLine(JSON.stringify(sigHelp));
+            Harness.IO.standardOut.WriteLine(JSON.stringify(sigHelp));
         }
 
         public printMemberListMembers() {
             var members = this.getMemberListAtCaret();
-            TypeScript.Environment.standardOut.WriteLine(JSON.stringify(members));
+            Harness.IO.standardOut.WriteLine(JSON.stringify(members));
         }
 
         public printCompletionListMembers() {
             var completions = this.getCompletionListAtCaret();
-            TypeScript.Environment.standardOut.WriteLine(JSON.stringify(completions));
+            Harness.IO.standardOut.WriteLine(JSON.stringify(completions));
         }
 
         private editCheckpoint(filename: string) {
@@ -1384,7 +1379,7 @@ module FourSlash {
         }
 
         public printNameOrDottedNameSpans(pos: number) {
-            TypeScript.Environment.standardOut.WriteLine(this.getNameOrDottedNameSpan(pos));
+            Harness.IO.standardOut.WriteLine(this.getNameOrDottedNameSpan(pos));
         }
 
         public verifyOutliningSpans(spans: TextSpan[]) {
@@ -1605,8 +1600,7 @@ module FourSlash {
                                     ' in the item: ' + JSON.stringify(item));
                             }
                         }
-                        else if (!isAdditionalSpan)
-                        {
+                        else if (!isAdditionalSpan) {
                             if (item.minChar <= markerPosition &&
                                 markerPosition <= item.minChar) {
                                 // marker is in span normal item's span
@@ -1635,11 +1629,11 @@ module FourSlash {
             var items = this.languageService.getNavigateToItems(searchValue);
             var length = items && items.length;
 
-            TypeScript.Environment.standardOut.WriteLine('NavigationItems list (' + length + ' items)');
+           Harness.IO.standardOut.WriteLine('NavigationItems list (' + length + ' items)');
 
             for (var i = 0; i < length; i++) {
                 var item = items[i];
-                TypeScript.Environment.standardOut.WriteLine('name: ' + item.name + ', kind: ' + item.kind + ', parentName: ' + item.containerName + ', fileName: ' + item.fileName);
+                Harness.IO.standardOut.WriteLine('name: ' + item.name + ', kind: ' + item.kind + ', parentName: ' + item.containerName + ', fileName: ' + item.fileName);
             }
         }
 
@@ -1647,11 +1641,11 @@ module FourSlash {
             var items = this.languageService.getScriptLexicalStructure(this.activeFile.fileName);
             var length = items && items.length;
 
-            TypeScript.Environment.standardOut.WriteLine('NavigationItems list (' + length + ' items)');
+            Harness.IO.standardOut.WriteLine('NavigationItems list (' + length + ' items)');
 
             for (var i = 0; i < length; i++) {
                 var item = items[i];
-                TypeScript.Environment.standardOut.WriteLine('name: ' + item.name + ', kind: ' + item.kind + ', parentName: ' + item.containerName + ', fileName: ' + item.fileName);
+                Harness.IO.standardOut.WriteLine('name: ' + item.name + ', kind: ' + item.kind + ', parentName: ' + item.containerName + ', fileName: ' + item.fileName);
             }
         }
 
@@ -1744,7 +1738,7 @@ module FourSlash {
 
         private assertItemInCompletionList(items: TypeScript.Services.CompletionEntry[], name: string, type?: string, docComment?: string, fullSymbolName?: string, kind?: string) {
             this.scenarioActions.push('<ShowCompletionList />');
-            this.scenarioActions.push('<VerifyCompletionContainsItem ItemName="' + name  + '"/>');
+            this.scenarioActions.push('<VerifyCompletionContainsItem ItemName="' + name + '"/>');
 
             if (type || docComment || fullSymbolName || kind) {
                 this.taoInvalidReason = 'assertItemInCompletionList only supports the "name" parameter';
@@ -1859,7 +1853,7 @@ module FourSlash {
     var fsErrors = new Harness.Compiler.WriterAggregator();
     export var xmlData: TestXmlData[] = [];
     export function runFourSlashTest(fileName: string) {
-        var content = TypeScript.Environment.readFile(fileName, /*codepage:*/ null);
+        var content = Harness.IO.readFile(fileName, /*codepage:*/ null);
         var xml = runFourSlashTestContent(content.contents, fileName);
         xmlData.push(xml);
     }
@@ -1868,14 +1862,15 @@ module FourSlash {
         // Parse out the files and their metadata
         var testData = parseTestData(content, fileName);
 
-        assert.bugs(content);
+        // TODO: re-enable
+        //assert.bugs(content);
 
         currentTestState = new TestState(testData);
-        var oldThrowAssertError = assert.throwAssertError;
-        assert.throwAssertError = (error: Error) => {
-            error.message = "Marker: " + currentTestState.lastKnownMarker + "\n" + error.message;
-            throw error;
-        }
+        //var oldThrowAssertError = assert.throwAssertError;
+        //assert.throwAssertError = (error: Error) => {
+        //    error.message = "Marker: " + currentTestState.lastKnownMarker + "\n" + error.message;
+        //    throw error;
+        //}
 
         var result = '';
         var tsFn = 'tests/cases/fourslash/fourslash.ts';
@@ -1887,8 +1882,8 @@ module FourSlash {
         harnessCompiler.reset();
 
         var filesToAdd = [
-            { unitName: tsFn, content: TypeScript.Environment.readFile(tsFn, /*codepage:*/ null).contents },
-            { unitName: fileName, content: TypeScript.Environment.readFile(fileName, /*codepage:*/ null).contents }
+            { unitName: tsFn, content: Harness.IO.readFile(tsFn, /*codepage:*/ null).contents },
+            { unitName: fileName, content: Harness.IO.readFile(fileName, /*codepage:*/ null).contents }
         ];
         harnessCompiler.addInputFiles(filesToAdd);
         harnessCompiler.compile();
@@ -1915,7 +1910,7 @@ module FourSlash {
             // Debugging: FourSlash.currentTestState.printCurrentFileState();
             throw err;
         } finally {
-            assert.throwAssertError = oldThrowAssertError;
+            //assert.throwAssertError = oldThrowAssertError;
             harnessCompiler.reset();
         }
 
@@ -2010,7 +2005,7 @@ module FourSlash {
                         opts[match[1]] = match[2];
                     }
                 }
-            } else if (line == '' || lineLength === 0) { 
+            } else if (line == '' || lineLength === 0) {
                 // Previously blank lines between fourslash content caused it to be considered as 2 files,
                 // Remove this behavior since it just causes errors now
             } else {

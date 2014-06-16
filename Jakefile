@@ -179,7 +179,6 @@ var harnessSources = [
 	path.join(compilerDirectory, "optionsParser.ts"),
 
 	path.join(harnessDirectory, "exec.ts"),
-	path.join(harnessDirectory, "diff.ts"),
 	path.join(harnessDirectory, "harness.ts"),
 	path.join(harnessDirectory, "baselining.ts"),
 	path.join(harnessDirectory, "fourslash.ts"),
@@ -193,16 +192,16 @@ var harnessSources = [
 	path.join(runnersDirectory, "unittest/unittestrunner.ts"),
 	path.join(runnersDirectory, "rwc/rwcRunner.ts"),
 
-	path.join(runnersDirectory, "../cases/unittests/samples/samples.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/callSignatureTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/classOverloads.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/constructSignatureTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/declarationTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/functionSignaturesTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/identifiers.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/samples/samples.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/callSignatureTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/classOverloads.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/constructSignatureTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/declarationTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/functionSignaturesTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/identifiers.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
 ];
 
 var librarySourceMap = [
@@ -264,7 +263,7 @@ var useDebugMode = false;
 function compileFile(outFile, sources, prereqs, prefixes, useBuiltCompiler) {
 	file(outFile, prereqs, function() {
 		var dir = useBuiltCompiler ? builtLocalDirectory : LKGDirectory;
-		var cmd = (process.env.host || process.env.TYPESCRIPT_HOST || "node") + " " + dir + "tsc.js -removeComments -propagateEnumConstants -declaration -noImplicitAny --module commonjs " + sources.join(" ") + " -out " + outFile;
+		var cmd = (process.env.host || process.env.TYPESCRIPT_HOST || "node") + " " + dir + "tsc.js -removeComments -propagateEnumConstants -declaration --noImplicitAny --module commonjs " + sources.join(" ") + " -out " + outFile;
 		if (useDebugMode) {
 			cmd = cmd + " -sourcemap -mapRoot file:///" + path.resolve(path.dirname(outFile));
 		}
@@ -375,9 +374,9 @@ directory(builtTestDirectory);
 
 // Task to build the tests infrastructure using the built compiler
 var run = path.join(builtTestDirectory, "run.js");
-var json2 = path.join(harnessDirectory, "external/json2.js")	 
-compileFile(run, harnessSources, [builtTestDirectory, tscFile].concat(libraryTargets).concat(harnessSources), [json2], true);	
-
+var json2 = path.join(harnessDirectory, "external/json2.js");
+var diffMatchPath = path.join(harnessDirectory, "../../node_modules/googlediff/javascript/diff_match_patch.js");
+compileFile(run, harnessSources, [builtTestDirectory, tscFile].concat(libraryTargets).concat(harnessSources), [json2, diffMatchPath], true);
 
 // Webharness
 var frontEndPath = "tests/cases/webharness/frontEnd.ts";
@@ -420,24 +419,7 @@ task("tests", [run, serviceFile, fidelityTestsOutFile, perfCompilerPath].concat(
 	jake.cpR(path.join(builtLocalDirectory, "lib.d.ts"), "tests/cases/webhost");
 });
 
-desc("Runs the tests using the built run.js file. Syntax is jake runtests. Optional parameters 'host=' and 'tests='.");
-task("runtests", ["local", "tests", builtTestDirectory], function() {
-	// Clean the local baselines directory
-	if (fs.existsSync(localBaseline)) {
-		jake.rmRf(localBaseline);
-	}
-
-		// Clean the local Rwc baselines directory
-	if (fs.existsSync(localRwcBaseline)) {
-		jake.rmRf(localRwcBaseline);
-	}
-
-	jake.mkdirP(localBaseline);
-	host = process.env.host || process.env.TYPESCRIPT_HOST || "node";
-	tests = process.env.test || process.env.tests;
-	tests = tests ? tests.split(',').join(' ') : ([].slice.call(arguments).join(' ') || "");
-				var cmd = host + " " + run + " " + tests;
-	console.log(cmd);
+function exec(cmd) {
 	var ex = jake.createExec([cmd]);
 	// Add listeners for output and error
 	ex.addListener("stdout", function(output) {
@@ -449,7 +431,77 @@ task("runtests", ["local", "tests", builtTestDirectory], function() {
 	ex.addListener("cmdEnd", function() {
 		complete();
 	});
-	ex.run();	
+	try{
+		ex.run();	
+	} catch(e) {
+		console.log('Exception: ' + e)
+	}
+}
+
+function cleanTestDirs() {
+	// Clean the local baselines directory
+	if (fs.existsSync(localBaseline)) {
+		jake.rmRf(localBaseline);
+	}
+
+		// Clean the local Rwc baselines directory
+	if (fs.existsSync(localRwcBaseline)) {
+		jake.rmRf(localRwcBaseline);
+	}
+
+	jake.mkdirP(localBaseline);
+}
+
+function writeTestConfigFile(tests, testConfigFile) {
+	console.log('Running test(s): ' + tests);
+	var testConfigContents = '{\n' + '\ttest: [\'' + tests + '\']\n}';
+	fs.writeFileSync('test.config', testConfigContents);    
+}
+
+desc("Runs the tests using the built run.js file. Syntax is jake runtests. Optional parameters 'host=' and 'tests='.");
+task("runtests", ["local", "tests", builtTestDirectory], function() {
+	cleanTestDirs();
+	host = "mocha"
+	tests = process.env.test || process.env.tests;
+	reporter = process.env.reporter || process.env.r || 'dot';
+	var testConfigFile = 'test.config';
+	if(fs.existsSync(testConfigFile)) {
+		fs.unlinkSync(testConfigFile);
+	}
+	if(tests) {
+		writeTestConfigFile(tests, testConfigFile);
+	}
+    var cmd = host + " -R " + reporter + " " + run;
+	console.log(cmd);
+	exec(cmd)
+}, {async: true});
+
+var nodeServerPath = 'tests/nodeServer.js'
+compileFile(nodeServerPath, 'tests/nodeServer.ts');
+
+desc("Runs browserify on run.js to produce a file suitable for running tests in the browser");
+task("browserify", ["tests", builtTestDirectory, nodeServerPath], function() {
+	var cmd = 'browserify built/localtest/run.js -o built/localtest/bundle.js';
+	exec(cmd);
+}, {async: true});
+
+desc("Runs the tests using the built run.js file like 'jake runtests'. Syntax is jake runtestsBrowser. Additional optional parameters port=, rootDir=");
+task("runtestsBrowser", ["local", "tests", "browserify", builtTestDirectory], function() {
+	cleanTestDirs();
+	host = "node"
+	tests = process.env.test || process.env.tests;
+	port = process.env.port || '8888';
+	rootDir = process.env.rootDir || '..';
+	var testConfigFile = 'test.config';
+	if(fs.existsSync(testConfigFile)) {
+		fs.unlinkSync(testConfigFile);
+	}
+	if(tests) {
+		writeTestConfigFile(tests, testConfigFile);
+	}
+    var cmd = host + " tests/nodeserver.js " + port + " " + rootDir
+	console.log(cmd);
+	exec(cmd);
 }, {async: true});
 
 desc("Builds the test sources and automation in debug mode");
@@ -488,19 +540,8 @@ desc("Builds and runs the syntax generator");
 task("run-syntax-generator", [syntaxGeneratorOutFile], function() {
 	host = process.env.host || process.env.TYPESCRIPT_HOST || "node";
 	var cmd = host + " " + syntaxGeneratorOutFile;
-	console.log(cmd);
-	var ex = jake.createExec([cmd]);
-	// Add listeners for output and error
-	ex.addListener("stdout", function(output) {
-		process.stdout.write(output);
-	});
-	ex.addListener("stderr", function(error) {
-		process.stderr.write(error);
-	});
-	ex.addListener("cmdEnd", function() {
-		complete();
-	});
-	ex.run();	
+	console.log(cmd);	
+	exec(cmd);
 }, {async: true});
 
 desc("Builds and runs the Fidelity tests");
@@ -508,16 +549,5 @@ task("run-fidelity-tests", [fidelityTestsOutFile], function() {
 	host = process.env.host || process.env.TYPESCRIPT_HOST || "node";
 	var cmd = host + " " + fidelityTestsOutFile;
 	console.log(cmd);
-	var ex = jake.createExec([cmd]);
-	// Add listeners for output and error
-	ex.addListener("stdout", function(output) {
-		process.stdout.write(output);
-	});
-	ex.addListener("stderr", function(error) {
-		process.stderr.write(error);
-	});
-	ex.addListener("cmdEnd", function() {
-		complete();
-	});
-	ex.run();	
+	exec(cmd);
 }, {async: true});

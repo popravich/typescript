@@ -18,7 +18,6 @@
 ///<reference path='..\compiler\typescript.ts'/>
 ///<reference path='harness.ts'/>
 ///<reference path='exec.ts'/>
-///<reference path='diff.ts'/>
 ///<reference path='..\..\tests\runners\runnerfactory.ts' />
 ///<reference path='..\..\tests\runners\compiler\compilerRunner.ts' />
 ///<reference path='..\..\tests\runners\fourslash\fourslashRunner.ts' />
@@ -27,189 +26,8 @@
 
 declare var _inheritsFrom: any; // reference base inheritsFrom in child contexts.
 
-class ConsoleLogger extends Harness.Logger {
-    private descriptionStack: string[] = [];
-    private errorString: string = '';
-    private passCounts = { Scenario: 0, Testcase: 0 };
-    private failCounts = { Scenario: 0, Testcase: 0 };
-    private blockedScenarioCount = 0;
-
-    // Adds the specified indentation to each line in the string
-    private fixIndent(str: string, indent: string) {
-        var lines = str.split('\n');
-
-        for (var i = 0; i < lines.length; i++) {
-            lines[i] = indent + lines[i];
-        }
-
-        return lines.join('\n');
-    }
-
-    private addError(error: Error) {
-        var tab = '  ';
-        var indent = (new Array(this.descriptionStack.length + 1)).join(tab);
-
-        for (var i = 0; i < this.descriptionStack.length; i++) {
-            this.errorString += (new Array(i + 1)).join(tab) + this.descriptionStack[i] + '\n';
-        }
-
-        var stack = (<any>error).stack;
-        if (stack) {
-            this.errorString += this.fixIndent(stack, indent) + '\n';
-        } else {
-            this.errorString += indent + error.message + '\n';
-        }
-    }
-
-    public start() {
-        TypeScript.Environment.standardOut.WriteLine("Running tests" + (iterations > 1 ? " " + iterations + " times" : "") + (reverse ? " in reverse." : "."));
-    }
-
-    public end() {
-        // Test execution is complete
-        TypeScript.Environment.standardOut.WriteLine('');
-        TypeScript.Environment.standardOut.WriteLine('');
-        TypeScript.Environment.standardOut.WriteLine(this.errorString);
-        TypeScript.Environment.standardOut.WriteLine('');
-
-        TypeScript.Environment.standardOut.WriteLine('Scenarios: ' + (this.passCounts['Scenario'] || 0) + ' passed, ' + (this.failCounts['Scenario'] || 0) + ' failed.');
-        TypeScript.Environment.standardOut.WriteLine('Testcases: ' + (this.passCounts['Testcase'] || 0) + ' passed, ' + (this.failCounts['Testcase'] || 0) + ' failed.');
-        TypeScript.Environment.standardOut.WriteLine('  Blocked: ' + this.blockedScenarioCount);
-        return;
-    }
-
-    public testStart(test: Harness.ITestMetadata) {
-        this.descriptionStack.push(test.desc);
-    }
-
-    public pass(test: Harness.ITestMetadata) {
-        if (test.perfResults) {
-            TypeScript.Environment.standardOut.WriteLine(test.desc + ": " + test.perfResults.trials.length + " trials");
-            TypeScript.Environment.standardOut.WriteLine('    mean: ' + test.perfResults.mean.toFixed(1) + "ms");
-            TypeScript.Environment.standardOut.WriteLine('     min: ' + test.perfResults.min.toFixed(1) + "ms");
-            TypeScript.Environment.standardOut.WriteLine('     max: ' + test.perfResults.max.toFixed(1) + "ms");
-            TypeScript.Environment.standardOut.WriteLine('  stdDev: ' + test.perfResults.stdDev.toFixed(1) + "ms");
-            TypeScript.Environment.standardOut.WriteLine('');
-            this.descriptionStack.pop();
-        } else {
-            TypeScript.Environment.standardOut.Write(".");
-            this.passCounts.Testcase++;
-            this.descriptionStack.pop();
-        }
-    }
-
-    public bug(test: Harness.ITestMetadata) {
-        TypeScript.Environment.standardOut.Write('*');
-    }
-
-    public fail(test: Harness.ITestMetadata) {
-        TypeScript.Environment.standardOut.Write("F");
-        this.failCounts.Testcase++;
-        this.descriptionStack.pop();
-    }
-
-    public error(test: Harness.ITestMetadata, error: Error) {
-        TypeScript.Environment.standardOut.Write("F");
-        this.failCounts.Testcase++;
-        this.addError(error);
-        this.descriptionStack.pop();
-    }
-
-    public scenarioStart(scenario: Harness.IScenarioMetadata) {
-        this.descriptionStack.push(scenario.desc);
-        //TypeScript.Environment.standardOut.WriteLine(scenario.id);
-        //TypeScript.Environment.standardOut.WriteLine(scenario.desc);
-    }
-
-    public scenarioEnd(scenario: Harness.IScenarioMetadata, error?: Error) {
-        if (scenario.pass) {
-            this.passCounts.Scenario++;
-        } else {
-            this.failCounts.Scenario++;
-        }
-
-        if (scenario.bugs && scenario.bugs.length > 0) {
-            this.blockedScenarioCount++;
-        }
-
-        if (error) {
-            this.addError(error);
-        }
-        this.descriptionStack.pop();
-    }
-}
-
-class JSONLogger extends Harness.Logger {
-    private root: any[] = [];
-    private scenarioStack: Harness.IScenarioMetadata[] = [];
-
-    constructor(public path: string) {
-        super();
-    }
-
-    private addTestResult(test: Harness.ITestMetadata) {
-        if (this.scenarioStack.length === 0) {
-            this.root.push(test);
-        } else {
-            (<any>this.scenarioStack[this.scenarioStack.length - 1]).children.push(test);
-        }
-    }
-
-    public pass(test: Harness.ITestMetadata) {
-        this.addTestResult(test);
-    }
-
-    public fail(test: Harness.ITestMetadata) {
-        this.addTestResult(test);
-    }
-
-    public error(test: Harness.ITestMetadata, error: Error) {
-        (<any>test).errorString = error.message;
-        this.addTestResult(test);
-    }
-
-    public scenarioStart(scenario: Harness.IScenarioMetadata) {
-        (<any>scenario).children = [];
-
-        if (this.scenarioStack.length === 0) {
-            this.root.push(scenario);
-        } else {
-            (<any>this.scenarioStack[this.scenarioStack.length - 1]).children.push(scenario);
-        }
-
-        this.scenarioStack.push(scenario);
-    }
-
-    public scenarioEnd() {
-        this.scenarioStack.pop();
-    }
-
-    public end() {
-        TypeScript.Environment.writeFile(this.path, JSON.stringify(this.root), /*writeByteOrderMark:*/ false);
-    }
-}
-
-function runTests(tests: RunnerBase[]) {
-    if (reverse) {
-        tests = tests.reverse();
-    }
-
-    for (var i = iterations; i > 0; i--) {
-        for (var j = 0; j < tests.length; j++) {
-            tests[j].initializeTests();
-        }
-    }
-
-    run();
-}
-
-var runners: RunnerBase[] = [];
-global.runners = runners;
-var reverse: boolean = false;
-var iterations: number = 1;
-
-var opts = new TypeScript.OptionsParser(TypeScript.Environment, "testCompiler");
-
+function runTests(tests: RunnerBase[]) {    if (reverse) {        tests = tests.reverse();    }    for (var i = iterations; i > 0; i--) {        for (var j = 0; j < tests.length; j++) {            tests[j].initializeTests();        }    }}var runners: RunnerBase[] = [];global.runners = runners;var reverse: boolean = false;var iterations: number = 1;
+var opts = new TypeScript.OptionsParser(Harness.IO, "testCompiler");
 opts.flag('compiler', {
     set: function () {
         runners.push(new CompilerBaselineRunner(CompilerTestType.Conformance));
@@ -280,9 +98,9 @@ opts.flag('harness', {
     }
 });
 
-opts.option('dump', {
-    set: function (file) { Harness.registerLogger(new JSONLogger(file)); }
-});
+//opts.option('dump', {
+//    set: function (file) { Harness.registerLogger(new JSONLogger(file)); }
+//});
 
 opts.option('root', {
     usage: {
@@ -323,17 +141,32 @@ opts.flag('compiler-baselines', {
     }
 });
 
-opts.parse(TypeScript.Environment.arguments)
+// users can define tests to run in mytest.config that will override cmd line args, otherwise use cmd line args (test.config), otherwise no options
+var mytestconfig = 'mytest.config';
+var testconfig = 'test.config';
+var testConfigFile =
+    Harness.IO.fileExists(mytestconfig) ? Harness.IO.readFile(mytestconfig, null).contents :
+    (Harness.IO.fileExists(testconfig) ? Harness.IO.readFile(testconfig, null).contents : '')
+
+if (testConfigFile !== '') {
+    // TODO: not sure why this is crashing mocha
+    //var testConfig = JSON.parse(testConfigRaw);
+    var testConfig = testConfigFile.match(/test:\s\['(.*)'\]/)
+    opts.parse(testConfig ? [testConfig[1]] : [])
+}
 
 if (runners.length === 0) {
-    if (opts.unnamed.length === 0) {
+    if (opts.unnamed.length === 0 || opts.unnamed[0].indexOf('run.js') !== -1) {
         // compiler
         runners.push(new CompilerBaselineRunner(CompilerTestType.Conformance));
         runners.push(new CompilerBaselineRunner(CompilerTestType.Regressions));
         runners.push(new UnitTestRunner(UnittestTestType.Compiler));
         runners.push(new UnitTestRunner(UnittestTestType.LanguageService));
 
-        runners.push(new ProjectRunner());
+        //// TODO: project tests don't work in the browser yet
+        if (Harness.currentExecutionEnvironment !== Harness.ExecutionEnvironment.Browser) {
+            runners.push(new ProjectRunner());
+        }
 
         // language services
         runners.push(new FourslashRunner());
@@ -351,7 +184,5 @@ if (runners.length === 0) {
     }
 }
 
-var c = new ConsoleLogger();
-Harness.registerLogger(c);
 runTests(runners);
 

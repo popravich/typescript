@@ -1,0 +1,36 @@
+=== tests/cases/compiler/widenedTypes1.ts ===
+var a = null;
+>a : any
+
+var b = undefined;
+>b : any
+>undefined : any
+
+var c = {x: null};
+>c : { x: any; }
+>{x: null} : { x: any; }
+>x : any
+
+var d = [{x: null}];
+>d : { x: any; }[]
+>[{x: null}] : { x: any; }[]
+>{x: null} : { x: any; }
+>x : any
+
+var f = [null, null];
+>f : any[]
+>[null, null] : any[]
+
+var g = [undefined, undefined];
+>g : any[]
+>[undefined, undefined] : any[]
+>undefined : any
+>undefined : any
+
+var h = [{x: undefined}];
+>h : { x: any; }[]
+>[{x: undefined}] : { x: any; }[]
+>{x: undefined} : { x: any; }
+>x : any
+>undefined : any
+

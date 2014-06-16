@@ -1,11 +1,11 @@
-// @filename: module.ts
+// @Filename: module.ts
 module X.Y {
     export module Point {
         export var Origin = new Point(0, 0);
     }
 }
 
-// @filename: class.ts
+// @Filename: classPoint.ts
 module X.Y {
     // duplicate identifier
     export class Point {
@@ -18,7 +18,7 @@ module X.Y {
     }
 }
 
-// @filename: simple.ts
+// @Filename: simple.ts
 module A {
     export var Instance = new A();
 }

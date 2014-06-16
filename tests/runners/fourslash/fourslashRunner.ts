@@ -11,14 +11,14 @@ class FourslashRunner extends RunnerBase {
 
     public initializeTests() {
         var runSingleFourslashTest = (fn: string) => {
-            fn = switchToForwardSlashes(fn);
+            fn = Utils.switchToForwardSlashes(fn);
             var justName = fn.replace(/^.*[\\\/]/, '');
-
+            
             // Convert to relative path
             var testIndex = fn.indexOf('tests/');
             if (testIndex >= 0) fn = fn.substr(testIndex);
 
-            if (!justName.match(/fourslash\.ts$/i) && !justName.match(/\.d\.ts$/i)) {
+            if (justName && !justName.match(/fourslash\.ts$/i) && !justName.match(/\.d\.ts$/i)) {
                 describe('FourSlash test ' + justName, function () {
                     it('Runs correctly', function () {
                         FourSlash.runFourSlashTest(fn);
@@ -32,7 +32,8 @@ class FourslashRunner extends RunnerBase {
         }
 
         describe("Setup compiler for compiler baselines", () => {
-            Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime);
+            var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+            harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime);
         });
 
         this.tests.forEach(runSingleFourslashTest);
@@ -83,7 +84,7 @@ class FourslashRunner extends RunnerBase {
             lines.push('        <CloseTarget />');
             lines.push('    </CleanupTest>');
             lines.push('</TaoTest>');
-            TypeScript.Environment.writeFile('built/localtest/fourslash.xml', lines.join('\r\n'), true);
+            Harness.IO.writeFile('built/localtest/fourslash.xml', lines.join('\r\n'), true);
         });
     }
 }

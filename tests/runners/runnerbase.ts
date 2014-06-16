@@ -1,4 +1,3 @@
-/// <reference path="../../src/compiler/io.ts" />
 /// <reference path="../../src/harness/harness.ts" />
 
 class RunnerBase {
@@ -13,7 +12,7 @@ class RunnerBase {
     }
 
     public enumerateFiles(folder: string, options?: { recursive: boolean }): string[] {
-        return TypeScript.Environment.listFiles(Harness.userSpecifiedroot + folder, /\.ts$/, { recursive: (options ? options.recursive : false) });
+        return Harness.IO.listFiles(Harness.userSpecifiedroot + folder, /\.ts$/, { recursive: (options ? options.recursive : false) });
     }
 
     /** Setup the runner's tests so that they are ready to be executed by the harness 
@@ -29,11 +28,18 @@ class RunnerBase {
 
     /** Replaces instances of full paths with filenames only */
     static removeFullPaths(path: string) {
-        var fullPath = /(\w+:)?(\/|\\)([\w+\-\.]|\/)*\.ts/g;
-        var fullPathList = path.match(fullPath);
+        var fixedPath = path;
+
+        // full paths either start with a drive letter or / for *nix, shouldn't have \ in the path at this point
+        var fullPath = /(\w+:|\/)?([\w+\-\.]|\/)*\.ts/g; 
+        var fullPathList = fixedPath.match(fullPath);
         if (fullPathList) {
-            fullPathList.forEach((match: string) => path = path.replace(match, Harness.getFileName(match)));
+            fullPathList.forEach((match: string) => fixedPath = fixedPath.replace(match, Harness.getFileName(match)));
         }
-        return path;
+        
+        // when running in the browser the 'full path' is the host name, shows up in error baselines
+        var localHost = /http:\/localhost:\d+/g;
+        fixedPath = fixedPath.replace(localHost, '');
+        return fixedPath;
     }
 }
