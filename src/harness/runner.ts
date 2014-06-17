@@ -27,7 +27,7 @@
 declare var _inheritsFrom: any; // reference base inheritsFrom in child contexts.
 
 function runTests(tests: RunnerBase[]) {    if (reverse) {        tests = tests.reverse();    }    for (var i = iterations; i > 0; i--) {        for (var j = 0; j < tests.length; j++) {            tests[j].initializeTests();        }    }}var runners: RunnerBase[] = [];global.runners = runners;var reverse: boolean = false;var iterations: number = 1;
-var opts = new TypeScript.OptionsParser(Harness.IO, "testCompiler");
+var opts = new TypeScript.OptionsParser(Harness.Environment, "testCompiler");
 opts.flag('compiler', {
     set: function () {
         runners.push(new CompilerBaselineRunner(CompilerTestType.Conformance));
@@ -145,8 +145,8 @@ opts.flag('compiler-baselines', {
 var mytestconfig = 'mytest.config';
 var testconfig = 'test.config';
 var testConfigFile =
-    Harness.IO.fileExists(mytestconfig) ? Harness.IO.readFile(mytestconfig, null).contents :
-    (Harness.IO.fileExists(testconfig) ? Harness.IO.readFile(testconfig, null).contents : '')
+    Harness.Environment.fileExists(mytestconfig) ? Harness.Environment.readFile(mytestconfig, null).contents :
+    (Harness.Environment.fileExists(testconfig) ? Harness.Environment.readFile(testconfig, null).contents : '')
 
 if (testConfigFile !== '') {
     // TODO: not sure why this is crashing mocha

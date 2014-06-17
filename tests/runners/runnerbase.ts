@@ -12,7 +12,7 @@ class RunnerBase {
     }
 
     public enumerateFiles(folder: string, options?: { recursive: boolean }): string[] {
-        return Harness.IO.listFiles(Harness.userSpecifiedroot + folder, /\.ts$/, { recursive: (options ? options.recursive : false) });
+        return Harness.Environment.listFiles(Harness.userSpecifiedroot + folder, /\.ts$/, { recursive: (options ? options.recursive : false) });
     }
 
     /** Setup the runner's tests so that they are ready to be executed by the harness 

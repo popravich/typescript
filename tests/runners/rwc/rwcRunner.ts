@@ -59,7 +59,7 @@ class RWCRunner extends RunnerBase {
             return cachedValue;
         } else {
             // some error message contain the path, we should use a regex to normalize all instances 
-            var fullpath = TypeScript.switchToForwardSlashes(Harness.IO.absolutePath(this.sourcePath));
+            var fullpath = TypeScript.switchToForwardSlashes(Harness.Environment.absolutePath(this.sourcePath));
             var result = path.replace(new RegExp(fullpath, "gi"), "");
             cache[path] = result;
             return result;
@@ -86,8 +86,8 @@ class RWCRunner extends RunnerBase {
         //this.htmlBaselineReport.reset();
 
         // Create folders if needed
-        Harness.IO.createDirectory(Harness.IO.directoryName(this.outputPath));
-        Harness.IO.createDirectory(this.outputPath);
+        Harness.Environment.createDirectory(Harness.Environment.directoryName(this.outputPath));
+        Harness.Environment.createDirectory(this.outputPath);
 
         var runner = this;
 
@@ -141,7 +141,7 @@ class RWCRunner extends RunnerBase {
                     try {
                         // Compile the project
                         spec.compileList.forEach((item: string) => {
-                            content = Harness.IO.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
+                            content = Harness.Environment.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
                             harnessCompiler.addInputFile({ unitName: spec.projectRoot + "/" + item, content: content });
                         });
 
@@ -161,31 +161,31 @@ class RWCRunner extends RunnerBase {
                         dtsresult = fsDeclOutput.lines.join("\r\n");
 
                         // Delete previous results 
-                        if (Harness.IO.fileExists(outputJsFilename))
-                            Harness.IO.deleteFile(outputJsFilename);
-                        if (Harness.IO.fileExists(outputErrorFilename))
-                            Harness.IO.deleteFile(outputErrorFilename);
-                        if (Harness.IO.fileExists(outputDeclarationFilename))
-                            Harness.IO.deleteFile(outputDeclarationFilename);
+                        if (Harness.Environment.fileExists(outputJsFilename))
+                            Harness.Environment.deleteFile(outputJsFilename);
+                        if (Harness.Environment.fileExists(outputErrorFilename))
+                            Harness.Environment.deleteFile(outputErrorFilename);
+                        if (Harness.Environment.fileExists(outputDeclarationFilename))
+                            Harness.Environment.deleteFile(outputDeclarationFilename);
 
                         // Create the results
-                        Harness.IO.writeFile(outputJsFilename, result, /*codepage*/ null);
-                        Harness.IO.writeFile(outputErrorFilename, errors, /*codepage*/ null);
-                        Harness.IO.writeFile(outputDeclarationFilename, dtsresult, /* codepath */ null);
+                        Harness.Environment.writeFile(outputJsFilename, result, /*codepage*/ null);
+                        Harness.Environment.writeFile(outputErrorFilename, errors, /*codepage*/ null);
+                        Harness.Environment.writeFile(outputDeclarationFilename, dtsresult, /* codepath */ null);
                     } catch (e) {
                         hasCrashed = true;
                         var message = e.message + (e.stack ? '\r\n' + e.stack : '');
-                        Harness.IO.writeFile(outputCrashFilename, message, /*codepage*/ null);
+                        Harness.Environment.writeFile(outputCrashFilename, message, /*codepage*/ null);
                         throw (new Error("Failed compilation"));
                     }
                 });
 
                 it("error baseline check", () => {
                     if (!hasCrashed) {
-                        if (!Harness.IO.fileExists(baselineErrorFilename)) {
+                        if (!Harness.Environment.fileExists(baselineErrorFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = Harness.IO.readFile(baselineErrorFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineErrorFilename, null).contents;
                         }
                         // remove line sensitivity
                         expected = expected.replace(/\r\n?/g, '\n');
@@ -203,10 +203,10 @@ class RWCRunner extends RunnerBase {
 
                 it("codegen baseline check", () => {
                     if (!hasCrashed) {
-                        if (!Harness.IO.fileExists(baselineJsFilename)) {
+                        if (!Harness.Environment.fileExists(baselineJsFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = Harness.IO.readFile(baselineJsFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineJsFilename, null).contents;
                         }
 
                         // remove line sensitivity
@@ -224,10 +224,10 @@ class RWCRunner extends RunnerBase {
 
                 it(".d.ts baseline check", () => {
                     if (!hasCrashed) {
-                        if (!Harness.IO.fileExists(baselineDeclarationFilename)) {
+                        if (!Harness.Environment.fileExists(baselineDeclarationFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = Harness.IO.readFile(baselineDeclarationFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineDeclarationFilename, null).contents;
                         }
 
                         // remove line sensitivity
@@ -252,7 +252,7 @@ class RWCRunner extends RunnerBase {
                             TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
 
                         spec.compileList.forEach((item: string) => {
-                            content = Harness.IO.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
+                            content = Harness.Environment.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
                             compiler.addFile(spec.projectRoot + "/" + item, TypeScript.ScriptSnapshot.fromString(content),
                                 TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
                         });
@@ -275,15 +275,15 @@ class RWCRunner extends RunnerBase {
                         var typesResult = typeLines.join('\n');
 
                         // write file for baseline updates
-                        if (Harness.IO.fileExists(outputTypesFilename)) {
-                            Harness.IO.deleteFile(outputTypesFilename);
+                        if (Harness.Environment.fileExists(outputTypesFilename)) {
+                            Harness.Environment.deleteFile(outputTypesFilename);
                         }
-                        Harness.IO.writeFile(outputTypesFilename, typesResult, /*codepage*/ null);
+                        Harness.Environment.writeFile(outputTypesFilename, typesResult, /*codepage*/ null);
                         
-                        if (!Harness.IO.fileExists(baselineTypesFilename)) {
+                        if (!Harness.Environment.fileExists(baselineTypesFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = Harness.IO.readFile(baselineTypesFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineTypesFilename, null).contents;
                         }
 
                         expected = expected.replace(/\r\n?/g, '\n');
@@ -314,7 +314,7 @@ class RWCRunner extends RunnerBase {
 
         // Read in and evaluate the test list.
         try {
-            eval(Harness.IO.readFile(this.runnerPath + "/TestProjectList.js", null).contents);
+            eval(Harness.Environment.readFile(this.runnerPath + "/TestProjectList.js", null).contents);
         } catch (ex) {
             throw (new Error("Could not read or evaluate TestProjectList.js!"));
         }

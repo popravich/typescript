@@ -371,23 +371,23 @@ module Harness {
     var typescriptServiceFileName = "typescriptServices.js";
     var typescriptServiceFile: string;
     export var libFolder: string;
-    export var IO: TypeScript.IEnvironment;
+    export var Environment: TypeScript.IEnvironment;
     switch (currentExecutionEnvironment) {
         case ExecutionEnvironment.CScript:
-            IO = TypeScript.Environment;
+            Environment = TypeScript.Environment;
             libFolder = TypeScript.filePath(global['WScript'].ScriptFullName);
             typescriptServiceFileName = "built/local/typescriptServices.js";
-            typescriptServiceFile = IO.readFile(typescriptServiceFileName, /*codepage:*/ null).contents;
+            typescriptServiceFile = Environment.readFile(typescriptServiceFileName, /*codepage:*/ null).contents;
             break;
         case ExecutionEnvironment.Node:
-            IO = TypeScript.Environment;
+            Environment = TypeScript.Environment;
             libFolder = (__dirname + '/');
             typescriptServiceFileName = "built/local/typescriptServices.js";
-            typescriptServiceFile = IO.readFile(typescriptServiceFileName, /*codepage:*/ null).contents;
+            typescriptServiceFile = Environment.readFile(typescriptServiceFileName, /*codepage:*/ null).contents;
             break;
         case ExecutionEnvironment.Browser:
             libFolder = "bin/";
-            IO = Network.getEnvironment();
+            Environment = Network.getEnvironment();
             var typescriptServiceFileName = serverRoot + "built/local/typescriptServices.js";
             var response = Network.getFileFromServerSync(typescriptServiceFileName);
             if (response.status !== 200) {
@@ -485,8 +485,8 @@ module Harness {
             }
         }
 
-        export var libText = IO.readFile(libFolder + "lib.d.ts", /*codepage:*/ null).contents;
-        export var libTextMinimal = IO.readFile('bin/lib.core.d.ts', null).contents; //libFolder + "../../tests/minimal.lib.d.ts", /*codepage:*/ null).contents;
+        export var libText = Environment.readFile(libFolder + "lib.d.ts", /*codepage:*/ null).contents;
+        export var libTextMinimal = Environment.readFile('bin/lib.core.d.ts', null).contents; //libFolder + "../../tests/minimal.lib.d.ts", /*codepage:*/ null).contents;
 
         /** This is the harness's own version of the batch compiler that encapsulates state about resolution */
         export class HarnessCompiler implements TypeScript.IReferenceResolverHost {
@@ -961,20 +961,20 @@ module Harness {
             var optionsWithDefaults = { useMinimalDefaultLib: useMinimalDefaultLibValue, noImplicitAny: noImplicitAnyValue };
             if (compilerInstance === CompilerInstance.RunTime) {
                 runTimeCompiler.reset();
-                runTimeCompiler = new HarnessCompiler(IO, optionsWithDefaults);
+                runTimeCompiler = new HarnessCompiler(Environment, optionsWithDefaults);
                 return runTimeCompiler;
             } else {
                 designTimeCompiler.reset();
-                designTimeCompiler = new HarnessCompiler(IO, optionsWithDefaults);
+                designTimeCompiler = new HarnessCompiler(Environment, optionsWithDefaults);
                 return designTimeCompiler;
             }
         }
 
         /** The harness' compiler instance used when setting up tests. For example, to generate Javascript with describe/it blocks that will be eval'd. 
             Unrelated to Visual Studio and not specific to fourslash. */
-        var designTimeCompiler = new HarnessCompiler(IO);
+        var designTimeCompiler = new HarnessCompiler(Environment);
         /** The harness' compiler instance used when tests are actually run. Reseting or changing settings of this compiler instance must be done within a testcase (i.e., describe/it) */
-        var runTimeCompiler = new HarnessCompiler(IO);
+        var runTimeCompiler = new HarnessCompiler(Environment);
 
         export enum CompilerInstance {
             DesignTime,
@@ -1598,10 +1598,10 @@ module Harness {
 
         // Need to check for browser first or else we may find the eval'd TypeScript.IO from TypeScriptServices.js
         if (currentExecutionEnvironment === ExecutionEnvironment.Browser) {
-            var IO = Network.getEnvironment();
+            var Environement = Network.getEnvironment();
         }
         else {
-            var IO = TypeScript.Environment;
+            var Environement = TypeScript.Environment;
         }
 
         export class HtmlBaselineReport {
@@ -1623,9 +1623,9 @@ module Harness {
 
             constructor(private reportFileName: string) {
                 var htmlTrailer = '</body></html>';;
-                if (IO.fileExists(this.reportFileName)) {
+                if (Environement.fileExists(this.reportFileName)) {
                     // Suck in the existing baseline if we have one.
-                    this.reportContent = IO.readFile(this.reportFileName, /*codepage:*/ null).contents;
+                    this.reportContent = Environement.readFile(this.reportFileName, /*codepage:*/ null).contents;
                 } else {
                     // Otherwise, set the content to the default.
                     this.reportContent = HtmlBaselineReport.htmlLeader;
@@ -1633,8 +1633,8 @@ module Harness {
             }
 
             public reset(): void {
-                if (IO.fileExists(this.reportFileName)) {
-                    IO.deleteFile(this.reportFileName);
+                if (Environement.fileExists(this.reportFileName)) {
+                    Environement.deleteFile(this.reportFileName);
                 }
 
                 this.reportContent = HtmlBaselineReport.htmlLeader;
@@ -1767,7 +1767,7 @@ module Harness {
                 this.reportContent += header + '<div class="code">' + htmlDiff + '</div>' + '<hr>';
                 this.reportContent += HtmlBaselineReport.htmlTrailer;
 
-                IO.writeFile(this.reportFileName, this.reportContent, /*writeByteOrderMark:*/ false);
+                Environement.writeFile(this.reportFileName, this.reportContent, /*writeByteOrderMark:*/ false);
             }
         }
 
@@ -1793,16 +1793,16 @@ module Harness {
 
         var fileCache: { [idx: string]: boolean } = {}
         function generateActual(actualFilename: string, generateContent: () => string): string {
-            var parentDir = IO.directoryName(actualFilename); // .../tests/baselines/local
-            var parentParentDir = IO.directoryName(IO.directoryName(actualFilename)) // .../tests/baselines
+            var parentDir = Environement.directoryName(actualFilename); // .../tests/baselines/local
+            var parentParentDir = Environement.directoryName(Environement.directoryName(actualFilename)) // .../tests/baselines
             if (!fileCache[parentDir] && !fileCache[parentParentDir]) {
                 // Create folders if needed
-                IO.createDirectory(parentParentDir);
-                IO.createDirectory(parentDir);
+                Environement.createDirectory(parentParentDir);
+                Environement.createDirectory(parentDir);
 
                 // Delete the actual file in case it fails
-                if (IO.fileExists(actualFilename)) {
-                    IO.deleteFile(actualFilename);
+                if (Environement.fileExists(actualFilename)) {
+                    Environement.deleteFile(actualFilename);
                 }
 
                 fileCache[parentDir] = true;
@@ -1818,7 +1818,7 @@ module Harness {
             // Store the content in the 'local' folder so we
             // can accept it later (manually)
             if (actual !== null) {
-                IO.writeFile(actualFilename, actual, /*writeByteOrderMark:*/ false);
+                Environement.writeFile(actualFilename, actual, /*writeByteOrderMark:*/ false);
             }
 
             return actual;
@@ -1839,8 +1839,8 @@ module Harness {
             }
 
             var expected = '<no content>';
-            if (IO.fileExists(refFilename)) {
-                expected = IO.readFile(refFilename, /*codepage:*/ null).contents;
+            if (Environement.fileExists(refFilename)) {
+                expected = Environement.readFile(refFilename, /*codepage:*/ null).contents;
             }
 
             var lineEndingSensitive = opts && opts.LineEndingSensitive;

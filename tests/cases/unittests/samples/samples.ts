@@ -10,7 +10,7 @@ describe('Compiling samples', function () {
     var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
 
     function loadSample(path: string): string {
-        return Harness.IO.readFile(Harness.userSpecifiedroot + 'samples/' + path, /*codepage:*/null).contents;
+        return Harness.Environment.readFile(Harness.userSpecifiedroot + 'samples/' + path, /*codepage:*/null).contents;
     }
 
     function addUnitsAndCompile(units: string[], includeWin8Libs = false, includeFullLib = false) {
@@ -21,11 +21,11 @@ describe('Compiling samples', function () {
             };
         });
         if (includeWin8Libs) {
-            ['winrt.d.ts', 'winjs.d.ts'].forEach(file => filesToAdd.push({ unitName: file, content: Harness.IO.readFile('typings/' + file, null).contents }));
+            ['winrt.d.ts', 'winjs.d.ts'].forEach(file => filesToAdd.push({ unitName: file, content: Harness.Environment.readFile('typings/' + file, null).contents }));
         }
 
         if (includeFullLib) {
-            filesToAdd.push({ unitName: 'lib.d.ts', content: Harness.IO.readFile('bin/lib.core.d.ts', null).contents });
+            filesToAdd.push({ unitName: 'lib.d.ts', content: Harness.Environment.readFile('bin/lib.core.d.ts', null).contents });
         }
 
         var result: Harness.Compiler.CompilerResult;
