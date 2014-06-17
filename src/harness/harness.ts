@@ -1578,201 +1578,14 @@ module Harness {
 
     /** Support class for baseline files */
     export module Baseline {
-        enum diff_type {
-            DELETE = -1,
-            EQUAL = 0,
-            INSERT = 1
-        }
-
-        interface diff_result {
-            operation: diff_type;
-            text: string;
-            [idx: number]: string;
-        }
-
-        declare class diff_match_patch {
-            diff_main(text1: string, text2: string, opts?: boolean): diff_result[]
-            diff_prettyHtml(diffs: diff_result[]): string;
-            diff_cleanupSemantic(diffs: diff_result[]): diff_result[];
-        }
-
-        // Need to check for browser first or else we may find the eval'd TypeScript.IO from TypeScriptServices.js
+        // Need to check for browser first or else we may find the eval'd TypeScript.Environment from TypeScriptServices.js
         if (currentExecutionEnvironment === ExecutionEnvironment.Browser) {
             var Environement = Network.getEnvironment();
         }
         else {
             var Environement = TypeScript.Environment;
         }
-
-        export class HtmlBaselineReport {
-            private static differ = new diff_match_patch();
-            private static htmlTrailer = '</body></html>';
-            private static htmlLeader = '<html><head><title>Baseline Report</title>' +
-                '\r\n' + ("<style>") +
-                '\r\n' + (".code { font: 9pt 'Courier New'; }") +
-                '\r\n' + (".old { background-color: #EE1111; }") +
-                '\r\n' + (".new { background-color: #FFFF11; }") +
-                '\r\n' + (".from { background-color: #EE1111; color: #1111EE; }") +
-                '\r\n' + (".to { background-color: #EEEE11; color: #1111EE; }") +
-                '\r\n' + ("h2 { margin-bottom: 0px; }") +
-                '\r\n' + ("h2 { padding-bottom: 0px; }") +
-                '\r\n' + ("h4 { font-weight: normal; }") +
-                '\r\n' + ("</style>");
-
-            private reportContent: string = null;
-
-            constructor(private reportFileName: string) {
-                var htmlTrailer = '</body></html>';;
-                if (Environement.fileExists(this.reportFileName)) {
-                    // Suck in the existing baseline if we have one.
-                    this.reportContent = Environement.readFile(this.reportFileName, /*codepage:*/ null).contents;
-                } else {
-                    // Otherwise, set the content to the default.
-                    this.reportContent = HtmlBaselineReport.htmlLeader;
-                }
-            }
-
-            public reset(): void {
-                if (Environement.fileExists(this.reportFileName)) {
-                    Environement.deleteFile(this.reportFileName);
-                }
-
-                this.reportContent = HtmlBaselineReport.htmlLeader;
-            }
-
-            private static fullHtmlEncode(text: string) {
-                return '<br>' + text.replace(/</g, '&lt;').replace(/\n/g, '<br>').replace(/ /g, '&nbsp;').replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;') + '</br>';
-            }
-
-            // basically the same as built in diff_prettyHtml for now
-            private static formatDiff(diffs: diff_result[]): string {
-                var html = '';
-                for (var i = 0; i < diffs.length; i++) {
-                    var diff = diffs[i];
-                    var diffOperation = <any>diff[0];
-                    var diffText = diff[1];
-                    if (diffText) {
-                        var text =
-                            diffText
-                                .replace("&", "&amp;")
-                                .replace("<", "&lt;")
-                                .replace(">", "&gt;")
-                                .replace("\n", "&para;<br>")
-                                .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
-                        switch (diffOperation) {
-                            case diff_type.INSERT:
-                                html += "<span class=\"new\">";
-                                html += HtmlBaselineReport.fullHtmlEncode(text);
-                                html += "</span>";
-                                break;
-                            case diff_type.DELETE:
-                                html += "<span class=\"old\">";
-                                html += HtmlBaselineReport.fullHtmlEncode(text);
-                                html += "</span>";
-                                break;
-                            case diff_type.EQUAL:
-                                html += "<span>";
-                                html += HtmlBaselineReport.fullHtmlEncode(text);
-                                html += "</span>";
-                                break;
-                        }
-                    }
-                }
-                return html;
-            }
-
-            private diff_linesToWords_ = function (text1: string, text2: string) {
-                var lineArray: any[] = [];  // e.g. lineArray[4] == 'Hello\n'
-                var lineHash: { [idx: string]: number } = {};   // e.g. lineHash['Hello\n'] == 4
-
-                // '\x00' is a valid character, but various debuggers don't like it.
-                // So we'll insert a junk entry to avoid generating a null character.
-                lineArray[0] = '';
-
-                /**
-                 * Split a text into an array of strings.  Reduce the texts to a string of
-                 * hashes where each Unicode character represents one line.
-                 * Modifies linearray and linehash through being a closure.
-                 * @param {string} text String to encode.
-                 * @return {string} Encoded string.
-                 * @private
-                 */
-                function diff_linesToCharsMunge_(text: string) {
-                    var chars = '';
-                    // Walk the text, pulling out a substring for each line.
-                    // text.split('\n') would would temporarily double our memory footprint.
-                    // Modifying text would create many large strings to garbage collect.
-                    var lineStart = 0;
-                    var lineEnd = -1;
-                    // Keeping our own length variable is faster than looking it up.
-                    var lineArrayLength = lineArray.length;
-                    while (lineEnd < text.length - 1) {
-                        // TODO: this is line based diffing, we need word based diffing
-                        // see https://code.google.com/p/google-diff-match-patch/wiki/LineOrWordDiffs
-                        lineEnd = text.indexOf('\n', lineStart);
-                        if (lineEnd == -1) {
-                            lineEnd = text.length - 1;
-                        }
-                        var line = text.substring(lineStart, lineEnd + 1);
-                        lineStart = lineEnd + 1;
-
-                        if (lineHash.hasOwnProperty ? lineHash.hasOwnProperty(line) :
-                            (lineHash[line] !== undefined)) {
-                            chars += String.fromCharCode(lineHash[line]);
-                        } else {
-                            chars += String.fromCharCode(lineArrayLength);
-                            lineHash[line] = lineArrayLength;
-                            lineArray[lineArrayLength++] = line;
-                        }
-                    }
-                    return chars;
-                }
-
-                var words1 = diff_linesToCharsMunge_(text1);
-                var words2 = diff_linesToCharsMunge_(text2);
-                return <{ words1: string; words2: string; lineArray: string[];[idx: number]: string }>{ words1: words1, words2: words2, lineArray: lineArray };
-            };
-
-            private diff_lineMode(text1: string, text2: string) {
-                var a = this.diff_linesToWords_(text1, text2);
-                var lineText1 = a[0];
-                var lineText2 = a[1];
-                var lineArray = a[2];
-
-                var diffs = HtmlBaselineReport.differ.diff_main(a.words1, a.words2, false);
-
-                // Use cleaupSemantic here if you want to stay at the line level.
-                //this.dmp.diff_cleanupSemantic(diffs);
-
-                (<any>HtmlBaselineReport.differ).diff_charsToLines_(diffs, a.lineArray);
-                return diffs;
-            }
-
-            public addDifference(description: string, expectedFileName: string, actualFileName: string, expected: string, actual: string, includeUnchangedRegions: boolean): void {
-                // TODO: format diffs better than the default HTML
-                //var diffs = HtmlBaselineReport.differ.diff_main(expected, actual);
-                var diffs = this.diff_lineMode(expected, actual);
-                var htmlDiff = HtmlBaselineReport.differ.diff_prettyHtml(diffs);
-                var header = "";
-                if (description !== "") {
-                    header = '<h2>' + description + '</h2>';
-                }
-
-                header += '<h4>Left file: ' + expectedFileName + '; Right file: ' + actualFileName + '</h4>';
-
-                // Trim the trailer since we're going to add a new entry.
-                this.reportContent = this.reportContent.replace(HtmlBaselineReport.htmlTrailer, '');
-
-                // Add the new entry and then add the trailer back in.
-                this.reportContent += header + '<div class="code">' + htmlDiff + '</div>' + '<hr>';
-                this.reportContent += HtmlBaselineReport.htmlTrailer;
-
-                Environement.writeFile(this.reportFileName, this.reportContent, /*writeByteOrderMark:*/ false);
-            }
-        }
-
-        var htmlBaselineReport = new HtmlBaselineReport('baseline-report.html');
-
+       
         var firstRun = true;
 
         export interface BaselineOptions {
@@ -1785,10 +1598,6 @@ module Harness {
 
         function referencePath(fileName: string) {
             return Harness.userSpecifiedroot + 'tests/baselines/reference/' + fileName;
-        }
-
-        export function reset() {
-            htmlBaselineReport.reset();
         }
 
         var fileCache: { [idx: string]: boolean } = {}
@@ -1859,9 +1668,6 @@ module Harness {
                 var errMsg = 'The baseline file ' + relativeFilename + ' has changed. Please refer to baseline-report.html and ';
                 errMsg += 'either fix the regression (if unintended) or run jake baseline-accept (if intended).'
 
-                var refFilename = referencePath(relativeFilename);
-                htmlBaselineReport.addDifference(descriptionForDescribe, actualFilename, refFilename, expected, actual, /*includeUnchangedRegions:*/ true);
-
                 throw new Error(errMsg);
             }
         }
@@ -1906,5 +1712,4 @@ module Harness {
     }
 
     if (Error) (<any>Error).stackTraceLimit = 100;
-    Baseline.reset();
 }
