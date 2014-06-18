@@ -17,10 +17,10 @@ module RWC {
         }
 
         directoryExists(s: string) {
-            return false;
+            throw new Error('Do not call RWCEmitter.directoryExists');
         }
         fileExists(s: string) {
-            return true;
+            throw new Error('Do not call RWCEmitter.fileExists');
         }
         resolvePath(s: string) {
             return s;
@@ -28,9 +28,12 @@ module RWC {
     }
 
     class RWCReferenceResolver implements TypeScript.IReferenceResolverHost {
+        // Copied from compiler implementations
+
         getScriptSnapshot(fileName: string): TypeScript.IScriptSnapshot {
             return TypeScript.ScriptSnapshot.fromString(TypeScript.IO.readFile(fileName, null).contents);
         }
+
         resolveRelativePath(path: string, directory: string): string {
             var unQuotedPath = TypeScript.stripStartAndEndQuotes(path);
             var normalizedPath: string;
@@ -170,14 +173,16 @@ module RWC {
         var result = '';
         files.forEach(fn => {
             // Some extra spacing if this isn't the first file
-            if (result.length) result = result + '\r\n\r\n';
+            if (result.length) {
+                result += '\r\n\r\n';
+            }
 
             // Filename header + content
-            result = result + '/*====== ' + fn + ' ======*/\r\n';
+            result += '/*====== ' + fn + ' ======*/\r\n';
             if (clean) {
-                result = result + clean(emitterIOHost.outputs[fn]);
+                result += clean(emitterIOHost.outputs[fn]);
             } else {
-                result = result + emitterIOHost.outputs[fn];
+                result += emitterIOHost.outputs[fn];
             }
         });
         return result;
@@ -201,7 +206,7 @@ module RWC {
         it('can compile', () => {
             runWithIOLog(ioLog, () => {
                 harnessCompiler.reset();
-                var resolver = new TypeScript.ReferenceResolver(optsParser.parser.unnamed, new RWCReferenceResolver(), false);
+                var resolver = new TypeScript.ReferenceResolver(optsParser.parser.unnamed, new RWCReferenceResolver(), /*case sensitive*/ false);
                 var resolutionResult = resolver.resolveInputFiles();
                 // Uniqueify all the filenames
                 var inputList: string[] = optsParser.parser.unnamed;
@@ -213,7 +218,6 @@ module RWC {
                     file.referencedFiles.forEach(addFilenameIfNotPresent);
                 });
 
-                harnessCompiler.reset();
                 harnessCompiler.setCompilerSettingsFromSettings(optsParser.settings);
 
                 var errors = '';
