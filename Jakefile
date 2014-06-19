@@ -192,16 +192,16 @@ var harnessSources = [
 	path.join(runnersDirectory, "unittest/unittestrunner.ts"),
 	path.join(runnersDirectory, "rwc/rwcRunner.ts"),
 
-	//path.join(runnersDirectory, "../cases/unittests/samples/samples.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/callSignatureTests.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/classOverloads.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/constructSignatureTests.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/declarationTests.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/functionSignaturesTests.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/identifiers.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
-	//path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/samples/samples.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/callSignatureTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/classOverloads.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/constructSignatureTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/declarationTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/functionSignaturesTests.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/identifiers.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
+	path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
 ];
 
 var librarySourceMap = [
@@ -263,9 +263,9 @@ var useDebugMode = false;
 function compileFile(outFile, sources, prereqs, prefixes, useBuiltCompiler) {
 	file(outFile, prereqs, function() {
 		var dir = useBuiltCompiler ? builtLocalDirectory : LKGDirectory;
-		var cmd = (process.env.host || process.env.TYPESCRIPT_HOST || "node") + " " + dir + "tsc.js -removeComments -propagateEnumConstants -declaration --noImplicitAny --module commonjs " + sources.join(" ") + " -out " + outFile;
+		var cmd = (process.env.host || process.env.TYPESCRIPT_HOST || "node") + " " + dir + "tsc.js --removeComments --propagateEnumConstants --declaration --noImplicitAny --module commonjs " + sources.join(" ") + " --out " + outFile;
 		if (useDebugMode) {
-			cmd = cmd + " -sourcemap -mapRoot file:///" + path.resolve(path.dirname(outFile));
+			cmd = cmd + " --sourcemap -mapRoot file:///" + path.resolve(path.dirname(outFile));
 		}
 		console.log(cmd + "\n");
 		var ex = jake.createExec([cmd]);
@@ -375,8 +375,7 @@ directory(builtTestDirectory);
 // Task to build the tests infrastructure using the built compiler
 var run = path.join(builtTestDirectory, "run.js");
 var json2 = path.join(harnessDirectory, "external/json2.js");
-var diffMatchPath = path.join(harnessDirectory, "../../node_modules/googlediff/javascript/diff_match_patch.js");
-compileFile(run, harnessSources, [builtTestDirectory, tscFile].concat(libraryTargets).concat(harnessSources), [json2, diffMatchPath], true);
+compileFile(run, harnessSources, [builtTestDirectory, tscFile].concat(libraryTargets).concat(harnessSources), [json2], true);
 
 // Webharness
 var frontEndPath = "tests/cases/webharness/frontEnd.ts";
@@ -485,8 +484,8 @@ task("browserify", ["tests", builtTestDirectory, nodeServerPath], function() {
 	exec(cmd);
 }, {async: true});
 
-desc("Runs the tests using the built run.js file like 'jake runtests'. Syntax is jake runtestsBrowser. Additional optional parameters port=, rootDir=");
-task("runtestsBrowser", ["local", "tests", "browserify", builtTestDirectory], function() {
+desc("Runs the tests using the built run.js file like 'jake runtests'. Syntax is jake runtests-browser. Additional optional parameters port=, rootDir=");
+task("runtests-browser", ["local", "tests", "browserify", builtTestDirectory], function() {
 	cleanTestDirs();
 	host = "node"
 	tests = process.env.test || process.env.tests;

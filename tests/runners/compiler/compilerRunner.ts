@@ -46,7 +46,6 @@ class CompilerBaselineRunner extends RunnerBase {
         var lastUnit = units[units.length - 1];
 
         describe('JS output and errors for ' + fileName, () => {
-            //Harness.Assert.bugs(content);
             /** Compiled JavaScript emit, if any */
             var jsOutput = '';
             /** Source map content, if any */
@@ -62,7 +61,7 @@ class CompilerBaselineRunner extends RunnerBase {
                 // a fresh compiler instance for themselves and then create a fresh one for the next test. Would be nice to get dev fixes
                 // eventually to remove this limitation.
                 if (!createNewInstance && (tcSettings[i].flag == "noimplicitany" || tcSettings[i].flag === 'target')) {
-                    harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: tcSettings[i].flag == "noimplicitany" });
+                    harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: tcSettings[i].flag === "noimplicitany" });
                     harnessCompiler.setCompilerSettings(tcSettings);
                     createNewInstance = true;
                 }
@@ -109,9 +108,6 @@ class CompilerBaselineRunner extends RunnerBase {
                         // TODO/REVIEW: this doesn't work quite right in the browser if a multi file test has files whose names are just the right length relative to one another
                         var fileErrors = result.errors.filter(e => {
                             var errFn = e.fileName();
-                            if (!errFn) {
-                                debugger;
-                            }
                             return errFn.indexOf(inputFile.unitName) === errFn.length - inputFile.unitName.length;
                         });
 

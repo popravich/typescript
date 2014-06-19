@@ -22,9 +22,6 @@ class UnitTestRunner extends RunnerBase {
             case UnittestTestType.LanguageService:
                 this.tests = this.enumerateFiles('tests/cases/unittests/ls');
                 break;
-            //case UnittestTestType.Services:
-            //    this.tests = this.enumerateFiles('tests/cases/unittests/services');
-            //    break;
             case UnittestTestType.Harness:
                 this.tests = this.enumerateFiles('tests/cases/unittests/harness');
                 break;

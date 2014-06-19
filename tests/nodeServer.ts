@@ -308,14 +308,14 @@ http.createServer(function (request, response) {
 console.log("Static file server running at\n  => http://localhost:" + port + "/\nCTRL + C to shutdown");
 
 var browserPath: string;
-if ((browser && browser == 'chrome') || !browser) {
+if ((browser && browser === 'chrome')) {
     var defaultChromePath = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
     if (fs.existsSync(defaultChromePath)) {
         browserPath = defaultChromePath;
     } else {
         browserPath = browser;
     }
-} else if (browser == 'IE') {
+} else if (browser === 'IE' || !browser) {
     var defaultIEPath = 'C:/Program Files/Internet Explorer/iexplore.exe';
     if (fs.existsSync(defaultIEPath)) {
         browserPath = defaultIEPath;

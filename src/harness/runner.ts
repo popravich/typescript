@@ -24,8 +24,6 @@
 ///<reference path='..\..\tests\runners\projects\projectsRunner.ts' />
 ///<reference path='..\..\tests\runners\unittest\unittestrunner.ts' />
 
-declare var _inheritsFrom: any; // reference base inheritsFrom in child contexts.
-
 function runTests(tests: RunnerBase[]) {    if (reverse) {        tests = tests.reverse();    }    for (var i = iterations; i > 0; i--) {        for (var j = 0; j < tests.length; j++) {            tests[j].initializeTests();        }    }}var runners: RunnerBase[] = [];global.runners = runners;var reverse: boolean = false;var iterations: number = 1;
 var opts = new TypeScript.OptionsParser(Harness.Environment, "testCompiler");
 opts.flag('compiler', {
@@ -97,10 +95,6 @@ opts.flag('harness', {
         runners.push(new UnitTestRunner(UnittestTestType.Harness));
     }
 });
-
-//opts.option('dump', {
-//    set: function (file) { Harness.registerLogger(new JSONLogger(file)); }
-//});
 
 opts.option('root', {
     usage: {

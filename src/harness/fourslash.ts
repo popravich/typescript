@@ -652,31 +652,36 @@ module FourSlash {
             var actualQuickInfoDocComment = actualQuickInfo ? actualQuickInfo.docComment : "";
             var actualQuickInfoSymbolName = actualQuickInfo ? actualQuickInfo.fullSymbolName : "";
             var actualQuickInfoKind = actualQuickInfo ? actualQuickInfo.kind : "";
+
+            function assertionMessage(name: string, actualValue: string, expectedValue: string) {
+                return "\nActual " + name + ":\n\t" + actualValue + "\nExpected value:\n\t" + expectedValue;
+            }
+
             if (negative) {
                 if (expectedTypeName !== undefined) {
-                    assert.notEqual(actualQuickInfoMemberName, expectedTypeName, "\nActual quick info member name:\n\t" + actualQuickInfoMemberName + "\nExpected value:\n\t" + expectedTypeName);
+                    assert.notEqual(actualQuickInfoMemberName, expectedTypeName, assertionMessage("quick info member name", actualQuickInfoMemberName, expectedTypeName));
                 }
                 if (docComment != undefined) {
-                    assert.notEqual(actualQuickInfoDocComment, docComment, "\nActual quick info doc comment:\n\t" + actualQuickInfoDocComment + "\nExpected value:\n\t" + docComment);
+                    assert.notEqual(actualQuickInfoDocComment, docComment, assertionMessage("quick info doc comment", actualQuickInfoDocComment, docComment));
                 }
                 if (symbolName !== undefined) {
-                    assert.notEqual(actualQuickInfoSymbolName, symbolName, "\nActual quick info symbol name:\n\t" + actualQuickInfoSymbolName + "\nExpected value:\n\t" + symbolName);
+                    assert.notEqual(actualQuickInfoSymbolName, symbolName, assertionMessage("quick info symbol name", actualQuickInfoSymbolName, symbolName));
                 }
                 if (kind !== undefined) {
-                    assert.notEqual(actualQuickInfoKind, kind, "\nActual quick info kind:\n\t" + actualQuickInfoKind + "\nExpected value:\n\t" + kind);
+                    assert.notEqual(actualQuickInfoKind, kind, assertionMessage("quick info kind", actualQuickInfoKind, kind));
                 }
             } else {
                 if (expectedTypeName !== undefined) {
-                    assert.equal(actualQuickInfoMemberName, expectedTypeName, "\nActual quick info member name:\n\t" + actualQuickInfoMemberName + "\nExpected value:\n\t" + expectedTypeName);
+                    assert.equal(actualQuickInfoMemberName, expectedTypeName, assertionMessage("quick info member", actualQuickInfoMemberName, expectedTypeName));
                 }
                 if (docComment != undefined) {
-                    assert.equal(actualQuickInfoDocComment, docComment, "\nActual quick info doc comment:\n\t" + actualQuickInfoDocComment + "\nExpected value:\n\t" + docComment);
+                    assert.equal(actualQuickInfoDocComment, docComment, assertionMessage("quick info doc", actualQuickInfoDocComment, docComment));
                 }
                 if (symbolName !== undefined) {
-                    assert.equal(actualQuickInfoSymbolName, symbolName, "\nActual quick info symbol name:\n\t" + actualQuickInfoSymbolName + "\nExpected value:\n\t" + symbolName);
+                    assert.equal(actualQuickInfoSymbolName, symbolName, assertionMessage("quick info symbol name", actualQuickInfoSymbolName, symbolName));
                 }
                 if (kind !== undefined) {
-                    assert.equal(actualQuickInfoKind, kind, "\nActual quick info kind:\n\t" + actualQuickInfoKind + "\nExpected value:\n\t" + kind);
+                    assert.equal(actualQuickInfoKind, kind, assertionMessage("quick info kind", actualQuickInfoKind, kind));
                 }
             }
         }
@@ -1629,7 +1634,7 @@ module FourSlash {
             var items = this.languageService.getNavigateToItems(searchValue);
             var length = items && items.length;
 
-           Harness.Environment.standardOut.WriteLine('NavigationItems list (' + length + ' items)');
+            Harness.Environment.standardOut.WriteLine('NavigationItems list (' + length + ' items)');
 
             for (var i = 0; i < length; i++) {
                 var item = items[i];
@@ -1862,15 +1867,7 @@ module FourSlash {
         // Parse out the files and their metadata
         var testData = parseTestData(content, fileName);
 
-        // TODO: re-enable
-        //assert.bugs(content);
-
         currentTestState = new TestState(testData);
-        //var oldThrowAssertError = assert.throwAssertError;
-        //assert.throwAssertError = (error: Error) => {
-        //    error.message = "Marker: " + currentTestState.lastKnownMarker + "\n" + error.message;
-        //    throw error;
-        //}
 
         var result = '';
         var tsFn = 'tests/cases/fourslash/fourslash.ts';
@@ -1910,7 +1907,6 @@ module FourSlash {
             // Debugging: FourSlash.currentTestState.printCurrentFileState();
             throw err;
         } finally {
-            //assert.throwAssertError = oldThrowAssertError;
             harnessCompiler.reset();
         }
 

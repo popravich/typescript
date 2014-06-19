@@ -71,18 +71,18 @@ module Utils {
         return content;
     }
 
-    export function memoize(f: Function) {
+    export function memoize<T extends Function>(f: T): T {
         var cache: { [idx: string]: any } = {};
 
-        return function memoizedF(): any {            
-            var key = Array.prototype.slice.call(arguments);
+        return <any>(() => {
+            var key = Array.prototype.join.call(arguments);
             var cachedResult = cache[key];
             if (cachedResult) {
                 return cachedResult;
             } else {
                 return cache[key] = f.apply(this, arguments);
             }
-        }
+        })
     }
 }
 
@@ -247,106 +247,6 @@ module Network {
             }
         };
     }
-
-    ///// Create a network based IO environment for the harness compiler to use instead of normal file system operations
-    //export function getEnvironment(env: TypeScript.IEnvironment, url?: string): TypeScript.IEnvironment {
-    //    var url = url || serverRoot;
-
-        
-    //    var fileCache = {};
-
-    //    return {
-    //        newLine: env.newLine,
-    //        appendFile: function (path: string, content: string): TypeScript.FileInformation {
-    //            throw new Error('NYI');
-    //        },
-    //        readFile: function (file: string, codepage: number): TypeScript.FileInformation {
-    //            return env.readFile(file, codepage);
-    //        },
-    //        writeFile: function (path: string, contents: string, writeByteOrderMark: boolean) {
-    //            return env.writeFile(path, contents, writeByteOrderMark);
-    //        },
-    //        deleteFile: function (path: string) {
-    //            writeToServerSync(url + path, 'DELETE', null);
-    //        },
-    //        fileExists: Utils.memoize((path: string): boolean => {
-    //            var response = getFileFromServerSync(url + path);
-    //            return response.status === 200;
-    //        }),
-    //        dir: Utils.memoize(function dir(path: string, spec?: any, options?: any) {
-    //            var response = getFileFromServerSync(url + path);
-    //            if (response.status === 200) {
-    //                var results = response.responseText.split(',');
-    //                return results;
-    //            }
-    //            else {
-    //                return [''];
-    //            }
-    //        }),
-    //        createDirectory: function (path: string): void {
-    //            writeToServerSync(url + path, 'WRITE', null);
-    //        },
-    //        directoryExists: function (path: string): boolean {
-    //            throw new Error('NYI');
-    //        },
-    //        resolvePath: Utils.memoize((path: string) => {
-    //            var resp = getResolvedPathFromServer(url + path);
-    //            if (resp.status === 200) {
-    //                return resp.responseText;
-    //            } else {
-    //                throw new Error('Server failed to resolve path: ' + path);
-    //            }
-    //        }),
-    //        dirName: Utils.memoize((path: string): string => {
-    //            // TODO: forward this to the server or not necessary?
-    //            var dirPath = path;
-    //            // root of the server
-    //            if (dirPath.match(/localhost:\d+$/) || dirPath.match(/localhost:\d+\/$/)) {
-    //                dirPath = null;
-    //                // path + filename
-    //            } else if (dirPath.indexOf('.') === -1) {
-    //                dirPath = dirPath.substring(0, dirPath.lastIndexOf('/'));
-    //                // path
-    //            } else {
-    //                // strip any trailing slash
-    //                if (dirPath.match(/.*\/$/)) {
-    //                    dirPath = dirPath.substring(0, dirPath.length - 2);
-    //                }
-    //                var dirPath = dirPath.substring(0, dirPath.lastIndexOf('/'));
-    //            }
-
-    //            return dirPath;
-    //        }),
-    //        findFile: function (rootPath: string, partialFilePath: string): TypeScript.IFindFileResult {
-    //            throw new Error('NYI');
-    //        },
-    //        print: function (str: string) { console.log(str); },
-    //        printLine: function (str: string) { console.log(str + '\n') },
-    //        arguments: [],
-    //        stderr: {
-    //            Write: function (str: string) { console.log(str); },
-    //            WriteLine: function (str: string) { console.log(str + '\n'); },
-    //            Close: function () { }
-    //        },
-    //        stdout: {
-    //            Write: function (str: string) { console.log(str); },
-    //            WriteLine: function (str: string) { console.log(str + '\n'); },
-    //            Close: function () { }
-    //        },
-    //        watchFile: function (fileName: string, callback: (x: string) => void): TypeScript.IFileWatcher {
-    //            throw new Error('NYI');
-    //        },
-    //        run: function (source: any, fileName: any) {
-    //            throw new Error('NYI');
-    //        },
-    //        getExecutingFilePath: function () {
-    //            return process.mainModule.filename;
-    //        },
-    //        quit: function (code?: number) {
-    //            throw new Error('NYI');
-    //        }
-    //    }
-    //};
 }
 
 module Harness {
@@ -423,10 +323,12 @@ module Harness {
             public currentLine = <string>undefined;
 
             public Write(str: string) {
+                // out of memory usage concerns avoid using + or += if we're going to do any manipulation of this string later
                 this.currentLine = [(this.currentLine || ''), str].join('');
             }
 
             public WriteLine(str: string) {
+                // out of memory usage concerns avoid using + or += if we're going to do any manipulation of this string later
                 this.lines.push([(this.currentLine || ''), str].join(''));
                 this.currentLine = undefined;
             }
@@ -1580,10 +1482,10 @@ module Harness {
     export module Baseline {
         // Need to check for browser first or else we may find the eval'd TypeScript.Environment from TypeScriptServices.js
         if (currentExecutionEnvironment === ExecutionEnvironment.Browser) {
-            var Environement = Network.getEnvironment();
+            var Environment = Network.getEnvironment();
         }
         else {
-            var Environement = TypeScript.Environment;
+            var Environment = TypeScript.Environment;
         }
        
         var firstRun = true;
@@ -1602,16 +1504,16 @@ module Harness {
 
         var fileCache: { [idx: string]: boolean } = {}
         function generateActual(actualFilename: string, generateContent: () => string): string {
-            var parentDir = Environement.directoryName(actualFilename); // .../tests/baselines/local
-            var parentParentDir = Environement.directoryName(Environement.directoryName(actualFilename)) // .../tests/baselines
+            var parentDir = Environment.directoryName(actualFilename); // .../tests/baselines/local
+            var parentParentDir = Environment.directoryName(Environment.directoryName(actualFilename)) // .../tests/baselines
             if (!fileCache[parentDir] && !fileCache[parentParentDir]) {
                 // Create folders if needed
-                Environement.createDirectory(parentParentDir);
-                Environement.createDirectory(parentDir);
+                Environment.createDirectory(parentParentDir);
+                Environment.createDirectory(parentDir);
 
                 // Delete the actual file in case it fails
-                if (Environement.fileExists(actualFilename)) {
-                    Environement.deleteFile(actualFilename);
+                if (Environment.fileExists(actualFilename)) {
+                    Environment.deleteFile(actualFilename);
                 }
 
                 fileCache[parentDir] = true;
@@ -1627,7 +1529,7 @@ module Harness {
             // Store the content in the 'local' folder so we
             // can accept it later (manually)
             if (actual !== null) {
-                Environement.writeFile(actualFilename, actual, /*writeByteOrderMark:*/ false);
+                Environment.writeFile(actualFilename, actual, /*writeByteOrderMark:*/ false);
             }
 
             return actual;
@@ -1648,8 +1550,8 @@ module Harness {
             }
 
             var expected = '<no content>';
-            if (Environement.fileExists(refFilename)) {
-                expected = Environement.readFile(refFilename, /*codepage:*/ null).contents;
+            if (Environment.fileExists(refFilename)) {
+                expected = Environment.readFile(refFilename, /*codepage:*/ null).contents;
             }
 
             var lineEndingSensitive = opts && opts.LineEndingSensitive;
