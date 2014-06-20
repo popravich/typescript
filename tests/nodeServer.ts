@@ -9,7 +9,7 @@ import child_process = require("child_process");
 
 if (process.argv[2] == '--help') {
     console.log('Runs a node server on port 8888 by default, looking for tests folder in the current directory\n');
-    console.log('Syntax: node nodeServer.js [port] [typescriptEnlistmentDirectory] [--verbose] [--browser]\n');
+    console.log('Syntax: node nodeServer.js [port] [typescriptEnlistmentDirectory] [tests] [--browser] [--verbose]\n');
     console.log('Examples: \n\tnode nodeServer.js 8888 .');
     console.log('\tnode nodeServer.js 3000 D:/src/typescript/public --verbose IE');
     return;
@@ -24,13 +24,9 @@ var port = process.argv[2] || defaultPort;
 var defaultRootDir = '../'; // ...\typescript\public
 var rootDir = process.argv[3] || defaultRootDir;
 rootDir = switchToForwardSlashes(rootDir);
-var verbose = false;
-if (process.argv[4] == '--verbose') {
-    verbose = true;
-} else if (process.argv[4] && process.argv[4] !== '--verbose') {
-    console.log('Invalid command line arguments. Got ' + process.argv[4] + ' but expected --verbose or nothing.');
-    return;
-}
+
+var grep = process.argv[4];
+
 var browser: string;
 if (process.argv[5]) {
     browser = process.argv[5];
@@ -38,6 +34,14 @@ if (process.argv[5]) {
         console.log('Invalid command line arguments. Got ' + browser + ' but expected chrome, IE or nothing.');
         return;
     }
+}
+
+var verbose = false;
+if (process.argv[6] == '--verbose') {
+    verbose = true;
+} else if (process.argv[6] && process.argv[6] !== '--verbose') {
+    console.log('Invalid command line arguments. Got ' + process.argv[4] + ' but expected --verbose or nothing.');
+    return;
 }
 
 function log(msg: string) {
@@ -315,7 +319,7 @@ if ((browser && browser === 'chrome')) {
     } else {
         browserPath = browser;
     }
-} else if (browser === 'IE' || !browser) {
+} else if (browser === 'IE') {
     var defaultIEPath = 'C:/Program Files/Internet Explorer/iexplore.exe';
     if (fs.existsSync(defaultIEPath)) {
         browserPath = defaultIEPath;
@@ -326,7 +330,9 @@ if ((browser && browser === 'chrome')) {
 
 log('Using browser: ' + browserPath);
 
-child_process.spawn(browserPath, [process.cwd() + '/webTestResults.html'], (err, stdout, stderr) => {
+// TODO: get query string passed to the browser correctly
+var queryString = grep ? "?grep=" + grep : '';
+child_process.spawn(browserPath, [process.cwd() + '\\webTestResults.html'], (err, stdout, stderr) => {
     console.log("ERR: " + err.message);
     console.log("STDOUT: " + stdout.toString());
     console.log("STDERR: " + stderr.toString());

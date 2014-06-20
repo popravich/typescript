@@ -26,76 +26,6 @@
 
 function runTests(tests: RunnerBase[]) {    if (reverse) {        tests = tests.reverse();    }    for (var i = iterations; i > 0; i--) {        for (var j = 0; j < tests.length; j++) {            tests[j].initializeTests();        }    }}var runners: RunnerBase[] = [];global.runners = runners;var reverse: boolean = false;var iterations: number = 1;
 var opts = new TypeScript.OptionsParser(Harness.Environment, "testCompiler");
-opts.flag('compiler', {
-    set: function () {
-        runners.push(new CompilerBaselineRunner(CompilerTestType.Conformance));
-        runners.push(new CompilerBaselineRunner(CompilerTestType.Regressions));
-        runners.push(new UnitTestRunner(UnittestTestType.Compiler));
-        runners.push(new ProjectRunner());
-    }
-});
-
-opts.flag('conformance', {
-    set: function () {
-        runners.push(new CompilerBaselineRunner(CompilerTestType.Conformance));
-    }
-});
-
-opts.flag('project', {
-    set: function () {
-        runners.push(new ProjectRunner());
-    }
-});
-
-opts.flag('fourslash', {
-    set: function () {
-        runners.push(new FourslashRunner());
-    }
-});
-
-opts.flag('fourslash-generated', {
-    set: function () {
-        runners.push(new GeneratedFourslashRunner());
-    }
-});
-
-opts.flag('unittests', {
-    set: function () {
-        runners.push(new UnitTestRunner(UnittestTestType.Compiler));
-        runners.push(new UnitTestRunner(UnittestTestType.Samples));
-    }
-});
-
-opts.flag('samples', {
-    set: function () {
-        runners.push(new UnitTestRunner(UnittestTestType.Samples));
-    }
-});
-
-opts.flag('rwc', {
-    set: function () {
-        runners.push(new RWCRunner());
-    }
-});
-
-opts.flag('ls', {
-    set: function () {
-        runners.push(new UnitTestRunner(UnittestTestType.LanguageService));
-    }
-});
-
-opts.flag('services', {
-    set: function () {
-        runners.push(new UnitTestRunner(UnittestTestType.Services));
-    }
-});
-
-opts.flag('harness', {
-    set: function () {
-        runners.push(new UnitTestRunner(UnittestTestType.Harness));
-    }
-});
-
 opts.option('root', {
     usage: {
         locCode: 'Sets the root for the tests")',
@@ -121,33 +51,6 @@ opts.option('iterations', {
         iterations = val < 1 ? 1 : val;
     }
 });
-
-// For running only compiler baselines with specific options like emit, decl files, etc
-opts.flag('compiler-baselines', {
-    set: function (str) {
-        var conformanceRunner = new CompilerBaselineRunner(CompilerTestType.Conformance);
-        conformanceRunner.options = str;
-        runners.push(conformanceRunner);
-
-        var regressionRunner = new CompilerBaselineRunner(CompilerTestType.Regressions);
-        regressionRunner.options = str;
-        runners.push(regressionRunner);
-    }
-});
-
-// users can define tests to run in mytest.config that will override cmd line args, otherwise use cmd line args (test.config), otherwise no options
-var mytestconfig = 'mytest.config';
-var testconfig = 'test.config';
-var testConfigFile =
-    Harness.Environment.fileExists(mytestconfig) ? Harness.Environment.readFile(mytestconfig, null).contents :
-    (Harness.Environment.fileExists(testconfig) ? Harness.Environment.readFile(testconfig, null).contents : '')
-
-if (testConfigFile !== '') {
-    // TODO: not sure why this is crashing mocha
-    //var testConfig = JSON.parse(testConfigRaw);
-    var testConfig = testConfigFile.match(/test:\s\['(.*)'\]/)
-    opts.parse(testConfig ? [testConfig[1]] : [])
-}
 
 if (runners.length === 0) {
     if (opts.unnamed.length === 0 || opts.unnamed[0].indexOf('run.js') !== -1) {

@@ -1,13 +1,9 @@
 ///<reference path="..\..\..\..\src\harness\harness.ts" />
 
 var samplesCompilerOptions = { useMinimalDefaultLib: false, noImplicitAny: false }
-describe("Setup compiler for samples", () => {
-    var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
-    harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
-});
 
 describe('Compiling samples', function () {
-    var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+    var harnessCompiler = Harness.Compiler.getCompiler();
 
     function loadSample(path: string): string {
         return Harness.Environment.readFile(Harness.userSpecifiedroot + 'samples/' + path, /*codepage:*/null).contents;
@@ -33,6 +29,14 @@ describe('Compiling samples', function () {
 
         assert.equal(result.errors.length, 0);
     }
+
+    beforeEach(() => {
+        harnessCompiler = Harness.Compiler.getCompiler({ useExistingInstance: false, optionsForFreshInstance: samplesCompilerOptions });
+    });
+
+    after(() => {
+        harnessCompiler = Harness.Compiler.getCompiler({ useExistingInstance: false });
+    });
 
     // d3
     it('compiles the d3 sample without error', function () {
@@ -65,7 +69,7 @@ describe('Compiling samples', function () {
 
     // jquery
     it('compiles the jquery sample without error', function () {
-        harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
+        harnessCompiler = Harness.Compiler.getCompiler({ useExistingInstance: true, optionsForFreshInstance: samplesCompilerOptions });
         var units = ["jquery/parallax.ts", "jquery/jquery.d.ts"];
         addUnitsAndCompile(units);
     });
@@ -111,8 +115,7 @@ describe('Compiling samples', function () {
         });
 
         // Necessary because both todomvc and warship declare var $
-        harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
-        harnessCompiler.reset();
+        harnessCompiler = Harness.Compiler.getCompiler({ useExistingInstance: true, optionsForFreshInstance: samplesCompilerOptions });
     });
 
     // warship
@@ -134,12 +137,7 @@ describe('Compiling samples', function () {
             "win8/encyclopedia/Encyclopedia/js/win.ts"
         ]
 
-        harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, samplesCompilerOptions);
-        harnessCompiler.reset();
+        harnessCompiler = Harness.Compiler.getCompiler({ useExistingInstance: true, optionsForFreshInstance: samplesCompilerOptions });
         addUnitsAndCompile(units, true);
     });
-});
-
-describe("Clean up samples", () => {
-    var harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: true, noImplicitAny: false });
 });

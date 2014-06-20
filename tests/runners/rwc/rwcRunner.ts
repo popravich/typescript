@@ -78,12 +78,10 @@ class RWCRunner extends RunnerBase {
         var exec = Exec.exec;
 
         // Recreate the compiler with the default lib
-        harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
-        harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: false, noImplicitAny: false });
-        
-
-        // reset the report
-        //this.htmlBaselineReport.reset();
+        harnessCompiler = Harness.Compiler.getCompiler({
+            useExistingInstance: false,
+            optionsForFreshInstance: { useMinimalDefaultLib: false, noImplicitAny: false }
+        });        
 
         // Create folders if needed
         Harness.Environment.createDirectory(Harness.Environment.directoryName(this.outputPath));
@@ -132,8 +130,10 @@ class RWCRunner extends RunnerBase {
                 var emitterIOHost = new RWCEmitter(fsOutput, fsDeclOutput);
 
                 it("setup compiler", function () {
-                    harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
-                    harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: false, noImplicitAny: false });                    
+                    harnessCompiler = Harness.Compiler.getCompiler({
+                        useExistingInstance: false,
+                        optionsForFreshInstance: { useMinimalDefaultLib: false, noImplicitAny: false }
+                    });
                     harnessCompiler.setCompilerSettings(tcSettings);
                 });
 

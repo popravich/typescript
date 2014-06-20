@@ -192,16 +192,16 @@ var harnessSources = [
 	path.join(runnersDirectory, "unittest/unittestrunner.ts"),
 	path.join(runnersDirectory, "rwc/rwcRunner.ts"),
 
-	path.join(runnersDirectory, "../cases/unittests/samples/samples.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/callSignatureTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/classOverloads.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/constructSignatureTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/declarationTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/functionSignaturesTests.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/identifiers.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
-	path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/samples/samples.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/callSignatureTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/classOverloads.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/constructSignatureTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/declarationTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/functionSignaturesTests.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/identifiers.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/moduleAlias.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/pathing.ts"),
+	//path.join(runnersDirectory, "../cases/unittests/compiler/propertySignatureTests.ts"),
 ];
 
 var librarySourceMap = [
@@ -451,26 +451,15 @@ function cleanTestDirs() {
 	jake.mkdirP(localBaseline);
 }
 
-function writeTestConfigFile(tests, testConfigFile) {
-	console.log('Running test(s): ' + tests);
-	var testConfigContents = '{\n' + '\ttest: [\'' + tests + '\']\n}';
-	fs.writeFileSync('test.config', testConfigContents);    
-}
-
-desc("Runs the tests using the built run.js file. Syntax is jake runtests. Optional parameters 'host=' and 'tests='.");
+desc("Runs the tests using the built run.js file. Syntax is jake runtests. Optional parameters 'host=', 'tests=[regex], reporter=[list|spec|json|<more>]'.");
 task("runtests", ["local", "tests", builtTestDirectory], function() {
 	cleanTestDirs();
 	host = "mocha"
 	tests = process.env.test || process.env.tests;
+	// ensure any paths are using only forward slashes
+	tests = tests ? ' -g ' + tests.replace(/\\/g, "/").replace(/\/\//g, '/') : '';
 	reporter = process.env.reporter || process.env.r || 'dot';
-	var testConfigFile = 'test.config';
-	if(fs.existsSync(testConfigFile)) {
-		fs.unlinkSync(testConfigFile);
-	}
-	if(tests) {
-		writeTestConfigFile(tests, testConfigFile);
-	}
-    var cmd = host + " -R " + reporter + " " + run;
+    var cmd = host + " -R " + reporter + tests + ' ' + run;
 	console.log(cmd);
 	exec(cmd)
 }, {async: true});
@@ -484,21 +473,14 @@ task("browserify", ["tests", builtTestDirectory, nodeServerPath], function() {
 	exec(cmd);
 }, {async: true});
 
-desc("Runs the tests using the built run.js file like 'jake runtests'. Syntax is jake runtests-browser. Additional optional parameters port=, rootDir=");
+desc("Runs the tests using the built run.js file like 'jake runtests'. Syntax is jake runtests-browser. Additional optional parameters tests=[regex], port=, rootDir=, browser=[chrome|IE]");
 task("runtests-browser", ["local", "tests", "browserify", builtTestDirectory], function() {
 	cleanTestDirs();
 	host = "node"
-	tests = process.env.test || process.env.tests;
 	port = process.env.port || '8888';
 	rootDir = process.env.rootDir || '..';
-	var testConfigFile = 'test.config';
-	if(fs.existsSync(testConfigFile)) {
-		fs.unlinkSync(testConfigFile);
-	}
-	if(tests) {
-		writeTestConfigFile(tests, testConfigFile);
-	}
-    var cmd = host + " tests/nodeserver.js " + port + " " + rootDir
+	browser = process.env.browser || "chrome";
+    var cmd = host + " tests/nodeserver.js " + port + " " + rootDir + " " + tests + " " + browser
 	console.log(cmd);
 	exec(cmd);
 }, {async: true});

@@ -204,7 +204,7 @@ module FourSlash {
             this.cancellationToken = new TestCancellationToken();
             this.languageServiceShimHost = new Harness.TypeScriptLS(this.cancellationToken);
 
-            var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+            var harnessCompiler = Harness.Compiler.getCompiler();
             var inputFiles: { unitName: string; content: string }[] = [];
 
             testData.files.forEach(file => {
@@ -1875,7 +1875,7 @@ module FourSlash {
         fsOutput.reset();
         fsErrors.reset();
 
-        var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+        var harnessCompiler = Harness.Compiler.getCompiler();
         harnessCompiler.reset();
 
         var filesToAdd = [

@@ -10,33 +10,34 @@ class FourslashRunner extends RunnerBase {
     }
 
     public initializeTests() {
-        var runSingleFourslashTest = (fn: string) => {
-            fn = Utils.switchToForwardSlashes(fn);
-            var justName = fn.replace(/^.*[\\\/]/, '');
-            
-            // Convert to relative path
-            var testIndex = fn.indexOf('tests/');
-            if (testIndex >= 0) fn = fn.substr(testIndex);
-
-            if (justName && !justName.match(/fourslash\.ts$/i) && !justName.match(/\.d\.ts$/i)) {
-                describe('FourSlash test ' + justName, function () {
-                    it('Runs correctly', function () {
-                        FourSlash.runFourSlashTest(fn);
-                    });
-                });
-            }
-        }
-
         if (this.tests.length === 0) {
             this.tests = this.enumerateFiles(this.basePath);
         }
 
-        describe("Setup compiler for compiler baselines", () => {
-            var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
-            harnessCompiler = Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime);
-        });
+        describe("fourslash tests", () => {
+            before(() => {
+                Harness.Compiler.getCompiler({ useExistingInstance: false });
+            });
 
-        this.tests.forEach(runSingleFourslashTest);
+            this.tests.forEach((fn: string) => {
+                fn = Utils.switchToForwardSlashes(fn);
+                var justName = fn.replace(/^.*[\\\/]/, '');
+
+                // Convert to relative path
+                var testIndex = fn.indexOf('tests/');
+                if (testIndex >= 0) fn = fn.substr(testIndex);
+
+                if (justName && !justName.match(/fourslash\.ts$/i) && !justName.match(/\.d\.ts$/i)) {
+                    it('FourSlash test ' + justName + ' runs correctly', function () {
+                        FourSlash.runFourSlashTest(fn);
+                    });
+                }
+            });
+
+            after(() => {
+                Harness.Compiler.getCompiler({ useExistingInstance: false });
+            });
+        });
 
         describe('Generate Tao XML', () => {
             var invalidReasons: TypeScript.IIndexable<any> = {};

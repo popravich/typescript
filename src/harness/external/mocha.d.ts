@@ -20,18 +20,26 @@ declare var it: {
     timeout(ms: number): void;
 };
 
+/** Runs once before any 'it' blocks in the current 'describe' are run */
 declare function before(action: () => void): void;
 
+/** Runs once before any 'it' blocks in the current 'describe' are run */
 declare function before(action: (done: () => void) => void): void;
 
+/** Runs once after all 'it' blocks in the current 'describe' are run */
 declare function after(action: () => void): void;
 
+/** Runs once after all 'it' blocks in the current 'describe' are run */
 declare function after(action: (done: () => void) => void): void;
 
+/** Runs before each individual 'it' block in the current 'describe' is run */
 declare function beforeEach(action: () => void): void;
 
+/** Runs before each individual 'it' block in the current 'describe' is run */
 declare function beforeEach(action: (done: () => void) => void): void;
 
+/** Runs after each individual 'it' block in the current 'describe' is run */
 declare function afterEach(action: () => void): void;
 
+/** Runs after each individual 'it' block in the current 'describe' is run */
 declare function afterEach(action: (done: () => void) => void): void;

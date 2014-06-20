@@ -44,7 +44,7 @@ module Utils {
                 throw new Error('Unknown context');
         }
     }
-        
+
     /** Splits the given string on \r\n or on only \n if that fails */
     export function splitContentByNewlines(content: string) {
         // Split up the input file by line
@@ -143,7 +143,7 @@ module Network {
 
     export function getEnvironment(): TypeScript.IEnvironment {
         var url = url || serverRoot;
-        
+
         return {
             newLine: '\r\n',
 
@@ -238,7 +238,7 @@ module Network {
                 return 'NYI';
             },
 
-            watchFile: function(filename: string, callback: (x: string) => void): TypeScript.IFileWatcher {
+            watchFile: function (filename: string, callback: (x: string) => void): TypeScript.IFileWatcher {
                 return null;
             },
 
@@ -260,7 +260,7 @@ module Harness {
     export function getExecutionEnvironment() {
         if (typeof WScript !== "undefined" && typeof ActiveXObject === "function") {
             return ExecutionEnvironment.CScript;
-        } else if(process && (<any>process).execPath && (<any>process).execPath.indexOf("node") !== -1) {
+        } else if (process && (<any>process).execPath && (<any>process).execPath.indexOf("node") !== -1) {
             return ExecutionEnvironment.Node;
         } else {
             return ExecutionEnvironment.Browser;
@@ -405,6 +405,7 @@ module Harness {
 
             constructor(private ioHost: TypeScript.IEnvironment, options?: { useMinimalDefaultLib: boolean; noImplicitAny: boolean; }) {
                 this.compiler = new TypeScript.TypeScriptCompiler();
+                this.reset();
                 this.useMinimalDefaultLib = options ? options.useMinimalDefaultLib : true;
                 var settings = makeDefaultCompilerSettings(options);
                 settings.codeGenTarget = TypeScript.LanguageVersion.EcmaScript5;
@@ -466,7 +467,7 @@ module Harness {
                             referencedFiles: file.referencedFiles,
                             importedFiles: file.importedFiles
                         }
-                    });
+                });
             }
 
             /* Compile the current set of input files (if resolve = false) or trigger resolution and compile the resulting set of files */
@@ -813,7 +814,7 @@ module Harness {
                 return normalizedPath;
             }
 
-            fileExists(path: string): boolean {                
+            fileExists(path: string): boolean {
                 var fixedPath = this.resolveRelativePath(path, ''); // when would I ever want to pass 'this.getParentDirectory(path)' for arg 2? Just ends up combining incorrectly later
                 var idx = path.indexOf('tests/');
                 var fixedPath = fixedPath.substr(idx === -1 ? 0 : idx);
@@ -857,39 +858,30 @@ module Harness {
         }
 
         /** Recreate the appropriate compiler instance to its default settings */
-        export function recreate(compilerInstance: CompilerInstance, options?: { useMinimalDefaultLib: boolean; noImplicitAny: boolean; }) {
+        function recreate(options?: { useMinimalDefaultLib: boolean; noImplicitAny: boolean; }) {
             var useMinimalDefaultLibValue = options ? options.useMinimalDefaultLib : true;
             var noImplicitAnyValue = options ? options.noImplicitAny : false;
             var optionsWithDefaults = { useMinimalDefaultLib: useMinimalDefaultLibValue, noImplicitAny: noImplicitAnyValue };
-            if (compilerInstance === CompilerInstance.RunTime) {
-                runTimeCompiler.reset();
-                runTimeCompiler = new HarnessCompiler(Environment, optionsWithDefaults);
-                return runTimeCompiler;
-            } else {
-                designTimeCompiler.reset();
-                designTimeCompiler = new HarnessCompiler(Environment, optionsWithDefaults);
-                return designTimeCompiler;
-            }
+            harnessCompiler = new HarnessCompiler(Environment, optionsWithDefaults);
+            return harnessCompiler;
         }
 
-        /** The harness' compiler instance used when setting up tests. For example, to generate Javascript with describe/it blocks that will be eval'd. 
-            Unrelated to Visual Studio and not specific to fourslash. */
-        var designTimeCompiler = new HarnessCompiler(Environment);
         /** The harness' compiler instance used when tests are actually run. Reseting or changing settings of this compiler instance must be done within a testcase (i.e., describe/it) */
-        var runTimeCompiler = new HarnessCompiler(Environment);
+        var harnessCompiler = new HarnessCompiler(Environment);
 
-        export enum CompilerInstance {
-            DesignTime,
-            RunTime
-        }
-
-        export function getCompiler(compilerInstance: CompilerInstance) {
-            return compilerInstance === CompilerInstance.RunTime ? runTimeCompiler : designTimeCompiler;
+        /** Returns the singleton harness compiler instance for generating and running tests.
+            If required a fresh compiler instance will be created, otherwise the existing singleton will be re-used.
+        */
+        export function getCompiler(opts?: { useExistingInstance: boolean; optionsForFreshInstance?: { useMinimalDefaultLib: boolean; noImplicitAny: boolean; } }) {
+            if (!opts || opts.useExistingInstance === true) return harnessCompiler
+            else {
+                harnessCompiler = recreate(opts.optionsForFreshInstance);
+                return harnessCompiler;
+            }
         }
 
         // This does not need to exist strictly speaking, but many tests will need to be updated if it's removed
         export function compileString(code: string, unitName: string, callback: (result: CompilerResult) => void) {
-            var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
             harnessCompiler.compileString(code, unitName, callback);
         }
 
@@ -1471,7 +1463,7 @@ module Harness {
         }
 
         export function runString(code: string, unitName: string, callback: (error: Error, result: any) => void) {
-            var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
+            var harnessCompiler = Harness.Compiler.getCompiler();
             harnessCompiler.compileString(code, unitName, function (res) {
                 runJSString(res.files[0].code, callback);
             });
@@ -1487,7 +1479,7 @@ module Harness {
         else {
             var Environment = TypeScript.Environment;
         }
-       
+
         var firstRun = true;
 
         export interface BaselineOptions {
@@ -1567,7 +1559,7 @@ module Harness {
         function writeComparison(expected: string, actual: string, relativeFilename: string, actualFilename: string, descriptionForDescribe: string) {
             if (expected != actual) {
                 // Overwrite & issue error
-                var errMsg = 'The baseline file ' + relativeFilename + ' has changed. Please refer to baseline-report.html and ';
+                var errMsg = 'The baseline file ' + relativeFilename + ' has changed. Diffs the baselines and ';
                 errMsg += 'either fix the regression (if unintended) or run jake baseline-accept (if intended).'
 
                 throw new Error(errMsg);
@@ -1589,22 +1581,10 @@ module Harness {
                 var comparison = compareToBaseline(actual, relativeFilename, opts);
                 writeComparison(comparison.expected, comparison.actual, relativeFilename, actualFilename, descriptionForDescribe);
             } else {
-                describe(descriptionForDescribe, () => {
-                    var actual: string;
+                actual = generateActual(actualFilename, generateContent);
 
-                    it('Can generate the content without error', () => {
-                        actual = generateActual(actualFilename, generateContent);
-                        if (actual) {
-                            var header = '<h4>' + "Left File" + '</h4>';
-                            return header;
-                        }
-                    });
-
-                    it('Matches the baseline file', () => {
-                        var comparison = compareToBaseline(actual, relativeFilename, opts);
-                        writeComparison(comparison.expected, comparison.actual, relativeFilename, actualFilename, descriptionForDescribe);
-                    });
-                });
+                var comparison = compareToBaseline(actual, relativeFilename, opts);
+                writeComparison(comparison.expected, comparison.actual, relativeFilename, actualFilename, descriptionForDescribe);
             }
         }
     }
