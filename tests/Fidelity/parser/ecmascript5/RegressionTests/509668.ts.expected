@@ -5,7 +5,10 @@
         {
             "start": 67,
             "length": 3,
-            "diagnosticCode": "Identifier expected."
+            "diagnosticCode": "'{0}' expected.",
+            "arguments": [
+                ","
+            ]
         }
     ],
     "sourceUnit": {
@@ -192,39 +195,28 @@
                                         "end": 66,
                                         "fullWidth": 7,
                                         "width": 6,
-                                        "isIncrementallyUnusable": true,
-                                        "modifiers": [
-                                            {
-                                                "kind": "PublicKeyword",
-                                                "fullStart": 60,
-                                                "fullEnd": 67,
-                                                "start": 60,
-                                                "end": 66,
-                                                "fullWidth": 7,
-                                                "width": 6,
-                                                "text": "public",
-                                                "value": "public",
-                                                "valueText": "public",
-                                                "hasTrailingTrivia": true,
-                                                "trailingTrivia": [
-                                                    {
-                                                        "kind": "WhitespaceTrivia",
-                                                        "fullStart": 66,
-                                                        "fullEnd": 67,
-                                                        "text": " "
-                                                    }
-                                                ]
-                                            }
-                                        ],
+                                        "modifiers": [],
                                         "identifier": {
                                             "kind": "IdentifierName",
-                                            "fullStart": 67,
+                                            "fullStart": 60,
                                             "fullEnd": 67,
-                                            "start": 67,
-                                            "end": 67,
-                                            "fullWidth": 0,
-                                            "width": 0,
-                                            "text": ""
+                                            "start": 60,
+                                            "end": 66,
+                                            "fullWidth": 7,
+                                            "width": 6,
+                                            "text": "public",
+                                            "value": "public",
+                                            "valueText": "public",
+                                            "isKeywordConvertedToIdentifier": true,
+                                            "hasTrailingTrivia": true,
+                                            "trailingTrivia": [
+                                                {
+                                                    "kind": "WhitespaceTrivia",
+                                                    "fullStart": 66,
+                                                    "fullEnd": 67,
+                                                    "text": " "
+                                                }
+                                            ]
                                         }
                                     },
                                     {

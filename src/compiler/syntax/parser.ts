@@ -1032,22 +1032,45 @@ module TypeScript.Parser {
             return new syntaxFactory.EnumElementSyntax(parseNodeData, eatPropertyName(), tryParseEnumElementEqualsValueClause());
         }
 
-        function isModifier(token: ISyntaxToken): boolean {
-            switch (token.kind()) {
+        function isModifierKind(kind: SyntaxKind): boolean {
+            switch (kind) {
+                case SyntaxKind.ExportKeyword:
                 case SyntaxKind.PublicKeyword:
                 case SyntaxKind.PrivateKeyword:
                 case SyntaxKind.StaticKeyword:
-                case SyntaxKind.ExportKeyword:
                 case SyntaxKind.DeclareKeyword:
                     return true;
-                default:
-                    return false;
             }
+
+            return false;
+        }
+
+        function isModifier(token: ISyntaxToken, index: number): boolean {
+            if (isModifierKind(token.kind())) {
+                // These are modifiers only if we see an actual keyword, identifier, string literal
+                // or number following.
+                // Note: we also allow [ for error conditions.  
+                // [   is for:     static [a: number]
+                var nextToken = peekToken(index + 1);
+                var nextTokenKind = nextToken.kind();
+
+                switch (nextTokenKind) {
+                    case SyntaxKind.IdentifierName:
+                    case SyntaxKind.OpenBracketToken:
+                    case SyntaxKind.NumericLiteral:
+                    case SyntaxKind.StringLiteral:
+                        return true;
+                    default:
+                        return SyntaxFacts.isAnyKeyword(nextTokenKind);
+                }
+            }
+
+            return false;
         }
 
         function modifierCount(): number {
             var modifierCount = 0;
-            while (isModifier(peekToken(modifierCount))) {
+            while (isModifier(peekToken(modifierCount), modifierCount)) {
                 modifierCount++;
             }
 
@@ -1059,7 +1082,7 @@ module TypeScript.Parser {
 
             while (true) {
                 var token = currentToken();
-                if (isModifier(token)) {
+                if (isModifier(token, /*index:*/ 0)) {
                     tokens.push(consumeToken(token));
                     continue;
                 }
@@ -1095,7 +1118,6 @@ module TypeScript.Parser {
 
         function parseClassDeclaration(): ClassDeclarationSyntax {
             var modifiers = parseModifiers();
-
             var classKeyword = eatToken(SyntaxKind.ClassKeyword);
             var identifier = eatIdentifierToken();
             var typeParameterList = tryParseTypeParameterList(/*requireCompleteTypeParameterList:*/ false);
@@ -1162,9 +1184,9 @@ module TypeScript.Parser {
             // checks for a subset of the conditions of the previous two calls.
             var _modifierCount = modifierCount();
             return isConstructorDeclaration(_modifierCount) ||
-                   isMemberFunctionDeclaration(inErrorRecovery) ||
+                   isMemberFunctionDeclaration(_modifierCount, inErrorRecovery) ||
                    isAccessor(_modifierCount, inErrorRecovery) ||
-                   isMemberVariableDeclaration(inErrorRecovery) ||
+                   isMemberVariableDeclaration(_modifierCount, inErrorRecovery) ||
                    isIndexMemberDeclaration(_modifierCount);
         }
 
@@ -1179,13 +1201,13 @@ module TypeScript.Parser {
             if (isConstructorDeclaration(_modifierCount)) {
                 return parseConstructorDeclaration();
             }
-            else if (isMemberFunctionDeclaration(inErrorRecovery)) {
+            else if (isMemberFunctionDeclaration(_modifierCount, inErrorRecovery)) {
                 return parseMemberFunctionDeclaration();
             }
             else if (isAccessor(_modifierCount, inErrorRecovery)) {
                 return parseAccessor(/*checkForStrictMode:*/ false);
             }
-            else if (isMemberVariableDeclaration(inErrorRecovery)) {
+            else if (isMemberVariableDeclaration(_modifierCount, inErrorRecovery)) {
                 return parseMemberVariableDeclaration();
             }
             else if (isIndexMemberDeclaration(_modifierCount)) {
@@ -1222,54 +1244,12 @@ module TypeScript.Parser {
             return new syntaxFactory.ConstructorDeclarationSyntax(parseNodeData, modifiers, constructorKeyword, callSignature, block, semicolonToken);
         }
 
-        function isMemberFunctionDeclaration(inErrorRecovery: boolean): boolean {
-            var index = 0;
-
-            // Note: typescript is highly ambiguous here.  We may have things like:
-            //      public()
-            //      public public()
-            //      public static()
-            //      public static public()
-            //
-            // etc.
-            //
-            // This means we can't just blindly consume and move past modifier tokens.  Instead, we 
-            // need to see if we're at the function's name, and only skip it if we're not.
-            while (true) {
-                var token = peekToken(index);
-                if (isPropertyName(token, inErrorRecovery) &&
-                    isCallSignature(index + 1)) {
-                    return true;
-                }
-
-                // We weren't at the name of the function.  If we have a modifier token, then 
-                // consume it and try again.
-                if (isModifier(token)) {
-                    index++;
-                    continue;
-                }
-
-                // Wasn't a member function.
-                return false;
-            }
+        function isMemberFunctionDeclaration(modifierCount: number, inErrorRecovery: boolean): boolean {
+            return isPropertyName(peekToken(modifierCount), inErrorRecovery) && isCallSignature(modifierCount + 1);
         }
 
         function parseMemberFunctionDeclaration(): MemberFunctionDeclarationSyntax {
-            var modifierArray: ISyntaxToken[] = getArray();
-
-            while (true) {
-                var _currentToken = currentToken();
-                if (isPropertyName(_currentToken, /*inErrorRecovery:*/ false) &&
-                    isCallSignature(1)) {
-                    break;
-                }
-
-                modifierArray.push(consumeToken(_currentToken));
-            }
-
-            var modifiers = Syntax.list(modifierArray);
-            returnZeroLengthArray(modifierArray);
-
+            var modifiers = parseModifiers();
             var propertyName = eatPropertyName();
             var callSignature = parseCallSignature(/*requireCompleteTypeParameterList:*/ false);
 
@@ -1316,55 +1296,13 @@ module TypeScript.Parser {
             }
         }
 
-        function isMemberVariableDeclaration(inErrorRecovery: boolean): boolean {
-            var index = 0;
-
-            // Note: typescript is highly ambiguous here.  We may have things like:
-            //      public;
-            //      public public;
-            //      public static;
-            //      public static public;
-            //
-            // etc.
-            //
-            // This means we can't just blindly consume and move past modifier tokens.  Instead, we 
-            // need to see if we're at the function's name, and only skip it if we're not.
-            while (true) {
-                var token = peekToken(index);
-                if (isPropertyName(token, inErrorRecovery) &&
-                    isDefinitelyMemberVariablePropertyName(index)) {
-                        return true;
-                }
-
-                // We weren't at the name of the variable.  If we have a modifier token, then 
-                // consume it and try again.
-                if (isModifier(peekToken(index))) {
-                    index++;
-                    continue;
-                }
-
-                // Wasn't a member variable.
-                return false;
-            }
+        function isMemberVariableDeclaration(modifierCount: number, inErrorRecover: boolean): boolean {
+            return isPropertyName(peekToken(modifierCount), inErrorRecover) && isDefinitelyMemberVariablePropertyName(modifierCount);
         }
 
         function parseMemberVariableDeclaration(): MemberVariableDeclarationSyntax {
-            var modifierArray: ISyntaxToken[] = getArray();
-
-            while (true) {
-                var _currentToken = currentToken();
-                if (isPropertyName(_currentToken, /*inErrorRecovery:*/ false) &&
-                    isDefinitelyMemberVariablePropertyName(0)) {
-                    break;
-                }
-
-                modifierArray.push(consumeToken(_currentToken));
-            }
-
-            var modifiers = Syntax.list(modifierArray);
-            returnZeroLengthArray(modifierArray);
-
-            return new syntaxFactory.MemberVariableDeclarationSyntax(parseNodeData, modifiers,
+            return new syntaxFactory.MemberVariableDeclarationSyntax(parseNodeData,
+                parseModifiers(),
                 tryParseVariableDeclarator(/*allowIn:*/ true, /*allowPropertyName:*/ true), eatExplicitOrAutomaticSemicolon(/*allowWithoutNewline:*/ false));
         }
 
@@ -1598,7 +1536,7 @@ module TypeScript.Parser {
             //      foo
             //
             // Then we *should* parse it as a property name, as ASI takes effect here.
-            if (isModifier(_currentToken)) {
+            if (isModifier(_currentToken, /*index:*/ 0)) {
                 if (!existsNewLineBetweenTokens(_currentToken, peekToken(1), source.text) &&
                     isPropertyName(peekToken(1), inErrorRecovery)) {
 
@@ -3669,43 +3607,9 @@ module TypeScript.Parser {
 
         function isParameterHelper(token: ISyntaxToken): boolean {
             var tokenKind = token.kind();
-            if (tokenKind === SyntaxKind.DotDotDotToken) {
-                return true;
-            }
-
-            if (isModifier(token) && !isModifierUsedAsParameterIdentifier(token)) {
-                return true;
-            }
-
-            return isIdentifier(token);
-        }
-
-        // Modifiers are perfectly legal names for parameters.  i.e.  you can have: foo(public: number) { }
-        // Most of the time we want to treat the modifier as a modifier.  However, if we're certain 
-        // it's a parameter identifier, then don't consider it as a modifier.
-        function isModifierUsedAsParameterIdentifier(token: ISyntaxToken): boolean {
-            if (isIdentifier(token)) {
-                // Check for:
-                // foo(public)
-                // foo(public: ...
-                // foo(public= ...
-                // foo(public, ...
-                // foo(public? ...
-                //
-                // In all these cases, it's not actually a modifier, but is instead the identifier.
-                // In any other case treat it as the modifier.
-                var nextTokenKind = peekToken(1).kind();
-                switch (nextTokenKind) {
-                    case SyntaxKind.CloseParenToken:
-                    case SyntaxKind.ColonToken:
-                    case SyntaxKind.EqualsToken:
-                    case SyntaxKind.CommaToken:
-                    case SyntaxKind.QuestionToken:
-                        return true;
-                }
-            }
-
-            return false;
+            return tokenKind === SyntaxKind.DotDotDotToken ||
+                   isModifierKind(tokenKind) ||
+                   isIdentifier(token);
         }
 
         function eatSimpleParameter() {
@@ -3722,26 +3626,22 @@ module TypeScript.Parser {
             }
 
             var dotDotDotToken = tryEatToken(SyntaxKind.DotDotDotToken);
-
-            var modifierArray: ISyntaxToken[] = getArray();
-
-            while (true) {
-                var _currentToken = currentToken();
-                if (isModifier(_currentToken) && !isModifierUsedAsParameterIdentifier(_currentToken)) {
-                    modifierArray.push(consumeToken(_currentToken));
-                    continue;
-                }
-
-                break;
-            }
-
-            var modifiers = Syntax.list(modifierArray);
-            returnZeroLengthArray(modifierArray);
+            var modifiers = parseModifiers();
 
             // If we're not forcing, and we don't see anything to indicate this is a parameter, then 
             // bail out.
-            if (!isIdentifier(currentToken()) && dotDotDotToken === null && modifiers.length === 0) {
-                return null;
+            var _currentToken = currentToken();
+            if (!isIdentifier(_currentToken) && dotDotDotToken === null && modifiers.length === 0) {
+                // ERROR RECOVERY:
+                // If we see a modifier alone in a parameter list, like:      foo(static)
+                //
+                // then treat it like modifier, and continue parsing the parameter.
+                if (isModifierKind(_currentToken.kind())) {
+                    modifiers = Syntax.list([consumeToken(_currentToken)]);
+                }
+                else {
+                    return null;
+                }
             }
 
             var identifier = eatIdentifierToken();
