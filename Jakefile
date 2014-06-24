@@ -464,24 +464,34 @@ task("runtests", ["local", "tests", builtTestDirectory], function() {
 	exec(cmd)
 }, {async: true});
 
-var nodeServerPath = 'tests/nodeServer.js'
-compileFile(nodeServerPath, 'tests/nodeServer.ts');
+var nodeServerOutFile = 'tests/webTestServer.js'
+var nodeServerInFile = 'tests/webTestServer.ts'
+compileFile(nodeServerOutFile, [nodeServerInFile], [nodeServerInFile]);
 
 desc("Runs browserify on run.js to produce a file suitable for running tests in the browser");
-task("browserify", ["tests", builtTestDirectory, nodeServerPath], function() {
+task("browserify", ["tests", builtTestDirectory, nodeServerOutFile], function() {
 	var cmd = 'browserify built/localtest/run.js -o built/localtest/bundle.js';
 	exec(cmd);
 }, {async: true});
 
-desc("Runs the tests using the built run.js file like 'jake runtests'. Syntax is jake runtests-browser. Additional optional parameters tests=[regex], port=, rootDir=, browser=[chrome|IE]");
+desc("Runs the tests using the built run.js file like 'jake runtests'. Syntax is jake runtests-browser. Additional optional parameters tests=[regex], port=, browser=[chrome|IE]");
 task("runtests-browser", ["local", "tests", "browserify", builtTestDirectory], function() {
 	cleanTestDirs();
 	host = "node"
 	port = process.env.port || '8888';
-	rootDir = process.env.rootDir || '..';
-	browser = process.env.browser || "chrome";
-    var cmd = host + " tests/nodeserver.js " + port + " " + rootDir + " " + tests + " " + browser
+	browser = process.env.browser || "IE";
+	tests = process.env.test || process.env.tests;
+	// ensure any paths are using only forward slashes
+	tests = tests ? tests.replace(/\\/g, "/").replace(/\/\//g, '/') : '';
+    var cmd = host + " tests/webTestServer.js " + port + " " + browser + " " + tests
 	console.log(cmd);
+	exec(cmd);
+}, {async: true});
+
+desc("Diffs the compiler baselines using the diff tool specified by the %DIFF% environment variable");
+task('diff', function () {
+	var cmd = "%DIFF% " + refBaseline + ' ' + localBaseline;
+	console.log(cmd)
 	exec(cmd);
 }, {async: true});
 
