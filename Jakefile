@@ -457,7 +457,7 @@ task("runtests", ["local", "tests", builtTestDirectory], function() {
 	host = "mocha"
 	tests = process.env.test || process.env.tests;
 	// ensure any paths are using only forward slashes
-	tests = tests ? ' -g ' + tests.replace(/\\/g, "/").replace(/\/\//g, '/') : '';
+	tests = tests ? ' -g ' + tests : '';
 	reporter = process.env.reporter || process.env.r || 'dot';
     var cmd = host + " -R " + reporter + tests + ' ' + run;
 	console.log(cmd);
@@ -482,7 +482,7 @@ task("runtests-browser", ["local", "tests", "browserify", builtTestDirectory], f
 	browser = process.env.browser || "IE";
 	tests = process.env.test || process.env.tests;
 	// ensure any paths are using only forward slashes
-	tests = tests ? tests.replace(/\\/g, "/").replace(/\/\//g, '/') : '';
+	tests = tests ? tests : '';
     var cmd = host + " tests/webTestServer.js " + port + " " + browser + " " + tests
 	console.log(cmd);
 	exec(cmd);

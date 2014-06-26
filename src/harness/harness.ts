@@ -177,11 +177,15 @@ module Network {
                 return false;
             },
 
-            listFiles: Utils.memoize(function dir(path: string, spec?: any, options?: any) {
+            listFiles: Utils.memoize(function dir(path: string, spec?: RegExp, options?: any) {
                 var response = getFileFromServerSync(url + path);
                 if (response.status === 200) {
                     var results = response.responseText.split(',');
-                    return results;
+                    if (spec) {
+                        return results.filter(file => spec.test(file));
+                    } else {
+                        return results;
+                    }                    
                 }
                 else {
                     return [''];

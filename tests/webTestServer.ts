@@ -1,4 +1,4 @@
-/// <reference path='..\samples\node\node.d.ts'/>
+/// <reference path='..\src\harness\external\node.d.ts'/>
 
 import http = require("http");
 import fs = require("fs");
@@ -184,10 +184,14 @@ function handleRequestOperation(req: http.ServerRequest, res: http.ServerRespons
             break;
         case RequestType.GetFile:
             fs.readFile(reqPath, function (err, file) {
-                var contentType = reqPath.indexOf('.html') !== -1 ? 'text/html' : 'binary';
+                var ext = reqPath.substr(reqPath.lastIndexOf('.'));
+                var contentType = 'binary';
+                if (ext === '.js') contentType = 'text/javascript'
+                else if (ext === '.css') contentType = 'text/javascript'
+                else if (ext === '.html') contentType = 'text/html'
                 err
                 ? send('fail', res, err.message, contentType)
-                : send('success', res, file, contentType);
+                : send('success', res, (<any>file), contentType);
             });
             break;
         case RequestType.ResolveFile:
@@ -255,7 +259,7 @@ if ((browser && browser === 'chrome')) {
 console.log('Using browser: ' + browserPath);
 
 var queryString = grep ? "?grep=" + grep : '';
-child_process.spawn(browserPath, ['http://localhost:' + port + '/tests/webTestResults.html' + queryString], (err, stdout, stderr) => {
+child_process.spawn(browserPath, ['http://localhost:' + port + '/tests/webTestResults.html' + queryString], (err: Error, stdout: any, stderr: any) => {
     console.log("ERR: " + err.message);
     console.log("STDOUT: " + stdout.toString());
     console.log("STDERR: " + stderr.toString());
