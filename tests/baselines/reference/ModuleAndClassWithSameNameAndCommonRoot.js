@@ -9,7 +9,7 @@ var X;
     })(X.Y || (X.Y = {}));
     var Y = X.Y;
 })(X || (X = {}));
-//// [class.js]
+//// [classPoint.js]
 var X;
 (function (X) {
     (function (Y) {

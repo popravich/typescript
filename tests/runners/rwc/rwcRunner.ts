@@ -46,18 +46,24 @@ class RWCRunner extends RunnerBase {
     private outputPath = "tests/baselines/rwc/local/";
     private referencePath = "tests/baselines/rwc/reference/";
 
-    private htmlBaselineReport = new Diff.HtmlBaselineReport('rwc-report.html');
+    //private htmlBaselineReport = new Harness.Baseline.HtmlBaselineReport('rwc-report.html');
 
     public _getDiagnosticText(diagnostic: TypeScript.Diagnostic): string {
         return this.removeRootPath(TypeScript.TypeScriptCompiler.getFullDiagnosticText(diagnostic, path => TypeScript.switchToForwardSlashes(path)));
     }
 
     private removeRootPath(path: string): string {
-
-        // some error message contain the path, we should use a regex to normalize all instances 
-        var fullpath = TypeScript.switchToForwardSlashes(TypeScript.Environment.absolutePath(this.sourcePath));
-
-        return path.replace(new RegExp(fullpath, "gi"), "")
+        var cache: { [idx: string]: string } = {};
+        var cachedValue = cache[path];
+        if (cachedValue) {
+            return cachedValue;
+        } else {
+            // some error message contain the path, we should use a regex to normalize all instances 
+            var fullpath = TypeScript.switchToForwardSlashes(Harness.Environment.absolutePath(this.sourcePath));
+            var result = path.replace(new RegExp(fullpath, "gi"), "");
+            cache[path] = result;
+            return result;
+        }
     }
 
     /** Setup the runner's tests so that they are ready to be executed by the harness
@@ -72,15 +78,14 @@ class RWCRunner extends RunnerBase {
         var exec = Exec.exec;
 
         // Recreate the compiler with the default lib
-        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: false, noImplicitAny: false });
-        harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.RunTime);
-
-        // reset the report
-        this.htmlBaselineReport.reset();
+        harnessCompiler = Harness.Compiler.getCompiler({
+            useExistingInstance: false,
+            optionsForFreshInstance: { useMinimalDefaultLib: false, noImplicitAny: false }
+        });        
 
         // Create folders if needed
-        TypeScript.Environment.createDirectory(TypeScript.Environment.directoryName(this.outputPath));
-        TypeScript.Environment.createDirectory(this.outputPath);
+        Harness.Environment.createDirectory(Harness.Environment.directoryName(this.outputPath));
+        Harness.Environment.createDirectory(this.outputPath);
 
         var runner = this;
 
@@ -100,6 +105,7 @@ class RWCRunner extends RunnerBase {
             describe("Testing a RWC project: " + spec.projectName, function () {
                 // reset compiler to initial state
                 harnessCompiler.reset();
+                
                 harnessCompiler.setCompilerSettings(tcSettings);
 
                 fsOutput.reset();
@@ -107,26 +113,35 @@ class RWCRunner extends RunnerBase {
                 content = '', result = '', errors = '', dtsresult = '';
                 hasCrashed = false;
 
-                var outputJsFilename = runner.outputPath + spec.outputFile + ".js";
-                var outputErrorFilename = runner.outputPath + spec.outputFile + ".err.out";
-                var outputCrashFilename = runner.outputPath + spec.outputFile + ".crash.out";
-                var outputDeclarationFilename = runner.outputPath + spec.outputFile + ".d.ts";
-                var outputTypesFilename = runner.outputPath + spec.outputFile + ".types";
+                var outputPath = runner.outputPath + spec.outputFile;
+                var outputJsFilename = outputPath + ".js";
+                var outputErrorFilename = outputPath + ".err.out";
+                var outputCrashFilename = outputPath + ".crash.out";
+                var outputDeclarationFilename = outputPath + ".d.ts";
+                var outputTypesFilename = outputPath + ".types";
 
-                var baselineJsFilename = runner.referencePath + spec.outputFile + ".js";
-                var baselineErrorFilename = runner.referencePath + spec.outputFile + ".err.out";
-                var baselineCrashFilename = runner.referencePath + spec.outputFile + ".crash.out";
-                var baselineDeclarationFilename = runner.referencePath + spec.outputFile + ".d.ts";
-                var baselineTypesFilename = runner.referencePath + spec.outputFile + ".types";
+                var baselinePath = runner.referencePath + spec.outputFile;
+                var baselineJsFilename = baselinePath + ".js";
+                var baselineErrorFilename = baselinePath + ".err.out";
+                var baselineCrashFilename = baselinePath + ".crash.out";
+                var baselineDeclarationFilename = baselinePath + ".d.ts";
+                var baselineTypesFilename = baselinePath + ".types";
 
                 var emitterIOHost = new RWCEmitter(fsOutput, fsDeclOutput);
 
+                it("setup compiler", function () {
+                    harnessCompiler = Harness.Compiler.getCompiler({
+                        useExistingInstance: false,
+                        optionsForFreshInstance: { useMinimalDefaultLib: false, noImplicitAny: false }
+                    });
+                    harnessCompiler.setCompilerSettings(tcSettings);
+                });
+
                 it("compile it ", function () {
                     try {
-
                         // Compile the project
                         spec.compileList.forEach((item: string) => {
-                            content = TypeScript.Environment.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
+                            content = Harness.Environment.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
                             harnessCompiler.addInputFile({ unitName: spec.projectRoot + "/" + item, content: content });
                         });
 
@@ -134,104 +149,96 @@ class RWCRunner extends RunnerBase {
                         harnessCompiler.compile();
                         var compilationErrors = harnessCompiler.reportCompilationErrors();
 
-                        // Emiting the results
+                        // Emiting the results  
                         harnessCompiler.emitAll(emitterIOHost);
                         harnessCompiler.emitAllDeclarations(emitterIOHost);
 
                         fsOutput.Close();
                         fsDeclOutput.Close();
 
-                        compilationErrors.forEach(err => {
-                            errors += runner._getDiagnosticText(err);
-                        });
+                        errors = compilationErrors.map(err => runner._getDiagnosticText(err)).join('');
                         result = fsOutput.lines.join('\r\n');
                         dtsresult = fsDeclOutput.lines.join("\r\n");
 
                         // Delete previous results 
-                        if (TypeScript.Environment.fileExists(outputJsFilename))
-                            TypeScript.Environment.deleteFile(outputJsFilename);
-                        if (TypeScript.Environment.fileExists(outputErrorFilename))
-                            TypeScript.Environment.deleteFile(outputErrorFilename);
-                        if (TypeScript.Environment.fileExists(outputDeclarationFilename))
-                            TypeScript.Environment.deleteFile(outputDeclarationFilename);
+                        if (Harness.Environment.fileExists(outputJsFilename))
+                            Harness.Environment.deleteFile(outputJsFilename);
+                        if (Harness.Environment.fileExists(outputErrorFilename))
+                            Harness.Environment.deleteFile(outputErrorFilename);
+                        if (Harness.Environment.fileExists(outputDeclarationFilename))
+                            Harness.Environment.deleteFile(outputDeclarationFilename);
 
                         // Create the results
-                        TypeScript.Environment.writeFile(outputJsFilename, result, /*codepage*/ null);
-                        TypeScript.Environment.writeFile(outputErrorFilename, errors, /*codepage*/ null);
-                    TypeScript.Environment.writeFile(outputDeclarationFilename, dtsresult, /* codepath */ null);
+                        Harness.Environment.writeFile(outputJsFilename, result, /*codepage*/ null);
+                        Harness.Environment.writeFile(outputErrorFilename, errors, /*codepage*/ null);
+                        Harness.Environment.writeFile(outputDeclarationFilename, dtsresult, /* codepath */ null);
                     } catch (e) {
                         hasCrashed = true;
                         var message = e.message + (e.stack ? '\r\n' + e.stack : '');
-                        TypeScript.Environment.writeFile(outputCrashFilename, message, /*codepage*/ null);
-                        Harness.Assert.throwAssertError(new Error("Failed compilation"));
-                    }
-                });
-
-                it("crash check", () => {
-                    if (hasCrashed) {
-                        Harness.Assert.throwAssertError(new Error("Compiler has crashed!"));
+                        Harness.Environment.writeFile(outputCrashFilename, message, /*codepage*/ null);
+                        throw (new Error("Failed compilation"));
                     }
                 });
 
                 it("error baseline check", () => {
                     if (!hasCrashed) {
-                        if (!TypeScript.Environment.fileExists(baselineErrorFilename)) {
+                        if (!Harness.Environment.fileExists(baselineErrorFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = TypeScript.Environment.readFile(baselineErrorFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineErrorFilename, null).contents;
                         }
                         // remove line sensitivity
                         expected = expected.replace(/\r\n?/g, '\n');
                         var actual = errors.replace(/\r\n?/g, '\n');
 
                         if (actual !== expected) {
-                            runner.htmlBaselineReport.addDifference("error baseline check for " + spec.projectName, spec.outputFile + '.err.out', spec.outputFile + '.err.out', expected, actual, /* includeUnchangedRegions*/ false);
+                            //runner.htmlBaselineReport.addDifference("error baseline check for " + spec.projectName, spec.outputFile + '.err.out', spec.outputFile + '.err.out', expected, actual, /* includeUnchangedRegions*/ false);
 
                             var errMsg = 'The baseline file ' + spec.outputFile + '.err.out' + ' has changed. Please refer to rwc-report.html and ';
                             errMsg += 'either fix the regression (if unintended) or update the baseline (if intended).'
-                            Harness.Assert.throwAssertError(new Error(errMsg));
+                            throw (new Error(errMsg));
                         }
                     }
                 });
 
                 it("codegen baseline check", () => {
                     if (!hasCrashed) {
-                        if (!TypeScript.Environment.fileExists(baselineJsFilename)) {
+                        if (!Harness.Environment.fileExists(baselineJsFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = TypeScript.Environment.readFile(baselineJsFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineJsFilename, null).contents;
                         }
 
                         // remove line sensitivity
                         expected = expected.replace(/\r\n?/g, '\n');
                         var actual = result.replace(/\r\n?/g, '\n');
                         if (actual !== expected) {
-                            runner.htmlBaselineReport.addDifference("codegen baseline check for " + spec.projectName, spec.outputFile + '.js', spec.outputFile + '.js', expected, actual, /* includeUnchangedRegions*/ false);
+                            //runner.htmlBaselineReport.addDifference("codegen baseline check for " + spec.projectName, spec.outputFile + '.js', spec.outputFile + '.js', expected, actual, /* includeUnchangedRegions*/ false);
 
                             var errMsg = 'The baseline file ' + spec.outputFile + '.js' + ' has changed. Please refer to rwc-report.html and ';
                             errMsg += 'either fix the regression (if unintended) or update the baseline (if intended).'
-                            Harness.Assert.throwAssertError(new Error(errMsg));
+                            throw (new Error(errMsg));
                         }
                     }
                 });
 
                 it(".d.ts baseline check", () => {
                     if (!hasCrashed) {
-                        if (!TypeScript.Environment.fileExists(baselineDeclarationFilename)) {
+                        if (!Harness.Environment.fileExists(baselineDeclarationFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = TypeScript.Environment.readFile(baselineDeclarationFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineDeclarationFilename, null).contents;
                         }
 
                         // remove line sensitivity
                         expected = expected.replace(/\r\n?/g, '\n');
                         var actual = dtsresult.replace(/\r\n?/g, '\n');
                         if (actual !== expected) {
-                            runner.htmlBaselineReport.addDifference("codegen baseline check for " + spec.projectName, spec.outputFile + '.d.ts', spec.outputFile + '.d.ts', expected, actual, /* includeUnchangedRegions*/ false);
+                            //runner.htmlBaselineReport.addDifference("codegen baseline check for " + spec.projectName, spec.outputFile + '.d.ts', spec.outputFile + '.d.ts', expected, actual, /* includeUnchangedRegions*/ false);
 
                             var errMsg = 'The baseline file ' + spec.outputFile + '.d.ts' + ' has changed. Please refer to rwc-report.html and ';
                             errMsg += 'either fix the regression (if unintended) or update the baseline (if intended).'
-                            Harness.Assert.throwAssertError(new Error(errMsg));
+                            throw (new Error(errMsg));
                         }
                     }
                 });
@@ -245,7 +252,7 @@ class RWCRunner extends RunnerBase {
                             TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
 
                         spec.compileList.forEach((item: string) => {
-                            content = TypeScript.Environment.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
+                            content = Harness.Environment.readFile(spec.projectRoot + "/" + item, /*codepage*/ null).contents;
                             compiler.addFile(spec.projectRoot + "/" + item, TypeScript.ScriptSnapshot.fromString(content),
                                 TypeScript.ByteOrderMark.None, /*version:*/ 0, /*isOpen:*/ true);
                         });
@@ -268,15 +275,15 @@ class RWCRunner extends RunnerBase {
                         var typesResult = typeLines.join('\n');
 
                         // write file for baseline updates
-                        if (TypeScript.Environment.fileExists(outputTypesFilename)) {
-                            TypeScript.Environment.deleteFile(outputTypesFilename);
+                        if (Harness.Environment.fileExists(outputTypesFilename)) {
+                            Harness.Environment.deleteFile(outputTypesFilename);
                         }
-                        TypeScript.Environment.writeFile(outputTypesFilename, typesResult, /*codepage*/ null);
+                        Harness.Environment.writeFile(outputTypesFilename, typesResult, /*codepage*/ null);
                         
-                        if (!TypeScript.Environment.fileExists(baselineTypesFilename)) {
+                        if (!Harness.Environment.fileExists(baselineTypesFilename)) {
                             var expected = "<no content>";
                         } else {
-                            var expected = TypeScript.Environment.readFile(baselineTypesFilename, null).contents;
+                            var expected = Harness.Environment.readFile(baselineTypesFilename, null).contents;
                         }
 
                         expected = expected.replace(/\r\n?/g, '\n');
@@ -284,20 +291,20 @@ class RWCRunner extends RunnerBase {
                         if (actual !== expected) {
                             var errMsg = 'The baseline file ' + spec.outputFile + '.types' + ' has changed. Due to the size of the generated files, '
                             errMsg += 'use odd (or your favorite diff tool) to analyze the differences.';
-                            Harness.Assert.throwAssertError(new Error(errMsg));
+                            throw (new Error(errMsg));
                         }
                     }
                 });
 
-                it("_this check", () => {
+                it("_this check", (done) => {
                     if (!hasCrashed && !spec.skipThisCheck) {
                         exec("node", ["tests/runners/rwc/verifiers/globalVerifier.js", outputJsFilename], (result) => {
                             // If there's a bug in the _this checker, just issue a 'pass'
                             if (result.exitCode == 0) {
-                                Harness.Assert.equal(result.stderr, "");
-                                Harness.Assert.equal(result.stdout, "");
+                                assert.equal(result.stderr, "");
+                                assert.equal(result.stdout, "");
                             } else {
-                                Harness.Assert.throwAssertError(new Error(spec.projectName + " '_this' check crashed!"));
+                                throw (new Error(spec.projectName + " '_this' check crashed!"));
                             }
                         });
                     } 
@@ -307,9 +314,9 @@ class RWCRunner extends RunnerBase {
 
         // Read in and evaluate the test list.
         try {
-            eval(TypeScript.Environment.readFile(this.runnerPath + "/TestProjectList.js", null).contents);
+            eval(Harness.Environment.readFile(this.runnerPath + "/TestProjectList.js", null).contents);
         } catch (ex) {
-            Harness.Assert.throwAssertError(new Error("Could not read or evaluate TestProjectList.js!"));
+            throw (new Error("Could not read or evaluate TestProjectList.js!"));
         }
 
         for (var i = 0; i < testCases.length; i++) {

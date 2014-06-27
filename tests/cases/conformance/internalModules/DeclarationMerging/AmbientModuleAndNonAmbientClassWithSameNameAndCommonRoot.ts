@@ -8,7 +8,7 @@ declare module A {
     }
 }
 
-// @filename: class.ts
+// @filename: classPoint.ts
 module A {
     export class Point {
         constructor(public x: number, public y: number) { }
