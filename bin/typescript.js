@@ -29341,7 +29341,16 @@ var TypeScript;
             this.sourceMapEntries = [];
             this.setSourceMapOptions(document, jsFilePath, emitOptions, resolvePath);
             this.setNewSourceFile(document, emitOptions);
+            this.setCompilerFlags(emitOptions.compilationSettings());
         }
+        SourceMapper.defaultDocumentMediaType = function () {
+            if (!SourceMapper._defaultDocumentMediaType) {
+                SourceMapper._defaultDocumentMediaType = ["application/x.typescript;version=" + TypeScript.version];
+            }
+
+            return SourceMapper._defaultDocumentMediaType;
+        };
+
         SourceMapper.prototype.getOutputFile = function () {
             var result = this.sourceMapOut.getOutputFile();
             result.sourceMapEntries = this.sourceMapEntries;
@@ -29476,16 +29485,89 @@ var TypeScript;
                 recordSourceMappingSiblings(this.allSourceMappings[sourceIndex]);
             }
 
-            this.sourceMapOut.Write(JSON.stringify({
+            var sourceMap = {
                 version: 3,
                 file: this.jsFileName,
                 sourceRoot: this.sourceRoot,
                 sources: this.tsFilePaths,
                 names: this.names,
                 mappings: mappingsString
-            }));
+            };
+
+            this.addExtensions(sourceMap);
+
+            this.sourceMapOut.Write(JSON.stringify(sourceMap));
 
             this.sourceMapOut.Close();
+        };
+
+        SourceMapper.prototype.addExtensions = function (sourceMap) {
+            this.addMediaTypeExtension(sourceMap);
+            this.addCompilerFlagsExtension(sourceMap);
+        };
+
+        SourceMapper.prototype.addMediaTypeExtension = function (sourceMap) {
+            sourceMap.x_ms_mediaTypes = SourceMapper.defaultDocumentMediaType();
+        };
+
+        SourceMapper.prototype.setCompilerFlags = function (compilationSettings) {
+            var compilerFlags = [];
+            if (compilationSettings.propagateEnumConstants()) {
+                compilerFlags.push("--propagateEnumConstants");
+            }
+
+            if (compilationSettings.removeComments()) {
+                compilerFlags.push("--removeComments");
+            }
+
+            if (compilationSettings.noResolve()) {
+                compilerFlags.push("--noResolve");
+            }
+
+            if (compilationSettings.noLib()) {
+                compilerFlags.push("--noLib");
+            }
+
+            switch (compilationSettings.codeGenTarget()) {
+                case 0 /* EcmaScript3 */:
+                    compilerFlags.push("--target ES3");
+                    break;
+
+                case 1 /* EcmaScript5 */:
+                    compilerFlags.push("--target ES5");
+                    break;
+            }
+
+            switch (compilationSettings.moduleGenTarget()) {
+                case 2 /* Asynchronous */:
+                    compilerFlags.push("--module amd");
+                    break;
+
+                case 1 /* Synchronous */:
+                    compilerFlags.push("--module commonjs");
+                    break;
+            }
+
+            if (compilationSettings.useCaseSensitiveFileResolution()) {
+                compilerFlags.push("--useCaseSensitiveFileResolution");
+            }
+
+            if (compilationSettings.noImplicitAny()) {
+                compilerFlags.push("--noImplicitAny");
+            }
+
+            var codepage = compilationSettings.codepage();
+            if (codepage) {
+                compilerFlags.push("--codepage " + codepage);
+            }
+
+            this.compilerFlags = compilerFlags.join(" ");
+        };
+
+        SourceMapper.prototype.addCompilerFlagsExtension = function (sourceMap) {
+            if (this.compilerFlags) {
+                sourceMap.x_ms_compilerFlags = this.compilerFlags;
+            }
         };
         SourceMapper.MapFileExtension = ".map";
         return SourceMapper;
@@ -55072,6 +55154,7 @@ if (Error)
 
 var TypeScript;
 (function (TypeScript) {
+    TypeScript.version = "1.0.3.0";
     TypeScript.fileResolutionTime = 0;
     TypeScript.fileResolutionIOTime = 0;
     TypeScript.fileResolutionScanImportsTime = 0;

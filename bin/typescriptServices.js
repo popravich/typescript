@@ -29426,7 +29426,16 @@ var TypeScript;
             this.sourceMapEntries = [];
             this.setSourceMapOptions(document, jsFilePath, emitOptions, resolvePath);
             this.setNewSourceFile(document, emitOptions);
+            this.setCompilerFlags(emitOptions.compilationSettings());
         }
+        SourceMapper.defaultDocumentMediaType = function () {
+            if (!SourceMapper._defaultDocumentMediaType) {
+                SourceMapper._defaultDocumentMediaType = ["application/x.typescript;version=" + TypeScript.version];
+            }
+
+            return SourceMapper._defaultDocumentMediaType;
+        };
+
         SourceMapper.prototype.getOutputFile = function () {
             var result = this.sourceMapOut.getOutputFile();
             result.sourceMapEntries = this.sourceMapEntries;
@@ -29561,16 +29570,89 @@ var TypeScript;
                 recordSourceMappingSiblings(this.allSourceMappings[sourceIndex]);
             }
 
-            this.sourceMapOut.Write(JSON.stringify({
+            var sourceMap = {
                 version: 3,
                 file: this.jsFileName,
                 sourceRoot: this.sourceRoot,
                 sources: this.tsFilePaths,
                 names: this.names,
                 mappings: mappingsString
-            }));
+            };
+
+            this.addExtensions(sourceMap);
+
+            this.sourceMapOut.Write(JSON.stringify(sourceMap));
 
             this.sourceMapOut.Close();
+        };
+
+        SourceMapper.prototype.addExtensions = function (sourceMap) {
+            this.addMediaTypeExtension(sourceMap);
+            this.addCompilerFlagsExtension(sourceMap);
+        };
+
+        SourceMapper.prototype.addMediaTypeExtension = function (sourceMap) {
+            sourceMap.x_ms_mediaTypes = SourceMapper.defaultDocumentMediaType();
+        };
+
+        SourceMapper.prototype.setCompilerFlags = function (compilationSettings) {
+            var compilerFlags = [];
+            if (compilationSettings.propagateEnumConstants()) {
+                compilerFlags.push("--propagateEnumConstants");
+            }
+
+            if (compilationSettings.removeComments()) {
+                compilerFlags.push("--removeComments");
+            }
+
+            if (compilationSettings.noResolve()) {
+                compilerFlags.push("--noResolve");
+            }
+
+            if (compilationSettings.noLib()) {
+                compilerFlags.push("--noLib");
+            }
+
+            switch (compilationSettings.codeGenTarget()) {
+                case 0 /* EcmaScript3 */:
+                    compilerFlags.push("--target ES3");
+                    break;
+
+                case 1 /* EcmaScript5 */:
+                    compilerFlags.push("--target ES5");
+                    break;
+            }
+
+            switch (compilationSettings.moduleGenTarget()) {
+                case 2 /* Asynchronous */:
+                    compilerFlags.push("--module amd");
+                    break;
+
+                case 1 /* Synchronous */:
+                    compilerFlags.push("--module commonjs");
+                    break;
+            }
+
+            if (compilationSettings.useCaseSensitiveFileResolution()) {
+                compilerFlags.push("--useCaseSensitiveFileResolution");
+            }
+
+            if (compilationSettings.noImplicitAny()) {
+                compilerFlags.push("--noImplicitAny");
+            }
+
+            var codepage = compilationSettings.codepage();
+            if (codepage) {
+                compilerFlags.push("--codepage " + codepage);
+            }
+
+            this.compilerFlags = compilerFlags.join(" ");
+        };
+
+        SourceMapper.prototype.addCompilerFlagsExtension = function (sourceMap) {
+            if (this.compilerFlags) {
+                sourceMap.x_ms_compilerFlags = this.compilerFlags;
+            }
         };
         SourceMapper.MapFileExtension = ".map";
         return SourceMapper;
@@ -55157,6 +55239,7 @@ if (Error)
 
 var TypeScript;
 (function (TypeScript) {
+    TypeScript.version = "1.0.3.0";
     TypeScript.fileResolutionTime = 0;
     TypeScript.fileResolutionIOTime = 0;
     TypeScript.fileResolutionScanImportsTime = 0;
@@ -64610,6 +64693,11 @@ var TypeScript;
                 this._currentFileScriptSnapshot = null;
                 this._hostCache = new HostCache(_host);
             }
+            SyntaxTreeCache.prototype.getCurrentScriptSnapshot = function (fileName) {
+                this.getCurrentFileSyntaxTree(fileName);
+                return this._currentFileScriptSnapshot;
+            };
+
             SyntaxTreeCache.prototype.getCurrentFileSyntaxTree = function (fileName) {
                 this._hostCache = new HostCache(this._host);
 
@@ -64768,7 +64856,6 @@ var TypeScript;
             };
 
             LanguageServiceCompiler.prototype.getScriptSnapshot = function (fileName) {
-                this.synchronizeHostData();
                 return this.hostCache.getScriptSnapshot(fileName);
             };
 
@@ -64789,12 +64876,10 @@ var TypeScript;
             };
 
             LanguageServiceCompiler.prototype.compilationSettings = function () {
-                this.synchronizeHostData();
                 return this.compiler.compilationSettings();
             };
 
             LanguageServiceCompiler.prototype.fileNames = function () {
-                this.synchronizeHostData();
                 return this.compiler.fileNames();
             };
 
@@ -64803,77 +64888,62 @@ var TypeScript;
             };
 
             LanguageServiceCompiler.prototype.getDocument = function (fileName) {
-                this.synchronizeHostData();
                 return this.compiler.getDocument(fileName);
             };
 
             LanguageServiceCompiler.prototype.getSyntacticDiagnostics = function (fileName) {
-                this.synchronizeHostData();
                 return this.compiler.getSyntacticDiagnostics(fileName);
             };
 
             LanguageServiceCompiler.prototype.getSemanticDiagnostics = function (fileName) {
-                this.synchronizeHostData();
                 return this.compiler.getSemanticDiagnostics(fileName);
             };
 
             LanguageServiceCompiler.prototype.getCompilerOptionsDiagnostics = function (resolvePath) {
-                this.synchronizeHostData();
                 return this.compiler.getCompilerOptionsDiagnostics(resolvePath);
             };
 
             LanguageServiceCompiler.prototype.getSymbolInformationFromAST = function (ast, document) {
-                this.synchronizeHostData();
                 return this.compiler.pullGetSymbolInformationFromAST(ast, document);
             };
 
             LanguageServiceCompiler.prototype.getCallInformationFromAST = function (ast, document) {
-                this.synchronizeHostData();
                 return this.compiler.pullGetCallInformationFromAST(ast, document);
             };
 
             LanguageServiceCompiler.prototype.getVisibleMemberSymbolsFromAST = function (ast, document) {
-                this.synchronizeHostData();
                 return this.compiler.pullGetVisibleMemberSymbolsFromAST(ast, document);
             };
 
             LanguageServiceCompiler.prototype.getVisibleDeclsFromAST = function (ast, document) {
-                this.synchronizeHostData();
                 return this.compiler.pullGetVisibleDeclsFromAST(ast, document);
             };
 
             LanguageServiceCompiler.prototype.getContextualMembersFromAST = function (ast, document) {
-                this.synchronizeHostData();
                 return this.compiler.pullGetContextualMembersFromAST(ast, document);
             };
 
             LanguageServiceCompiler.prototype.pullGetDeclInformation = function (decl, ast, document) {
-                this.synchronizeHostData();
                 return this.compiler.pullGetDeclInformation(decl, ast, document);
             };
 
             LanguageServiceCompiler.prototype.topLevelDeclaration = function (fileName) {
-                this.synchronizeHostData();
                 return this.compiler.topLevelDeclaration(fileName);
             };
 
             LanguageServiceCompiler.prototype.getDeclForAST = function (ast) {
-                this.synchronizeHostData();
                 return this.compiler.getDeclForAST(ast);
             };
 
             LanguageServiceCompiler.prototype.emit = function (fileName, resolvePath) {
-                this.synchronizeHostData();
                 return this.compiler.emit(fileName, resolvePath);
             };
 
             LanguageServiceCompiler.prototype.emitDeclarations = function (fileName, resolvePath) {
-                this.synchronizeHostData();
                 return this.compiler.emitDeclarations(fileName, resolvePath);
             };
 
             LanguageServiceCompiler.prototype.canEmitDeclarations = function (fileName) {
-                this.synchronizeHostData();
                 return this.compiler.canEmitDeclarations(fileName);
             };
             return LanguageServiceCompiler;
@@ -65544,6 +65614,7 @@ var TypeScript;
             };
 
             LanguageService.prototype.getReferencesAtPosition = function (fileName, pos) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 var symbolAndContainingAST = this.getSymbolInfoAtPosition(fileName, pos, true);
@@ -65594,6 +65665,7 @@ var TypeScript;
             };
 
             LanguageService.prototype.getOccurrencesAtPosition = function (fileName, pos) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 var symbolAndContainingAST = this.getSymbolInfoAtPosition(fileName, pos, true);
@@ -65626,6 +65698,7 @@ var TypeScript;
 
             LanguageService.prototype.getImplementorsAtPosition = function (fileName, pos) {
                 var _this = this;
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 var result = [];
@@ -65768,16 +65841,23 @@ var TypeScript;
                 var possiblePositions = this.getPossibleSymbolReferencePositions(fileName, symbolName);
                 if (possiblePositions && possiblePositions.length > 0) {
                     var document = this.compiler.getDocument(fileName);
-                    var sourceUnit = document.sourceUnit();
+                    var sourceUnit = document.syntaxTree().sourceUnit();
 
                     possiblePositions.forEach(function (p) {
                         if (containingASTOpt && (p < containingASTOpt.start() || p > containingASTOpt.end())) {
                             return;
                         }
 
-                        var nameAST = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, p, false);
+                        var nameToken = sourceUnit.findToken(p);
 
-                        if (nameAST === null || nameAST.kind() !== 11 /* IdentifierName */ || (nameAST.end() - nameAST.start() !== symbolName.length)) {
+                        var isValidAST = nameToken !== null && nameToken.kind() === 11 /* IdentifierName */ && p >= nameToken.start() && p < nameToken.end() && (nameToken.end() - nameToken.start()) === symbolName.length;
+
+                        if (!isValidAST) {
+                            return;
+                        }
+
+                        var nameAST = nameToken._ast || (nameToken.element() && nameToken.element()._ast);
+                        if (!nameAST) {
                             return;
                         }
 
@@ -65881,6 +65961,7 @@ var TypeScript;
             };
 
             LanguageService.prototype.getSignatureAtPosition = function (fileName, position) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 var document = this.compiler.getDocument(fileName);
@@ -66003,6 +66084,7 @@ var TypeScript;
             };
 
             LanguageService.prototype.getDefinitionAtPosition = function (fileName, position) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 var symbolInfo = this.getSymbolInfoAtPosition(fileName, position, false);
@@ -66060,16 +66142,16 @@ var TypeScript;
             };
 
             LanguageService.prototype.tryAddSignatures = function (symbolKind, symbolName, containerKind, containerName, declarations, result) {
-                var signatureDeclarations = TypeScript.ArrayUtilities.where(declarations, function (d) {
+                var definitionDeclaration = TypeScript.ArrayUtilities.lastOrDefault(declarations, function (d) {
                     var signature = d.getSignatureSymbol();
                     return signature && !signature.isDefinition();
                 });
 
-                if (signatureDeclarations.length === 0) {
+                if (!definitionDeclaration) {
                     return false;
                 }
 
-                this.addDeclaration(symbolKind, symbolName, containerKind, containerName, TypeScript.ArrayUtilities.last(signatureDeclarations), result);
+                this.addDeclaration(symbolKind, symbolName, containerKind, containerName, definitionDeclaration, result);
                 return true;
             };
 
@@ -66088,6 +66170,7 @@ var TypeScript;
 
             LanguageService.prototype.getNavigateToItems = function (searchValue) {
                 var _this = this;
+                this.compiler.synchronizeHostData();
                 TypeScript.Debug.assert(searchValue !== null && searchValue !== undefined, "The searchValue argument was not supplied or null");
 
                 var terms = searchValue.split(" ");
@@ -66234,11 +66317,13 @@ var TypeScript;
             };
 
             LanguageService.prototype.getSyntacticDiagnostics = function (fileName) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
                 return this.compiler.getSyntacticDiagnostics(fileName);
             };
 
             LanguageService.prototype.getSemanticDiagnostics = function (fileName) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
                 return this.compiler.getSemanticDiagnostics(fileName);
             };
@@ -66249,6 +66334,7 @@ var TypeScript;
 
             LanguageService.prototype.getCompilerOptionsDiagnostics = function () {
                 var _this = this;
+                this.compiler.synchronizeHostData();
                 var resolvePath = function (fileName) {
                     return _this.host.resolveRelativePath(fileName, null);
                 };
@@ -66267,6 +66353,7 @@ var TypeScript;
 
             LanguageService.prototype.getEmitOutput = function (fileName) {
                 var _this = this;
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 var resolvePath = function (fileName) {
@@ -66354,10 +66441,7 @@ var TypeScript;
                 return symbol.fullName(enclosingScopeSymbol);
             };
 
-            LanguageService.prototype.getTypeInfoEligiblePath = function (fileName, position, isConstructorValidPosition) {
-                var document = this.compiler.getDocument(fileName);
-                var sourceUnit = document.sourceUnit();
-
+            LanguageService.prototype.getTypeInfoEligiblePath = function (sourceUnit, position, isConstructorValidPosition) {
                 var ast = TypeScript.ASTHelpers.getAstAtPosition(sourceUnit, position, false, true);
                 if (ast === null) {
                     return null;
@@ -66392,14 +66476,15 @@ var TypeScript;
             };
 
             LanguageService.prototype.getTypeAtPosition = function (fileName, position) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
+                var document = this.compiler.getDocument(fileName);
 
-                var node = this.getTypeInfoEligiblePath(fileName, position, true);
+                var node = this.getTypeInfoEligiblePath(document.sourceUnit(), position, true);
                 if (!node) {
                     return null;
                 }
 
-                var document = this.compiler.getDocument(fileName);
                 var ast;
                 var symbol;
                 var typeSymbol;
@@ -66502,6 +66587,7 @@ var TypeScript;
             };
 
             LanguageService.prototype.getCompletionsAtPosition = function (fileName, position, isMemberCompletion) {
+                this.compiler.synchronizeHostData();
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 var document = this.compiler.getDocument(fileName);
@@ -66693,6 +66779,8 @@ var TypeScript;
             };
 
             LanguageService.prototype.getCompletionEntryDetails = function (fileName, position, entryName) {
+                this.compiler.synchronizeHostData();
+
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
                 if (!this.activeCompletionSession || this.activeCompletionSession.fileName !== fileName || this.activeCompletionSession.position !== position) {
@@ -66961,7 +67049,9 @@ var TypeScript;
             LanguageService.prototype.getNameOrDottedNameSpan = function (fileName, startPos, endPos) {
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
-                var node = this.getTypeInfoEligiblePath(fileName, startPos, false);
+                this.compiler.synchronizeHostData();
+                var document = this.compiler.getDocument(fileName);
+                var node = this.getTypeInfoEligiblePath(document.sourceUnit(), startPos, false);
 
                 if (!node) {
                     return null;
@@ -67030,13 +67120,10 @@ var TypeScript;
 
                 this.formattingRulesProvider.ensureUpToDate(options);
 
-                var syntaxTree = this.getSyntaxTree(fileName);
+                var scriptSnapshot = this._syntaxTreeCache.getCurrentScriptSnapshot(fileName);
+                var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(TypeScript.SimpleText.fromScriptSnapshot(scriptSnapshot));
 
-                var scriptSnapshot = this.compiler.getScriptSnapshot(fileName);
-                var scriptText = TypeScript.SimpleText.fromScriptSnapshot(scriptSnapshot);
-                var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(scriptText);
-
-                var manager = new TypeScript.Services.Formatting.FormattingManager(syntaxTree, textSnapshot, this.formattingRulesProvider, options);
+                var manager = new TypeScript.Services.Formatting.FormattingManager(this.getSyntaxTree(fileName), textSnapshot, this.formattingRulesProvider, options);
 
                 return manager;
             };
@@ -67051,14 +67138,11 @@ var TypeScript;
             LanguageService.prototype.getIndentationAtPosition = function (fileName, position, editorOptions) {
                 fileName = TypeScript.switchToForwardSlashes(fileName);
 
-                var syntaxTree = this.getSyntaxTree(fileName);
-
-                var scriptSnapshot = this.compiler.getScriptSnapshot(fileName);
-                var scriptText = TypeScript.SimpleText.fromScriptSnapshot(scriptSnapshot);
-                var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(scriptText);
+                var scriptSnapshot = this._syntaxTreeCache.getCurrentScriptSnapshot(fileName);
+                var textSnapshot = new TypeScript.Services.Formatting.TextSnapshot(TypeScript.SimpleText.fromScriptSnapshot(scriptSnapshot));
                 var options = new FormattingOptions(!editorOptions.ConvertTabsToSpaces, editorOptions.TabSize, editorOptions.IndentSize, editorOptions.NewLineCharacter);
 
-                return TypeScript.Services.Formatting.SingleTokenIndenter.getIndentationAmount(position, syntaxTree.sourceUnit(), textSnapshot, options);
+                return TypeScript.Services.Formatting.SingleTokenIndenter.getIndentationAmount(position, this.getSyntaxTree(fileName).sourceUnit(), textSnapshot, options);
             };
 
             LanguageService.prototype.getBraceMatchingAtPosition = function (fileName, position) {
