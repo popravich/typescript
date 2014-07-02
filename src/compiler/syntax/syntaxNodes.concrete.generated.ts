@@ -1308,13 +1308,13 @@ module TypeScript.Syntax.Concrete {
     }
     export class ConstraintSyntax extends SyntaxNode {
         public extendsKeyword: ISyntaxToken;
-        public type: ITypeSyntax;
-        constructor(data: number, extendsKeyword: ISyntaxToken, type: ITypeSyntax) {
+        public typeOrExpression: ISyntaxNodeOrToken;
+        constructor(data: number, extendsKeyword: ISyntaxToken, typeOrExpression: ISyntaxNodeOrToken) {
             super(data);
             this.extendsKeyword = extendsKeyword,
-            this.type = type,
+            this.typeOrExpression = typeOrExpression,
             extendsKeyword.parent = this,
-            type.parent = this;
+            typeOrExpression.parent = this;
         }
     }
     export class SimplePropertyAssignmentSyntax extends SyntaxNode implements IPropertyAssignmentSyntax {

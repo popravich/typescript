@@ -22,9 +22,6 @@ class UnitTestRunner extends RunnerBase {
             case UnittestTestType.LanguageService:
                 this.tests = this.enumerateFiles('tests/cases/unittests/ls');
                 break;
-            case UnittestTestType.Services:
-                this.tests = this.enumerateFiles('tests/cases/unittests/services');
-                break;
             case UnittestTestType.Harness:
                 this.tests = this.enumerateFiles('tests/cases/unittests/harness');
                 break;
@@ -40,10 +37,12 @@ class UnitTestRunner extends RunnerBase {
 
         var outfile = new Harness.Compiler.WriterAggregator()
         var outerr = new Harness.Compiler.WriterAggregator();
-        var harnessCompiler = Harness.Compiler.getCompiler(Harness.Compiler.CompilerInstance.DesignTime);
+        // note this is running immediately to generate tests to be run later inside describe/it
+        // need a fresh instance so that the previous runner's last test is not hanging around
+        var harnessCompiler = Harness.Compiler.getCompiler({ useExistingInstance: false });
 
         var toBeAdded = this.tests.map(test => {
-            return { unitName: test, content: TypeScript.Environment.readFile(test, /*codepage:*/ null).contents }
+            return { unitName: test, content: Harness.Environment.readFile(test, /*codepage:*/ null).contents }
         });
         harnessCompiler.addInputFiles(toBeAdded);
         harnessCompiler.compile({ noResolve: true });
@@ -55,35 +54,47 @@ class UnitTestRunner extends RunnerBase {
         results.forEach(v => lines = lines.concat(v.file.lines));
         var code = lines.join("\n")
 
-        describe("Setup compiler for compiler unittests", () => {
-            Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime, { useMinimalDefaultLib: this.testType !== UnittestTestType.Samples, noImplicitAny: false });
-        });
-        
-        if (typeof require !== "undefined") {
-            var vm = require('vm');
-            vm.runInNewContext(code,
-                {
-                    require: require,
-                    TypeScript: TypeScript,
-                    process: process,
-                    describe: describe,
-                    it: it,
-                    assert: Harness.Assert,
-                    Harness: Harness,
-                    IO: TypeScript.Environment,
-                    Exec: Exec,
-                    Services: TypeScript.Services,
-                    // Formatting: Formatting,
-                    Diff: Diff,
-                    FourSlash: FourSlash
-                },
-                "generated_test_code.js"
-            );
-        } else {
-            eval(code);
+        var nodeContext: any = undefined;
+        if (Harness.currentExecutionEnvironment == Harness.ExecutionEnvironment.Node) {
+            nodeContext = {
+                require: require,
+                TypeScript: TypeScript,
+                process: process,
+                describe: describe,
+                it: it,
+                assert: assert,
+                beforeEach: beforeEach,
+                afterEach: afterEach,
+                before: before,
+                after: after,
+                Harness: Harness,
+                IO: Harness.Environment,
+                Exec: Exec,
+                Services: TypeScript.Services,
+                FourSlash: FourSlash
+            };
         }
 
-        // make sure the next unittestrunner doesn't include the previous one's stuff
-        Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.DesignTime);
+        describe("Setup compiler for compiler unittests", () => {
+            // ensures a clean compiler instance when tests are eventually executed following this describe block
+            harnessCompiler = Harness.Compiler.getCompiler({
+                useExistingInstance: false,
+                optionsForFreshInstance: { useMinimalDefaultLib: this.testType !== UnittestTestType.Samples, noImplicitAny: false }
+            });
+        });
+
+        // this generated code is a series of top level describe/it blocks that will run in between the setup and cleanup blocks in this file
+        Utils.evalFile(code, "generated_test_code.js", nodeContext);
+
+        describe("Cleanup after unittests", () => {
+            var harnessCompiler = Harness.Compiler.getCompiler({
+                useExistingInstance: false,
+                optionsForFreshInstance: { useMinimalDefaultLib: true, noImplicitAny: false }
+            });
+        });
+
+        // note this runs immediately (ie before this same code in the describe block above)
+        // to make sure the next runner doesn't include the previous one's stuff
+        harnessCompiler = Harness.Compiler.getCompiler({ useExistingInstance: false });
     }
 }

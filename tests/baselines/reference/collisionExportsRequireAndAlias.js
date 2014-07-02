@@ -1,23 +1,39 @@
-//// [collisionExportsRequireAndAlias_file1.js]
-define(["require", "exports"], function(require, exports) {
-    function bar() {
-    }
-    exports.bar = bar;
-});
-//// [collisionExportsRequireAndAlias_file11.js]
-define(["require", "exports"], function(require, exports) {
-    function bar2() {
-    }
-    exports.bar2 = bar2;
-});
-//// [collisionExportsRequireAndAlias_file2.js]
-define(["require", "exports", 'collisionExportsRequireAndAlias_file1', 'collisionExportsRequireAndAlias_file11'], function(require, exports, require, exports) {
-    function foo() {
-        require.bar();
-    }
-    exports.foo = foo;
-    function foo2() {
-        exports.bar2();
-    }
-    exports.foo2 = foo2;
-});
+//// [collisionExportsRequireAndAlias.ts]
+// TODO: re-enable, fails when run in the browser with full compiler suite, but not when run alone
+
+////@module: amd
+//// @Filename: collisionExportsRequireAndAlias_file1.ts
+//export function bar() {
+//}
+
+//// @Filename: collisionExportsRequireAndAlias_file3333.ts
+//export function bar2() {
+//}
+//// @Filename: collisionExportsRequireAndAlias_file2.ts
+//import require = require('collisionExportsRequireAndAlias_file1'); // Error
+//import exports = require('collisionExportsRequireAndAlias_file3333'); // Error
+//export function foo() {
+//    require.bar();
+//}
+//export function foo2() {
+//    exports.bar2();
+//}
+
+//// [collisionExportsRequireAndAlias.js]
+// TODO: re-enable, fails when run in the browser with full compiler suite, but not when run alone
+////@module: amd
+//// @Filename: collisionExportsRequireAndAlias_file1.ts
+//export function bar() {
+//}
+//// @Filename: collisionExportsRequireAndAlias_file3333.ts
+//export function bar2() {
+//}
+//// @Filename: collisionExportsRequireAndAlias_file2.ts
+//import require = require('collisionExportsRequireAndAlias_file1'); // Error
+//import exports = require('collisionExportsRequireAndAlias_file3333'); // Error
+//export function foo() {
+//    require.bar();
+//}
+//export function foo2() {
+//    exports.bar2();
+//}

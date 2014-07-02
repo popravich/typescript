@@ -570,7 +570,7 @@ module TypeScript {
 
         public visitConstraint(node: ConstraintSyntax): void {
             this.visitToken(node.extendsKeyword);
-            this.visitNodeOrToken(node.type);
+            this.visitNodeOrToken(node.typeOrExpression);
         }
 
         public visitSimplePropertyAssignment(node: SimplePropertyAssignmentSyntax): void {

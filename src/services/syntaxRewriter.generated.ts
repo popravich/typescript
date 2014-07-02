@@ -653,7 +653,7 @@ module TypeScript {
         public visitConstraint(node: ConstraintSyntax): any {
             return node.update(
                 this.visitToken(node.extendsKeyword),
-                <ITypeSyntax>this.visitNodeOrToken(node.type));
+                <ISyntaxNodeOrToken>this.visitNodeOrToken(node.typeOrExpression));
         }
 
         public visitSimplePropertyAssignment(node: SimplePropertyAssignmentSyntax): any {

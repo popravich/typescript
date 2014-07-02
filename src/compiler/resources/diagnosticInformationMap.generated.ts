@@ -13,7 +13,7 @@ module TypeScript {
     "Identifier expected; '{0}' is a keyword.": { "code": 1006, "category": DiagnosticCategory.Error },
     "Automatic semicolon insertion not allowed.": { "code": 1007, "category": DiagnosticCategory.Error },
     "Unexpected token; '{0}' expected.": { "code": 1008, "category": DiagnosticCategory.Error },
-    "Trailing separator not allowed.": { "code": 1009, "category": DiagnosticCategory.Error },
+    "Trailing comma not allowed.": { "code": 1009, "category": DiagnosticCategory.Error },
     "'*/' expected.": { "code": 1010, "category": DiagnosticCategory.Error },
     "'public' or 'private' modifier must precede 'static'.": { "code": 1011, "category": DiagnosticCategory.Error },
     "Unexpected token.": { "code": 1012, "category": DiagnosticCategory.Error },

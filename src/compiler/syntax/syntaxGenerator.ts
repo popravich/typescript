@@ -561,7 +561,8 @@ var definitions:ITypeDefinition[] = [
         baseType: 'ISyntaxNode',
         children: [
             <any>{ name: 'extendsKeyword', isToken: true, excludeFromAST: true },
-            <any>{ name: 'type', type: 'ITypeSyntax' }
+            // Expression only in error cases.
+            <any>{ name: 'typeOrExpression', type: 'ISyntaxNodeOrToken' }
         ],
         isTypeScriptSpecific: true
     },

@@ -10,32 +10,34 @@ class FourslashRunner extends RunnerBase {
     }
 
     public initializeTests() {
-        var runSingleFourslashTest = (fn: string) => {
-            fn = switchToForwardSlashes(fn);
-            var justName = fn.replace(/^.*[\\\/]/, '');
-
-            // Convert to relative path
-            var testIndex = fn.indexOf('tests/');
-            if (testIndex >= 0) fn = fn.substr(testIndex);
-
-            if (!justName.match(/fourslash\.ts$/i) && !justName.match(/\.d\.ts$/i)) {
-                describe('FourSlash test ' + justName, function () {
-                    it('Runs correctly', function () {
-                        FourSlash.runFourSlashTest(fn);
-                    });
-                });
-            }
-        }
-
         if (this.tests.length === 0) {
             this.tests = this.enumerateFiles(this.basePath);
         }
 
-        describe("Setup compiler for compiler baselines", () => {
-            Harness.Compiler.recreate(Harness.Compiler.CompilerInstance.RunTime);
-        });
+        describe("fourslash tests", () => {
+            before(() => {
+                Harness.Compiler.getCompiler({ useExistingInstance: false });
+            });
 
-        this.tests.forEach(runSingleFourslashTest);
+            this.tests.forEach((fn: string) => {
+                fn = Utils.switchToForwardSlashes(fn);
+                var justName = fn.replace(/^.*[\\\/]/, '');
+
+                // Convert to relative path
+                var testIndex = fn.indexOf('tests/');
+                if (testIndex >= 0) fn = fn.substr(testIndex);
+
+                if (justName && !justName.match(/fourslash\.ts$/i) && !justName.match(/\.d\.ts$/i)) {
+                    it('FourSlash test ' + justName + ' runs correctly', function () {
+                        FourSlash.runFourSlashTest(fn);
+                    });
+                }
+            });
+
+            after(() => {
+                Harness.Compiler.getCompiler({ useExistingInstance: false });
+            });
+        });
 
         describe('Generate Tao XML', () => {
             var invalidReasons: TypeScript.IIndexable<any> = {};
@@ -83,7 +85,7 @@ class FourslashRunner extends RunnerBase {
             lines.push('        <CloseTarget />');
             lines.push('    </CleanupTest>');
             lines.push('</TaoTest>');
-            TypeScript.Environment.writeFile('built/localtest/fourslash.xml', lines.join('\r\n'), true);
+            Harness.Environment.writeFile('built/localtest/fourslash.xml', lines.join('\r\n'), true);
         });
     }
 }

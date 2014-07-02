@@ -6,10 +6,9 @@
 ///<reference path='Test262.ts' />
 ///<reference path='incremental\IncrementalParserTests.ts' />
 ///<reference path='..\..\src\compiler\core\environment.ts' />
-///<reference path='..\..\src\harness\diff.ts' />
 ///<reference path='..\..\src\compiler\references.ts' />
 ///<reference path='..\..\src\compiler\syntax\testUtilities.ts' />
-// ///<reference path='anders\parser.ts' />
+///<reference path='..\..\src\harness\harness.ts' />
 
 var timer = new TypeScript.Timer();
 
@@ -18,9 +17,6 @@ var specificFile: string =
     undefined;
 
 var generate = false;
-
-var htmlReport = new Diff.HtmlBaselineReport("fidelity-report.html");
-htmlReport.reset();
 
 class PositionValidatingWalker extends TypeScript.SyntaxWalker {
     private position = 0;
@@ -532,11 +528,6 @@ class Program {
             if (expectedResult !== actualResult) {
                 TypeScript.Environment.standardOut.WriteLine(" ! Fail: " + actualFile);
                 TypeScript.Environment.writeFile(actualFile, actualResult, /*writeByteOrderMark:*/ false);
-
-                if (!generate) {
-                    var includeUnchangedRegions = expectedResult.length < 10240 && actualResult.length < 10240;
-                    htmlReport.addDifference("", expectedFile, actualFile, expectedResult, actualResult, includeUnchangedRegions);
-                }
             }
             else {
                 if (TypeScript.Environment.fileExists(actualFile)) {

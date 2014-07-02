@@ -604,7 +604,7 @@ module TypeScript.PrettyPrinter {
             this.ensureSpace();
             this.appendToken(node.extendsKeyword);
             this.ensureSpace();
-            visitNodeOrToken(this, node.type);
+            visitNodeOrToken(this, node.typeOrExpression);
         }
 
         private appendBlockOrStatement(node: IStatementSyntax): void {

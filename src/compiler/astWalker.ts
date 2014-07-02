@@ -215,7 +215,7 @@ module TypeScript {
     }
 
     function walkConstraintChildren(preAst: ConstraintSyntax, walker: AstWalker): void {
-        walker.walk(preAst.type);
+        walker.walk(preAst.typeOrExpression);
     }
 
     function walkConstructorDeclarationChildren(preAst: ConstructorDeclarationSyntax, walker: AstWalker): void {
